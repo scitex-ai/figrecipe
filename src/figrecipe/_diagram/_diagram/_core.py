@@ -24,7 +24,7 @@ from ._specs import (  # noqa: F401
 )
 
 try:
-    from scitex.logging import getLogger
+    from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:

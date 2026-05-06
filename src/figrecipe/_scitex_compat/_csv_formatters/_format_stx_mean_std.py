@@ -6,7 +6,7 @@
 """CSV formatter for stx_mean_std() calls - uses standard column naming."""
 
 import pandas as pd
-from scitex.plt.utils._csv_column_naming import get_csv_column_name
+from scitex_plt.utils._csv_column_naming import get_csv_column_name
 
 from ._format_plot import _parse_tracking_id
 

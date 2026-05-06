@@ -13,7 +13,7 @@ __DIR__ = os.path.dirname(__FILE__)
 
 import numpy as np
 import pandas as pd
-from scitex import logging
+import scitex_logging as logging
 
 logger = logging.getLogger(__name__)
 

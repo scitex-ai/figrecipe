@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 
 # Check if scitex.stats is available
 try:
-    from scitex import stats as scitex_stats
+    import scitex_stats as scitex_stats
 
     SCITEX_STATS_AVAILABLE = True
 except ImportError:

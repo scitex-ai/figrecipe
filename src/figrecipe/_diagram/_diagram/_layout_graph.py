@@ -35,7 +35,7 @@ def _spring_layout(
         from ._layout import _flow_layout
 
         try:
-            from scitex.logging import getLogger
+            from scitex_logging import getLogger
 
             _logger = getLogger(__name__)
         except ImportError:

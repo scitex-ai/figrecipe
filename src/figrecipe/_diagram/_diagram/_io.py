@@ -5,7 +5,7 @@
 from typing import TYPE_CHECKING, Any, Dict
 
 try:
-    from scitex.logging import getLogger
+    from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:

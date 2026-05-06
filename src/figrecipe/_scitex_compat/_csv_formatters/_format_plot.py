@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-from scitex.plt.utils._csv_column_naming import get_csv_column_name
+from scitex_plt.utils._csv_column_naming import get_csv_column_name
 
 
 def _parse_tracking_id(id: str, record_index: int = 0) -> tuple:
