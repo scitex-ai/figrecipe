@@ -735,6 +735,40 @@
             <span class="n">track</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">):</span>
+            <span class="c1"># Resolve figrecipe-extended `loc` strings BEFORE matplotlib</span>
+            <span class="c1"># sees them. Four named outer placements cover the canonical</span>
+            <span class="c1"># cases without forcing every caller to remember the</span>
+            <span class="c1"># bbox_to_anchor incantation:</span>
+            <span class="c1">#</span>
+            <span class="c1">#   loc=&#39;outer right&#39;  -&gt; outside the right edge (DEFAULT)</span>
+            <span class="c1">#   loc=&#39;outer left&#39;   -&gt; outside the left edge</span>
+            <span class="c1">#   loc=&#39;outer top&#39;    -&gt; above the axes</span>
+            <span class="c1">#   loc=&#39;outer bottom&#39; -&gt; below the axes</span>
+            <span class="c1">#</span>
+            <span class="c1"># When neither `loc` nor `bbox_to_anchor` is specified, default</span>
+            <span class="c1"># to &#39;outer right&#39; — inside-axes legends frequently occlude</span>
+            <span class="c1"># the data they describe.</span>
+            <span class="n">_OUTER_VARIANTS</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;outer right&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="s2">&quot;upper left&quot;</span><span class="p">,</span> <span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.02</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)},</span>
+                <span class="s2">&quot;outer left&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="s2">&quot;upper right&quot;</span><span class="p">,</span> <span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)},</span>
+                <span class="s2">&quot;outer top&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="s2">&quot;lower center&quot;</span><span class="p">,</span> <span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">)},</span>
+                <span class="s2">&quot;outer bottom&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="s2">&quot;upper center&quot;</span><span class="p">,</span> <span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">)},</span>
+            <span class="p">}</span>
+            <span class="n">user_loc</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loc&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user_loc</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">user_loc</span> <span class="ow">in</span> <span class="n">_OUTER_VARIANTS</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;bbox_to_anchor&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_OUTER_VARIANTS</span><span class="p">[</span><span class="n">user_loc</span><span class="p">][</span>
+                        <span class="s2">&quot;bbox_to_anchor&quot;</span>
+                    <span class="p">]</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_OUTER_VARIANTS</span><span class="p">[</span><span class="n">user_loc</span><span class="p">][</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span>
+                <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;borderaxespad&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s2">&quot;loc&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="s2">&quot;bbox_to_anchor&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="c1"># Silent default: outer right.</span>
+                <span class="n">outer</span> <span class="o">=</span> <span class="n">_OUTER_VARIANTS</span><span class="p">[</span><span class="s2">&quot;outer right&quot;</span><span class="p">]</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outer</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outer</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span>
+                <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;borderaxespad&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
             <span class="n">legend</span> <span class="o">=</span> <span class="n">original_legend</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
             <span class="c1"># Apply SCITEX style frame settings</span>
