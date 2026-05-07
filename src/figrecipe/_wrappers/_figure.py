@@ -65,7 +65,13 @@ class RecordingFigure:
             pass  # headless / mock canvas (e.g. some test fixtures)
 
     def _on_draw_finalize(self, event):
-        """Apply figrecipe finalize hooks once per draw event.
+        """Apply figrecipe finalize hooks once per figure lifetime.
+
+        Run-once: setting a new locator marks the canvas stale, which
+        on the inline notebook backend triggers another draw and a
+        SECOND inline render of the same figure. We only need to
+        finalize once per figure — cache the flag and short-circuit
+        on subsequent draws.
 
         Re-entrancy guard: finalize_ticks may swap a locator, which on
         some backends triggers another draw and would recurse. The
@@ -73,6 +79,8 @@ class RecordingFigure:
         """
         if getattr(self, "_figrecipe_finalize_in_progress", False):
             return
+        if getattr(self, "_figrecipe_finalized", False):
+            return  # already finalized — avoid the inline re-render cascade
         self._figrecipe_finalize_in_progress = True
         try:
             from ..styles._finalize import (
@@ -87,6 +95,7 @@ class RecordingFigure:
                     pass  # never break a render on a finalize bug
         finally:
             self._figrecipe_finalize_in_progress = False
+            self._figrecipe_finalized = True
 
     @property
     def fig(self) -> Figure:
