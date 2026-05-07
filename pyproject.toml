@@ -45,7 +45,7 @@ dependencies = [
     "click>=8.0.0",
     "rich>=13.0.0",
     "scitex-app>=0.2.0",
-    "scitex-linter>=0.3.0",
+    "scitex-dev>=0.11.0",
     "scitex",
 ]
 
@@ -139,6 +139,11 @@ figrecipe = "figrecipe"
 [project.entry-points."scitex_dev.skills"]
 figrecipe = "figrecipe"
 
+[project.entry-points."scitex_dev.linter.plugins"]
+figure = "figrecipe._linter_plugin:get_plugin"
+
+# Legacy entry-point group (dual-register during scitex-linter
+# deprecation window — will be dropped after the final shim release).
 [project.entry-points."scitex_linter.plugins"]
 figure = "figrecipe._linter_plugin:get_plugin"
 

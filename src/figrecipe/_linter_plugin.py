@@ -22,7 +22,7 @@ def _make_style_kwarg_checker(P006, P007, P008, P009):
     import ast
 
     try:
-        from scitex_linter.checker import Issue, _is_allowed_by_comment
+        from scitex_dev.linter.checker import Issue, _is_allowed_by_comment
     except ImportError:
         return None
 
@@ -80,7 +80,7 @@ def _make_style_kwarg_checker(P006, P007, P008, P009):
 
 def get_plugin():
     """Return figrecipe linter rules, call mappings, axes hints, and checkers."""
-    from scitex_linter._rules._base import Rule
+    from scitex_dev.linter._rules._base import Rule
 
     # ------------------------------------------------------------------
     # FM: Figure / Millimeter rules (FM001-FM009)
@@ -295,7 +295,7 @@ def get_plugin():
     # ------------------------------------------------------------------
     checkers: list = []
     try:
-        from scitex_linter._fm_checker import FMChecker
+        from scitex_dev.linter._fm_checker import FMChecker
 
         checkers.append(FMChecker)
     except ImportError:
