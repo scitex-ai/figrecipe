@@ -274,32 +274,111 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             **kwargs,
         ):
             # Resolve figrecipe-extended `loc` strings BEFORE matplotlib
-            # sees them. Four named outer placements cover the canonical
-            # cases without forcing every caller to remember the
-            # bbox_to_anchor incantation:
+            # sees them. Twelve canonical outer placements cover every
+            # corner / edge of the axes. The user passes any "outer …"
+            # string and we translate it to a (loc, bbox_to_anchor) pair
+            # so they don't have to remember the bbox_to_anchor
+            # incantation.
             #
-            #   loc='outer right'  -> outside the right edge (DEFAULT)
-            #   loc='outer left'   -> outside the left edge
-            #   loc='outer top'    -> above the axes
-            #   loc='outer bottom' -> below the axes
+            # Cardinal (4):
+            #   outer right / left / top / bottom    — anchored to mid-edge
+            # Corners (4 × 2 alias forms each):
+            #   outer upper right, outer right upper — top-right corner
+            #   outer upper left,  outer left upper  — top-left corner
+            #   outer lower right, outer right lower — bottom-right corner
+            #   outer lower left,  outer left lower  — bottom-bottom corner
+            # Edge centers (2):
+            #   outer upper center / outer lower center
             #
             # When neither `loc` nor `bbox_to_anchor` is specified, default
             # to 'outer right' — inside-axes legends frequently occlude
             # the data they describe.
             _OUTER_VARIANTS = {
-                "outer right": {"loc": "upper left", "bbox_to_anchor": (1.02, 1.0)},
-                "outer left": {"loc": "upper right", "bbox_to_anchor": (-0.02, 1.0)},
+                # Cardinal edges (mid-anchored)
+                "outer right": {"loc": "center left", "bbox_to_anchor": (1.02, 0.5)},
+                "outer left": {"loc": "center right", "bbox_to_anchor": (-0.02, 0.5)},
                 "outer top": {"loc": "lower center", "bbox_to_anchor": (0.5, 1.02)},
                 "outer bottom": {"loc": "upper center", "bbox_to_anchor": (0.5, -0.05)},
+                # Corner anchored, right side
+                "outer upper right": {
+                    "loc": "upper left",
+                    "bbox_to_anchor": (1.02, 1.0),
+                },
+                "outer lower right": {
+                    "loc": "lower left",
+                    "bbox_to_anchor": (1.02, 0.0),
+                },
+                # Corner anchored, left side
+                "outer upper left": {
+                    "loc": "upper right",
+                    "bbox_to_anchor": (-0.02, 1.0),
+                },
+                "outer lower left": {
+                    "loc": "lower right",
+                    "bbox_to_anchor": (-0.02, 0.0),
+                },
+                # Edge-centered above/below (synonyms of outer top / outer bottom)
+                "outer upper center": {
+                    "loc": "lower center",
+                    "bbox_to_anchor": (0.5, 1.02),
+                },
+                "outer lower center": {
+                    "loc": "upper center",
+                    "bbox_to_anchor": (0.5, -0.05),
+                },
+            }
+            # Order-insensitive aliases — accept "outer right upper" etc.
+            _OUTER_ALIASES = {
+                "outer right upper": "outer upper right",
+                "outer right lower": "outer lower right",
+                "outer left upper": "outer upper left",
+                "outer left lower": "outer lower left",
+                "outer center upper": "outer upper center",
+                "outer center lower": "outer lower center",
             }
             user_loc = kwargs.get("loc")
-            if isinstance(user_loc, str) and user_loc in _OUTER_VARIANTS:
-                if "bbox_to_anchor" not in kwargs:
-                    kwargs["bbox_to_anchor"] = _OUTER_VARIANTS[user_loc][
-                        "bbox_to_anchor"
-                    ]
-                kwargs["loc"] = _OUTER_VARIANTS[user_loc]["loc"]
-                kwargs.setdefault("borderaxespad", 0.0)
+            if isinstance(user_loc, str):
+                # Normalise: collapse runs of whitespace + lowercase.
+                norm = " ".join(user_loc.lower().split())
+                norm = _OUTER_ALIASES.get(norm, norm)
+                if norm in _OUTER_VARIANTS:
+                    if "bbox_to_anchor" not in kwargs:
+                        kwargs["bbox_to_anchor"] = _OUTER_VARIANTS[norm][
+                            "bbox_to_anchor"
+                        ]
+                    kwargs["loc"] = _OUTER_VARIANTS[norm]["loc"]
+                    kwargs.setdefault("borderaxespad", 0.0)
+                elif norm == "separate":
+                    h_kw = kwargs.pop("handles", None)
+                    l_kw = kwargs.pop("labels", None)
+                    if h_kw is None or l_kw is None:
+                        h_a, l_a = self._ax.get_legend_handles_labels()
+                        h_kw = h_kw if h_kw is not None else h_a
+                        l_kw = l_kw if l_kw is not None else l_a
+                    sep_kw = {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in {"loc", "bbox_to_anchor", "borderaxespad"}
+                    }
+                    fig = self._ax.get_figure()
+                    if not hasattr(fig, "_separate_legend_params"):
+                        fig._separate_legend_params = []
+                    fig._separate_legend_params.append(
+                        {
+                            "handles": list(h_kw),
+                            "labels": list(l_kw),
+                            "axis_id": getattr(self._ax, "_id", None) or hash(self._ax),
+                            "figsize": sep_kw.pop("figsize", (4, 2)),
+                            "frameon": sep_kw.pop("frameon", True),
+                            "fancybox": sep_kw.pop("fancybox", False),
+                            "shadow": sep_kw.pop("shadow", False),
+                            "kwargs": sep_kw,
+                        }
+                    )
+                    outer = _OUTER_VARIANTS["outer right"]
+                    kwargs["loc"] = outer["loc"]
+                    kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
+                    kwargs.setdefault("borderaxespad", 0.0)
             elif "loc" not in kwargs and "bbox_to_anchor" not in kwargs:
                 # Silent default: outer right.
                 outer = _OUTER_VARIANTS["outer right"]
