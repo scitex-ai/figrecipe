@@ -53,6 +53,41 @@ class RecordingFigure:
         else:
             self._axes = [[axes]]
 
+        # Run finalize_ticks / finalize_special_plots on every draw
+        # event — not just at fr.save() time. Without this hook, the
+        # inline notebook backend renders before finalize is reached,
+        # so MaxNLocator nice-tick logic never applies and matplotlib
+        # AutoLocator defaults win.
+        self._figrecipe_finalize_in_progress = False
+        try:
+            self._fig.canvas.mpl_connect("draw_event", self._on_draw_finalize)
+        except AttributeError:
+            pass  # headless / mock canvas (e.g. some test fixtures)
+
+    def _on_draw_finalize(self, event):
+        """Apply figrecipe finalize hooks once per draw event.
+
+        Re-entrancy guard: finalize_ticks may swap a locator, which on
+        some backends triggers another draw and would recurse. The
+        flag breaks the loop.
+        """
+        if getattr(self, "_figrecipe_finalize_in_progress", False):
+            return
+        self._figrecipe_finalize_in_progress = True
+        try:
+            from ..styles._finalize import (
+                finalize_special_plots,
+                finalize_ticks,
+            )
+            for ax in self._fig.get_axes():
+                try:
+                    finalize_ticks(ax)
+                    finalize_special_plots(ax)
+                except Exception:
+                    pass  # never break a render on a finalize bug
+        finally:
+            self._figrecipe_finalize_in_progress = False
+
     @property
     def fig(self) -> Figure:
         """Get the underlying matplotlib figure."""
