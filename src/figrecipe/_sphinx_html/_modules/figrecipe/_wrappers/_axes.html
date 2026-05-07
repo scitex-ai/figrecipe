@@ -735,6 +735,27 @@
             <span class="n">track</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">):</span>
+            <span class="c1"># Catch the common anti-pattern `ax.legend(&#39;upper right&#39;)`</span>
+            <span class="c1"># — matplotlib interprets a single positional string as</span>
+            <span class="c1"># the handles arg and iterates it into per-character labels.</span>
+            <span class="c1"># If the only positional looks like a known loc string,</span>
+            <span class="c1"># route it to the `loc=` kwarg.</span>
+            <span class="n">_KNOWN_MPL_LOCS</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="s1">&#39;upper left&#39;</span><span class="p">,</span> <span class="s1">&#39;lower right&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;lower left&#39;</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">,</span> <span class="s1">&#39;center left&#39;</span><span class="p">,</span> <span class="s1">&#39;center right&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;lower center&#39;</span><span class="p">,</span> <span class="s1">&#39;upper center&#39;</span><span class="p">,</span> <span class="s1">&#39;center&#39;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="s1">&#39;loc&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span>
+            <span class="p">):</span>
+                <span class="n">_norm0</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+                <span class="c1"># Will be filled below; just check the prefix here.</span>
+                <span class="k">if</span> <span class="n">_norm0</span> <span class="ow">in</span> <span class="n">_KNOWN_MPL_LOCS</span> <span class="ow">or</span> <span class="n">_norm0</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;outer&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_norm0</span> <span class="o">==</span> <span class="s1">&#39;separate&#39;</span><span class="p">:</span>
+                    <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;loc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">args</span> <span class="o">=</span> <span class="p">()</span>
+
             <span class="c1"># Resolve figrecipe-extended `loc` strings BEFORE matplotlib</span>
             <span class="c1"># sees them. Twelve canonical outer placements cover every</span>
             <span class="c1"># corner / edge of the axes. The user passes any &quot;outer …&quot;</span>
@@ -842,11 +863,12 @@
                     <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outer</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span>
                     <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;borderaxespad&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
             <span class="k">elif</span> <span class="s2">&quot;loc&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="s2">&quot;bbox_to_anchor&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-                <span class="c1"># Silent default: outer right.</span>
-                <span class="n">outer</span> <span class="o">=</span> <span class="n">_OUTER_VARIANTS</span><span class="p">[</span><span class="s2">&quot;outer right&quot;</span><span class="p">]</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outer</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span>
-                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">outer</span><span class="p">[</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">]</span>
-                <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;borderaxespad&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="c1"># Silent default: matplotlib&#39;s &#39;best&#39; auto-pick.</span>
+                <span class="c1"># Earlier figrecipe defaulted to outer right; that</span>
+                <span class="c1"># consistently shrank wide plots via constrained_layout.</span>
+                <span class="c1"># Now defer to matplotlib and let the caller opt in</span>
+                <span class="c1"># to outer placement explicitly via loc=&#39;outer …&#39;.</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;loc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;best&quot;</span>
 
             <span class="n">legend</span> <span class="o">=</span> <span class="n">original_legend</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
