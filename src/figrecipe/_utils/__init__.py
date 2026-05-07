@@ -58,6 +58,7 @@ from ._csv_column_naming import (  # noqa: F401
     parse_csv_column_name,
     sanitize_id,
 )
+from ._dimension_info import get_dimension_info, print_dimension_info  # noqa: F401
 from ._dimension_viewer import compare_modes  # noqa: F401
 from ._get_actual_font import get_actual_font_name  # noqa: F401
 from ._histogram_utils import HistogramBinManager  # noqa: F401
@@ -73,6 +74,8 @@ __all__.extend(
         "get_trace_columns_from_df",
         "get_unique_trace_id",
         "compare_modes",
+        "get_dimension_info",
+        "print_dimension_info",
         "get_actual_font_name",
         "HistogramBinManager",
         "im2grid",
