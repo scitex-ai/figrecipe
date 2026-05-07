@@ -283,16 +283,21 @@ def create_subplots(
     else:
         mm_layout = None
 
-    # Apply DPI from global style if not explicitly provided
+    # Apply DPI from global style if not explicitly provided.
+    # Prefer output.display_dpi (inline notebook backend) over output.dpi
+    # (savefig); this keeps publication-grade saved files while making
+    # inline previews ~9x lighter for the typical (figsize, ipynb) case.
     if "dpi" not in kwargs and global_style is not None:
         style_dpi = None
         try:
             if hasattr(global_style, "figure") and hasattr(global_style.figure, "dpi"):
                 style_dpi = global_style.figure.dpi
-            elif hasattr(global_style, "output") and hasattr(
-                global_style.output, "dpi"
-            ):
-                style_dpi = global_style.output.dpi
+            elif hasattr(global_style, "output"):
+                # Try display_dpi first, then dpi (back-compat).
+                if hasattr(global_style.output, "display_dpi"):
+                    style_dpi = global_style.output.display_dpi
+                elif hasattr(global_style.output, "dpi"):
+                    style_dpi = global_style.output.dpi
         except (KeyError, AttributeError):
             pass
         if style_dpi is not None:

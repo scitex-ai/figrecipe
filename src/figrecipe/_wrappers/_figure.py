@@ -416,7 +416,7 @@ class RecordingFigure:
         dpi: Optional[int] = None,
         image_format: Optional[str] = None,
         facecolor: Optional[str] = None,
-        save_hitmap: bool = True,
+        save_hitmap: bool = False,
         **kwargs,
     ):
         """Save figure — equivalent to fr.save(). Same DPI, crop, recipe.

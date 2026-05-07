@@ -74,7 +74,7 @@ def save(
     dpi: Optional[int] = None,
     image_format: Optional[str] = None,
     facecolor: Optional[str] = None,
-    save_hitmap: bool = True,
+    save_hitmap: bool = False,
 ) -> Tuple[Path, Path | None, ValidationResult | None]
 ```
 

@@ -23,7 +23,7 @@ def save_bundle(
     path: Union[str, Path],
     dpi: Optional[int] = None,
     image_formats: Optional[list] = None,
-    save_hitmap: bool = True,
+    save_hitmap: bool = False,
     verbose: bool = True,
 ) -> Path:
     """Save figure as a layered bundle (ZIP format).
@@ -35,7 +35,7 @@ def save_bundle(
         recipe.yaml    # Reproducible recipe (for fr.reproduce())
         exports/
             figure.png
-            figure_hitmap.png
+            figure_hitmap.png   # only if save_hitmap=True
 
     Parameters
     ----------
@@ -48,7 +48,10 @@ def save_bundle(
     image_formats : list, optional
         Image formats to export (default: ['png']).
     save_hitmap : bool
-        Whether to save hitmap for GUI editing (default: True).
+        Whether to save the per-pixel hitmap PNG used by the GUI editor
+        for diff visualisation (default: False). Hitmap rendering is
+        expensive and the typical save() caller doesn't need it; opt in
+        with save_hitmap=True when persisting bundles for the editor.
     verbose : bool
         Whether to print status (default: True).
 

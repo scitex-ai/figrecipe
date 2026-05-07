@@ -31,7 +31,7 @@ def save_bundle(
     path: str | Path,              # output .zip path (extension added if missing)
     dpi: Optional[int] = None,     # default from style or 300
     image_formats: Optional[list] = None,  # default: ["png"]
-    save_hitmap: bool = True,
+    save_hitmap: bool = False,
     verbose: bool = True,
 ) -> Path
 ```
