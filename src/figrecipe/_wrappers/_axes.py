@@ -273,6 +273,16 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             track: bool = True,
             **kwargs,
         ):
+            # Default to outside-right placement when caller has not
+            # specified location. Inside-axes legends frequently occlude
+            # the data they describe; placing the legend outside the axes
+            # by default avoids that without forcing every caller to
+            # remember the bbox_to_anchor incantation.
+            if "loc" not in kwargs and "bbox_to_anchor" not in kwargs:
+                kwargs.setdefault("loc", "upper left")
+                kwargs.setdefault("bbox_to_anchor", (1.02, 1.0))
+                kwargs.setdefault("borderaxespad", 0.0)
+
             legend = original_legend(*args, **kwargs)
 
             # Apply SCITEX style frame settings
