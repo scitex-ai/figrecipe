@@ -308,6 +308,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#recording-classes">Recording Classes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure"><code class="docutils literal notranslate"><span class="pre">RecordingFigure</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__init__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._on_draw_finalize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._on_draw_finalize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.fig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.fig</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.axes"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.axes</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.dpi"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.dpi</span></code></a></li>
@@ -492,7 +493,45 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">axes</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="o">=</span> <span class="p">[[</span><span class="n">axes</span><span class="p">]]</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="o">=</span> <span class="p">[[</span><span class="n">axes</span><span class="p">]]</span>
+
+        <span class="c1"># Run finalize_ticks / finalize_special_plots on every draw</span>
+        <span class="c1"># event — not just at fr.save() time. Without this hook, the</span>
+        <span class="c1"># inline notebook backend renders before finalize is reached,</span>
+        <span class="c1"># so MaxNLocator nice-tick logic never applies and matplotlib</span>
+        <span class="c1"># AutoLocator defaults win.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figrecipe_finalize_in_progress</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">mpl_connect</span><span class="p">(</span><span class="s2">&quot;draw_event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_on_draw_finalize</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># headless / mock canvas (e.g. some test fixtures)</span></div>
+
+
+<div class="viewcode-block" id="RecordingFigure._on_draw_finalize">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._on_draw_finalize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_draw_finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply figrecipe finalize hooks once per draw event.</span>
+
+<span class="sd">        Re-entrancy guard: finalize_ticks may swap a locator, which on</span>
+<span class="sd">        some backends triggers another draw and would recurse. The</span>
+<span class="sd">        flag breaks the loop.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_figrecipe_finalize_in_progress&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figrecipe_finalize_in_progress</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._finalize</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">finalize_special_plots</span><span class="p">,</span>
+                <span class="n">finalize_ticks</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">get_axes</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">finalize_ticks</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+                    <span class="n">finalize_special_plots</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>  <span class="c1"># never break a render on a finalize bug</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_figrecipe_finalize_in_progress</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
     <span class="nd">@property</span>

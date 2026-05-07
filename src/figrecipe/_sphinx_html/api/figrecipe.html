@@ -310,6 +310,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#recording-classes">Recording Classes</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure"><code class="docutils literal notranslate"><span class="pre">RecordingFigure</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.__init__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure._on_draw_finalize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._on_draw_finalize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.fig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.fig</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.axes"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.axes</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.dpi"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.dpi</span></code></a></li>
@@ -1883,6 +1884,15 @@ returns (path, offset_dict).</p>
 <dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.__init__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure._on_draw_finalize">
+<span class="sig-name descname"><span class="pre">_on_draw_finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure._on_draw_finalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure._on_draw_finalize" title="Link to this definition"></a></dt>
+<dd><p>Apply figrecipe finalize hooks once per draw event.</p>
+<p>Re-entrancy guard: finalize_ticks may swap a locator, which on
+some backends triggers another draw and would recurse. The
+flag breaks the loop.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.fig">
