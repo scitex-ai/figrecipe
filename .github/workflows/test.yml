@@ -44,7 +44,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest tests/ -v --tb=short --ignore=tests/editor --ignore=tests/test_pixel_perfect.py \
+          pytest tests/ -v --tb=short --ignore=tests/figrecipe/_editor --ignore=tests/test_pixel_perfect.py \
             ${{ matrix.python-version == '3.12' && '--cov --cov-report=term-missing' || '' }}
 
       - name: Run pixel-perfect reproduction tests
