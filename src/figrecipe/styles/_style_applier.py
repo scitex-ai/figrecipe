@@ -267,6 +267,13 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     mpl.rcParams["ytick.labelsize"] = tick_fs
     mpl.rcParams["figure.titlesize"] = style.get("suptitle_font_size_pt", title_fs + 1)
 
+    # Push DPI defaults so plain mpl ops outside a fg.subplots() chain
+    # also follow the preset. Keys come from to_subplots_kwargs():
+    #   "dpi"          = display_dpi (inline, default 100)
+    #   "savefig_dpi"  = output_dpi  (saved figures, default 300)
+    mpl.rcParams["figure.dpi"] = style.get("dpi", 100)
+    mpl.rcParams["savefig.dpi"] = style.get("savefig_dpi", 300)
+
     # Set legend font size and background via rcParams
     mpl.rcParams["legend.fontsize"] = legend_fs
     mpl.rcParams["legend.title_fontsize"] = legend_fs
