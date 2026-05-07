@@ -273,6 +273,27 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             track: bool = True,
             **kwargs,
         ):
+            # Catch the common anti-pattern `ax.legend('upper right')`
+            # — matplotlib interprets a single positional string as
+            # the handles arg and iterates it into per-character labels.
+            # If the only positional looks like a known loc string,
+            # route it to the `loc=` kwarg.
+            _KNOWN_MPL_LOCS = {
+                'best', 'upper right', 'upper left', 'lower right',
+                'lower left', 'right', 'center left', 'center right',
+                'lower center', 'upper center', 'center',
+            }
+            if (
+                len(args) == 1
+                and isinstance(args[0], str)
+                and 'loc' not in kwargs
+            ):
+                _norm0 = ' '.join(args[0].lower().split())
+                # Will be filled below; just check the prefix here.
+                if _norm0 in _KNOWN_MPL_LOCS or _norm0.startswith('outer') or _norm0 == 'separate':
+                    kwargs['loc'] = args[0]
+                    args = ()
+
             # Resolve figrecipe-extended `loc` strings BEFORE matplotlib
             # sees them. Twelve canonical outer placements cover every
             # corner / edge of the axes. The user passes any "outer …"
@@ -380,11 +401,12 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
                     kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
                     kwargs.setdefault("borderaxespad", 0.0)
             elif "loc" not in kwargs and "bbox_to_anchor" not in kwargs:
-                # Silent default: outer right.
-                outer = _OUTER_VARIANTS["outer right"]
-                kwargs["loc"] = outer["loc"]
-                kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
-                kwargs.setdefault("borderaxespad", 0.0)
+                # Silent default: matplotlib's 'best' auto-pick.
+                # Earlier figrecipe defaulted to outer right; that
+                # consistently shrank wide plots via constrained_layout.
+                # Now defer to matplotlib and let the caller opt in
+                # to outer placement explicitly via loc='outer …'.
+                kwargs["loc"] = "best"
 
             legend = original_legend(*args, **kwargs)
 
