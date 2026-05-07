@@ -24,15 +24,6 @@ def im2grid(image_paths, default_color=(255, 255, 255)):
     Returns:
     PIL.Image: A new image consisting of the grid of images
     """
-    # Lazy PIL import — use scitex.io.load when available (extra format
-    # support, scitex.io path resolution); fall back to PIL.Image.open.
-    try:
-        from scitex.io import load as scitex_io_load
-    except ImportError:
-        from PIL import Image as _PILImage
-        def scitex_io_load(path):
-            return _PILImage.open(path)
-
     nrows, ncols = image_paths.shape
 
     # Load images, skip None paths
@@ -41,8 +32,7 @@ def im2grid(image_paths, default_color=(255, 255, 255)):
         row_images = []
         for path in row:
             if path is not None:
-                # img = Image.open(path)
-                img = scitex_io_load(path)
+                img = Image.open(path)
             else:
                 img = None
             row_images.append(img)

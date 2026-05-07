@@ -19,7 +19,7 @@ def mk_patches(colors, labels):
     ax.legend(handles=scitex.plt.mk_patches(colors, labels))
     """
 
-    patches = [mpatches.Patch(color=c, label=l) for c, l in zip(colors, labels)]
+    patches = [mpatches.Patch(color=c, label=lbl) for c, lbl in zip(colors, labels)]
     return patches
 
 

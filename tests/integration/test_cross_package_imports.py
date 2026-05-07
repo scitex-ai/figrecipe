@@ -19,6 +19,7 @@ import pytest
 
 # ===== AUTO-GENERATED: cross-package imports =====
 CROSS_PACKAGE_IMPORTS = [
+    'scitex.io',
     'scitex_app',
     'scitex_app._chat',
     'scitex_app._django',
@@ -29,7 +30,6 @@ CROSS_PACKAGE_IMPORTS = [
     'scitex_dev.linter.checker',
     'scitex_logging',
     'scitex_pd',
-    'scitex_plt.utils._csv_column_naming',
     'scitex_stats',
     'scitex_types',
     'scitex_ui',

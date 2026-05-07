@@ -159,7 +159,6 @@ def configure_mpl(
     # ------------------------------------------------------------------
     # Colours: alpha-blend the palette into a DotDict.
     # ------------------------------------------------------------------
-    RGBA = {k: update_alpha(v, alpha) for k, v in PARAMS["RGBA"].items()}
     RGBA_NORM = {
         k: tuple(update_alpha(v, alpha)) for k, v in PARAMS["RGBA_NORM"].items()
     }

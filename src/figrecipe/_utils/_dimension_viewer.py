@@ -269,7 +269,7 @@ def view_dimensions(fig, ax, show_rulers=True, show_grid=True, output_path=None)
     ax_diag.set_ylabel("Height (mm)", fontsize=12)
 
     # Title
-    title = f"Dimension Viewer\n"
+    title = "Dimension Viewer\n"
     title += f"Figure: {fig_w_mm:.1f}×{fig_h_mm:.1f} mm ({info['figure_size_px'][0]}×{info['figure_size_px'][1]} px)\n"
     title += f"Axes: {axes_w_mm:.1f}×{axes_h_mm:.1f} mm ({info['axes_size_px'][0]}×{info['axes_size_px'][1]} px) @ {dpi} DPI"
     ax_diag.set_title(title, fontsize=12, fontweight="bold", pad=20)

@@ -74,17 +74,18 @@ fr.gui(fig)  # Launch visual editor at http://127.0.0.1:5050
 
 ---
 
-## Role in SciTeX Ecosystem
+## Architecture
 
 FigRecipe is the **first app built on the SciTeX platform** -- it proves the app pattern that other apps follow. It works standalone (`figrecipe gui`) AND embedded inside scitex-cloud.
 
 ```
-scitex (orchestrator) -- re-exports figrecipe as scitex.plt
-  |-- scitex-app        -- runtime SDK (FigRecipe inherits ScitexAppConfig)
-  |-- scitex-ui         -- React/TS components (FigRecipe consumes these)
-  +-- figrecipe (this package) -- reference app
-        |-- figrecipe           -- standalone Python package (pip install figrecipe)
-        +-- figrecipe._django   -- Django integration for scitex-cloud embedding
+scitex (orchestrator) — re-exports figrecipe as scitex.plt
+│
+├── scitex-app          — runtime SDK (FigRecipe inherits ScitexAppConfig)
+├── scitex-ui           — React/TS components (FigRecipe consumes these)
+└── figrecipe (this package) — reference app
+    ├── figrecipe          — standalone Python package (pip install figrecipe)
+    └── figrecipe._django  — Django integration for scitex-cloud embedding
 ```
 
 **What this package owns:** Figure creation, reproduction, and composition engine; YAML recipe format and data provenance; Diagram system (box-and-arrow with mm-based coordinates); GUI editor; Django integration.
@@ -106,7 +107,7 @@ The SciTeX system follows the Four Freedoms for Research below, inspired by [the
 >
 >AGPL-3.0 -- because we believe research infrastructure deserves the same freedoms as the software it runs on.
 
-## Overview
+## Demo
 
 FigRecipe treats recipe, data, and style as first-class attributes of every figure. This enables data governance and style editing without losing scientific rigor.
 

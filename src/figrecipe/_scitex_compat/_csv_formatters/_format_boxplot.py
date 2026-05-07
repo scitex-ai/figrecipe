@@ -5,7 +5,8 @@
 
 import numpy as np
 import pandas as pd
-from scitex_plt.utils._csv_column_naming import get_csv_column_name
+
+from figrecipe._utils._csv_column_naming import get_csv_column_name
 
 from ._format_plot import _parse_tracking_id
 
@@ -53,8 +54,9 @@ def _format_boxplot(id, tracked_dict, kwargs):
             df.columns = [col_name]
         else:
             # Multiple boxes
-            import scitex_pd as scitex_pd
-            df = scitex.pd.force_df({i_x: _x for i_x, _x in enumerate(x)})
+            import scitex_pd
+
+            df = scitex_pd.force_df({i_x: _x for i_x, _x in enumerate(x)})
 
             # Use labels if provided, otherwise use numeric indices
             if labels and len(labels) == len(df.columns):

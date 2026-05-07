@@ -12,7 +12,8 @@ __DIR__ = os.path.dirname(__FILE__)
 import numpy as np
 import pandas as pd
 import scitex_logging as logging
-from scitex_plt.utils._csv_column_naming import get_csv_column_name
+
+from figrecipe._utils._csv_column_naming import get_csv_column_name
 
 from ._format_plot import _parse_tracking_id
 
@@ -38,7 +39,8 @@ def _format_eventplot(id, tracked_dict, kwargs):
         try:
             # Try using scitex.pd.force_df if available
             try:
-                import scitex_pd as scitex_pd
+                import scitex_pd
+
                 # If positions is a single array
                 if isinstance(positions, (list, np.ndarray)) and not isinstance(
                     positions[0], (list, np.ndarray)
@@ -61,7 +63,7 @@ def _format_eventplot(id, tracked_dict, kwargs):
                         data[col_name] = events
 
                     # Use force_df to handle different length arrays
-                    return scitex.pd.force_df(data)
+                    return scitex_pd.force_df(data)
 
             except (ImportError, AttributeError):
                 # Fall back to pandas with manual Series creation
