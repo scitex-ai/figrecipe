@@ -1888,7 +1888,12 @@ returns (path, offset_dict).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure._on_draw_finalize">
 <span class="sig-name descname"><span class="pre">_on_draw_finalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure._on_draw_finalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure._on_draw_finalize" title="Link to this definition"></a></dt>
-<dd><p>Apply figrecipe finalize hooks once per draw event.</p>
+<dd><p>Apply figrecipe finalize hooks once per figure lifetime.</p>
+<p>Run-once: setting a new locator marks the canvas stale, which
+on the inline notebook backend triggers another draw and a
+SECOND inline render of the same figure. We only need to
+finalize once per figure — cache the flag and short-circuit
+on subsequent draws.</p>
 <p>Re-entrancy guard: finalize_ticks may swap a locator, which on
 some backends triggers another draw and would recurse. The
 flag breaks the loop.</p>
