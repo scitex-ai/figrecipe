@@ -273,14 +273,38 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             track: bool = True,
             **kwargs,
         ):
-            # Default to outside-right placement when caller has not
-            # specified location. Inside-axes legends frequently occlude
-            # the data they describe; placing the legend outside the axes
-            # by default avoids that without forcing every caller to
-            # remember the bbox_to_anchor incantation.
-            if "loc" not in kwargs and "bbox_to_anchor" not in kwargs:
-                kwargs.setdefault("loc", "upper left")
-                kwargs.setdefault("bbox_to_anchor", (1.02, 1.0))
+            # Resolve figrecipe-extended `loc` strings BEFORE matplotlib
+            # sees them. Four named outer placements cover the canonical
+            # cases without forcing every caller to remember the
+            # bbox_to_anchor incantation:
+            #
+            #   loc='outer right'  -> outside the right edge (DEFAULT)
+            #   loc='outer left'   -> outside the left edge
+            #   loc='outer top'    -> above the axes
+            #   loc='outer bottom' -> below the axes
+            #
+            # When neither `loc` nor `bbox_to_anchor` is specified, default
+            # to 'outer right' — inside-axes legends frequently occlude
+            # the data they describe.
+            _OUTER_VARIANTS = {
+                "outer right": {"loc": "upper left", "bbox_to_anchor": (1.02, 1.0)},
+                "outer left": {"loc": "upper right", "bbox_to_anchor": (-0.02, 1.0)},
+                "outer top": {"loc": "lower center", "bbox_to_anchor": (0.5, 1.02)},
+                "outer bottom": {"loc": "upper center", "bbox_to_anchor": (0.5, -0.05)},
+            }
+            user_loc = kwargs.get("loc")
+            if isinstance(user_loc, str) and user_loc in _OUTER_VARIANTS:
+                if "bbox_to_anchor" not in kwargs:
+                    kwargs["bbox_to_anchor"] = _OUTER_VARIANTS[user_loc][
+                        "bbox_to_anchor"
+                    ]
+                kwargs["loc"] = _OUTER_VARIANTS[user_loc]["loc"]
+                kwargs.setdefault("borderaxespad", 0.0)
+            elif "loc" not in kwargs and "bbox_to_anchor" not in kwargs:
+                # Silent default: outer right.
+                outer = _OUTER_VARIANTS["outer right"]
+                kwargs["loc"] = outer["loc"]
+                kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
                 kwargs.setdefault("borderaxespad", 0.0)
 
             legend = original_legend(*args, **kwargs)
