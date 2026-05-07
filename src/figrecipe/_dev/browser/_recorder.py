@@ -418,6 +418,21 @@ class DemoRecorder(ABC):
                 # Cleanup
                 await self._cleanup_page(page)
 
+            except Exception as exc:
+                # PA305 — every Playwright flow must capture debug artefacts
+                # (screenshot + HTML) on the fail path so selector regressions
+                # are diagnosable post-mortem.
+                try:
+                    from scitex_browser.debugging import (
+                        capture_debug_artifacts_async,
+                    )
+
+                    await capture_debug_artifacts_async(
+                        page, output_dir=str(self.output_dir), context=str(exc)
+                    )
+                except ImportError:
+                    pass
+                raise
             finally:
                 await context.close()
                 await browser.close()

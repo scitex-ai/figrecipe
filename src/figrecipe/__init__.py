@@ -69,34 +69,80 @@ except ImportError:  # pragma: no cover — only on ancient Pythons
     __version__ = "0.0.0+local"
 
 # =============================================================================
-# CORE PUBLIC API - Minimal, essential functions only
+# CORE PUBLIC API - lazy via PEP 562 __getattr__ (audit-cli §10).
+#
+# Click runs the program once per Tab press for shell completion, so a slow
+# top-level import (~1.5s here, mostly matplotlib + diagram subsystem) makes
+# tab-completion noticeably sluggish. The map below records (submodule,
+# attribute) for every public name; each entry imports lazily on first use.
 # =============================================================================
-from . import colors
-from ._api._public import (
-    crop,
-    extract_data,
-    gui,
-    info,
-    load,
-    reproduce,
-    save,
-    subplots,
-    validate,
-    validate_recipe,  # backward compat alias
-)
-from ._api._signature import caption_with_signature, signature
-from ._api._style_manager import list_presets, load_style, unload_style
-from ._bundle import Figz, Pltz, load_bundle, reproduce_bundle, save_bundle
-from ._composition import align_panels, align_smart, compose, distribute_panels
-from ._configure_mpl import configure_mpl  # noqa: F401
-from ._diagram import Diagram
-from ._diagram._graphviz.graphviz import Graphviz as _Graphviz  # noqa: F401
-from ._diagram._mermaid.mermaid import Mermaid as _Mermaid  # noqa: F401
+_LAZY_ATTRS: dict[str, tuple[str, str]] = {
+    # ._api._public
+    "crop": ("._api._public", "crop"),
+    "extract_data": ("._api._public", "extract_data"),
+    "gui": ("._api._public", "gui"),
+    "info": ("._api._public", "info"),
+    "load": ("._api._public", "load"),
+    "reproduce": ("._api._public", "reproduce"),
+    "save": ("._api._public", "save"),
+    "subplots": ("._api._public", "subplots"),
+    "validate": ("._api._public", "validate"),
+    "validate_recipe": ("._api._public", "validate_recipe"),
+    # ._api._signature
+    "caption_with_signature": ("._api._signature", "caption_with_signature"),
+    "signature": ("._api._signature", "signature"),
+    # ._api._style_manager
+    "list_presets": ("._api._style_manager", "list_presets"),
+    "load_style": ("._api._style_manager", "load_style"),
+    "unload_style": ("._api._style_manager", "unload_style"),
+    # ._bundle
+    "Figz": ("._bundle", "Figz"),
+    "Pltz": ("._bundle", "Pltz"),
+    "save_bundle": ("._bundle", "save_bundle"),
+    "load_bundle": ("._bundle", "load_bundle"),
+    "reproduce_bundle": ("._bundle", "reproduce_bundle"),
+    # ._composition
+    "align_panels": ("._composition", "align_panels"),
+    "align_smart": ("._composition", "align_smart"),
+    "compose": ("._composition", "compose"),
+    "distribute_panels": ("._composition", "distribute_panels"),
+    # ._configure_mpl
+    "configure_mpl": ("._configure_mpl", "configure_mpl"),
+    # ._diagram
+    "Diagram": ("._diagram", "Diagram"),
+    "_Graphviz": ("._diagram._graphviz.graphviz", "Graphviz"),
+    "_Mermaid": ("._diagram._mermaid.mermaid", "Mermaid"),
+    # ._graph._presets
+    "get_graph_preset": ("._graph._presets", "get_preset"),
+    "list_graph_presets": ("._graph._presets", "list_presets"),
+    "register_graph_preset": ("._graph._presets", "register_preset"),
+}
 
-# Graph preset functions: accessible but not in __all__ (keep for scitex.plt compat)
-from ._graph._presets import get_preset as get_graph_preset  # noqa: F401
-from ._graph._presets import list_presets as list_graph_presets  # noqa: F401
-from ._graph._presets import register_preset as register_graph_preset  # noqa: F401
+
+def __getattr__(name: str):
+    """PEP 562 lazy attribute resolution for the figrecipe public surface."""
+    if name in _LAZY_ATTRS:
+        import importlib
+
+        # Patch on first matplotlib-touching access — see _patch_pyplot_close.
+        _patch_pyplot_close()
+        module_path, attr = _LAZY_ATTRS[name]
+        module = importlib.import_module(module_path, __name__)
+        value = getattr(module, attr)
+        globals()[name] = value  # cache subsequent accesses
+        return value
+    if name == "colors":
+        import importlib
+
+        value = importlib.import_module(".colors", __name__)
+        globals()["colors"] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    """Expose lazy names for tab completion in REPLs."""
+    return sorted(set(__all__) | set(_LAZY_ATTRS.keys()) | {"colors"})
 
 
 # Lazy seaborn access (avoids import error if seaborn not installed)
@@ -157,12 +203,23 @@ def _patch_pyplot_close() -> None:
 
     ``plt.close()`` uses ``isinstance(fig, Figure)`` as its type check, which
     rejects figrecipe's ``RecordingFigure`` wrapper (composition, not
-    inheritance) with a TypeError. We wrap ``plt.close`` once at import time
-    so that passing a ``RecordingFigure`` transparently unwraps to the
-    underlying ``matplotlib.figure.Figure``.
-    """
-    import matplotlib.pyplot as _plt
+    inheritance) with a TypeError. We wrap ``plt.close`` once so that passing
+    a ``RecordingFigure`` transparently unwraps to the underlying
+    ``matplotlib.figure.Figure``.
 
+    Called lazily from ``__getattr__`` on first access of any matplotlib-
+    touching attribute, so importing figrecipe does not pay the ~700ms
+    matplotlib.pyplot import cost up-front (audit-cli §10).
+    """
+    import sys
+
+    # If matplotlib.pyplot was never imported, defer further: triggering it
+    # here would defeat the lazy-import goal. The next attribute access in
+    # __getattr__ that resolves through ._api._public will already pull it in,
+    # at which point this patch is idempotent.
+    _plt = sys.modules.get("matplotlib.pyplot")
+    if _plt is None:
+        return
     if getattr(_plt.close, "_figrecipe_patched", False):
         return
 
@@ -179,6 +236,3 @@ def _patch_pyplot_close() -> None:
     close.__wrapped__ = _orig_close  # type: ignore[attr-defined]
     close.__doc__ = _orig_close.__doc__
     _plt.close = close
-
-
-_patch_pyplot_close()

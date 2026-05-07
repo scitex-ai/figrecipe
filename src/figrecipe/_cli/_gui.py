@@ -36,7 +36,7 @@ def _kill_port(port: int) -> bool:
             return False
 
 
-@click.command()
+@click.command("start-gui")
 @click.argument("source", type=click.Path(exists=True), required=False)
 @click.option(
     "--port",
@@ -65,6 +65,12 @@ def _kill_port(port: int) -> bool:
     is_flag=True,
     help="Kill existing process on port before starting.",
 )
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Print what would happen (port, source, mode) without launching the server.",
+)
+@click.option("-y", "--yes", is_flag=True, help="Skip interactive confirmations.")
 def gui(
     source: Optional[str],
     port: int,
@@ -72,6 +78,8 @@ def gui(
     no_browser: bool,
     desktop: bool,
     force: bool,
+    dry_run: bool,
+    yes: bool,
 ) -> None:
     """Launch interactive GUI editor.
 
@@ -104,6 +112,14 @@ def gui(
             working_dir = source_path
             source_path = None
             click.echo(f"Browsing directory: {working_dir}")
+
+    if dry_run:
+        click.echo(
+            f"[dry-run] would start editor: source={source_path} "
+            f"host={host} port={port} desktop={desktop} "
+            f"open_browser={not no_browser} working_dir={working_dir}"
+        )
+        return
 
     if desktop:
         click.echo("Starting editor in desktop mode...")

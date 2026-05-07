@@ -7,7 +7,7 @@ from typing import Optional
 import click
 
 
-@click.command()
+@click.command("list-fonts")
 @click.option(
     "--check",
     type=str,
@@ -18,37 +18,50 @@ import click
     type=str,
     help="Search for fonts matching a pattern.",
 )
-def fonts(check: Optional[str], search: Optional[str]) -> None:
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON output.")
+def fonts(check: Optional[str], search: Optional[str], as_json: bool) -> None:
     """List or check available fonts.
 
     \b
     Example:
-      $ figrecipe fonts
-      $ figrecipe fonts --search arial
-      $ figrecipe fonts --check "DejaVu Sans"
+      $ figrecipe list-fonts
+      $ figrecipe list-fonts --search arial
+      $ figrecipe list-fonts --check "DejaVu Sans"
+      $ figrecipe list-fonts --json
     """
+    import json
+
     from ..styles._style_applier import check_font, list_available_fonts
 
     if check:
         available = check_font(check)
-        if available:
-            click.echo(f"Font '{check}' is available.")
+        if as_json:
+            click.echo(json.dumps({"font": check, "available": bool(available)}))
         else:
-            click.echo(f"Font '{check}' is NOT available.")
+            click.echo(
+                f"Font '{check}' is {'available' if available else 'NOT available'}."
+            )
+        if not available:
             raise SystemExit(1)
         return
 
-    all_fonts = list_available_fonts()
+    all_fonts = sorted(list_available_fonts())
 
     if search:
         pattern = search.lower()
         matching = [f for f in all_fonts if pattern in f.lower()]
-        click.echo(f"Fonts matching '{search}':")
-        for font in sorted(matching):
-            click.echo(f"  {font}")
-        click.echo(f"\nFound {len(matching)} matching fonts.")
+        if as_json:
+            click.echo(json.dumps({"search": search, "fonts": matching}))
+        else:
+            click.echo(f"Fonts matching '{search}':")
+            for font in matching:
+                click.echo(f"  {font}")
+            click.echo(f"\nFound {len(matching)} matching fonts.")
     else:
-        click.echo("Available fonts:")
-        for font in sorted(all_fonts):
-            click.echo(f"  {font}")
-        click.echo(f"\nTotal: {len(all_fonts)} fonts.")
+        if as_json:
+            click.echo(json.dumps({"fonts": all_fonts}))
+        else:
+            click.echo("Available fonts:")
+            for font in all_fonts:
+                click.echo(f"  {font}")
+            click.echo(f"\nTotal: {len(all_fonts)} fonts.")
