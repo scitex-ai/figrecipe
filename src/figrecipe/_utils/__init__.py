@@ -44,6 +44,44 @@ from ._mk_colorbar import mk_colorbar  # noqa: F401
 
 __all__.extend(["style_colorbar", "add_colorbar", "mk_colorbar"])
 
+# Migrated from scitex.plt.utils (Phase 1 of the figrecipe-owns-plt
+# rebalance — see GITIGNORED/HANDOFF_FIGRECIPE_OWNS_PLT.md). Each of
+# these is generic plotting tooling with no scitex business-logic
+# coupling, so it lives here now and scitex.plt re-exports for
+# backward compatibility.
+from ._close import close  # noqa: F401
+from ._csv_column_naming import (  # noqa: F401
+    get_csv_column_name,
+    get_csv_column_prefix,
+    get_trace_columns_from_df,
+    get_unique_trace_id,
+    parse_csv_column_name,
+    sanitize_id,
+)
+from ._dimension_viewer import compare_modes  # noqa: F401
+from ._get_actual_font import get_actual_font_name  # noqa: F401
+from ._histogram_utils import HistogramBinManager  # noqa: F401
+from ._im2grid import im2grid  # noqa: F401
+from ._is_valid_axis import assert_valid_axis, is_valid_axis  # noqa: F401
+from ._mk_patches import mk_patches  # noqa: F401
+
+__all__.extend(
+    [
+        "close",
+        "get_csv_column_name",
+        "get_csv_column_prefix",
+        "get_trace_columns_from_df",
+        "get_unique_trace_id",
+        "compare_modes",
+        "get_actual_font_name",
+        "HistogramBinManager",
+        "im2grid",
+        "assert_valid_axis",
+        "is_valid_axis",
+        "mk_patches",
+    ]
+)
+
 # Optional: hitmap visualization (requires PIL, scipy for bbox detection)
 try:
     from ._hitmap import create_hitmap, generate_hitmap_report  # noqa: F401
