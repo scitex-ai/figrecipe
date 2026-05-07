@@ -5,7 +5,7 @@
 import time
 from typing import List
 
-from ...figrecipe.editor.conftest import requires_playwright
+from .conftest import requires_playwright
 
 
 @requires_playwright
