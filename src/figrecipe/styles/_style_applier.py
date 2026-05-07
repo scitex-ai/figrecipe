@@ -254,6 +254,19 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     title_pad_pt = style.get("title_pad_pt", 4.0)
     ax.set_title(ax.get_title(), pad=title_pad_pt)
 
+    # Push every font size to rcParams so subsequent ax.set_title /
+    # ax.set_xlabel / ax.set_yticklabels calls inherit the SCITEX preset.
+    # Without this push, calling `ax.set_title('Foo')` AFTER the styler ran
+    # creates a fresh Text artist that picks up the matplotlib defaults
+    # (axes.titlesize='large' = 12pt) instead of fonts.title_pt = 8 from
+    # SCITEX. The legend block below already did this for legend; replicate
+    # for title / axis-label / tick-label / figure-title.
+    mpl.rcParams["axes.titlesize"] = title_fs
+    mpl.rcParams["axes.labelsize"] = axis_fs
+    mpl.rcParams["xtick.labelsize"] = tick_fs
+    mpl.rcParams["ytick.labelsize"] = tick_fs
+    mpl.rcParams["figure.titlesize"] = style.get("suptitle_font_size_pt", title_fs + 1)
+
     # Set legend font size and background via rcParams
     mpl.rcParams["legend.fontsize"] = legend_fs
     mpl.rcParams["legend.title_fontsize"] = legend_fs
