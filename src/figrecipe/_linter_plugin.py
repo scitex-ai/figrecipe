@@ -8,6 +8,76 @@ P rules flag bare matplotlib calls and suggest scitex/figrecipe tracked variants
 """
 
 
+def _make_style_kwarg_checker(P006, P007, P008, P009):
+    """Build an AST NodeVisitor class that flags style-override kwargs:
+
+    - ``scatter(..., s=...)``  → P006
+    - any call with ``fontsize=...``  → P007
+    - any call with ``figsize=...``   → P008
+    - any call with ``linewidth=`` / ``lw=``  → P009
+
+    Returned class follows the scitex-linter checker contract:
+    ``__init__(source_lines, config)`` + ``.issues`` list + ``.category``.
+    """
+    import ast
+
+    try:
+        from scitex_linter.checker import Issue, _is_allowed_by_comment
+    except ImportError:
+        return None
+
+    class StyleKwargChecker(ast.NodeVisitor):
+        category = "plot"
+
+        def __init__(self, source_lines, config):
+            self.source_lines = source_lines
+            self.config = config
+            self.issues: list = []
+
+        def _src(self, ln):
+            if 1 <= ln <= len(self.source_lines):
+                return self.source_lines[ln - 1].rstrip()
+            return ""
+
+        def _emit(self, rule, node):
+            from dataclasses import replace as _replace
+
+            line = self._src(node.lineno)
+            if rule.id in self.config.disable:
+                return
+            if _is_allowed_by_comment(line, rule.id):
+                return
+            sev = self.config.per_rule_severity.get(rule.id)
+            if sev:
+                rule = _replace(rule, severity=sev)
+            self.issues.append(
+                Issue(
+                    rule=rule, line=node.lineno, col=node.col_offset, source_line=line
+                )
+            )
+
+        def visit_Call(self, node):
+            func = node.func
+            if isinstance(func, ast.Attribute):
+                fname = func.attr
+            elif isinstance(func, ast.Name):
+                fname = func.id
+            else:
+                fname = ""
+            kwargs = {kw.arg for kw in node.keywords if kw.arg}
+            if fname in ("scatter", "stx_scatter") and "s" in kwargs:
+                self._emit(P006, node)
+            if "fontsize" in kwargs:
+                self._emit(P007, node)
+            if "figsize" in kwargs:
+                self._emit(P008, node)
+            if "linewidth" in kwargs or "lw" in kwargs:
+                self._emit(P009, node)
+            self.generic_visit(node)
+
+    return StyleKwargChecker
+
+
 def get_plugin():
     """Return figrecipe linter rules, call mappings, axes hints, and checkers."""
     from scitex_linter._rules._base import Rule
@@ -165,16 +235,75 @@ def get_plugin():
     )
 
     # ------------------------------------------------------------------
-    # FMChecker: AST-level checker for FM rules that need structural
-    # analysis (e.g. figsize= kwarg, tight_layout(), rcParams[...] =).
-    # Import is deferred so figrecipe can be installed without scitex-linter.
+    # P: Style-override rules (P006-P009) — figrecipe + SciTeX style
+    # centralizes marker size, font size, figure size, and line width.
+    # Per-call overrides defeat the global style and produce inconsistent
+    # figures across a paper.
     # ------------------------------------------------------------------
+    P006 = Rule(
+        id="STX-P006",
+        severity="warning",
+        category="plot",
+        message="`scatter(..., s=...)` — drop `s=`; SciTeX style sizes markers automatically",
+        suggestion=(
+            "Remove the `s=` kwarg from scatter() calls. Marker size is tuned by the "
+            "SciTeX style and overriding it produces inconsistent figures."
+        ),
+        requires="figrecipe",
+    )
+
+    P007 = Rule(
+        id="STX-P007",
+        severity="warning",
+        category="plot",
+        message="`fontsize=` kwarg — drop it; SciTeX style sets font sizes globally",
+        suggestion=(
+            "Remove `fontsize=` kwargs. Set sizes once via the SciTeX style / "
+            "matplotlib rcParams instead of per-call overrides."
+        ),
+        requires="figrecipe",
+    )
+
+    P008 = Rule(
+        id="STX-P008",
+        severity="warning",
+        category="plot",
+        message="`figsize=` kwarg — drop it; figrecipe controls layout in mm via `figure_mm()`",
+        suggestion=(
+            "Remove `figsize=` from `plt.subplots()`/`plt.figure()`. Use "
+            "`figrecipe.figure_mm()` (or the SciTeX style defaults) so journal "
+            "column widths stay consistent."
+        ),
+        requires="figrecipe",
+    )
+
+    P009 = Rule(
+        id="STX-P009",
+        severity="warning",
+        category="plot",
+        message="`linewidth=` kwarg — drop it; SciTeX style sets line widths globally",
+        suggestion=(
+            "Remove `linewidth=`/`lw=` kwargs. Set widths once via the SciTeX "
+            "style / matplotlib rcParams."
+        ),
+        requires="figrecipe",
+    )
+
+    # ------------------------------------------------------------------
+    # Checkers: AST visitors. Imports deferred so figrecipe can be
+    # installed without scitex-linter.
+    # ------------------------------------------------------------------
+    checkers: list = []
     try:
         from scitex_linter._fm_checker import FMChecker
 
-        checkers = [FMChecker]
+        checkers.append(FMChecker)
     except ImportError:
-        checkers = []
+        pass
+
+    style_checker = _make_style_kwarg_checker(P006, P007, P008, P009)
+    if style_checker is not None:
+        checkers.append(style_checker)
 
     return {
         "rules": [
@@ -192,6 +321,10 @@ def get_plugin():
             P003,
             P004,
             P005,
+            P006,
+            P007,
+            P008,
+            P009,
         ],
         "call_rules": {
             # FM rules via call patterns
