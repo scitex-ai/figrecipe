@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h25m24s_y2nj
+PID: 2322445
+START_DATETIME: 2026-02-07 03:25:24.152361
+FILE: /home/ywatanabe/proj/figrecipe/examples/06_style_switching.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/06_style_switching_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/06_style_switching_out/RUNNING/2026Y-02M-07D-03h25m24s_y2nj-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:25:28.318552
+RUN_DURATION: 00:00:04

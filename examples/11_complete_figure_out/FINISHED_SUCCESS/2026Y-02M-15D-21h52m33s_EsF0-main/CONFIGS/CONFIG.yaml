@@ -1,0 +1,11 @@
+ID: 2026Y-02M-15D-21h52m33s_EsF0
+PID: 536042
+START_DATETIME: 2026-02-15 21:52:33.610262
+FILE: /home/ywatanabe/proj/figrecipe/examples/11_complete_figure.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/11_complete_figure_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/figrecipe/examples/11_complete_figure_out/RUNNING/2026Y-02M-15D-21h52m33s_EsF0-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-15 21:52:37.938271
+RUN_DURATION: 00:00:04

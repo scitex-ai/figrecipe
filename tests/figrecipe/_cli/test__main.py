@@ -59,7 +59,7 @@ class TestMainCommand:
         # Check for categorized command sections
         assert "Figure Creation:" in result.output
         # Help should mention how to launch GUI editor
-        assert "figrecipe gui" in result.output
+        assert "figrecipe start-gui" in result.output
 
 
 class TestVersionCommand:
@@ -180,38 +180,38 @@ class TestFontsCommand:
     """Test fonts command."""
 
     def test_fonts_list(self, runner):
-        """Test fonts command lists fonts."""
-        result = runner.invoke(main, ["fonts"])
+        """Test list-fonts command lists fonts."""
+        result = runner.invoke(main, ["list-fonts"])
         assert result.exit_code == 0
         assert "fonts" in result.output.lower()
 
     def test_fonts_search(self, runner):
-        """Test fonts --search."""
-        result = runner.invoke(main, ["fonts", "--search", "sans"])
+        """Test list-fonts --search."""
+        result = runner.invoke(main, ["list-fonts", "--search", "sans"])
         assert result.exit_code == 0
         assert "matching" in result.output.lower()
 
     def test_fonts_check_available(self, runner):
-        """Test fonts --check with common font."""
+        """Test list-fonts --check with common font."""
         # DejaVu Sans is typically available
-        result = runner.invoke(main, ["fonts", "--check", "DejaVu Sans"])
+        result = runner.invoke(main, ["list-fonts", "--check", "DejaVu Sans"])
         # May or may not be available, just check it runs
         assert result.exit_code in [0, 1]
 
     def test_fonts_help(self, runner):
-        """Test fonts --help."""
-        result = runner.invoke(main, ["fonts", "--help"])
+        """Test list-fonts --help."""
+        result = runner.invoke(main, ["list-fonts", "--help"])
         assert result.exit_code == 0
         assert "--check" in result.output
         assert "--search" in result.output
 
 
 class TestGuiCommand:
-    """Test gui command."""
+    """Test start-gui command."""
 
     def test_gui_help(self, runner):
-        """Test gui --help."""
-        result = runner.invoke(main, ["gui", "--help"])
+        """Test start-gui --help."""
+        result = runner.invoke(main, ["start-gui", "--help"])
         assert result.exit_code == 0
         assert "SOURCE" in result.output or "source" in result.output.lower()
 
@@ -245,35 +245,26 @@ class TestStyleCommand:
 
 
 class TestCompletionCommand:
-    """Test completion command."""
+    """Test install-shell-completion + print-shell-completion (replaced
+    the legacy `completion` group per audit-cli §1a)."""
 
-    def test_completion_help(self, runner):
-        """Test completion --help."""
-        result = runner.invoke(main, ["completion", "--help"])
-        assert result.exit_code == 0
-        assert "install" in result.output
-        assert "status" in result.output
-        assert "bash" in result.output
-
-    def test_completion_status(self, runner):
-        """Test completion status subcommand."""
-        result = runner.invoke(main, ["completion", "status"])
-        assert result.exit_code == 0
-        assert "bash" in result.output
-        assert "zsh" in result.output
-
-    def test_completion_bash(self, runner):
-        """Test completion bash subcommand."""
-        result = runner.invoke(main, ["completion", "bash"])
-        assert result.exit_code == 0
-        # Should contain completion script
-        assert "_FIGRECIPE_COMPLETE" in result.output or "figrecipe" in result.output
-
-    def test_completion_install_help(self, runner):
-        """Test completion install --help."""
-        result = runner.invoke(main, ["completion", "install", "--help"])
+    def test_install_shell_completion_help(self, runner):
+        """Test install-shell-completion --help."""
+        result = runner.invoke(main, ["install-shell-completion", "--help"])
         assert result.exit_code == 0
         assert "--shell" in result.output
+
+    def test_print_shell_completion_help(self, runner):
+        """Test print-shell-completion --help."""
+        result = runner.invoke(main, ["print-shell-completion", "--help"])
+        assert result.exit_code == 0
+        assert "--shell" in result.output
+
+    def test_print_shell_completion_bash(self, runner):
+        """Print bash completion script."""
+        result = runner.invoke(main, ["print-shell-completion", "--shell", "bash"])
+        assert result.exit_code == 0
+        assert "_FIGRECIPE_COMPLETE" in result.output or "figrecipe" in result.output
 
 
 class TestConvertCommand:

@@ -173,6 +173,14 @@ mgmt
 **/FINISHED
 **/202?Y-*
 
+# But: keep example FINISHED_SUCCESS artefacts so the published examples
+# show real demo output (PS503 audit invariant — every examples/<demo>_out
+# must ship a FINISHED_SUCCESS/<session_id>/ subdir).
+!examples/*_out/FINISHED_SUCCESS/
+!examples/*_out/FINISHED_SUCCESS/**
+!examples/*_out/FINISHED_ERROR/
+!examples/*_out/FINISHED_ERROR/**
+
 # TODO
 **/TODO.md
 

@@ -1,0 +1,13 @@
+ID: 2026Y-02M-07D-18h32m53s_yu8G
+PID: 409716
+START_DATETIME: 2026-02-07 18:32:53.963113
+FILE:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed.py
+SDIR_OUT:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed_out/RUNNING/2026Y-02M-07D-18h32m53s_yu8G-main
+ARGS: {}
+EXIT_STATUS: 1
+END_DATETIME: 2026-02-07 18:32:57.037192
+RUN_DURATION: 00:00:03

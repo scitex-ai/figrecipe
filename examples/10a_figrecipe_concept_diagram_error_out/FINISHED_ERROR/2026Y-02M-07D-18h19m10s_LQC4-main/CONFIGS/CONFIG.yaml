@@ -1,0 +1,13 @@
+ID: 2026Y-02M-07D-18h19m10s_LQC4
+PID: 359331
+START_DATETIME: 2026-02-07 18:19:10.856640
+FILE:
+    /home/ywatanabe/proj/figrecipe/examples/10a_figrecipe_concept_diagram_error.py
+SDIR_OUT:
+    /home/ywatanabe/proj/figrecipe/examples/10a_figrecipe_concept_diagram_error_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/10a_figrecipe_concept_diagram_error_out/RUNNING/2026Y-02M-07D-18h19m10s_LQC4-main
+ARGS: {}
+EXIT_STATUS: 1
+END_DATETIME: 2026-02-07 18:19:13.721039
+RUN_DURATION: 00:00:02

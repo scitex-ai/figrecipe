@@ -1,0 +1,13 @@
+ID: 2026Y-02M-07D-18h22m24s_ruLj
+PID: 371260
+START_DATETIME: 2026-02-07 18:22:24.773266
+FILE:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed.py
+SDIR_OUT:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed_out/RUNNING/2026Y-02M-07D-18h22m24s_ruLj-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 18:22:28.527295
+RUN_DURATION: 00:00:03

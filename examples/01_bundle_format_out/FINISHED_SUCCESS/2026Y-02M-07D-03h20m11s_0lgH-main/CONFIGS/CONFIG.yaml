@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h20m11s_0lgH
+PID: 2314579
+START_DATETIME: 2026-02-07 03:20:11.903164
+FILE: /home/ywatanabe/proj/figrecipe/examples/01_bundle_format.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/01_bundle_format_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/01_bundle_format_out/RUNNING/2026Y-02M-07D-03h20m11s_0lgH-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:20:14.416634
+RUN_DURATION: 00:00:02

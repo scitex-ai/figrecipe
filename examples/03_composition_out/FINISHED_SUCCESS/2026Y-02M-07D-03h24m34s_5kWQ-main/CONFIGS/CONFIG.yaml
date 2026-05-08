@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h24m34s_5kWQ
+PID: 2320959
+START_DATETIME: 2026-02-07 03:24:34.387466
+FILE: /home/ywatanabe/proj/figrecipe/examples/03_composition.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/03_composition_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/03_composition_out/RUNNING/2026Y-02M-07D-03h24m34s_5kWQ-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:24:39.419379
+RUN_DURATION: 00:00:05

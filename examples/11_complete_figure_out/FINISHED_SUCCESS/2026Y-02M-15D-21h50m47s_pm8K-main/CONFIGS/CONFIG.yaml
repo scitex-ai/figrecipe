@@ -1,0 +1,11 @@
+ID: 2026Y-02M-15D-21h50m47s_pm8K
+PID: 530670
+START_DATETIME: 2026-02-15 21:50:47.425843
+FILE: /home/ywatanabe/proj/figrecipe/examples/11_complete_figure.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/11_complete_figure_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/figrecipe/examples/11_complete_figure_out/RUNNING/2026Y-02M-15D-21h50m47s_pm8K-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-15 21:50:52.954383
+RUN_DURATION: 00:00:05
