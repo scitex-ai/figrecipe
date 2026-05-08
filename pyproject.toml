@@ -45,7 +45,7 @@ dependencies = [
     "click>=8.0.0",
     "rich>=13.0.0",
     "scitex-app>=0.2.0",
-    "scitex-dev>=0.11.0",
+    "scitex-dev>=0.11.5",
 ]
 
 [project.optional-dependencies]
@@ -55,7 +55,7 @@ dev = [
     "pytest-xdist>=3.0.0",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    "scitex-dev>=0.7.0",
+    "scitex-dev>=0.11.5",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.1.0",
