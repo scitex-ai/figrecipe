@@ -51,8 +51,8 @@ For the GUI editor: `pip install figrecipe[editor]`
 
 figrecipe is part of [**SciTeX**](https://scitex.ai). Install via the
 umbrella with `pip install scitex[plt]` to use as `scitex.plt` (Python)
-or `figrecipe <subcommand> ...` (CLI; the standalone CLI is the same
-binary the umbrella shells out to).
+or `scitex plt ...` / `scitex figrecipe ...` (CLI; the umbrella shells
+out to the standalone `figrecipe` binary).
 
 ## Quickstart
 
