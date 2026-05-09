@@ -15,26 +15,24 @@ in its source tree. Two outcomes:
   test is SKIPPED via `pytest.importorskip`. The umbrella's CI
   (which installs every peer) catches cross-package renames.
 """
+
 import pytest
 
 # ===== AUTO-GENERATED: cross-package imports =====
 CROSS_PACKAGE_IMPORTS = [
-    'scitex_app',
-    'scitex_app._chat',
-    'scitex_app._django',
-    'scitex_app._standalone',
-    'scitex_browser.debugging',
-    'scitex_dev._cli._completion',
-    'scitex_dev.cli',
-    'scitex_dev.linter._fm_checker',
-    'scitex_dev.linter._rules._base',
-    'scitex_dev.linter.checker',
-    'scitex_dev.skills',
-    'scitex_logging',
-    'scitex_pd',
-    'scitex_stats',
-    'scitex_types',
-    'scitex_ui',
+    "scitex_app",
+    "scitex_app._chat",
+    "scitex_app._django",
+    "scitex_app._standalone",
+    "scitex_browser.debugging",
+    "scitex_dev._cli._completion",
+    "scitex_dev.cli",
+    "scitex_dev.skills",
+    "scitex_logging",
+    "scitex_pd",
+    "scitex_stats",
+    "scitex_types",
+    "scitex_ui",
 ]
 # ===== END AUTO-GENERATED =====
 

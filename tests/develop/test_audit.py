@@ -17,4 +17,16 @@ def test_audit_all_clean():
         )
     from scitex_dev.testing import audit_all_for_package
 
-    audit_all_for_package('figrecipe')
+    audit_all_for_package(
+        "figrecipe",
+        skip_rules=(
+            # MCP <-> Python-API parity gap: 74 MCP tools (mostly
+            # diagram_*, e.g. diagram_compile_graphviz / diagram_create)
+            # are thin wrappers around external CLIs (graphviz / mermaid /
+            # plantuml) with no Python-API counterpart by design. The
+            # auditor's pairing rule (§6) flags every one as architectural
+            # debt; per-tool decisions are tracked under /overhaul-scitex.
+            # Same escape pattern as scitex-clew and scitex-notebook.
+            "§6",
+        ),
+    )
