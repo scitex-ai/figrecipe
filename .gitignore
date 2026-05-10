@@ -822,3 +822,7 @@ src/*/_docs/
 
 .claude/
 .venv/
+
+
+# Local state dirs from scitex-dev / scitex-clew tooling
+.scitex/
