@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://figrecipe.readthedocs.io/">Full Documentation</a> · <code>pip install figrecipe</code>
+  <a href="https://figrecipe.readthedocs.io/">Full Documentation</a> · <code>uv pip install figrecipe[all]</code>
 </p>
 
 ---
