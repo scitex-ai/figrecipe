@@ -817,6 +817,7 @@ src/*/_docs/
 # Debug screenshots and development artifacts in project root
 /*.png
 /*.yml
+!/codecov.yml
 # Playwright CLI snapshots
 .playwright-cli/
 
@@ -825,4 +826,8 @@ src/*/_docs/
 
 
 # Local state dirs from scitex-dev / scitex-clew tooling
-.scitex/
+.scitex/*
+!.scitex/dev/
+.scitex/dev/*
+!.scitex/dev/config.yaml
+!.scitex/dev/cli-audit-dict.yaml

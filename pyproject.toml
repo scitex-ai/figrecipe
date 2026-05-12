@@ -68,6 +68,11 @@ dev = [
     "playwright>=1.40.0",
     "pytesseract>=0.3.0",
     "fastmcp>=2.0",
+    # function-local test imports (`from PIL import Image` in
+    # tests/figrecipe/_composition/test__compose.py et al; `import networkx as nx`
+    # in tests/figrecipe/_serializer/test__utils.py); needed by `pip install -e .[dev]`.
+    "Pillow>=9.0.0",
+    "networkx>=3.0",
 ]
 imaging = [
     "Pillow>=9.0.0",
@@ -171,6 +176,8 @@ addopts = "-v --tb=short"
 
 [tool.coverage.run]
 source = ["figrecipe"]
+parallel = true
+concurrency = ["multiprocessing", "thread"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",

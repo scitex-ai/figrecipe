@@ -649,13 +649,17 @@ if __name__ == "__main__":
 # -*- coding: utf-8 -*-
 """Tests for hitmap visualization functionality."""
 
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
-import numpy as np
-import pytest
-from PIL import Image
+import numpy as np  # noqa: E402,F811
+import pytest  # noqa: E402
 
-from figrecipe._utils._hitmap import create_hitmap, generate_hitmap_report
+Image = pytest.importorskip("PIL.Image")
+
+from figrecipe._utils._hitmap import (  # noqa: E402
+    create_hitmap,
+    generate_hitmap_report,
+)
 
 
 @pytest.fixture
@@ -816,7 +820,7 @@ class TestGenerateHitmapReport:
         assert report["is_pixel_perfect"] is False
 
 
-class TestEdgeCases:
+class TestEdgeCases:  # noqa: F811
     """Tests for edge cases and error handling."""
 
     def test_different_sizes(self):

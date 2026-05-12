@@ -1,0 +1,18 @@
+coverage:
+  status:
+    project:
+      default:
+        # Coverage is still ramping up; switch to a hard 90% target once
+        # the long-tail unit tests (_cli/, _mcp/_handlers/, _plot_*) land.
+        # See 05_development_08_coverage-push-playbook.md for the recipe.
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
