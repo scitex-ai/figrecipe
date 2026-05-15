@@ -231,29 +231,17 @@ class SciTexMixin:
 
 __all__ = ["SciTexMixin"]
 
-# ── Branding aliases (driven by FIGRECIPE_ALIAS env var) ─────────────────────
-# Generates e.g. ax.fr_line() when FIGRECIPE_ALIAS="fr" (default),
-# or ax.plt_line() when FIGRECIPE_ALIAS="plt" (scitex.plt white-label).
-from figrecipe._branding import BRAND_ALIAS as _BRAND_ALIAS  # noqa: E402
-
-_STX_SUFFIXES = (
-    "line",
-    "shaded_line",
-    "mean_std",
-    "mean_ci",
-    "median_iqr",
-    "conf_mat",
-    "ecdf",
-    "raster",
-    "scatter_hist",
-    "heatmap",
-    "fillv",
-    "rectangle",
-    "image",
-    "violin",
+# ── Branding aliases (driven by scitex_dev._branding registry) ──────────────
+# Generates ax.fr_*() aliases for each ax.stx_*() method. The helper rebinds
+# __module__ on the alias methods to the counterpart brand's umbrella attr
+# (scitex.plt) so that help() on the umbrella side does not leak figrecipe
+# as the source module. Previously this was a manual setattr loop driven by
+# a FIGRECIPE_ALIAS env var; the registry replaces both.
+from scitex_dev._branding import (
+    register_method_aliases as _register_aliases,  # noqa: E402
 )
-for _s in _STX_SUFFIXES:
-    setattr(SciTexMixin, f"{_BRAND_ALIAS}_{_s}", getattr(SciTexMixin, f"stx_{_s}"))
-del _s, _BRAND_ALIAS, _STX_SUFFIXES
+
+_register_aliases(SciTexMixin, brand_key="scitex-plt")
+del _register_aliases
 
 # EOF
