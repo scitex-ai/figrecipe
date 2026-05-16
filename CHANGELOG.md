@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.9] - 2026-05-16
+
+### Fixed
+- **Defensive import of `scitex_dev._branding`** in `_wrappers/_axes_scitex.py`. The branding-registry refactor (a78434c) hard-imported `scitex_dev._branding`, but that module lives only on scitex-dev's develop branch and is not in the PyPI v0.11.16 wheel — CI installed the PyPI version and crashed at import time with `ModuleNotFoundError`, blocking every job. Wrap the import + alias registration in a `try/except ModuleNotFoundError` so figrecipe installs cleanly against any scitex-dev>=0.11.7 while the registry rolls out across the ecosystem. Mirrors socialia's commit 5640a56.
+- **Subprocess test PYTHONPATH** in `tests/figrecipe/test__env_runtime_respect.py::test_import_in_subprocess_with_no_dotenv_succeeds`. Explicitly inject `<repo>/src` so the test does not depend on the editable-install `.pth` file resolving correctly under an overridden `HOME`.
+
 ## [0.25.0] - 2026-02-16
 
 ### Added
