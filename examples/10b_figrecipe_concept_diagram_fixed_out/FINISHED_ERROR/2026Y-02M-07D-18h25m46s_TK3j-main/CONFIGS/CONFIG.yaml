@@ -1,0 +1,13 @@
+ID: 2026Y-02M-07D-18h25m46s_TK3j
+PID: 382572
+START_DATETIME: 2026-02-07 18:25:46.548938
+FILE:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed.py
+SDIR_OUT:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/10b_figrecipe_concept_diagram_fixed_out/RUNNING/2026Y-02M-07D-18h25m46s_TK3j-main
+ARGS: {}
+EXIT_STATUS: 1
+END_DATETIME: 2026-02-07 18:25:49.142469
+RUN_DURATION: 00:00:02

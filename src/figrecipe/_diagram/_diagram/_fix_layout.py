@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Dict, List
 from ._geom import box_rect, rects_overlap
 
 try:
-    from scitex.logging import getLogger
+    from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:

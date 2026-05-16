@@ -156,7 +156,8 @@ stat_annotation:
   stars_fontweight: "bold"  # Font weight for stars
 
 output:
-  dpi: 300
+  dpi: 300              # Saved files (savefig). Publication-grade.
+  display_dpi: 100      # Inline notebook display. ~3x smaller PNG payload.
   transparent: false
   format: "png"
 

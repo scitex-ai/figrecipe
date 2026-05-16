@@ -60,7 +60,8 @@ legend:
   loc: null              # matplotlib default
 
 output:
-  dpi: 300
+  dpi: 300              # Saved files (savefig).
+  display_dpi: 100      # Inline notebook display.
   transparent: false
   format: "png"
 

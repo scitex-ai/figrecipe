@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h57m32s_AQ49
+PID: 2397527
+START_DATETIME: 2026-02-07 03:57:32.454398
+FILE: /home/ywatanabe/proj/figrecipe/examples/09_diagram.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/09_diagram_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/09_diagram_out/RUNNING/2026Y-02M-07D-03h57m32s_AQ49-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:57:37.010339
+RUN_DURATION: 00:00:04

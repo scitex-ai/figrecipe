@@ -1,0 +1,11 @@
+ID: 2026Y-05M-08D-09h01m05s_yhBq
+PID: 1938896
+START_DATETIME: 2026-05-08 09:01:05.522206
+FILE: /home/ywatanabe/proj/figrecipe/examples/08_diagram.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/08_diagram_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/figrecipe/examples/08_diagram_out/RUNNING/2026Y-05M-08D-09h01m05s_yhBq-main
+ARGS: {}
+EXIT_STATUS: 1
+END_DATETIME: 2026-05-08 09:01:07.576965
+RUN_DURATION: 00:00:02

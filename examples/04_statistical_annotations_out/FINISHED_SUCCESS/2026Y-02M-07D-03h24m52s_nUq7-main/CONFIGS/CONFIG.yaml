@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h24m52s_nUq7
+PID: 2321574
+START_DATETIME: 2026-02-07 03:24:52.334961
+FILE: /home/ywatanabe/proj/figrecipe/examples/04_statistical_annotations.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/04_statistical_annotations_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/04_statistical_annotations_out/RUNNING/2026Y-02M-07D-03h24m52s_nUq7-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:24:56.205660
+RUN_DURATION: 00:00:03

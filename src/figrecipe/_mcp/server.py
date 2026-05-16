@@ -472,6 +472,24 @@ def get_spec_schema() -> str:
     return schema
 
 
+# §5 audit-mcp-tools — every package's MCP server MUST expose
+# skills_list + skills_get so agents can discover skill pages.
+@mcp.tool
+async def skills_list() -> Dict[str, Any]:
+    """List available skill pages for figrecipe."""
+    from scitex_dev.skills import list_skills
+
+    return list_skills(package="figrecipe")
+
+
+@mcp.tool
+async def skills_get(name: Optional[str] = None) -> Dict[str, Any]:
+    """Get a figrecipe skill page by name (or list when name is None)."""
+    from scitex_dev.skills import get_skill
+
+    return get_skill(package="figrecipe", name=name)
+
+
 # Register additional documentation resources
 register_resources(mcp)
 
@@ -482,6 +500,11 @@ register_diagram_tools(mcp)
 from ._plot_tools import register_plot_tools  # noqa: E402
 
 register_plot_tools(mcp)
+
+# Register §6 Python-API parity wrappers (subplots, save, reproduce, …).
+from ._api_parity_tools import register_api_parity_tools  # noqa: E402
+
+register_api_parity_tools(mcp)
 
 
 if __name__ == "__main__":

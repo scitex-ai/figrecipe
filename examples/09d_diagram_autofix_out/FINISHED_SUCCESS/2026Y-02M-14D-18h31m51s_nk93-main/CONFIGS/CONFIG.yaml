@@ -1,0 +1,11 @@
+ID: 2026Y-02M-14D-18h31m51s_nk93
+PID: 1604908
+START_DATETIME: 2026-02-14 18:31:51.750671
+FILE: /home/ywatanabe/proj/figrecipe/examples/09d_diagram_autofix.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/09d_diagram_autofix_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/figrecipe/examples/09d_diagram_autofix_out/RUNNING/2026Y-02M-14D-18h31m51s_nk93-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-14 18:31:55.139054
+RUN_DURATION: 00:00:03

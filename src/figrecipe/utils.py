@@ -38,6 +38,7 @@ from ._reproducer import get_recipe_info
 from ._serializer import load_recipe
 from ._utils._numpy_io import CsvFormat, DataFormat, load_array, save_array
 from ._utils._units import (
+    MM_PER_INCH,  # noqa: F401  (re-exported via __all__)
     inch_to_mm,
     mm_to_inch,
     mm_to_pt,
@@ -51,6 +52,7 @@ from .styles._style_applier import check_font, list_available_fonts
 
 __all__ = [
     # Unit conversions
+    "MM_PER_INCH",
     "mm_to_inch",
     "inch_to_mm",
     "mm_to_pt",

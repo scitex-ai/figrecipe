@@ -1,8 +1,10 @@
 ---
-description: Common figrecipe workflows — quick recipes for plots, multi-panel figures, diagrams, cropping, and data extraction.
-name: workflows
-tags: [figrecipe, scitex-package]
+description: |
+  [TOPIC] Workflows
+  [DETAILS] quick recipes for plots, multi-panel figures, diagrams, cropping, and data extraction.
+tags: [figrecipe-workflows, figrecipe]
 ---
+
 
 # Common Workflows
 

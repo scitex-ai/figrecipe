@@ -1,8 +1,10 @@
 ---
-description: Box-and-arrow diagram builder and Mermaid/Graphviz diagram compilation via fr.Diagram.
-name: diagram
-tags: [figrecipe, scitex-package]
+description: |
+  [TOPIC] Diagram
+  [DETAILS] Box-and-arrow diagram builder and Mermaid/Graphviz diagram compilation via fr.Diagram.
+tags: [figrecipe-diagram, figrecipe]
 ---
+
 
 # Diagrams
 

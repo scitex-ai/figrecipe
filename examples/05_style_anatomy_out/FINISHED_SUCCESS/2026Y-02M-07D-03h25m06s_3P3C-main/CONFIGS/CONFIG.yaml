@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h25m06s_3P3C
+PID: 2321937
+START_DATETIME: 2026-02-07 03:25:06.676758
+FILE: /home/ywatanabe/proj/figrecipe/examples/05_style_anatomy.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/05_style_anatomy_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/05_style_anatomy_out/RUNNING/2026Y-02M-07D-03h25m06s_3P3C-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:25:11.612488
+RUN_DURATION: 00:00:04

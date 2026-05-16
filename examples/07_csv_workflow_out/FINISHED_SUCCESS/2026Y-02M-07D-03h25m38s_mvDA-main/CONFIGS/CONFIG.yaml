@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-03h25m38s_mvDA
+PID: 2322804
+START_DATETIME: 2026-02-07 03:25:38.279661
+FILE: /home/ywatanabe/proj/figrecipe/examples/07_csv_workflow.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/07_csv_workflow_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/07_csv_workflow_out/RUNNING/2026Y-02M-07D-03h25m38s_mvDA-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 03:25:43.326319
+RUN_DURATION: 00:00:05

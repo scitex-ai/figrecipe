@@ -32,11 +32,11 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 # Command categories for organized help display
 COMMAND_CATEGORIES = [
-    ("Figure Creation", ["plot", "reproduce", "compose", "gui"]),
-    ("Image Processing", ["convert", "crop", "diff", "hitmap"]),
+    ("Figure Creation", ["plot", "reproduce", "compose", "start-gui"]),
+    ("Image Processing", ["convert", "crop", "diff", "show-hitmap"]),
     ("Data & Validation", ["extract", "validate", "info"]),
     ("Diagram", ["diagram"]),
-    ("Style & Appearance", ["style", "fonts"]),
+    ("Style & Appearance", ["style", "list-fonts"]),
     ("Integration", ["mcp", "list-python-apis"]),
     ("Utility", ["completion", "version"]),
 ]
@@ -117,7 +117,7 @@ def main(
 ) -> None:
     """FigRecipe - Reproducible, style-editable scientific figures via YAML recipes.
 
-    Use 'figrecipe gui' to launch the GUI editor.
+    Use 'figrecipe start-gui' to launch the GUI editor.
 
     Config is loaded with the SciTeX precedence chain:
       config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
@@ -180,6 +180,15 @@ try:
     from scitex_dev.cli import skills_click_group
 
     main.add_command(skills_click_group(package="figrecipe"))
+except ImportError:
+    pass
+
+# audit-cli §1a — wire install-shell-completion + print-shell-completion
+# so `figrecipe <TAB>` works without the user copy-pasting boilerplate.
+try:
+    from scitex_dev._cli._completion import attach_shell_completion
+
+    attach_shell_completion(main, prog_name="figrecipe")
 except ImportError:
     pass
 

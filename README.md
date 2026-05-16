@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="https://figrecipe.readthedocs.io/">Full Documentation</a> · <code>pip install figrecipe</code>
+  <a href="https://figrecipe.readthedocs.io/">Full Documentation</a> · <code>uv pip install figrecipe[all]</code>
 </p>
 
 ---
@@ -47,7 +47,12 @@ pip install figrecipe
 
 For the GUI editor: `pip install figrecipe[editor]`
 
-> **SciTeX users**: `pip install scitex[plt]` already includes FigRecipe.
+## Part of SciTeX
+
+figrecipe is part of [**SciTeX**](https://scitex.ai). Install via the
+umbrella with `pip install scitex[plt]` to use as `scitex.plt` (Python)
+or `scitex plt ...` / `scitex figrecipe ...` (CLI; the umbrella shells
+out to the standalone `figrecipe` binary).
 
 ## Quickstart
 
@@ -72,17 +77,18 @@ fr.gui(fig)  # Launch visual editor at http://127.0.0.1:5050
 
 ---
 
-## Role in SciTeX Ecosystem
+## Architecture
 
 FigRecipe is the **first app built on the SciTeX platform** -- it proves the app pattern that other apps follow. It works standalone (`figrecipe gui`) AND embedded inside scitex-cloud.
 
 ```
-scitex (orchestrator) -- re-exports figrecipe as scitex.plt
-  |-- scitex-app        -- runtime SDK (FigRecipe inherits ScitexAppConfig)
-  |-- scitex-ui         -- React/TS components (FigRecipe consumes these)
-  +-- figrecipe (this package) -- reference app
-        |-- figrecipe           -- standalone Python package (pip install figrecipe)
-        +-- figrecipe._django   -- Django integration for scitex-cloud embedding
+scitex (orchestrator) — re-exports figrecipe as scitex.plt
+│
+├── scitex-app          — runtime SDK (FigRecipe inherits ScitexAppConfig)
+├── scitex-ui           — React/TS components (FigRecipe consumes these)
+└── figrecipe (this package) — reference app
+    ├── figrecipe          — standalone Python package (pip install figrecipe)
+    └── figrecipe._django  — Django integration for scitex-cloud embedding
 ```
 
 **What this package owns:** Figure creation, reproduction, and composition engine; YAML recipe format and data provenance; Diagram system (box-and-arrow with mm-based coordinates); GUI editor; Django integration.
@@ -104,9 +110,7 @@ The SciTeX system follows the Four Freedoms for Research below, inspired by [the
 >
 >AGPL-3.0 -- because we believe research infrastructure deserves the same freedoms as the software it runs on.
 
-> **SciTeX users**: `pip install scitex[plt]` includes FigRecipe. `scitex.plt` delegates to `figrecipe` -- they share the same API.
-
-## Overview
+## Demo
 
 FigRecipe treats recipe, data, and style as first-class attributes of every figure. This enables data governance and style editing without losing scientific rigor.
 
@@ -262,7 +266,7 @@ d.save("overview.png")
 
 ## Four Interfaces
 
-<details>
+<details open>
 <summary><strong>Python API</strong></summary>
 
 <br>
@@ -284,7 +288,7 @@ fr.compose(sources=["panel_a.yaml", "panel_b.yaml"], output_path="composed.png",
 ax.add_stat_annotation(x1=0, x2=1, p_value=0.01, style="stars")
 ```
 
-> **[Full API reference](https://figrecipe.readthedocs.io/en/latest/)**
+> **[Full API reference](https://figrecipe.readthedocs.io/en/latest/api/figrecipe.html)**
 
 </details>
 

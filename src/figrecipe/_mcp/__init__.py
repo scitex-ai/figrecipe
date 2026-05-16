@@ -6,11 +6,9 @@ Requires fastmcp>=2.0.0 (Python 3.10+). Install with:
     pip install figrecipe[mcp]
 """
 
-try:
-    from .server import mcp
+from scitex_dev import try_import_optional
 
-    __all__ = ["mcp"]
-except ImportError:
-    # fastmcp not installed - MCP functionality unavailable
-    mcp = None
-    __all__ = []
+mcp = try_import_optional(
+    ".server", "mcp", extra="mcp", pkg="figrecipe", package=__name__
+)
+__all__ = ["mcp"]

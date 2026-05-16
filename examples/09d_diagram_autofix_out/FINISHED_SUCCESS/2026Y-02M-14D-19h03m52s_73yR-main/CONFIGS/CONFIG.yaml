@@ -1,0 +1,11 @@
+ID: 2026Y-02M-14D-19h03m52s_73yR
+PID: 1766875
+START_DATETIME: 2026-02-14 19:03:52.767795
+FILE: /home/ywatanabe/proj/figrecipe/examples/09d_diagram_autofix.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/09d_diagram_autofix_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/figrecipe/examples/09d_diagram_autofix_out/RUNNING/2026Y-02M-14D-19h03m52s_73yR-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-14 19:03:58.260890
+RUN_DURATION: 00:00:05

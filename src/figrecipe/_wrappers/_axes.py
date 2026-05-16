@@ -262,61 +262,13 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
         return wrapper
 
     def _create_legend_wrapper(self):
-        """Create wrapper for legend() that applies frame styling and records the call."""
-        from ..styles import load_style
+        """Build the legend() wrapper that handles SCITEX styling +
+        figrecipe loc extensions + recording. Implementation lives
+        in `_legend_wrapper.py` so this file stays focused.
+        """
+        from ._legend_wrapper import build_legend_wrapper
 
-        original_legend = self._ax.legend
-
-        def wrapper(
-            *args,
-            id: Optional[str] = None,
-            track: bool = True,
-            **kwargs,
-        ):
-            legend = original_legend(*args, **kwargs)
-
-            # Apply SCITEX style frame settings
-            if legend is not None:
-                style = load_style()
-                legend_config = style.get("legend", {})
-
-                frameon = legend_config.get("frameon", True)
-                edge_mm = legend_config.get("edge_mm", 0.2)
-                edgecolor = legend_config.get("edgecolor", "black")
-
-                if frameon and edge_mm:
-                    frame = legend.get_frame()
-                    frame.set_linewidth(edge_mm * 72 / 25.4)  # mm to points
-                    if edgecolor:
-                        frame.set_edgecolor(edgecolor)
-
-            # Record the legend call for reproduction
-            if self._track and track:
-                record_kwargs = kwargs.copy()
-                # Handle custom handles - extract color/label info for serialization
-                if "handles" in record_kwargs:
-                    handles = record_kwargs.pop("handles")
-                    handle_specs = []
-                    for h in handles:
-                        spec = {"label": h.get_label()}
-                        if hasattr(h, "get_facecolor"):
-                            spec["facecolor"] = list(h.get_facecolor())
-                        if hasattr(h, "get_edgecolor"):
-                            spec["edgecolor"] = list(h.get_edgecolor())
-                        handle_specs.append(spec)
-                    record_kwargs["_handle_specs"] = handle_specs
-
-                self._recorder.record_call(
-                    ax_position=self._position,
-                    method_name="legend",
-                    args=args,
-                    kwargs=record_kwargs,
-                    call_id=id,
-                )
-
-            return legend
-
-        return wrapper
+        return build_legend_wrapper(self)
 
     def set_caption(self, caption: str) -> "RecordingAxes":
         """Set panel caption metadata (not rendered, stored in recipe)."""

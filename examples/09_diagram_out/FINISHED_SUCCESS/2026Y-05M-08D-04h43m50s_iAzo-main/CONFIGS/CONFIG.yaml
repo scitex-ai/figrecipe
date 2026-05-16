@@ -1,0 +1,11 @@
+ID: 2026Y-05M-08D-04h43m50s_iAzo
+PID: 1295079
+START_DATETIME: 2026-05-08 04:43:50.804678
+FILE: /home/ywatanabe/proj/figrecipe/examples/09_diagram.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/09_diagram_out
+SDIR_RUN: 
+    /home/ywatanabe/proj/figrecipe/examples/09_diagram_out/RUNNING/2026Y-05M-08D-04h43m50s_iAzo-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-05-08 04:43:56.084201
+RUN_DURATION: 00:00:05

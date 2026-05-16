@@ -8,7 +8,7 @@ from typing import Optional
 import click
 
 
-@click.command()
+@click.command("show-hitmap")
 @click.argument("original", type=click.Path(exists=True))
 @click.argument("reproduced", type=click.Path(exists=True))
 @click.option(
@@ -40,6 +40,7 @@ import click
     default=10,
     help="Minimum pixel area for bounding box. Default: 10.",
 )
+@click.option("--json", "as_json", is_flag=True, help="Emit JSON output.")
 def hitmap(
     original: str,
     reproduced: str,
@@ -48,6 +49,7 @@ def hitmap(
     threshold: int,
     no_bbox: bool,
     min_region: int,
+    as_json: bool,
 ) -> None:
     """Generate hitmap visualization from two images.
 
@@ -80,8 +82,10 @@ def hitmap(
     else:
         output_path = original_path.with_stem(f"{original_path.stem}_hitmap")
 
+    import json
+
     try:
-        hitmap_img, stats = create_hitmap(
+        _, stats = create_hitmap(
             original_path,
             reproduced_path,
             output_path=output_path,
@@ -91,9 +95,14 @@ def hitmap(
             min_region_area=min_region,
         )
 
-        click.echo(f"Hitmap saved: {output_path}")
-        click.echo(f"  Mode: {mode}")
-        click.echo(f"  Diff regions: {stats['num_regions']}")
+        if as_json:
+            click.echo(
+                json.dumps({"output": str(output_path), "mode": mode, "stats": stats})
+            )
+        else:
+            click.echo(f"Hitmap saved: {output_path}")
+            click.echo(f"  Mode: {mode}")
+            click.echo(f"  Diff regions: {stats['num_regions']}")
 
     except Exception as e:
         raise click.ClickException(f"Hitmap generation failed: {e}") from e

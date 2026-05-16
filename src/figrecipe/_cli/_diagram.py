@@ -145,14 +145,17 @@ def convert(
     console.print(f"[green]✓[/green] Converted: {input_path} → {output_path}")
 
 
-@diagram.command("info")
+@diagram.command("show-info")
 @click.argument("path", type=click.Path(exists=True))
-def info(path: str):
+@click.option("--json", "as_json", is_flag=True, help="Emit machine-readable JSON.")
+def info(path: str, as_json: bool):
     """Show information about a diagram file.
 
     Example:
-        figrecipe diagram info workflow.yaml
+        figrecipe diagram show-info workflow.yaml
     """
+    import json as _json
+
     from .._diagram import Diagram
 
     input_path = Path(path)
@@ -166,28 +169,50 @@ def info(path: str):
         console.print(f"[red]Error:[/red] Unknown format: {input_path.suffix}")
         raise SystemExit(1)
 
-    console.print(f"[bold]Diagram Info:[/bold] {input_path}")
-    console.print(f"  Type: {d.spec.type.value}")
-    console.print(f"  Title: {d.spec.title or '(none)'}")
-    console.print(f"  Nodes: {len(d.spec.nodes)}")
-    console.print(f"  Edges: {len(d.spec.edges)}")
-    console.print(f"  Groups: {len(d.spec.layout.groups)}")
-    console.print(
-        f"  Column: {d.spec.paper.column.value if hasattr(d.spec.paper.column, 'value') else d.spec.paper.column}"
+    column = (
+        d.spec.paper.column.value
+        if hasattr(d.spec.paper.column, "value")
+        else d.spec.paper.column
     )
+    payload = {
+        "path": str(input_path),
+        "type": d.spec.type.value,
+        "title": d.spec.title or "",
+        "nodes": len(d.spec.nodes),
+        "edges": len(d.spec.edges),
+        "groups": len(d.spec.layout.groups),
+        "column": column,
+    }
+    if as_json:
+        click.echo(_json.dumps(payload, indent=2))
+        return
+
+    console.print(f"[bold]Diagram Info:[/bold] {input_path}")
+    console.print(f"  Type: {payload['type']}")
+    console.print(f"  Title: {payload['title'] or '(none)'}")
+    console.print(f"  Nodes: {payload['nodes']}")
+    console.print(f"  Edges: {payload['edges']}")
+    console.print(f"  Groups: {payload['groups']}")
+    console.print(f"  Column: {payload['column']}")
 
 
-@diagram.command("presets")
-def presets():
+@diagram.command("show-presets")
+@click.option("--json", "as_json", is_flag=True, help="Emit machine-readable JSON.")
+def presets(as_json: bool):
     """List available diagram presets.
 
     \b
     Example:
-      $ figrecipe diagram presets
+      $ figrecipe diagram show-presets
     """
+    import json as _json
+
     from .._diagram import list_presets as list_diagram_presets
 
     preset_info = list_diagram_presets()
+    if as_json:
+        click.echo(_json.dumps(preset_info, indent=2))
+        return
 
     console.print("[bold]Available Diagram Presets:[/bold]")
     for name, desc in preset_info.items():
@@ -299,17 +324,23 @@ def render(
         raise SystemExit(1)
 
 
-@diagram.command("backends")
-def backends():
+@diagram.command("show-backends")
+@click.option("--json", "as_json", is_flag=True, help="Emit machine-readable JSON.")
+def backends(as_json: bool):
     """Show available rendering backends and their status.
 
     \b
     Example:
-      $ figrecipe diagram backends
+      $ figrecipe diagram show-backends
     """
+    import json as _json
+
     from .._diagram._shared._render import get_available_backends
 
     backend_info = get_available_backends()
+    if as_json:
+        click.echo(_json.dumps(backend_info, indent=2))
+        return
 
     console.print("[bold]Diagram Rendering Backends:[/bold]")
     for name, info in backend_info.items():

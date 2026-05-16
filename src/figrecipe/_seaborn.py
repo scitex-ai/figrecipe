@@ -6,16 +6,11 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 import numpy as np
+import pandas as pd
+from scitex_dev import try_import_optional
 
-try:
-    import pandas as pd
-    import seaborn as sns
-
-    HAS_SEABORN = True
-except ImportError:
-    HAS_SEABORN = False
-    sns = None
-    pd = None
+sns = try_import_optional("seaborn", extra="seaborn", pkg="figrecipe")
+HAS_SEABORN = sns is not None
 
 if TYPE_CHECKING:
     pass

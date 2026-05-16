@@ -231,29 +231,28 @@ class SciTexMixin:
 
 __all__ = ["SciTexMixin"]
 
-# ── Branding aliases (driven by FIGRECIPE_ALIAS env var) ─────────────────────
-# Generates e.g. ax.fr_line() when FIGRECIPE_ALIAS="fr" (default),
-# or ax.plt_line() when FIGRECIPE_ALIAS="plt" (scitex.plt white-label).
-from figrecipe._branding import BRAND_ALIAS as _BRAND_ALIAS  # noqa: E402
+# ── Branding aliases (driven by scitex_dev._branding registry) ──────────────
+# Generates ax.fr_*() aliases for each ax.stx_*() method. The helper rebinds
+# __module__ on the alias methods to the counterpart brand's umbrella attr
+# (scitex.plt) so that help() on the umbrella side does not leak figrecipe
+# as the source module. Previously this was a manual setattr loop driven by
+# a FIGRECIPE_ALIAS env var; the registry replaces both.
+#
+# Defensive import: ``scitex_dev._branding`` ships on scitex-dev develop and
+# is not in the PyPI v0.11.16 wheel yet (see socialia commit 5640a56 for the
+# same fallback pattern). When the installed scitex-dev predates the
+# registry, skip alias registration — the stx_* methods remain functional;
+# only the fr_* aliases on the figrecipe-branded surface are absent until
+# scitex-dev>=0.11.17 lands. Once 0.11.17 is on PyPI this try/except is a
+# no-op (the registry always wins).
+try:
+    from scitex_dev._branding import (
+        register_method_aliases as _register_aliases,  # noqa: E402
+    )
 
-_STX_SUFFIXES = (
-    "line",
-    "shaded_line",
-    "mean_std",
-    "mean_ci",
-    "median_iqr",
-    "conf_mat",
-    "ecdf",
-    "raster",
-    "scatter_hist",
-    "heatmap",
-    "fillv",
-    "rectangle",
-    "image",
-    "violin",
-)
-for _s in _STX_SUFFIXES:
-    setattr(SciTexMixin, f"{_BRAND_ALIAS}_{_s}", getattr(SciTexMixin, f"stx_{_s}"))
-del _s, _BRAND_ALIAS, _STX_SUFFIXES
+    _register_aliases(SciTexMixin, brand_key="scitex-plt")
+    del _register_aliases
+except ModuleNotFoundError:
+    pass
 
 # EOF

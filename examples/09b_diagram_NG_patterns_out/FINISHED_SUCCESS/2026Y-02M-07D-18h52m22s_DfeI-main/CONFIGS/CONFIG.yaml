@@ -1,0 +1,11 @@
+ID: 2026Y-02M-07D-18h52m22s_DfeI
+PID: 474216
+START_DATETIME: 2026-02-07 18:52:22.723278
+FILE: /home/ywatanabe/proj/figrecipe/examples/09b_diagram_NG_patterns.py
+SDIR_OUT: /home/ywatanabe/proj/figrecipe/examples/09b_diagram_NG_patterns_out
+SDIR_RUN:
+    /home/ywatanabe/proj/figrecipe/examples/09b_diagram_NG_patterns_out/RUNNING/2026Y-02M-07D-18h52m22s_DfeI-main
+ARGS: {}
+EXIT_STATUS: 0
+END_DATETIME: 2026-02-07 18:52:26.088561
+RUN_DURATION: 00:00:03

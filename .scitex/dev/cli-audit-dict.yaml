@@ -1,0 +1,9 @@
+# Project-local CLI audit dictionary for figrecipe
+# Extends the bundled scitex-dev catalog with package-specific tokens.
+# See: scitex-dev/_skills/general/03_interface_02_cli/07_audit-cli.md
+
+nouns:
+  # Shell names used as `figrecipe completion <shell>` leaves
+  - bash
+  - zsh
+  - fish

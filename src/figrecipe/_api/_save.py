@@ -161,7 +161,7 @@ def save_figure(
     image_format: Optional[str] = None,
     crop_margin_mm: Optional[float] = None,
     facecolor: Optional[str] = None,
-    save_hitmap: bool = True,
+    save_hitmap: bool = False,
 ):
     """Core save implementation.
 

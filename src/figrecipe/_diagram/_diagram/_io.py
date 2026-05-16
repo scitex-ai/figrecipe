@@ -5,7 +5,7 @@
 from typing import TYPE_CHECKING, Any, Dict
 
 try:
-    from scitex.logging import getLogger
+    from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:
@@ -255,7 +255,7 @@ def _render_to_file(
     path,
     dpi: int = 200,
     save_recipe: bool = True,
-    save_hitmap: bool = True,
+    save_hitmap: bool = False,
     save_debug: bool = True,
     watermark: bool = False,
 ):

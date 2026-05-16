@@ -1,8 +1,10 @@
 ---
-description: Convention — plotting functions must return fig for composability and external save/show handling.
-name: return-fig
-tags: [figrecipe, scitex-package]
+description: |
+  [TOPIC] Return Fig
+  [DETAILS] plotting functions must return fig for composability and external save/show handling.
+tags: [figrecipe-return-fig, figrecipe]
 ---
+
 
 # Return Fig Convention
 

@@ -6,13 +6,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 # Check if scitex.stats is available
-try:
-    from scitex import stats as scitex_stats
+from scitex_dev import try_import_optional
 
-    SCITEX_STATS_AVAILABLE = True
-except ImportError:
-    scitex_stats = None
-    SCITEX_STATS_AVAILABLE = False
+scitex_stats = try_import_optional("scitex_stats", extra="scitex", pkg="figrecipe")
+SCITEX_STATS_AVAILABLE = scitex_stats is not None
 
 
 def from_scitex_stats(

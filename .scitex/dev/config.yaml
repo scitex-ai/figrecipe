@@ -1,0 +1,10 @@
+# scitex-dev project-type config
+# Drives which rule families the auditor applies.
+# See: scitex-dev ecosystem audit-project --help
+
+project-type:
+  - pip
+
+# audit:
+#   skip:
+#     - PS-108

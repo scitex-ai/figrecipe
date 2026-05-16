@@ -102,6 +102,9 @@ def to_subplots_kwargs(style: Optional["DotDict"] = None) -> Dict[str, Any]:
         "padding_title_pt": style.padding.title_pt,
         # Output (output.* in YAML)
         "output_dpi": style.output.dpi,
+        # Display DPI: inline notebook backend. Falls back to output_dpi
+        # for backward compatibility with presets that lack display_dpi.
+        "display_dpi": style.output.get("display_dpi", style.output.dpi),
         "output_transparent": style.output.get("transparent", True),
         "output_format": style.output.get("format", "pdf"),
         # Theme (theme.* in YAML)
@@ -180,7 +183,12 @@ def _get_legacy_aliases(result: Dict[str, Any]) -> Dict[str, Any]:
         "label_pad_pt": result["padding_label_pt"],
         "tick_pad_pt": result["padding_tick_pt"],
         "title_pad_pt": result["padding_title_pt"],
-        "dpi": result["output_dpi"],
+        # Figure construction uses display_dpi (inline notebook backend);
+        # savefig() reads output_dpi separately. Splitting these keeps
+        # publication-grade saved files while making inline previews
+        # ~9x lighter.
+        "dpi": result.get("display_dpi", result["output_dpi"]),
+        "savefig_dpi": result["output_dpi"],
         "theme": result["theme_mode"],
         "hide_top_spine": result.get("behavior_hide_top_spine", True),
         "hide_right_spine": result.get("behavior_hide_right_spine", True),
