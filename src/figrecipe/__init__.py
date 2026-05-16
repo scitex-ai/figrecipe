@@ -5,6 +5,18 @@
 # Branding support (must be imported first, before docstring is set)
 from __future__ import annotations
 
+from pathlib import Path as _Path
+
+# Best-effort .env loading: walk parent dirs from cwd up to $HOME, loading
+# every .env found (closest wins). Imported lazily and tolerantly so that a
+# missing/broken scitex-config never breaks `import figrecipe`.
+try:
+    from scitex_config import load_dotenv as _load_dotenv
+
+    _load_dotenv(walk_up=True, stop_at=str(_Path.home()))
+except Exception:
+    pass
+
 from ._branding import rebrand_text as _rebrand_text
 
 # Define module docstring with branding applied
