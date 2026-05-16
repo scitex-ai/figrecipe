@@ -237,11 +237,22 @@ __all__ = ["SciTexMixin"]
 # (scitex.plt) so that help() on the umbrella side does not leak figrecipe
 # as the source module. Previously this was a manual setattr loop driven by
 # a FIGRECIPE_ALIAS env var; the registry replaces both.
-from scitex_dev._branding import (
-    register_method_aliases as _register_aliases,  # noqa: E402
-)
+#
+# Defensive import: ``scitex_dev._branding`` ships on scitex-dev develop and
+# is not in the PyPI v0.11.16 wheel yet (see socialia commit 5640a56 for the
+# same fallback pattern). When the installed scitex-dev predates the
+# registry, skip alias registration — the stx_* methods remain functional;
+# only the fr_* aliases on the figrecipe-branded surface are absent until
+# scitex-dev>=0.11.17 lands. Once 0.11.17 is on PyPI this try/except is a
+# no-op (the registry always wins).
+try:
+    from scitex_dev._branding import (
+        register_method_aliases as _register_aliases,  # noqa: E402
+    )
 
-_register_aliases(SciTexMixin, brand_key="scitex-plt")
-del _register_aliases
+    _register_aliases(SciTexMixin, brand_key="scitex-plt")
+    del _register_aliases
+except ModuleNotFoundError:
+    pass
 
 # EOF
