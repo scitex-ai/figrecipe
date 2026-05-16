@@ -78,13 +78,27 @@ def test_import_in_subprocess_with_no_dotenv_succeeds(tmp_path):
     # Arrange: pristine tmp dir, no .env anywhere up to it.
     work = tmp_path / "no_env"
     work.mkdir()
+    # Inject PYTHONPATH=<repo>/src so the child does not depend on the
+    # editable-install .pth file. Some editable backends bake ``$HOME`` into
+    # the .pth — when we override HOME below to suppress .env walk-up, those
+    # backends strip the repo src/ from sys.path and `import figrecipe`
+    # resolves to a namespace package without ``__version__``. PYTHONPATH is
+    # honoured before any .pth processing, so the child always finds the
+    # in-tree figrecipe regardless of install style.
+    import figrecipe as _fr_local
+
+    pkg_src_dir = str(Path(_fr_local.__file__).resolve().parent.parent)
+    child_env = {**os.environ, "HOME": str(work)}  # stop walk_up at fake HOME
+    child_env["PYTHONPATH"] = (
+        pkg_src_dir + os.pathsep + child_env.get("PYTHONPATH", "")
+    ).rstrip(os.pathsep)
     # Act
     result = subprocess.run(
         [sys.executable, "-c", "import figrecipe; print(figrecipe.__version__)"],
         cwd=str(work),
         capture_output=True,
         text=True,
-        env={**os.environ, "HOME": str(work)},  # stop walk_up at fake HOME
+        env=child_env,
     )
     # Assert
     assert result.returncode == 0, result.stderr
