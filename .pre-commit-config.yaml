@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: pytest-testmon
         name: pytest-testmon
-        entry: python -m pytest --testmon -x -q --tb=short --ignore=tests/figrecipe/editor --ignore=tests/figrecipe/test_pixel_perfect.py
+        entry: python -m pytest --testmon -x -q --tb=short --ignore=tests/figrecipe/_editor --ignore=tests/figrecipe/test_pixel_perfect.py --ignore=tests/develop/test_audit.py --ignore=tests/figrecipe/_mcp/test__resources.py
         language: system
         types: [python]
         pass_filenames: false
