@@ -27,6 +27,9 @@ class TestTextAnnotationFontsize:
 
     def test_text_uses_scitex_annotation_pt(self, fig_ax_with_scitex):
         """ax.text() should use annotation_pt (6pt) from SCITEX style."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax_with_scitex
         text_obj = ax.text(0.5, 0.5, "Test annotation")
 
@@ -35,6 +38,9 @@ class TestTextAnnotationFontsize:
 
     def test_text_override_fontsize(self, fig_ax_with_scitex):
         """Explicit fontsize should override style default."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax_with_scitex
         text_obj = ax.text(0.5, 0.5, "Test annotation", fontsize=12)
 
@@ -46,6 +52,9 @@ class TestAnnotateAnnotationFontsize:
 
     def test_annotate_uses_scitex_annotation_pt(self, fig_ax_with_scitex):
         """ax.annotate() should use annotation_pt (6pt) from SCITEX style."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax_with_scitex
         annot_obj = ax.annotate("Test", xy=(0.5, 0.5))
 
@@ -54,6 +63,9 @@ class TestAnnotateAnnotationFontsize:
 
     def test_annotate_override_fontsize(self, fig_ax_with_scitex):
         """Explicit fontsize should override style default."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax_with_scitex
         annot_obj = ax.annotate("Test", xy=(0.5, 0.5), fontsize=10)
 
@@ -61,6 +73,9 @@ class TestAnnotateAnnotationFontsize:
 
     def test_annotate_with_xytext(self, fig_ax_with_scitex):
         """ax.annotate() with xytext should still use annotation_pt."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax_with_scitex
         annot_obj = ax.annotate(
             "Test", xy=(0.5, 0.5), xytext=(0.7, 0.7), arrowprops=dict(arrowstyle="->")
@@ -72,43 +87,106 @@ class TestAnnotateAnnotationFontsize:
 class TestTextRecording:
     """Tests that text calls are properly recorded for reproduction."""
 
-    def test_text_is_recorded(self, fig_ax_with_scitex, tmp_path):
+    def test_text_is_recorded_part_1(self, fig_ax_with_scitex, tmp_path):
         """ax.text() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
-
         fig, ax = fig_ax_with_scitex
         ax.plot([1, 2, 3], [1, 2, 3])
         ax.text(0.05, 0.95, "r = 0.99", transform=ax.transAxes)
-
-        # Save and check the recipe contains the text call
         output_path = tmp_path / "test.png"
         fr.save(fig, output_path, validate=False, verbose=False)
-
-        # Check that the decoration (text) is recorded
         ax_record = fig.record.get_or_create_axes(0, 0)
         assert len(ax_record.decorations) > 0
 
-        # Find the text call
+    def test_text_is_recorded_part_2(self, fig_ax_with_scitex, tmp_path):
+        """ax.text() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        fig, ax = fig_ax_with_scitex
+        ax.plot([1, 2, 3], [1, 2, 3])
+        ax.text(0.05, 0.95, "r = 0.99", transform=ax.transAxes)
+        output_path = tmp_path / "test.png"
+        fr.save(fig, output_path, validate=False, verbose=False)
+        ax_record = fig.record.get_or_create_axes(0, 0)
         text_calls = [d for d in ax_record.decorations if d.function == "text"]
         assert len(text_calls) == 1
+
+    def test_text_is_recorded_part_3(self, fig_ax_with_scitex, tmp_path):
+        """ax.text() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        fig, ax = fig_ax_with_scitex
+        ax.plot([1, 2, 3], [1, 2, 3])
+        ax.text(0.05, 0.95, "r = 0.99", transform=ax.transAxes)
+        output_path = tmp_path / "test.png"
+        fr.save(fig, output_path, validate=False, verbose=False)
+        ax_record = fig.record.get_or_create_axes(0, 0)
+        text_calls = [d for d in ax_record.decorations if d.function == "text"]
         assert "fontsize" in text_calls[0].kwargs
+
+    def test_text_is_recorded_part_4(self, fig_ax_with_scitex, tmp_path):
+        """ax.text() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        fig, ax = fig_ax_with_scitex
+        ax.plot([1, 2, 3], [1, 2, 3])
+        ax.text(0.05, 0.95, "r = 0.99", transform=ax.transAxes)
+        output_path = tmp_path / "test.png"
+        fr.save(fig, output_path, validate=False, verbose=False)
+        ax_record = fig.record.get_or_create_axes(0, 0)
+        text_calls = [d for d in ax_record.decorations if d.function == "text"]
         assert text_calls[0].kwargs["fontsize"] == 6
 
-    def test_annotate_is_recorded(self, fig_ax_with_scitex, tmp_path):
+    def test_annotate_is_recorded_part_1(self, fig_ax_with_scitex, tmp_path):
         """ax.annotate() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
-
         fig, ax = fig_ax_with_scitex
         ax.plot([1, 2, 3], [1, 2, 3])
         ax.annotate("Peak", xy=(2, 2))
-
-        # Save and check the recipe contains the annotate call
         output_path = tmp_path / "test.png"
         fr.save(fig, output_path, validate=False, verbose=False)
-
-        # Check that the decoration (annotate) is recorded
         ax_record = fig.record.get_or_create_axes(0, 0)
         annotate_calls = [d for d in ax_record.decorations if d.function == "annotate"]
         assert len(annotate_calls) == 1
+
+    def test_annotate_is_recorded_part_2(self, fig_ax_with_scitex, tmp_path):
+        """ax.annotate() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        fig, ax = fig_ax_with_scitex
+        ax.plot([1, 2, 3], [1, 2, 3])
+        ax.annotate("Peak", xy=(2, 2))
+        output_path = tmp_path / "test.png"
+        fr.save(fig, output_path, validate=False, verbose=False)
+        ax_record = fig.record.get_or_create_axes(0, 0)
+        annotate_calls = [d for d in ax_record.decorations if d.function == "annotate"]
         assert "fontsize" in annotate_calls[0].kwargs
+
+    def test_annotate_is_recorded_part_3(self, fig_ax_with_scitex, tmp_path):
+        """ax.annotate() calls should be recorded in the recipe."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        fig, ax = fig_ax_with_scitex
+        ax.plot([1, 2, 3], [1, 2, 3])
+        ax.annotate("Peak", xy=(2, 2))
+        output_path = tmp_path / "test.png"
+        fr.save(fig, output_path, validate=False, verbose=False)
+        ax_record = fig.record.get_or_create_axes(0, 0)
+        annotate_calls = [d for d in ax_record.decorations if d.function == "annotate"]
         assert annotate_calls[0].kwargs["fontsize"] == 6

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__specialized_plots__annotation_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._specialized_plots._annotation'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_special_plot_eventplot_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.special.plot_eventplot'
     # Act
     mod = pytest.importorskip(module_path)

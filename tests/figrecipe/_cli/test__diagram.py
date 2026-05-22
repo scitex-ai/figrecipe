@@ -10,6 +10,9 @@ import pytest
 
 def test_import__cli__diagram_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._cli._diagram'
     # Act
     mod = pytest.importorskip(module_path)

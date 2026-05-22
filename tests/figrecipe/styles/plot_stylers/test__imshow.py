@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles_plot_stylers__imshow_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles.plot_stylers._imshow'
     # Act
     mod = pytest.importorskip(module_path)

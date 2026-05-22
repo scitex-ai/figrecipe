@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__bbox__extract_text_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._bbox._extract_text'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__composition__source_parser_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._composition._source_parser'
     # Act
     mod = pytest.importorskip(module_path)

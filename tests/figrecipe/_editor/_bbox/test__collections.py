@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__bbox__collections_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._bbox._collections'
     # Act
     mod = pytest.importorskip(module_path)

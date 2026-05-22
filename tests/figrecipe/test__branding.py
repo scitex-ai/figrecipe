@@ -47,6 +47,9 @@ class TestRebrandText:
 
     def test_default_brand_returns_text_unchanged(self, _branding_env):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("figrecipe", "fr")
         text = "import figrecipe as fr"
         # Act
@@ -56,6 +59,9 @@ class TestRebrandText:
 
     def test_scitex_plt_rebrands_import_statement(self, _branding_env):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         text = "import figrecipe as fr"
         # Act
@@ -67,6 +73,9 @@ class TestRebrandText:
         self, _branding_env
     ):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         text = ">>> fr.subplots()"
         # Act
@@ -76,6 +85,9 @@ class TestRebrandText:
 
     def test_scitex_plt_rebrands_from_import_statement(self, _branding_env):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         text = "from figrecipe import utils"
         # Act
@@ -85,6 +97,9 @@ class TestRebrandText:
 
     def test_none_input_returns_none(self):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._branding import rebrand_text
         # Act
         result = rebrand_text(None)
@@ -93,6 +108,9 @@ class TestRebrandText:
 
     def test_preserves_url_domain_when_rebranding(self, _branding_env):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         text = "https://github.com/user/figrecipe"
         # Act
@@ -108,6 +126,9 @@ class TestGetBrandedImportExample:
         self, _branding_env
     ):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("figrecipe", "fr")
         # Act
         result = branding.get_branded_import_example()
@@ -118,6 +139,9 @@ class TestGetBrandedImportExample:
         self, _branding_env
     ):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         # Act
         result = branding.get_branded_import_example()
@@ -132,6 +156,9 @@ class TestGetMcpServerName:
         self, _branding_env
     ):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("figrecipe", "fr")
         # Act
         result = branding.get_mcp_server_name()
@@ -140,6 +167,9 @@ class TestGetMcpServerName:
 
     def test_dotted_brand_converts_dots_to_dashes(self, _branding_env):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         # Act
         result = branding.get_mcp_server_name()
@@ -154,6 +184,9 @@ class TestGetMcpInstructions:
         self, _branding_env
     ):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         # Act
         result = branding.get_mcp_instructions()
@@ -162,6 +195,9 @@ class TestGetMcpInstructions:
 
     def test_instructions_mention_mcp_server(self, _branding_env):
         # Arrange
+        # Arrange
+        # Act
+        # Assert
         _branding_env("scitex.plt", "plt")
         # Act
         result = branding.get_mcp_instructions()

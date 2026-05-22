@@ -10,6 +10,9 @@ import pytest
 
 def test_import__wrappers__boxplot_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._wrappers._boxplot'
     # Act
     mod = pytest.importorskip(module_path)

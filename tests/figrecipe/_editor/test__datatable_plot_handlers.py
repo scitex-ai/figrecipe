@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__datatable_plot_handlers_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._datatable_plot_handlers'
     # Act
     mod = pytest.importorskip(module_path)

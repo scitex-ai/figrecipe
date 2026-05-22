@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__hitmap__colors_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._hitmap._colors'
     # Act
     mod = pytest.importorskip(module_path)

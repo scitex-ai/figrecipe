@@ -14,6 +14,9 @@ class TestEditorToolbar:
 
     def test_toolbar_buttons_clickable(self, editor_server):
         """Verify toolbar buttons can be clicked without errors."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -45,6 +48,9 @@ class TestEditorToolbar:
 
     def test_view_mode_toggle(self, editor_server):
         """Test view mode (All/Selected) toggle."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -82,6 +88,9 @@ class TestEditorToolbar:
 
     def test_keyboard_shortcuts_no_errors(self, editor_server):
         """Test that keyboard shortcuts don't cause errors."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []

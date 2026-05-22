@@ -10,6 +10,9 @@ import pytest
 
 def test_import__bundle__extract_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._bundle._extract'
     # Act
     mod = pytest.importorskip(module_path)

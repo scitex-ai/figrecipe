@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters__figure_creators_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters._figure_creators'
     # Act
     mod = pytest.importorskip(module_path)

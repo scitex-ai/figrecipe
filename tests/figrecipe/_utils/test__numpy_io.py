@@ -10,6 +10,9 @@ import pytest
 
 def test_import__utils__numpy_io_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._utils._numpy_io'
     # Act
     mod = pytest.importorskip(module_path)

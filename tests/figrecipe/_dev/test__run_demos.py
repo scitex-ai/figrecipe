@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev__run_demos_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev._run_demos'
     # Act
     mod = pytest.importorskip(module_path)

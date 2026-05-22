@@ -19,22 +19,47 @@ class TestCreateFigureFromSpec:
         yield
         plt.close("all")
 
-    def test_basic_line_plot(self):
+    def test_basic_line_plot_part_1(self):
         """Test creating a basic line plot from spec."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
-
         spec = {
             "plots": [{"type": "line", "x": [1, 2, 3], "y": [1, 4, 9]}],
         }
-
         result = create_figure_from_spec(spec)
-
         assert result["figure"] is not None
+
+    def test_basic_line_plot_part_2(self):
+        """Test creating a basic line plot from spec."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import create_figure_from_spec
+        spec = {
+            "plots": [{"type": "line", "x": [1, 2, 3], "y": [1, 4, 9]}],
+        }
+        result = create_figure_from_spec(spec)
         assert result["axes"] is not None
+
+    def test_basic_line_plot_part_3(self):
+        """Test creating a basic line plot from spec."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import create_figure_from_spec
+        spec = {
+            "plots": [{"type": "line", "x": [1, 2, 3], "y": [1, 4, 9]}],
+        }
+        result = create_figure_from_spec(spec)
         assert result["image_path"] is None  # No output path specified
 
-    def test_scatter_plot(self):
+    def test_scatter_plot_create_figure_from_spec(self):
         """Test creating a scatter plot from spec."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -46,8 +71,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_bar_plot(self):
+    def test_bar_plot_create_figure_from_spec(self):
         """Test creating a bar plot from spec."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -57,8 +85,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_histogram(self):
+    def test_histogram_create_figure_from_spec(self):
         """Test creating a histogram from spec."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -68,8 +99,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_multiple_plots(self):
+    def test_multiple_plots_create_figure_from_spec(self):
         """Test creating multiple plots on same axes."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -83,8 +117,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_figure_dimensions(self):
+    def test_figure_dimensions_create_from_spec(self):
         """Test specifying figure dimensions in mm."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -95,8 +132,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_decorations(self):
+    def test_decorations_create_figure_from_spec(self):
         """Test applying axis decorations."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -111,8 +151,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_subplots(self):
+    def test_subplots_create_figure_from_spec(self):
         """Test creating multi-axes figure."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -134,8 +177,11 @@ class TestCreateFigureFromSpec:
         result = create_figure_from_spec(spec)
         assert result["figure"] is not None
 
-    def test_facecolor(self):
+    def test_facecolor_create_figure_from_spec(self):
         """Test setting figure facecolor."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -148,6 +194,9 @@ class TestCreateFigureFromSpec:
 
     def test_save_to_file(self):
         """Test saving figure to file."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -166,6 +215,9 @@ class TestCreateFigureFromSpec:
 
     def test_save_with_recipe(self):
         """Test saving figure with recipe."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -201,8 +253,11 @@ class TestPlotTypes:
             ("step", {}),
         ],
     )
-    def test_plot_type(self, plot_type, extra_kwargs):
+    def test_plot_type_types(self, plot_type, extra_kwargs):
         """Test different plot types work."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import create_figure_from_spec
 
         spec = {
@@ -218,18 +273,31 @@ class TestPlotTypes:
 class TestHelperFunctions:
     """Tests for helper functions in _plot module."""
 
-    def test_normalize_axes_single(self):
+    def test_normalize_axes_single_part_1(self):
         """Test normalizing single axes."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import _normalize_axes_array
-
-        # Mock single axes
         mock_ax = object()
         result = _normalize_axes_array(mock_ax, 1, 1)
         assert result.shape == (1, 1)
+
+    def test_normalize_axes_single_part_2(self):
+        """Test normalizing single axes."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import _normalize_axes_array
+        mock_ax = object()
+        result = _normalize_axes_array(mock_ax, 1, 1)
         assert result[0, 0] is mock_ax
 
     def test_normalize_axes_row(self):
         """Test normalizing row of axes."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import _normalize_axes_array
 
         # Mock row of axes
@@ -239,6 +307,9 @@ class TestHelperFunctions:
 
     def test_normalize_axes_column(self):
         """Test normalizing column of axes."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import _normalize_axes_array
 
         # Mock column of axes
@@ -246,52 +317,138 @@ class TestHelperFunctions:
         result = _normalize_axes_array(mock_axes, 2, 1)
         assert result.shape == (2, 1)
 
-    def test_parse_axes_position_row_col(self):
+    def test_parse_axes_position_row_col_part_1(self):
         """Test parsing axes position with row/col."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import _parse_axes_position
-
         ax_spec = {"row": 1, "col": 2}
         row, col = _parse_axes_position(ax_spec)
         assert row == 1
+
+    def test_parse_axes_position_row_col_part_2(self):
+        """Test parsing axes position with row/col."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import _parse_axes_position
+        ax_spec = {"row": 1, "col": 2}
+        row, col = _parse_axes_position(ax_spec)
         assert col == 2
 
-    def test_parse_axes_position_panel(self):
+    def test_parse_axes_position_panel_part_1(self):
         """Test parsing axes position with panel string."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import _parse_axes_position
-
         ax_spec = {"panel": "1, 2"}
         row, col = _parse_axes_position(ax_spec)
         assert row == 1
+
+    def test_parse_axes_position_panel_part_2(self):
+        """Test parsing axes position with panel string."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import _parse_axes_position
+        ax_spec = {"panel": "1, 2"}
+        row, col = _parse_axes_position(ax_spec)
         assert col == 2
 
-    def test_parse_axes_position_default(self):
+    def test_parse_axes_position_default_part_1(self):
         """Test parsing axes position with no position."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import _parse_axes_position
-
         ax_spec = {}
         row, col = _parse_axes_position(ax_spec)
         assert row == 0
+
+    def test_parse_axes_position_default_part_2(self):
+        """Test parsing axes position with no position."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import _parse_axes_position
+        ax_spec = {}
+        row, col = _parse_axes_position(ax_spec)
         assert col == 0
 
 
 class TestPlotConstants:
     """Tests for module constants."""
 
-    def test_plot_types_contains_common_types(self):
+    def test_plot_types_contains_common_types_part_1(self):
         """Test PLOT_TYPES contains common plot types."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import PLOT_TYPES
-
         assert "line" in PLOT_TYPES
+
+    def test_plot_types_contains_common_types_part_2(self):
+        """Test PLOT_TYPES contains common plot types."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import PLOT_TYPES
         assert "scatter" in PLOT_TYPES
+
+    def test_plot_types_contains_common_types_part_3(self):
+        """Test PLOT_TYPES contains common plot types."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import PLOT_TYPES
         assert "bar" in PLOT_TYPES
+
+    def test_plot_types_contains_common_types_part_4(self):
+        """Test PLOT_TYPES contains common plot types."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import PLOT_TYPES
         assert "hist" in PLOT_TYPES
+
+    def test_plot_types_contains_common_types_part_5(self):
+        """Test PLOT_TYPES contains common plot types."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import PLOT_TYPES
         assert "boxplot" in PLOT_TYPES
 
-    def test_reserved_keys(self):
+    def test_reserved_keys_part_1(self):
         """Test RESERVED_KEYS are defined."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._plot import RESERVED_KEYS
-
         assert "type" in RESERVED_KEYS
+
+    def test_reserved_keys_part_2(self):
+        """Test RESERVED_KEYS are defined."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import RESERVED_KEYS
         assert "x" in RESERVED_KEYS
+
+    def test_reserved_keys_part_3(self):
+        """Test RESERVED_KEYS are defined."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import RESERVED_KEYS
         assert "y" in RESERVED_KEYS
+
+    def test_reserved_keys_part_4(self):
+        """Test RESERVED_KEYS are defined."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._api._plot import RESERVED_KEYS
         assert "data_file" in RESERVED_KEYS

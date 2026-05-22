@@ -10,6 +10,9 @@ import pytest
 
 def test_import__composition__import_axes_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._composition._import_axes'
     # Act
     mod = pytest.importorskip(module_path)

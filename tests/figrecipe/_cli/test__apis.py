@@ -42,6 +42,9 @@ class TestValidateRecipe:
 
     def test_validate_valid_recipe(self):
         """Test validating a valid recipe passes."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._validate import validate_recipe
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -57,6 +60,9 @@ class TestValidateRecipe:
 
     def test_validate_with_custom_threshold(self):
         """Test validating with custom MSE threshold."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._validate import validate_recipe
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -71,6 +77,9 @@ class TestValidateRecipe:
 
     def test_validate_returns_validation_result(self):
         """Test that validate_recipe returns ValidationResult with all fields."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._validate import validate_recipe
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -92,6 +101,9 @@ class TestValidateRecipe:
 
     def test_validate_path_as_string(self):
         """Test that validate_recipe accepts string path."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._validate import validate_recipe
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -115,6 +127,9 @@ class TestValidationResultDetails:
 
     def test_mse_is_numeric(self):
         """Test that MSE is a numeric value."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._validate import validate_recipe
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -138,8 +153,11 @@ class TestValidationResultDetails:
 
             assert isinstance(result.mse, (int, float))
 
-    def test_psnr_value(self):
+    def test_psnr_value_validation_result_details(self):
         """Test that PSNR is returned."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._api._validate import validate_recipe
 
         with tempfile.TemporaryDirectory() as tmpdir:

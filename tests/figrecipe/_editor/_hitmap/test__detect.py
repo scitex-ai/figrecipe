@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__hitmap__detect_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._hitmap._detect'
     # Act
     mod = pytest.importorskip(module_path)

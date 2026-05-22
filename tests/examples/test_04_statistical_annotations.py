@@ -11,6 +11,9 @@ EXAMPLE = (
 
 def test_example_file_exists_on_disk():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     target = EXAMPLE
     # Act
     actually_exists = target.exists()
@@ -20,6 +23,9 @@ def test_example_file_exists_on_disk():
 
 def test_example_compiles_under_py_compile():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     target = EXAMPLE
     # Act
     completed = subprocess.run(

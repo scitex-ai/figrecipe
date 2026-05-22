@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_image_matrix_plot_hexbin_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.image_matrix.plot_hexbin'
     # Act
     mod = pytest.importorskip(module_path)

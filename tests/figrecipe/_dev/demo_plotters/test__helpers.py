@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters__helpers_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters._helpers'
     # Act
     mod = pytest.importorskip(module_path)

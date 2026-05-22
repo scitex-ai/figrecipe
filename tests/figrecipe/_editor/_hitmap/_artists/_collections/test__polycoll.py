@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__hitmap__artists__collections__polycoll_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._hitmap._artists._collections._polycoll'
     # Act
     mod = pytest.importorskip(module_path)

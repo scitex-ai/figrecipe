@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles__axis_helpers__rotate_labels_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles._axis_helpers._rotate_labels'
     # Act
     mod = pytest.importorskip(module_path)

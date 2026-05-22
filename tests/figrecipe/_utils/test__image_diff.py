@@ -10,6 +10,9 @@ import pytest
 
 def test_import__utils__image_diff_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._utils._image_diff'
     # Act
     mod = pytest.importorskip(module_path)

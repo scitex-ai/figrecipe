@@ -10,6 +10,9 @@ import pytest
 
 def test_import__reproducer__replay_diagram_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._reproducer._replay_diagram'
     # Act
     mod = pytest.importorskip(module_path)

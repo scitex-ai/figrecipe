@@ -10,6 +10,9 @@ import pytest
 
 def test_import__wrappers__axes_methods_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._wrappers._axes_methods'
     # Act
     mod = pytest.importorskip(module_path)

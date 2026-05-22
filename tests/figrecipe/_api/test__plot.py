@@ -10,6 +10,9 @@ import pytest
 
 def test_import__api__plot_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._api._plot'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_distribution_plot_boxplot_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.distribution.plot_boxplot'
     # Act
     mod = pytest.importorskip(module_path)

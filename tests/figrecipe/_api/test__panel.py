@@ -10,6 +10,9 @@ import pytest
 
 def test_import__api__panel_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._api._panel'
     # Act
     mod = pytest.importorskip(module_path)

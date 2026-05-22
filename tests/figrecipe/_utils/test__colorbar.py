@@ -10,6 +10,9 @@ import pytest
 
 def test_import__utils__colorbar_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._utils._colorbar'
     # Act
     mod = pytest.importorskip(module_path)

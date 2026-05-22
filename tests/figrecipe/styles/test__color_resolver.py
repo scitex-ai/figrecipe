@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles__color_resolver_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles._color_resolver'
     # Act
     mod = pytest.importorskip(module_path)

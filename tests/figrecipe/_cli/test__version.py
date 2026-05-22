@@ -10,6 +10,9 @@ import pytest
 
 def test_import__cli__version_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._cli._version'
     # Act
     mod = pytest.importorskip(module_path)

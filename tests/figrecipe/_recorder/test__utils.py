@@ -10,6 +10,9 @@ import pytest
 
 def test_import__recorder__utils_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._recorder._utils'
     # Act
     mod = pytest.importorskip(module_path)

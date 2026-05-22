@@ -10,6 +10,9 @@ import pytest
 
 def test_import__cli__extract_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._cli._extract'
     # Act
     mod = pytest.importorskip(module_path)

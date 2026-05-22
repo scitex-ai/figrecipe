@@ -10,6 +10,9 @@ import pytest
 
 def test_import__diagram__shared__schema_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._diagram._shared._schema'
     # Act
     mod = pytest.importorskip(module_path)

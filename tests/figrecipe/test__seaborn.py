@@ -23,6 +23,9 @@ class TestSeabornRecording:
 
     def test_scatterplot_record_and_reproduce(self):
         """Test recording and reproducing a scatterplot."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as ps
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -56,6 +59,9 @@ class TestSeabornRecording:
 
     def test_lineplot_record_and_reproduce(self):
         """Test recording and reproducing a lineplot."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as ps
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -86,6 +92,9 @@ class TestSeabornRecording:
 
     def test_seaborn_call_in_recipe_info(self):
         """Test that seaborn calls appear in recipe info."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as ps
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -113,6 +122,9 @@ class TestSeabornRecording:
 
     def test_seaborn_with_hue(self):
         """Test seaborn plots with hue parameter."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as ps
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -143,6 +155,9 @@ class TestSeabornDataSerialization:
 
     def test_csv_data_created(self):
         """Test that CSV files are created for large DataFrame columns."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as ps
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -171,6 +186,9 @@ class TestSeabornDataSerialization:
 
     def test_small_data_creates_csv(self):
         """Test that small data is stored in CSV files (consistent CSV storage)."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as ps
 
         with tempfile.TemporaryDirectory() as tmpdir:

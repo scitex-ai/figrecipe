@@ -10,6 +10,9 @@ import pytest
 
 def test_import__scitex_compat__csv_formatters__format_sns_scatterplot_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._scitex_compat._csv_formatters._format_sns_scatterplot'
     # Act
     mod = pytest.importorskip(module_path)

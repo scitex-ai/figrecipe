@@ -10,6 +10,9 @@ import pytest
 
 def test_import_colors__colormap_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.colors._colormap'
     # Act
     mod = pytest.importorskip(module_path)

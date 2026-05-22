@@ -10,6 +10,9 @@ import pytest
 
 def test_import__diagram__diagram__color_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._diagram._diagram._color'
     # Act
     mod = pytest.importorskip(module_path)

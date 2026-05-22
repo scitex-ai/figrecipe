@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_browser__video_trim__markers_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.browser._video_trim._markers'
     # Act
     mod = pytest.importorskip(module_path)

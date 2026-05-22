@@ -10,6 +10,9 @@ import pytest
 
 def test_import__wrappers__figure_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._wrappers._figure'
     # Act
     mod = pytest.importorskip(module_path)

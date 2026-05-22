@@ -10,6 +10,9 @@ import pytest
 
 def test_import__annotations__stat_bracket_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._annotations._stat_bracket'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__api__seaborn_proxy_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._api._seaborn_proxy'
     # Act
     mod = pytest.importorskip(module_path)

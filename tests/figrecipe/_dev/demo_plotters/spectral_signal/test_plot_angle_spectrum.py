@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_spectral_signal_plot_angle_spectrum_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.spectral_signal.plot_angle_spectrum'
     # Act
     mod = pytest.importorskip(module_path)

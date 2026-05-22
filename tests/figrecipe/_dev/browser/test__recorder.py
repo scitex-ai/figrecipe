@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_browser__recorder_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.browser._recorder'
     # Act
     mod = pytest.importorskip(module_path)

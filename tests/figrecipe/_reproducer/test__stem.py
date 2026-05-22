@@ -10,6 +10,9 @@ import pytest
 
 def test_import__reproducer__stem_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._reproducer._stem'
     # Act
     mod = pytest.importorskip(module_path)

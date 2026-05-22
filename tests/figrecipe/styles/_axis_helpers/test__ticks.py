@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles__axis_helpers__ticks_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles._axis_helpers._ticks'
     # Act
     mod = pytest.importorskip(module_path)

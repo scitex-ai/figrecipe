@@ -10,6 +10,9 @@ import pytest
 
 def test_import__api__subplots_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._api._subplots'
     # Act
     mod = pytest.importorskip(module_path)

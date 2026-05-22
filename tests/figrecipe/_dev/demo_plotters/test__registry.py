@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters__registry_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters._registry'
     # Act
     mod = pytest.importorskip(module_path)

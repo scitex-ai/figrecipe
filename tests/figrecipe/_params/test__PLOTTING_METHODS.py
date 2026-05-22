@@ -10,6 +10,9 @@ import pytest
 
 def test_import__params__PLOTTING_METHODS_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._params._PLOTTING_METHODS'
     # Act
     mod = pytest.importorskip(module_path)

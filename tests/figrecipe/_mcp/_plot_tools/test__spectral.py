@@ -10,6 +10,9 @@ import pytest
 
 def test_import__mcp__plot_tools__spectral_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._mcp._plot_tools._spectral'
     # Act
     mod = pytest.importorskip(module_path)

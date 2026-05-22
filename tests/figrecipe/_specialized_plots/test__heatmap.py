@@ -10,6 +10,9 @@ import pytest
 
 def test_import__specialized_plots__heatmap_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._specialized_plots._heatmap'
     # Act
     mod = pytest.importorskip(module_path)

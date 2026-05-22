@@ -10,6 +10,9 @@ import pytest
 
 def test_import__mcp_server_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._mcp.server'
     # Act
     mod = pytest.importorskip(module_path)

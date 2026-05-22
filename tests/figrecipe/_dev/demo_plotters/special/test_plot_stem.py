@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_special_plot_stem_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.special.plot_stem'
     # Act
     mod = pytest.importorskip(module_path)

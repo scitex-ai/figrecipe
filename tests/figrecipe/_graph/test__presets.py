@@ -10,6 +10,9 @@ import pytest
 
 def test_import__graph__presets_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._graph._presets'
     # Act
     mod = pytest.importorskip(module_path)

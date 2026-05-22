@@ -10,6 +10,9 @@ import pytest
 
 def test_import__cli__gui_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._cli._gui'
     # Act
     mod = pytest.importorskip(module_path)

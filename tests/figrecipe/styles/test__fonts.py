@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles__fonts_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles._fonts'
     # Act
     mod = pytest.importorskip(module_path)

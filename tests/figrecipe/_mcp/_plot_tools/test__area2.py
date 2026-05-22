@@ -10,6 +10,9 @@ import pytest
 
 def test_import__mcp__plot_tools__area2_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._mcp._plot_tools._area2'
     # Act
     mod = pytest.importorskip(module_path)

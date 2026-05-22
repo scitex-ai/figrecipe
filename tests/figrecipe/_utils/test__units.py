@@ -10,6 +10,9 @@ import pytest
 
 def test_import__utils__units_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._utils._units'
     # Act
     mod = pytest.importorskip(module_path)

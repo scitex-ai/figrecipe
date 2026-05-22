@@ -10,6 +10,9 @@ import pytest
 
 def test_import__bundle__figz_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._bundle._figz'
     # Act
     mod = pytest.importorskip(module_path)

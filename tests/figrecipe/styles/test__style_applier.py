@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles__style_applier_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles._style_applier'
     # Act
     mod = pytest.importorskip(module_path)

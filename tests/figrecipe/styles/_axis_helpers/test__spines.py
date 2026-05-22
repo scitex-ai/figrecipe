@@ -10,6 +10,9 @@ import pytest
 
 def test_import_styles__axis_helpers__spines_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.styles._axis_helpers._spines'
     # Act
     mod = pytest.importorskip(module_path)

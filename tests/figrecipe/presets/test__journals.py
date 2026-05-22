@@ -10,6 +10,9 @@ import pytest
 
 def test_import_presets__journals_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.presets._journals'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__reproducer__seaborn_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._reproducer._seaborn'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__api__decorations_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._api._decorations'
     # Act
     mod = pytest.importorskip(module_path)

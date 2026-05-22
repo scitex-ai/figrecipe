@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_bar_categorical_plot_bar_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.bar_categorical.plot_bar'
     # Act
     mod = pytest.importorskip(module_path)

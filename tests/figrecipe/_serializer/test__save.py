@@ -92,30 +92,39 @@ class TestRoundtripAllPlotters:
             yield Path(d)
 
     @pytest.mark.parametrize("plot_type", list_plotters())
-    def test_roundtrip(self, plot_type, rng, tmpdir):
+    def test_roundtrip_part_1(self, plot_type, rng, tmpdir):
         """Test that plot type can be saved and reproduced."""
+        # Arrange
+        # Act
+        # Assert
         plotter = PLOTTERS[plot_type]
-
-        # Create original figure
         fig, ax = plotter(fr, rng)
-
-        # Save
         recipe_path = tmpdir / f"{plot_type}.yaml"
         fr.save(fig, recipe_path, validate=False)
         plt.close(fig.fig)
-
-        # Reproduce
         fig2, ax2 = fr.reproduce(recipe_path)
-
-        # Basic checks
         assert fig2 is not None
-        assert ax2 is not None
 
-        plt.close(fig2.fig)
+    @pytest.mark.parametrize("plot_type", list_plotters())
+    def test_roundtrip_part_2(self, plot_type, rng, tmpdir):
+        """Test that plot type can be saved and reproduced."""
+        # Arrange
+        # Act
+        # Assert
+        plotter = PLOTTERS[plot_type]
+        fig, ax = plotter(fr, rng)
+        recipe_path = tmpdir / f"{plot_type}.yaml"
+        fr.save(fig, recipe_path, validate=False)
+        plt.close(fig.fig)
+        fig2, ax2 = fr.reproduce(recipe_path)
+        assert ax2 is not None
 
     @pytest.mark.parametrize("plot_type", list_plotters())
     def test_roundtrip_pixel_match(self, plot_type, rng, tmpdir):
         """Test that reproduced figure matches original within threshold."""
+        # Arrange
+        # Act
+        # Assert
         plotter = PLOTTERS[plot_type]
 
         # Create original figure
@@ -317,38 +326,121 @@ def fig_ax():
 class TestSavefigConsistency:
     """Tests that savefig() delegates to save_figure()."""
 
-    def test_savefig_creates_yaml(self, fig_ax, tmp_path):
+    def test_savefig_creates_yaml_part_1(self, fig_ax, tmp_path):
         """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax
         output = tmp_path / "test.png"
-
         result = fig.savefig(output, verbose=False)
-
-        # Should return (image_path, yaml_path, validation_result) tuple
         assert isinstance(result, tuple)
+
+    def test_savefig_creates_yaml_part_2(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert len(result) == 3
+
+    def test_savefig_creates_yaml_part_3(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert result[0].exists()
+
+    def test_savefig_creates_yaml_part_4(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert result[1].exists()
+
+    def test_savefig_creates_yaml_part_5(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert result[1].suffix == ".yaml"
 
-    def test_savefig_no_recipe(self, fig_ax, tmp_path):
+    def test_savefig_no_recipe_part_1(self, fig_ax, tmp_path):
         """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax
         output = tmp_path / "test.png"
-
         result = fig.savefig(output, save_recipe=False, verbose=False)
-
-        # Should return (image_path, None, None) tuple
         assert isinstance(result, tuple)
+
+    def test_savefig_no_recipe_part_2(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert len(result) == 3
+
+    def test_savefig_no_recipe_part_3(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert result[0].exists()
+
+    def test_savefig_no_recipe_part_4(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert result[1] is None
+
+    def test_savefig_no_recipe_part_5(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert result[2] is None
-        # YAML should NOT be created
+
+    def test_savefig_no_recipe_part_6(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert not (tmp_path / "test.yaml").exists()
 
     def test_savefig_same_as_fr_save(self, fig_ax, tmp_path):
         """savefig() output should match fr.save() output dimensions."""
+        # Arrange
+        # Act
+        # Assert
         from PIL import Image
 
         import figrecipe as fr
@@ -381,6 +473,9 @@ class TestSavefigConsistency:
 
     def test_savefig_applies_autocrop(self, tmp_path):
         """savefig() should apply auto-crop from mm_layout."""
+        # Arrange
+        # Act
+        # Assert
         from PIL import Image
 
         import figrecipe as fr
@@ -407,6 +502,9 @@ class TestSavefigConsistency:
 
     def test_savefig_respects_dpi_kwarg(self, fig_ax, tmp_path):
         """savefig() should respect the dpi keyword argument."""
+        # Arrange
+        # Act
+        # Assert
         from PIL import Image
 
         fig, ax = fig_ax
@@ -440,28 +538,67 @@ class TestSavefigConsistency:
 class TestSavefigRecording:
     """Tests that savefig() properly records calls for reproduction."""
 
-    def test_savefig_recipe_contains_plot(self, fig_ax, tmp_path):
+    def test_savefig_recipe_contains_plot_part_1(self, fig_ax, tmp_path):
         """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
         from ruamel.yaml import YAML
-
         fig, ax = fig_ax
         output = tmp_path / "test.png"
-
         fig.savefig(output, verbose=False, validate=False)
-
-        # Read the recipe
         yaml_path = tmp_path / "test.yaml"
         yaml_loader = YAML(typ="safe")
         with open(yaml_path) as f:
             recipe = yaml_loader.load(f)
-
-        # Should contain axes with a plot call
         assert "axes" in recipe
+
+    def test_savefig_recipe_contains_plot_part_2(self, fig_ax, tmp_path):
+        """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
+        from ruamel.yaml import YAML
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        fig.savefig(output, verbose=False, validate=False)
+        yaml_path = tmp_path / "test.yaml"
+        yaml_loader = YAML(typ="safe")
+        with open(yaml_path) as f:
+            recipe = yaml_loader.load(f)
         ax_key = list(recipe["axes"].keys())[0]
         assert "calls" in recipe["axes"][ax_key]
+
+    def test_savefig_recipe_contains_plot_part_3(self, fig_ax, tmp_path):
+        """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
+        from ruamel.yaml import YAML
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        fig.savefig(output, verbose=False, validate=False)
+        yaml_path = tmp_path / "test.yaml"
+        yaml_loader = YAML(typ="safe")
+        with open(yaml_path) as f:
+            recipe = yaml_loader.load(f)
+        ax_key = list(recipe["axes"].keys())[0]
         assert len(recipe["axes"][ax_key]["calls"]) > 0
 
-        # Verify the plot call is recorded correctly
+    def test_savefig_recipe_contains_plot_part_4(self, fig_ax, tmp_path):
+        """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
+        from ruamel.yaml import YAML
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        fig.savefig(output, verbose=False, validate=False)
+        yaml_path = tmp_path / "test.yaml"
+        yaml_loader = YAML(typ="safe")
+        with open(yaml_path) as f:
+            recipe = yaml_loader.load(f)
+        ax_key = list(recipe["axes"].keys())[0]
         calls = recipe["axes"][ax_key]["calls"]
         plot_calls = [c for c in calls if c["function"] == "plot"]
         assert len(plot_calls) == 1

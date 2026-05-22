@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_demo_plotters_contour_surface_plot_tricontourf_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.demo_plotters.contour_surface.plot_tricontourf'
     # Act
     mod = pytest.importorskip(module_path)

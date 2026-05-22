@@ -10,6 +10,9 @@ import pytest
 
 def test_import__reproducer__legend_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._reproducer._legend'
     # Act
     mod = pytest.importorskip(module_path)

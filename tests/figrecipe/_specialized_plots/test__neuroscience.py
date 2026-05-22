@@ -10,6 +10,9 @@ import pytest
 
 def test_import__specialized_plots__neuroscience_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._specialized_plots._neuroscience'
     # Act
     mod = pytest.importorskip(module_path)

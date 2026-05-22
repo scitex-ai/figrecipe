@@ -10,6 +10,9 @@ import pytest
 
 def test_import__captions__convenience_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._captions._convenience'
     # Act
     mod = pytest.importorskip(module_path)

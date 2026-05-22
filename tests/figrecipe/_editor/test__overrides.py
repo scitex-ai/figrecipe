@@ -14,6 +14,9 @@ class TestEditorOverrides:
 
     def test_style_api_endpoint(self, editor_server):
         """Verify style API endpoint works (contains overrides)."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
@@ -33,6 +36,9 @@ class TestEditorOverrides:
 
     def test_save_triggers_update(self, editor_server):
         """Test that save action triggers preview update."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -55,6 +61,9 @@ class TestEditorOverrides:
 
     def test_update_api_endpoint(self, editor_server):
         """Test the update API endpoint accepts changes."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
@@ -78,6 +87,9 @@ class TestEditorOverrides:
 
     def test_preview_api_endpoint(self, editor_server):
         """Verify preview endpoint returns JSON with image data."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:

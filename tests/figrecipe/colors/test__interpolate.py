@@ -10,6 +10,9 @@ import pytest
 
 def test_import_colors__interpolate_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe.colors._interpolate'
     # Act
     mod = pytest.importorskip(module_path)

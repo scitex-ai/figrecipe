@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__figure_layout_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._figure_layout'
     # Act
     mod = pytest.importorskip(module_path)

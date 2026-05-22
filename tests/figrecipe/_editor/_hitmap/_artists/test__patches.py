@@ -10,6 +10,9 @@ import pytest
 
 def test_import__editor__hitmap__artists__patches_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._editor._hitmap._artists._patches'
     # Act
     mod = pytest.importorskip(module_path)

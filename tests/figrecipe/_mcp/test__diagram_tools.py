@@ -10,6 +10,9 @@ import pytest
 
 def test_import__mcp__diagram_tools_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._mcp._diagram_tools'
     # Act
     mod = pytest.importorskip(module_path)

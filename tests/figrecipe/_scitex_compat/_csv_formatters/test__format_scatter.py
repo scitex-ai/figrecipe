@@ -10,6 +10,9 @@ import pytest
 
 def test_import__scitex_compat__csv_formatters__format_scatter_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._scitex_compat._csv_formatters._format_scatter'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__diagram__mermaid__render_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._diagram._mermaid._render'
     # Act
     mod = pytest.importorskip(module_path)

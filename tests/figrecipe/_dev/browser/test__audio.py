@@ -10,6 +10,9 @@ import pytest
 
 def test_import__dev_browser__audio_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._dev.browser._audio'
     # Act
     mod = pytest.importorskip(module_path)

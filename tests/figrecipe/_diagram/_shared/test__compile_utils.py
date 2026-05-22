@@ -10,6 +10,9 @@ import pytest
 
 def test_import__diagram__shared__compile_utils_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._diagram._shared._compile_utils'
     # Act
     mod = pytest.importorskip(module_path)

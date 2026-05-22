@@ -10,6 +10,9 @@ import pytest
 
 def test_import__scitex_compat__shaded_lines_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._scitex_compat._shaded_lines'
     # Act
     mod = pytest.importorskip(module_path)

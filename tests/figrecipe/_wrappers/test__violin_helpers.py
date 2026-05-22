@@ -10,6 +10,9 @@ import pytest
 
 def test_import__wrappers__violin_helpers_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._wrappers._violin_helpers'
     # Act
     mod = pytest.importorskip(module_path)

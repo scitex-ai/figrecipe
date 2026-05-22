@@ -10,6 +10,9 @@ import pytest
 
 def test_import__mcp__plot_tools__vector_corr_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._mcp._plot_tools._vector_corr'
     # Act
     mod = pytest.importorskip(module_path)

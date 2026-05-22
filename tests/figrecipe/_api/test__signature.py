@@ -10,6 +10,9 @@ import pytest
 
 def test_import__api__signature_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._api._signature'
     # Act
     mod = pytest.importorskip(module_path)

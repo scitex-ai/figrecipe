@@ -10,6 +10,9 @@ import pytest
 
 def test_import__signatures__loader_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._signatures._loader'
     # Act
     mod = pytest.importorskip(module_path)

@@ -10,6 +10,9 @@ import pytest
 
 def test_import__sphinx_html__static_generate_quickstart_images_module():
     # Arrange
+    # Arrange
+    # Act
+    # Assert
     module_path = 'figrecipe._sphinx_html._static.generate_quickstart_images'
     # Act
     mod = pytest.importorskip(module_path)
