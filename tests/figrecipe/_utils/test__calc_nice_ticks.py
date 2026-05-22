@@ -4,13 +4,14 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-import importlib
+
+import pytest
 
 
 def test_import__utils__calc_nice_ticks_module():
-    """Module imports without raising hard errors."""
-    try:
-        importlib.import_module("figrecipe._utils._calc_nice_ticks")
-    except ImportError:
-        # Optional-dependency module; skip when extras absent.
-        return
+    # Arrange
+    module_path = 'figrecipe._utils._calc_nice_ticks'
+    # Act
+    mod = pytest.importorskip(module_path)
+    # Assert
+    assert mod.__name__ == module_path
