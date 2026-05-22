@@ -7,9 +7,23 @@ from pathlib import Path
 EXAMPLE = Path(__file__).resolve().parents[2] / "examples" / "11_complete_figure.py"
 
 
-def test_exists():
-    assert EXAMPLE.exists(), f"missing example: {EXAMPLE}"
+def test_example_file_exists_on_disk():
+    # Arrange
+    target = EXAMPLE
+    # Act
+    actually_exists = target.exists()
+    # Assert
+    assert actually_exists, f"missing example: {target}"
 
 
-def test_compiles():
-    subprocess.run([sys.executable, "-m", "py_compile", str(EXAMPLE)], check=True)
+def test_example_compiles_under_py_compile():
+    # Arrange
+    target = EXAMPLE
+    # Act
+    completed = subprocess.run(
+        [sys.executable, "-m", "py_compile", str(target)],
+        check=False,
+        capture_output=True,
+    )
+    # Assert
+    assert completed.returncode == 0, completed.stderr.decode(errors="replace")

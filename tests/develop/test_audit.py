@@ -9,7 +9,8 @@ import shutil
 import pytest
 
 
-def test_audit_all_clean():
+def test_audit_all_for_package_reports_clean():
+    # Arrange
     if shutil.which("scitex-dev") is None:
         pytest.skip(
             "scitex-dev not installed — add `scitex-dev[cli-audit]` "
@@ -17,6 +18,9 @@ def test_audit_all_clean():
         )
     from scitex_dev.testing import audit_all_for_package
 
+    # Act
+    # `audit_all_for_package` raises (pytest.fail) on any violation;
+    # a clean return is the assertion proxy.
     audit_all_for_package(
         "figrecipe",
         skip_rules=(
@@ -30,3 +34,5 @@ def test_audit_all_clean():
             "§6",
         ),
     )
+    # Assert
+    assert True  # `audit_all_for_package` raises on failure
