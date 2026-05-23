@@ -1034,30 +1034,32 @@ plots:
 class TestCLIIntegration:
     """Integration tests for CLI."""
 
-    def test_module_invocation_part_1(self):
-        """Test python -m figrecipe works."""
+    def test_module_invocation_returncode_zero(self):
+        """`python -m figrecipe --help` should exit 0."""
         # Arrange
-        # Act
-        # Assert
         import subprocess
+        import sys
+        # Act
         result = subprocess.run(
-            ["python", "-m", "figrecipe", "--help"],
+            [sys.executable, "-m", "figrecipe", "--help"],
             capture_output=True,
             text=True,
         )
-        assert result.returncode == 0
+        # Assert
+        assert result.returncode == 0, result.stderr
 
-    def test_module_invocation_part_2(self):
-        """Test python -m figrecipe works."""
+    def test_module_invocation_stdout_mentions_figrecipe(self):
+        """`python -m figrecipe --help` stdout should mention the package name."""
         # Arrange
-        # Act
-        # Assert
         import subprocess
+        import sys
+        # Act
         result = subprocess.run(
-            ["python", "-m", "figrecipe", "--help"],
+            [sys.executable, "-m", "figrecipe", "--help"],
             capture_output=True,
             text=True,
         )
+        # Assert
         assert "figrecipe" in result.stdout
 
     def test_full_workflow_part_1(self, runner, tmp_path):
