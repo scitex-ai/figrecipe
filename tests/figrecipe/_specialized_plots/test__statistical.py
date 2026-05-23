@@ -513,46 +513,56 @@ class TestECDF:
         ax_out, ecdf_data = ecdf(ax, data)
         assert ecdf_data["n"] == 100
 
-    def test_ecdf_with_nan_part_1(self):
-        """Test ECDF handles NaN values."""
+    def test_ecdf_with_nan_warns_user(self):
+        """ECDF on data containing NaN must emit a UserWarning."""
         # Arrange
-        # Act
-        # Assert
         from figrecipe._specialized_plots import ecdf
         fig, ax = fr.subplots()
         data = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
-        with pytest.warns(UserWarning, match="NaN values"):
-            ax_out, ecdf_data = ecdf(ax, data)
-
-    def test_ecdf_with_nan_part_2(self):
-        """Test ECDF handles NaN values."""
-        # Arrange
         # Act
+        ctx = pytest.warns(UserWarning, match="NaN values")
         # Assert
+        with ctx:
+            ecdf(ax, data)
+
+    def test_ecdf_with_nan_excludes_nan_from_count(self):
+        """ECDF on data containing NaN must drop the NaN from `n`."""
+        # Arrange
+        import warnings
         from figrecipe._specialized_plots import ecdf
         fig, ax = fr.subplots()
         data = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
-        assert ecdf_data["n"] == 4  # NaN excluded
-
-    def test_ecdf_empty_part_1(self):
-        """Test ECDF with empty data after NaN removal."""
-        # Arrange
         # Act
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _ax_out, ecdf_data = ecdf(ax, data)
         # Assert
+        assert ecdf_data["n"] == 4
+
+    def test_ecdf_empty_after_nan_removal_warns_user(self):
+        """ECDF on all-NaN data must emit a UserWarning."""
+        # Arrange
         from figrecipe._specialized_plots import ecdf
         fig, ax = fr.subplots()
         data = np.array([np.nan, np.nan])
-        with pytest.warns(UserWarning):
-            ax_out, ecdf_data = ecdf(ax, data)
-
-    def test_ecdf_empty_part_2(self):
-        """Test ECDF with empty data after NaN removal."""
-        # Arrange
         # Act
+        ctx = pytest.warns(UserWarning)
         # Assert
+        with ctx:
+            ecdf(ax, data)
+
+    def test_ecdf_empty_after_nan_removal_has_zero_count(self):
+        """ECDF on all-NaN data must report `n == 0`."""
+        # Arrange
+        import warnings
         from figrecipe._specialized_plots import ecdf
         fig, ax = fr.subplots()
         data = np.array([np.nan, np.nan])
+        # Act
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _ax_out, ecdf_data = ecdf(ax, data)
+        # Assert
         assert ecdf_data["n"] == 0
 
 
