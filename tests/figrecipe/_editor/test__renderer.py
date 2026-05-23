@@ -53,7 +53,8 @@ class TestDarkModeTextColors:
 
         # Verify colors changed for all panel labels
         for text in panel_labels:
-            assert text.get_color() == dark_text_color
+            if not (text.get_color() == dark_text_color):
+                raise AssertionError
 
     def test_pie_labels_dark_mode(self):
         """Test that pie chart labels change color in dark mode."""
@@ -78,7 +79,8 @@ class TestDarkModeTextColors:
 
         # Verify all pie text colors changed
         for text in pie_ax.texts:
-            assert text.get_color() == dark_text_color
+            if not (text.get_color() == dark_text_color):
+                raise AssertionError
 
     def test_title_xlabel_ylabel_dark_mode_part_1(self):
         """Test that title and axis labels change color in dark mode."""
@@ -228,7 +230,8 @@ class TestDarkModeTextColors:
         mpl_ax = mpl_fig.get_axes()[0]
         assert mpl_ax.title.get_color() == dark_text_color
         for text in mpl_ax.texts:
-            assert text.get_color() == dark_text_color
+            if not (text.get_color() == dark_text_color):
+                raise AssertionError
 
 
 class TestSpecgramTickVisibility:

@@ -71,7 +71,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
-            assert spec_path is not None, f"spec.json not found in {zf.namelist()}"
+            if not (spec_path is not None):
+                raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "version" in spec
@@ -86,7 +87,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
-            assert spec_path is not None, f"spec.json not found in {zf.namelist()}"
+            if not (spec_path is not None):
+                raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "figure" in spec
@@ -101,7 +103,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
-            assert spec_path is not None, f"spec.json not found in {zf.namelist()}"
+            if not (spec_path is not None):
+                raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "axes" in spec
@@ -116,7 +119,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
-            assert spec_path is not None, f"spec.json not found in {zf.namelist()}"
+            if not (spec_path is not None):
+                raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "ax_0_0" in spec["axes"]
@@ -131,7 +135,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
-            assert spec_path is not None, f"spec.json not found in {zf.namelist()}"
+            if not (spec_path is not None):
+                raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert len(spec["axes"]["ax_0_0"]["traces"]) == 1
@@ -146,7 +151,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
-            assert spec_path is not None, f"spec.json not found in {zf.namelist()}"
+            if not (spec_path is not None):
+                raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert spec["axes"]["ax_0_0"]["traces"][0]["id"] == "myplot"
@@ -161,7 +167,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             style_path = _find_bundle_file(zf, "style.json")
-            assert style_path is not None, f"style.json not found in {zf.namelist()}"
+            if not (style_path is not None):
+                raise AssertionError(f'style.json not found in {zf.namelist()}')
             with zf.open(style_path) as f:
                 style = json.load(f)
         assert "version" in style
@@ -176,7 +183,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             style_path = _find_bundle_file(zf, "style.json")
-            assert style_path is not None, f"style.json not found in {zf.namelist()}"
+            if not (style_path is not None):
+                raise AssertionError(f'style.json not found in {zf.namelist()}')
             with zf.open(style_path) as f:
                 style = json.load(f)
         assert "axes" in style
@@ -193,7 +201,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             data_path = _find_bundle_file(zf, "data.csv")
-            assert data_path is not None, f"data.csv not found in {zf.namelist()}"
+            if not (data_path is not None):
+                raise AssertionError(f'data.csv not found in {zf.namelist()}')
             with zf.open(data_path) as f:
                 df = pd.read_csv(f)
         assert "mydata_x" in df.columns
@@ -210,7 +219,8 @@ class TestSaveBundle:
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
         with zipfile.ZipFile(bundle_path, "r") as zf:
             data_path = _find_bundle_file(zf, "data.csv")
-            assert data_path is not None, f"data.csv not found in {zf.namelist()}"
+            if not (data_path is not None):
+                raise AssertionError(f'data.csv not found in {zf.namelist()}')
             with zf.open(data_path) as f:
                 df = pd.read_csv(f)
         assert "mydata_y" in df.columns

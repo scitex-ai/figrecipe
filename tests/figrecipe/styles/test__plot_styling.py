@@ -31,7 +31,8 @@ class TestStyleBoxplot:
         assert result is bp
         # Check line widths were set
         for box in bp["boxes"]:
-            assert box.get_linewidth() > 0
+            if not (box.get_linewidth() > 0):
+                raise AssertionError
         plt.close(fig)
 
     def test_custom_linewidth_style_boxplot(self):

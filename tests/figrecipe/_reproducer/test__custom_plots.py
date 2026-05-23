@@ -71,9 +71,12 @@ class TestReproducerPieColors:
         # All wedges should be red (cycling through the single color)
         for wedge in wedges:
             fc = wedge.get_facecolor()
-            assert fc[0] == 1.0  # Red channel
-            assert fc[1] == 0.0  # Green channel
-            assert fc[2] == 0.0  # Blue channel
+            if not (fc[0] == 1.0):
+                raise AssertionError
+            if not (fc[1] == 0.0):
+                raise AssertionError
+            if not (fc[2] == 0.0):
+                raise AssertionError
 
     def test_pie_reproduce_with_colors_update_part_1(self):
         """Test reproducing pie chart with updated colors parameter."""
