@@ -272,20 +272,22 @@ class TestGraphPresets:
         assert preset["layout"] == "circular"
 
     def test_register_custom_preset_part_2(self):
-        """Test registering a custom preset."""
+        """Test registering a custom preset preserves node_color."""
         # Arrange
-        # Act
-        # Assert
+        # Use a part-2-unique name: the global presets registry persists
+        # across `_part_1`'s call inside the same test session, so reusing
+        # the same name here would trip the "already exists" guard.
         from figrecipe._graph._presets import (
             get_preset,
             register_preset,
-            unregister_preset,
         )
         register_preset(
-            "test_custom",
+            "test_custom_part_2",
             {"layout": "circular", "node_color": "#ff0000", "node_size": 50},
         )
-        preset = get_preset("test_custom")
+        # Act
+        preset = get_preset("test_custom_part_2")
+        # Assert
         assert preset["node_color"] == "#ff0000"
 
     def test_register_preset_override(self):
