@@ -96,44 +96,30 @@ class TestDataSerialization:
         check_inline_data(recipe)
 
         # Plots that may have small inline data (labels, positions, etc.)
-        # are OK, but large arrays should be external
-        if inline_data_found:
-            # Allow certain plot types with known small inline data or structural data
-            allowed_inline = {
-                "graph",  # stores structural data (nodes/edges) - inline is appropriate
-            }
-            if plot_type not in allowed_inline:
-                pytest.fail(
-                    f"{plot_type}: Found inline data at {inline_data_found}. "
-                    f"Data should be externalized to CSV files."
-                )
+        # are OK, but large arrays should be external. `graph` stores
+        # structural data (nodes/edges) — inline is appropriate there.
+        allowed_inline = {"graph"}
+        # Assert
+        assert not inline_data_found or plot_type in allowed_inline, (
+            f"{plot_type}: Found inline data at {inline_data_found}. "
+            f"Data should be externalized to CSV files."
+        )
 
     @pytest.mark.parametrize("plot_type", list_plotters())
     def test_data_dir_exists_for_data_plots(self, plot_type, rng, tmpdir):
         """Test that plots with array data create a _data directory."""
         # Arrange
-        # Act
-        # Assert
         plotter = PLOTTERS[plot_type]
-
-        # Create figure
         fig, ax = plotter(fr, rng)
-
-        # Save
         recipe_path = tmpdir / f"{plot_type}.yaml"
+        # Act
         fr.save(fig, recipe_path, validate=False)
         plt.close(fig.fig)
-
-        # Plots that typically don't need external data
-        no_data_expected = {
-            # These plots may have all their data inline (small arrays)
-        }
-
-        if plot_type not in no_data_expected:
-            # For most plots, we expect a data directory with CSV files
-            # (unless the plot has no data arrays)
-            pass  # Just checking creation, not requiring
-        assert True  # TQ001-placeholder: body exercises code under test
+        # Assert
+        # Successful save is the assertion: every plotter must serialise
+        # without raising. Per-plot-type data-dir expectations live in
+        # the dedicated `TestSpecificPlotDataSerialization` class below.
+        assert recipe_path.exists(), f"{plot_type}: recipe file was not written"
 
 
 class TestSpecificPlotDataSerialization:
@@ -281,10 +267,7 @@ class TestSpecificPlotDataSerialization:
         # Arrange
         # Act
         # Assert
-        try:
-            import networkx as nx
-        except ImportError:
-            pytest.skip("networkx not installed")
+        nx = pytest.importorskip("networkx")
         G = nx.karate_club_graph()
         fig, ax = fr.subplots()
         ax.graph(G, id="graph")
@@ -298,10 +281,7 @@ class TestSpecificPlotDataSerialization:
         # Arrange
         # Act
         # Assert
-        try:
-            import networkx as nx
-        except ImportError:
-            pytest.skip("networkx not installed")
+        nx = pytest.importorskip("networkx")
         G = nx.karate_club_graph()
         fig, ax = fr.subplots()
         ax.graph(G, id="graph")
@@ -324,10 +304,7 @@ class TestSpecificPlotDataSerialization:
         # Arrange
         # Act
         # Assert
-        try:
-            import networkx as nx
-        except ImportError:
-            pytest.skip("networkx not installed")
+        nx = pytest.importorskip("networkx")
         G = nx.karate_club_graph()
         fig, ax = fr.subplots()
         ax.graph(G, id="graph")

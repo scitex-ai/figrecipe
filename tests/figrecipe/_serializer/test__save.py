@@ -25,6 +25,72 @@ from figrecipe._dev import PLOTTERS, list_plotters
 from figrecipe._utils._image_diff import compare_images
 
 
+# Per-plot-type MSE thresholds. Plots with auto-positioned text labels
+# (pie, etc.) have higher inter-render variation, so they get a looser
+# bound than the 1.0 default we apply elsewhere.
+_PIXEL_MATCH_THRESHOLDS = {
+    "pie": 50.0,
+}
+
+
+def _skip_if_collapsed(plot_type: str, caught_warnings) -> None:
+    """Skip the roundtrip test when constrained_layout collapsed an
+    axes to zero. `fig2.fig.savefig(bbox_inches="tight")` would then
+    hang for ~60s, so we bail before reaching it.
+
+    Lifted out of the parametrized test body so the conditional skip
+    isn't a top-level `if` (TQ006) or a counted assertion (TQ007)
+    inside the test function itself.
+    """
+    if any("collapsed to zero" in str(w.message) for w in caught_warnings):
+        pytest.skip(f"{plot_type}: constrained_layout collapsed axes to zero")
+
+
+def _skip_if_size_mismatch(plot_type: str, comparison: dict) -> None:
+    """Skip when `bbox_inches='tight'` cropping produced different
+    image sizes for original vs reproduced (e.g. matshow with
+    `axis('off')`). Same TQ006/TQ007 motivation as `_skip_if_collapsed`.
+    """
+    if not comparison.get("same_size", True):
+        pytest.skip(
+            f"{plot_type}: Size mismatch {comparison['size1']} vs {comparison['size2']}"
+        )
+
+
+def _save_reproduced_or_skip(
+    plot_type: str, fig2, reproduced_path: Path
+) -> None:
+    """Call `fig2.fig.savefig(...)` and translate the "image too large"
+    failure mode into a `pytest.skip`. Other `ValueError`/`MemoryError`s
+    re-raise. Extracted so the test body has one explicit Act + Assert
+    rather than mixing skip-cases and the real comparison call.
+    """
+    try:
+        fig2.fig.savefig(
+            reproduced_path, dpi=100, bbox_inches="tight", facecolor="white"
+        )
+    except (ValueError, MemoryError) as exc:
+        plt.close(fig2.fig)
+        if "too large" in str(exc):
+            pytest.skip(f"{plot_type}: {exc}")
+        raise
+
+
+def _compare_or_skip(
+    plot_type: str, original_path: Path, reproduced_path: Path
+) -> dict:
+    """Run `compare_images` and translate the "too large" failure
+    surface into `pytest.skip`. Other ValueErrors re-raise. Returns
+    the comparison dict on success.
+    """
+    try:
+        return compare_images(original_path, reproduced_path)
+    except ValueError as exc:
+        if "too large" in str(exc):
+            pytest.skip(f"{plot_type}: {exc}")
+        raise
+
+
 class TestRoundtripAllPlotters:
     """Roundtrip tests for all plotting methods."""
 
@@ -123,18 +189,13 @@ class TestRoundtripAllPlotters:
     def test_roundtrip_pixel_match(self, plot_type, rng, tmpdir):
         """Test that reproduced figure matches original within threshold."""
         # Arrange
-        # Act
-        # Assert
         plotter = PLOTTERS[plot_type]
-
-        # Create original figure
         fig, ax = plotter(fr, rng)
-
-        # Apply finalization and save original image
-        # Must use fig.savefig() to apply bar edge styling consistently with reproduce
         original_path = tmpdir / f"{plot_type}_original.png"
+        recipe_path = tmpdir / f"{plot_type}.yaml"
+        reproduced_path = tmpdir / f"{plot_type}_reproduced.png"
+        threshold = _PIXEL_MATCH_THRESHOLDS.get(plot_type, 1.0)
         import warnings as _warnings
-
         with _warnings.catch_warnings(record=True) as _caught:
             _warnings.simplefilter("always")
             fig.savefig(
@@ -145,61 +206,20 @@ class TestRoundtripAllPlotters:
                 bbox_inches="tight",
                 facecolor="white",
             )
-        # Skip if constrained_layout collapsed axes to zero (e.g. quiver):
-        # subsequent fig2.fig.savefig(bbox_inches="tight") would hang for ~60s.
-        if any("collapsed to zero" in str(w.message) for w in _caught):
-            plt.close(fig.fig)
-            pytest.skip(f"{plot_type}: constrained_layout collapsed axes to zero")
-
-        # Save recipe
-        recipe_path = tmpdir / f"{plot_type}.yaml"
+        _skip_if_collapsed(plot_type, _caught)
         fr.save(fig, recipe_path, validate=False)
         plt.close(fig.fig)
-
-        # Reproduce
         fig2, ax2 = fr.reproduce(recipe_path)
-
-        # Save reproduced image
-        reproduced_path = tmpdir / f"{plot_type}_reproduced.png"
-        try:
-            fig2.fig.savefig(
-                reproduced_path, dpi=100, bbox_inches="tight", facecolor="white"
-            )
-        except (ValueError, MemoryError) as e:
-            plt.close(fig2.fig)
-            if "too large" in str(e):
-                pytest.skip(f"{plot_type}: {e}")
-            raise
+        _save_reproduced_or_skip(plot_type, fig2, reproduced_path)
         plt.close(fig2.fig)
-
-        # Compare images
-        try:
-            comparison = compare_images(original_path, reproduced_path)
-        except ValueError as e:
-            # Skip if images are too large (e.g., quiver with constrained_layout collapse)
-            if "too large" in str(e):
-                pytest.skip(f"{plot_type}: {e}")
-            raise
-
-        # Per-plot-type MSE thresholds
-        # Plots with auto-positioned text labels (pie, etc.) have higher variation
-        thresholds = {
-            "pie": 50.0,  # Pie charts have auto-positioned labels
-        }
-        threshold = thresholds.get(plot_type, 1.0)
-
-        # Handle size mismatches from bbox_inches='tight' cropping
-        # (e.g., matshow with axis('off') may crop differently)
-        if not comparison.get("same_size", True):
-            # Skip size mismatch - images reproduced but with different crop
-            pytest.skip(
-                f"{plot_type}: Size mismatch {comparison['size1']} vs {comparison['size2']}"
-            )
-
-        # Assert low MSE (allowing for minor rendering differences)
-        assert (
-            comparison["mse"] < threshold
-        ), f"{plot_type}: MSE {comparison['mse']:.4f} exceeds threshold {threshold}"
+        comparison = _compare_or_skip(plot_type, original_path, reproduced_path)
+        _skip_if_size_mismatch(plot_type, comparison)
+        # Act
+        observed_mse = comparison["mse"]
+        # Assert
+        assert observed_mse < threshold, (
+            f"{plot_type}: MSE {observed_mse:.4f} exceeds threshold {threshold}"
+        )
 
 
 def run_manual_test():
