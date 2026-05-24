@@ -28,7 +28,8 @@ def save_bundle(
 ) -> Path:
     """Save figure as a layered bundle (ZIP format).
 
-    Bundle structure inside ZIP:
+    Bundle structure inside ZIP::
+
         spec.json      # WHAT (semantic specification)
         style.json     # HOW (appearance settings)
         data.csv       # DATA (immutable source data)
