@@ -22,28 +22,9 @@ def test_audit_all_for_package_reports_clean():
 
     # Act
     # `audit_all_for_package` raises (pytest.fail) on any violation;
-    # a clean return is the assertion proxy.
-    audit_all_for_package(
-        "figrecipe",
-        skip_rules=(
-            # MCP <-> Python-API parity gap: 74 MCP tools (mostly
-            # diagram_*, e.g. diagram_compile_graphviz / diagram_create)
-            # are thin wrappers around external CLIs (graphviz / mermaid /
-            # plantuml) with no Python-API counterpart by design. The
-            # auditor's pairing rule (§6) flags every one as architectural
-            # debt.
-            #
-            # The DECLARED exemption now lives in pyproject.toml as
-            # `[tool.scitex_dev] mcp_parity_exempt = true`. This skip_rules
-            # entry is the TRANSITIONAL fallback: CI installs scitex-dev
-            # from PyPI (`scitex-dev>=0.11.7`), and the mcp_parity_exempt
-            # knob only suppresses §6 once a scitex-dev release carrying it
-            # is published and the pin is bumped. Until then, the knob is a
-            # forward-compatible no-op and this entry keeps pytest-matrix
-            # green. Remove this entry (keeping the pyproject declaration)
-            # after bumping scitex-dev to the version with the knob.
-            "§6",
-        ),
-    )
+    # a clean return is the assertion proxy. The §6 MCP<->Python-API
+    # parity rule is exempted via `.scitex/dev/config.yaml`
+    # (audit.mcp-parity-exempt: true), read by scitex-dev >= 0.12.0.
+    audit_all_for_package("figrecipe")
     # Assert
     assert True  # `audit_all_for_package` raises on failure
