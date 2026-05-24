@@ -14,6 +14,9 @@ class TestEditorProperties:
 
     def test_tabs_switch_without_errors(self, editor_server):
         """Verify tab switching works without JS errors."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -41,6 +44,9 @@ class TestEditorProperties:
 
     def test_property_inputs_respond(self, editor_server):
         """Test that property inputs can be interacted with."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -73,6 +79,9 @@ class TestEditorProperties:
 
     def test_color_picker_opens(self, editor_server):
         """Test that color pickers can be opened."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []

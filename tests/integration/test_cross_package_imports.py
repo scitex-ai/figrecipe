@@ -7,11 +7,11 @@ regeneration; add hand-written cases below the second sentinel.
 This test imports every cross-package module that 'figrecipe' references
 in its source tree. Two outcomes:
 
-- Module installed AND import succeeds → test PASSES.
+- Module installed AND import succeeds -> test PASSES.
 - Module installed BUT import fails (e.g. internal rename like
-  `scitex_io._load_cache` → `scitex_io._loading._load_cache`) →
+  `scitex_io._load_cache` -> `scitex_io._loading._load_cache`) ->
   test FAILS loudly.
-- Module NOT installed (peer standalone absent in the CI env) →
+- Module NOT installed (peer standalone absent in the CI env) ->
   test is SKIPPED via `pytest.importorskip`. The umbrella's CI
   (which installs every peer) catches cross-package renames.
 """
@@ -25,7 +25,9 @@ CROSS_PACKAGE_IMPORTS = [
     "scitex_app._django",
     "scitex_app._standalone",
     "scitex_browser.debugging",
+    "scitex_config",
     "scitex_dev",
+    "scitex_dev._branding",
     "scitex_dev._cli._completion",
     "scitex_dev.cli",
     "scitex_dev.linter._fm_checker",
@@ -41,6 +43,11 @@ CROSS_PACKAGE_IMPORTS = [
 
 
 @pytest.mark.parametrize("module_name", CROSS_PACKAGE_IMPORTS)
-def test_cross_package_import(module_name):
+def test_declared_cross_package_dependency_imports(module_name):
     """Importing figrecipe's declared cross-package dependency must succeed."""
-    pytest.importorskip(module_name)
+    # Arrange
+    name = module_name
+    # Act
+    mod = pytest.importorskip(name)
+    # Assert
+    assert mod.__name__ == name

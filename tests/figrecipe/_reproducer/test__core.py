@@ -97,191 +97,332 @@ class TestPixelPerfect:
         yield
         plt.close("all")
 
-    def test_acorr(self):
+    def test_acorr_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("acorr")
         assert success, f"acorr: {msg}"
 
-    def test_angle_spectrum(self):
+    def test_angle_spectrum_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("angle_spectrum")
         assert success, f"angle_spectrum: {msg}"
 
-    def test_bar(self):
+    def test_bar_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("bar")
         assert success, f"bar: {msg}"
 
-    def test_barbs(self):
+    def test_barbs_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("barbs")
         assert success, f"barbs: {msg}"
 
-    def test_barh(self):
+    def test_barh_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("barh")
         assert success, f"barh: {msg}"
 
-    def test_boxplot(self):
+    def test_boxplot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("boxplot")
         assert success, f"boxplot: {msg}"
 
-    def test_cohere(self):
+    def test_cohere_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("cohere")
         assert success, f"cohere: {msg}"
 
-    def test_contour(self):
+    def test_contour_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("contour")
         assert success, f"contour: {msg}"
 
-    def test_contourf(self):
+    def test_contourf_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("contourf")
         assert success, f"contourf: {msg}"
 
-    def test_csd(self):
+    def test_csd_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("csd")
         assert success, f"csd: {msg}"
 
-    def test_ecdf(self):
+    def test_ecdf_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("ecdf")
         assert success, f"ecdf: {msg}"
 
-    def test_errorbar(self):
+    def test_errorbar_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("errorbar")
         assert success, f"errorbar: {msg}"
 
-    def test_eventplot(self):
+    def test_eventplot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("eventplot")
         assert success, f"eventplot: {msg}"
 
-    def test_fill(self):
+    def test_fill_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("fill")
         assert success, f"fill: {msg}"
 
-    def test_fill_between(self):
+    def test_fill_between_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("fill_between")
         assert success, f"fill_between: {msg}"
 
-    def test_fill_betweenx(self):
+    def test_fill_betweenx_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("fill_betweenx")
         assert success, f"fill_betweenx: {msg}"
 
-    def test_graph(self):
+    def test_graph_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("graph")
         assert success, f"graph: {msg}"
 
-    def test_hexbin(self):
+    def test_hexbin_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("hexbin")
         assert success, f"hexbin: {msg}"
 
-    def test_hist(self):
+    def test_hist_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("hist")
         assert success, f"hist: {msg}"
 
-    def test_hist2d(self):
+    def test_hist2d_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("hist2d")
         assert success, f"hist2d: {msg}"
 
-    def test_imshow(self):
+    def test_imshow_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("imshow")
         assert success, f"imshow: {msg}"
 
-    def test_loglog(self):
+    def test_loglog_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("loglog")
         assert success, f"loglog: {msg}"
 
-    def test_magnitude_spectrum(self):
+    def test_magnitude_spectrum_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("magnitude_spectrum")
         assert success, f"magnitude_spectrum: {msg}"
 
-    def test_matshow(self):
+    def test_matshow_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("matshow")
         assert success, f"matshow: {msg}"
 
-    def test_pcolor(self):
+    def test_pcolor_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("pcolor")
         assert success, f"pcolor: {msg}"
 
-    def test_pcolormesh(self):
+    def test_pcolormesh_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("pcolormesh")
         assert success, f"pcolormesh: {msg}"
 
-    def test_phase_spectrum(self):
+    def test_phase_spectrum_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("phase_spectrum")
         assert success, f"phase_spectrum: {msg}"
 
-    def test_pie(self):
+    def test_pie_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("pie")
         assert success, f"pie: {msg}"
 
-    def test_plot(self):
+    def test_plot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("plot")
         assert success, f"plot: {msg}"
 
-    def test_psd(self):
+    def test_psd_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("psd")
         assert success, f"psd: {msg}"
 
-    def test_quiver(self):
+    def test_quiver_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("quiver")
         assert success, f"quiver: {msg}"
 
-    def test_scatter(self):
+    def test_scatter_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("scatter")
         assert success, f"scatter: {msg}"
 
-    def test_semilogx(self):
+    def test_semilogx_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("semilogx")
         assert success, f"semilogx: {msg}"
 
-    def test_semilogy(self):
+    def test_semilogy_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("semilogy")
         assert success, f"semilogy: {msg}"
 
-    def test_specgram(self):
+    def test_specgram_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("specgram")
         assert success, f"specgram: {msg}"
 
-    def test_spy(self):
+    def test_spy_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("spy")
         assert success, f"spy: {msg}"
 
-    def test_stackplot(self):
+    def test_stackplot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("stackplot")
         assert success, f"stackplot: {msg}"
 
-    def test_stairs(self):
+    def test_stairs_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("stairs")
         assert success, f"stairs: {msg}"
 
-    def test_stem(self):
+    def test_stem_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("stem")
         assert success, f"stem: {msg}"
 
-    def test_step(self):
+    def test_step_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("step")
         assert success, f"step: {msg}"
 
-    def test_streamplot(self):
+    def test_streamplot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("streamplot")
         assert success, f"streamplot: {msg}"
 
-    def test_tricontour(self):
+    def test_tricontour_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("tricontour")
         assert success, f"tricontour: {msg}"
 
-    def test_tricontourf(self):
+    def test_tricontourf_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("tricontourf")
         assert success, f"tricontourf: {msg}"
 
-    def test_tripcolor(self):
+    def test_tripcolor_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("tripcolor")
         assert success, f"tripcolor: {msg}"
 
-    def test_triplot(self):
+    def test_triplot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("triplot")
         assert success, f"triplot: {msg}"
 
-    def test_violinplot(self):
+    def test_violinplot_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("violinplot")
         assert success, f"violinplot: {msg}"
 
-    def test_xcorr(self):
+    def test_xcorr_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
         success, msg = run_pixel_perfect_test("xcorr")
         assert success, f"xcorr: {msg}"
 

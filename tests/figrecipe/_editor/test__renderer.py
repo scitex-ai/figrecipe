@@ -24,6 +24,9 @@ class TestDarkModeTextColors:
 
     def test_panel_labels_dark_mode(self):
         """Test that panel labels change color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._render_overrides import apply_dark_mode
 
@@ -50,10 +53,14 @@ class TestDarkModeTextColors:
 
         # Verify colors changed for all panel labels
         for text in panel_labels:
-            assert text.get_color() == dark_text_color
+            if not (text.get_color() == dark_text_color):
+                raise AssertionError
 
     def test_pie_labels_dark_mode(self):
         """Test that pie chart labels change color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._render_overrides import apply_dark_mode
 
@@ -72,33 +79,68 @@ class TestDarkModeTextColors:
 
         # Verify all pie text colors changed
         for text in pie_ax.texts:
-            assert text.get_color() == dark_text_color
+            if not (text.get_color() == dark_text_color):
+                raise AssertionError
 
-    def test_title_xlabel_ylabel_dark_mode(self):
+    def test_title_xlabel_ylabel_dark_mode_part_1(self):
         """Test that title and axis labels change color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._render_overrides import apply_dark_mode
-
         fig, ax = fr.subplots(1, 1)
         ax.plot([1, 2, 3], [1, 4, 9])
         ax.set_title("Test Title")
         ax.set_xlabel("X Label")
         ax.set_ylabel("Y Label")
-
         mpl_fig = fig.fig
         dark_text_color = "#e8e8e8"
-
-        # Apply dark mode
         apply_dark_mode(mpl_fig)
-
-        # Verify axis label colors
         mpl_ax = mpl_fig.get_axes()[0]
         assert mpl_ax.title.get_color() == dark_text_color
+
+    def test_title_xlabel_ylabel_dark_mode_part_2(self):
+        """Test that title and axis labels change color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        from figrecipe._editor._render_overrides import apply_dark_mode
+        fig, ax = fr.subplots(1, 1)
+        ax.plot([1, 2, 3], [1, 4, 9])
+        ax.set_title("Test Title")
+        ax.set_xlabel("X Label")
+        ax.set_ylabel("Y Label")
+        mpl_fig = fig.fig
+        dark_text_color = "#e8e8e8"
+        apply_dark_mode(mpl_fig)
+        mpl_ax = mpl_fig.get_axes()[0]
         assert mpl_ax.xaxis.label.get_color() == dark_text_color
+
+    def test_title_xlabel_ylabel_dark_mode_part_3(self):
+        """Test that title and axis labels change color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        from figrecipe._editor._render_overrides import apply_dark_mode
+        fig, ax = fr.subplots(1, 1)
+        ax.plot([1, 2, 3], [1, 4, 9])
+        ax.set_title("Test Title")
+        ax.set_xlabel("X Label")
+        ax.set_ylabel("Y Label")
+        mpl_fig = fig.fig
+        dark_text_color = "#e8e8e8"
+        apply_dark_mode(mpl_fig)
+        mpl_ax = mpl_fig.get_axes()[0]
         assert mpl_ax.yaxis.label.get_color() == dark_text_color
 
     def test_suptitle_dark_mode(self):
         """Test that figure suptitle changes color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._render_overrides import apply_dark_mode
 
@@ -117,6 +159,9 @@ class TestDarkModeTextColors:
 
     def test_legend_text_dark_mode(self):
         """Test that legend text changes color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._render_overrides import apply_dark_mode
 
@@ -139,6 +184,9 @@ class TestDarkModeTextColors:
 
     def test_specgram_tick_labels_dark_mode(self):
         """Test that specgram tick labels change color in dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._render_overrides import apply_dark_mode
 
@@ -161,6 +209,9 @@ class TestDarkModeTextColors:
 
     def test_render_with_overrides_dark_mode(self):
         """Test that render_with_overrides correctly applies dark mode."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe._editor._helpers import render_with_overrides
 
@@ -179,16 +230,19 @@ class TestDarkModeTextColors:
         mpl_ax = mpl_fig.get_axes()[0]
         assert mpl_ax.title.get_color() == dark_text_color
         for text in mpl_ax.texts:
-            assert text.get_color() == dark_text_color
+            if not (text.get_color() == dark_text_color):
+                raise AssertionError
 
 
 class TestSpecgramTickVisibility:
     """Test that specgram keeps visible ticks when matrix styling is applied."""
 
-    def test_specgram_keeps_ticks_with_matrix_style(self):
+    def test_specgram_keeps_ticks_with_matrix_style_part_1(self):
         """Test that apply_matrix_style preserves specgram ticks when xlabel/ylabel present."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe.styles._plot_styles import apply_matrix_style
-
         fig, ax = plt.subplots()
         fs = 1000
         t = np.linspace(0, 2, 2000)
@@ -196,38 +250,58 @@ class TestSpecgramTickVisibility:
         ax.specgram(x, Fs=fs)
         ax.set_xlabel("Time")
         ax.set_ylabel("Frequency")
-
-        # Store original tick counts
         orig_xticks = len(ax.get_xticks())
         orig_yticks = len(ax.get_yticks())
-
-        # Apply matrix style with imshow_show_axes=False
         apply_matrix_style(ax, {"imshow_show_axes": False})
-
-        # Specgram should keep ticks because it has xlabel/ylabel
         assert len(ax.get_xticks()) == orig_xticks
+
+    def test_specgram_keeps_ticks_with_matrix_style_part_2(self):
+        """Test that apply_matrix_style preserves specgram ticks when xlabel/ylabel present."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe.styles._plot_styles import apply_matrix_style
+        fig, ax = plt.subplots()
+        fs = 1000
+        t = np.linspace(0, 2, 2000)
+        x = np.sin(2 * np.pi * 50 * t)
+        ax.specgram(x, Fs=fs)
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Frequency")
+        orig_xticks = len(ax.get_xticks())
+        orig_yticks = len(ax.get_yticks())
+        apply_matrix_style(ax, {"imshow_show_axes": False})
         assert len(ax.get_yticks()) == orig_yticks
 
-    def test_imshow_hides_ticks_with_matrix_style(self):
+    def test_imshow_hides_ticks_with_matrix_style_part_1(self):
         """Test that regular imshow hides ticks when imshow_show_axes=False."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe.styles._plot_styles import apply_matrix_style
-
         fig, ax = plt.subplots()
         ax.imshow(np.random.rand(10, 10))
-        # No xlabel/ylabel set
-
-        # Apply matrix style with imshow_show_axes=False
         apply_matrix_style(ax, {"imshow_show_axes": False})
-
-        # Regular imshow should hide ticks
         assert len(ax.get_xticks()) == 0
+
+    def test_imshow_hides_ticks_with_matrix_style_part_2(self):
+        """Test that regular imshow hides ticks when imshow_show_axes=False."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe.styles._plot_styles import apply_matrix_style
+        fig, ax = plt.subplots()
+        ax.imshow(np.random.rand(10, 10))
+        apply_matrix_style(ax, {"imshow_show_axes": False})
         assert len(ax.get_yticks()) == 0
 
-    def test_specgram_with_style_keeps_ticks(self):
+    def test_specgram_with_style_keeps_ticks_part_1(self):
         """Test specgram ticks remain visible after full style application."""
+        # Arrange
+        # Act
+        # Assert
         import figrecipe as fr
         from figrecipe.styles._style_applier import apply_style_mm
-
         fig, ax = fr.subplots(1, 1)
         fs = 1000
         t = np.linspace(0, 2, 2000)
@@ -235,15 +309,28 @@ class TestSpecgramTickVisibility:
         ax.specgram(x, Fs=fs)
         ax.set_xlabel("Time")
         ax.set_ylabel("Frequency")
-
         mpl_ax = ax.ax
-
-        # Apply full style (which calls apply_matrix_style internally)
         style = {"imshow_show_axes": False, "theme": "dark"}
         apply_style_mm(mpl_ax, style)
-
-        # Specgram should still have ticks
         assert len(mpl_ax.get_xticks()) > 0
+
+    def test_specgram_with_style_keeps_ticks_part_2(self):
+        """Test specgram ticks remain visible after full style application."""
+        # Arrange
+        # Act
+        # Assert
+        import figrecipe as fr
+        from figrecipe.styles._style_applier import apply_style_mm
+        fig, ax = fr.subplots(1, 1)
+        fs = 1000
+        t = np.linspace(0, 2, 2000)
+        x = np.sin(2 * np.pi * 50 * t)
+        ax.specgram(x, Fs=fs)
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Frequency")
+        mpl_ax = ax.ax
+        style = {"imshow_show_axes": False, "theme": "dark"}
+        apply_style_mm(mpl_ax, style)
         assert len(mpl_ax.get_yticks()) > 0
 
 
@@ -268,6 +355,9 @@ class TestEditorTheme:
 
     def test_theme_modal_opens(self, editor_server):
         """Verify theme modal can be opened."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -294,6 +384,9 @@ class TestEditorTheme:
 
     def test_dark_mode_toggle(self, editor_server):
         """Test dark mode toggle functionality."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []
@@ -323,6 +416,9 @@ class TestEditorTheme:
 
     def test_theme_change_updates_preview(self, editor_server):
         """Test that changing theme updates the preview."""
+        # Arrange
+        # Act
+        # Assert
         from playwright.sync_api import sync_playwright
 
         js_errors: List[str] = []

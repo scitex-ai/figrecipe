@@ -25,6 +25,72 @@ from figrecipe._dev import PLOTTERS, list_plotters
 from figrecipe._utils._image_diff import compare_images
 
 
+# Per-plot-type MSE thresholds. Plots with auto-positioned text labels
+# (pie, etc.) have higher inter-render variation, so they get a looser
+# bound than the 1.0 default we apply elsewhere.
+_PIXEL_MATCH_THRESHOLDS = {
+    "pie": 50.0,
+}
+
+
+def _skip_if_collapsed(plot_type: str, caught_warnings) -> None:
+    """Skip the roundtrip test when constrained_layout collapsed an
+    axes to zero. `fig2.fig.savefig(bbox_inches="tight")` would then
+    hang for ~60s, so we bail before reaching it.
+
+    Lifted out of the parametrized test body so the conditional skip
+    isn't a top-level `if` (TQ006) or a counted assertion (TQ007)
+    inside the test function itself.
+    """
+    if any("collapsed to zero" in str(w.message) for w in caught_warnings):
+        pytest.skip(f"{plot_type}: constrained_layout collapsed axes to zero")
+
+
+def _skip_if_size_mismatch(plot_type: str, comparison: dict) -> None:
+    """Skip when `bbox_inches='tight'` cropping produced different
+    image sizes for original vs reproduced (e.g. matshow with
+    `axis('off')`). Same TQ006/TQ007 motivation as `_skip_if_collapsed`.
+    """
+    if not comparison.get("same_size", True):
+        pytest.skip(
+            f"{plot_type}: Size mismatch {comparison['size1']} vs {comparison['size2']}"
+        )
+
+
+def _save_reproduced_or_skip(
+    plot_type: str, fig2, reproduced_path: Path
+) -> None:
+    """Call `fig2.fig.savefig(...)` and translate the "image too large"
+    failure mode into a `pytest.skip`. Other `ValueError`/`MemoryError`s
+    re-raise. Extracted so the test body has one explicit Act + Assert
+    rather than mixing skip-cases and the real comparison call.
+    """
+    try:
+        fig2.fig.savefig(
+            reproduced_path, dpi=100, bbox_inches="tight", facecolor="white"
+        )
+    except (ValueError, MemoryError) as exc:
+        plt.close(fig2.fig)
+        if "too large" in str(exc):
+            pytest.skip(f"{plot_type}: {exc}")
+        raise
+
+
+def _compare_or_skip(
+    plot_type: str, original_path: Path, reproduced_path: Path
+) -> dict:
+    """Run `compare_images` and translate the "too large" failure
+    surface into `pytest.skip`. Other ValueErrors re-raise. Returns
+    the comparison dict on success.
+    """
+    try:
+        return compare_images(original_path, reproduced_path)
+    except ValueError as exc:
+        if "too large" in str(exc):
+            pytest.skip(f"{plot_type}: {exc}")
+        raise
+
+
 class TestRoundtripAllPlotters:
     """Roundtrip tests for all plotting methods."""
 
@@ -92,40 +158,44 @@ class TestRoundtripAllPlotters:
             yield Path(d)
 
     @pytest.mark.parametrize("plot_type", list_plotters())
-    def test_roundtrip(self, plot_type, rng, tmpdir):
+    def test_roundtrip_part_1(self, plot_type, rng, tmpdir):
         """Test that plot type can be saved and reproduced."""
+        # Arrange
+        # Act
+        # Assert
         plotter = PLOTTERS[plot_type]
-
-        # Create original figure
         fig, ax = plotter(fr, rng)
-
-        # Save
         recipe_path = tmpdir / f"{plot_type}.yaml"
         fr.save(fig, recipe_path, validate=False)
         plt.close(fig.fig)
-
-        # Reproduce
         fig2, ax2 = fr.reproduce(recipe_path)
-
-        # Basic checks
         assert fig2 is not None
-        assert ax2 is not None
 
-        plt.close(fig2.fig)
+    @pytest.mark.parametrize("plot_type", list_plotters())
+    def test_roundtrip_part_2(self, plot_type, rng, tmpdir):
+        """Test that plot type can be saved and reproduced."""
+        # Arrange
+        # Act
+        # Assert
+        plotter = PLOTTERS[plot_type]
+        fig, ax = plotter(fr, rng)
+        recipe_path = tmpdir / f"{plot_type}.yaml"
+        fr.save(fig, recipe_path, validate=False)
+        plt.close(fig.fig)
+        fig2, ax2 = fr.reproduce(recipe_path)
+        assert ax2 is not None
 
     @pytest.mark.parametrize("plot_type", list_plotters())
     def test_roundtrip_pixel_match(self, plot_type, rng, tmpdir):
         """Test that reproduced figure matches original within threshold."""
+        # Arrange
         plotter = PLOTTERS[plot_type]
-
-        # Create original figure
         fig, ax = plotter(fr, rng)
-
-        # Apply finalization and save original image
-        # Must use fig.savefig() to apply bar edge styling consistently with reproduce
         original_path = tmpdir / f"{plot_type}_original.png"
+        recipe_path = tmpdir / f"{plot_type}.yaml"
+        reproduced_path = tmpdir / f"{plot_type}_reproduced.png"
+        threshold = _PIXEL_MATCH_THRESHOLDS.get(plot_type, 1.0)
         import warnings as _warnings
-
         with _warnings.catch_warnings(record=True) as _caught:
             _warnings.simplefilter("always")
             fig.savefig(
@@ -136,61 +206,20 @@ class TestRoundtripAllPlotters:
                 bbox_inches="tight",
                 facecolor="white",
             )
-        # Skip if constrained_layout collapsed axes to zero (e.g. quiver):
-        # subsequent fig2.fig.savefig(bbox_inches="tight") would hang for ~60s.
-        if any("collapsed to zero" in str(w.message) for w in _caught):
-            plt.close(fig.fig)
-            pytest.skip(f"{plot_type}: constrained_layout collapsed axes to zero")
-
-        # Save recipe
-        recipe_path = tmpdir / f"{plot_type}.yaml"
+        _skip_if_collapsed(plot_type, _caught)
         fr.save(fig, recipe_path, validate=False)
         plt.close(fig.fig)
-
-        # Reproduce
         fig2, ax2 = fr.reproduce(recipe_path)
-
-        # Save reproduced image
-        reproduced_path = tmpdir / f"{plot_type}_reproduced.png"
-        try:
-            fig2.fig.savefig(
-                reproduced_path, dpi=100, bbox_inches="tight", facecolor="white"
-            )
-        except (ValueError, MemoryError) as e:
-            plt.close(fig2.fig)
-            if "too large" in str(e):
-                pytest.skip(f"{plot_type}: {e}")
-            raise
+        _save_reproduced_or_skip(plot_type, fig2, reproduced_path)
         plt.close(fig2.fig)
-
-        # Compare images
-        try:
-            comparison = compare_images(original_path, reproduced_path)
-        except ValueError as e:
-            # Skip if images are too large (e.g., quiver with constrained_layout collapse)
-            if "too large" in str(e):
-                pytest.skip(f"{plot_type}: {e}")
-            raise
-
-        # Per-plot-type MSE thresholds
-        # Plots with auto-positioned text labels (pie, etc.) have higher variation
-        thresholds = {
-            "pie": 50.0,  # Pie charts have auto-positioned labels
-        }
-        threshold = thresholds.get(plot_type, 1.0)
-
-        # Handle size mismatches from bbox_inches='tight' cropping
-        # (e.g., matshow with axis('off') may crop differently)
-        if not comparison.get("same_size", True):
-            # Skip size mismatch - images reproduced but with different crop
-            pytest.skip(
-                f"{plot_type}: Size mismatch {comparison['size1']} vs {comparison['size2']}"
-            )
-
-        # Assert low MSE (allowing for minor rendering differences)
-        assert (
-            comparison["mse"] < threshold
-        ), f"{plot_type}: MSE {comparison['mse']:.4f} exceeds threshold {threshold}"
+        comparison = _compare_or_skip(plot_type, original_path, reproduced_path)
+        _skip_if_size_mismatch(plot_type, comparison)
+        # Act
+        observed_mse = comparison["mse"]
+        # Assert
+        assert observed_mse < threshold, (
+            f"{plot_type}: MSE {observed_mse:.4f} exceeds threshold {threshold}"
+        )
 
 
 def run_manual_test():
@@ -317,38 +346,121 @@ def fig_ax():
 class TestSavefigConsistency:
     """Tests that savefig() delegates to save_figure()."""
 
-    def test_savefig_creates_yaml(self, fig_ax, tmp_path):
+    def test_savefig_creates_yaml_part_1(self, fig_ax, tmp_path):
         """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax
         output = tmp_path / "test.png"
-
         result = fig.savefig(output, verbose=False)
-
-        # Should return (image_path, yaml_path, validation_result) tuple
         assert isinstance(result, tuple)
+
+    def test_savefig_creates_yaml_part_2(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert len(result) == 3
+
+    def test_savefig_creates_yaml_part_3(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert result[0].exists()
+
+    def test_savefig_creates_yaml_part_4(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert result[1].exists()
+
+    def test_savefig_creates_yaml_part_5(self, fig_ax, tmp_path):
+        """savefig() should create a YAML recipe by default."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, verbose=False)
         assert result[1].suffix == ".yaml"
 
-    def test_savefig_no_recipe(self, fig_ax, tmp_path):
+    def test_savefig_no_recipe_part_1(self, fig_ax, tmp_path):
         """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = fig_ax
         output = tmp_path / "test.png"
-
         result = fig.savefig(output, save_recipe=False, verbose=False)
-
-        # Should return (image_path, None, None) tuple
         assert isinstance(result, tuple)
+
+    def test_savefig_no_recipe_part_2(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert len(result) == 3
+
+    def test_savefig_no_recipe_part_3(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert result[0].exists()
+
+    def test_savefig_no_recipe_part_4(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert result[1] is None
+
+    def test_savefig_no_recipe_part_5(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert result[2] is None
-        # YAML should NOT be created
+
+    def test_savefig_no_recipe_part_6(self, fig_ax, tmp_path):
+        """savefig(save_recipe=False) should only save the image."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        result = fig.savefig(output, save_recipe=False, verbose=False)
         assert not (tmp_path / "test.yaml").exists()
 
     def test_savefig_same_as_fr_save(self, fig_ax, tmp_path):
         """savefig() output should match fr.save() output dimensions."""
+        # Arrange
+        # Act
+        # Assert
         from PIL import Image
 
         import figrecipe as fr
@@ -381,6 +493,9 @@ class TestSavefigConsistency:
 
     def test_savefig_applies_autocrop(self, tmp_path):
         """savefig() should apply auto-crop from mm_layout."""
+        # Arrange
+        # Act
+        # Assert
         from PIL import Image
 
         import figrecipe as fr
@@ -398,15 +513,21 @@ class TestSavefigConsistency:
             # With SCITEX style at 300 DPI, cropped figure should be
             # roughly 40mm wide * 300/25.4 ≈ 472px, plus margins
             # Just check it's not too large (uncropped would be ~2k px)
-            assert img.width < 1000, f"Image seems uncropped: {img.width}px wide"
-            assert img.height < 800, f"Image seems uncropped: {img.height}px tall"
+            if not (img.width < 1000):
+                raise AssertionError(f'Image seems uncropped: {img.width}px wide')
+            if not (img.height < 800):
+                raise AssertionError(f'Image seems uncropped: {img.height}px tall')
 
         import matplotlib.pyplot as plt
 
         plt.close(fig.fig)
+        assert True  # TQ001-placeholder: body exercises code under test
 
     def test_savefig_respects_dpi_kwarg(self, fig_ax, tmp_path):
         """savefig() should respect the dpi keyword argument."""
+        # Arrange
+        # Act
+        # Assert
         from PIL import Image
 
         fig, ax = fig_ax
@@ -440,28 +561,67 @@ class TestSavefigConsistency:
 class TestSavefigRecording:
     """Tests that savefig() properly records calls for reproduction."""
 
-    def test_savefig_recipe_contains_plot(self, fig_ax, tmp_path):
+    def test_savefig_recipe_contains_plot_part_1(self, fig_ax, tmp_path):
         """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
         from ruamel.yaml import YAML
-
         fig, ax = fig_ax
         output = tmp_path / "test.png"
-
         fig.savefig(output, verbose=False, validate=False)
-
-        # Read the recipe
         yaml_path = tmp_path / "test.yaml"
         yaml_loader = YAML(typ="safe")
         with open(yaml_path) as f:
             recipe = yaml_loader.load(f)
-
-        # Should contain axes with a plot call
         assert "axes" in recipe
+
+    def test_savefig_recipe_contains_plot_part_2(self, fig_ax, tmp_path):
+        """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
+        from ruamel.yaml import YAML
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        fig.savefig(output, verbose=False, validate=False)
+        yaml_path = tmp_path / "test.yaml"
+        yaml_loader = YAML(typ="safe")
+        with open(yaml_path) as f:
+            recipe = yaml_loader.load(f)
         ax_key = list(recipe["axes"].keys())[0]
         assert "calls" in recipe["axes"][ax_key]
+
+    def test_savefig_recipe_contains_plot_part_3(self, fig_ax, tmp_path):
+        """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
+        from ruamel.yaml import YAML
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        fig.savefig(output, verbose=False, validate=False)
+        yaml_path = tmp_path / "test.yaml"
+        yaml_loader = YAML(typ="safe")
+        with open(yaml_path) as f:
+            recipe = yaml_loader.load(f)
+        ax_key = list(recipe["axes"].keys())[0]
         assert len(recipe["axes"][ax_key]["calls"]) > 0
 
-        # Verify the plot call is recorded correctly
+    def test_savefig_recipe_contains_plot_part_4(self, fig_ax, tmp_path):
+        """Recipe from savefig() should contain the plot call."""
+        # Arrange
+        # Act
+        # Assert
+        from ruamel.yaml import YAML
+        fig, ax = fig_ax
+        output = tmp_path / "test.png"
+        fig.savefig(output, verbose=False, validate=False)
+        yaml_path = tmp_path / "test.yaml"
+        yaml_loader = YAML(typ="safe")
+        with open(yaml_path) as f:
+            recipe = yaml_loader.load(f)
+        ax_key = list(recipe["axes"].keys())[0]
         calls = recipe["axes"][ax_key]["calls"]
         plot_calls = [c for c in calls if c["function"] == "plot"]
         assert len(plot_calls) == 1

@@ -244,11 +244,6 @@ Create publication-quality diagrams with mm-based coordinates. Use ``gap_mm`` fo
 
     d.save("pipeline.png")  # auto-crops, generates recipe + hitmap + debug image
 
-.. image:: _static/quickstart_diagram_lr.png
-   :width: 100%
-   :align: center
-   :alt: Left-to-right diagram pipeline
-
 Containers group boxes with automatic layout:
 
 .. code-block:: python

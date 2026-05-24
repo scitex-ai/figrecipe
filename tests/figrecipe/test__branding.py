@@ -1,220 +1,208 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests for branding module."""
+"""Tests for branding module.
 
+Real-collaborator tests: each test mutates ``os.environ`` directly and
+restores it via a ``yield``-based fixture (no ``unittest.mock.patch``).
+The branding module reads ``FIGRECIPE_BRAND`` / ``FIGRECIPE_ALIAS`` at
+import time, so the fixture also ``importlib.reload``s it under the
+chosen env, then reloads it again under defaults on teardown.
+"""
+
+import importlib
 import os
-from unittest.mock import patch
 
 import pytest
 
+import figrecipe._branding as branding
+
+
+def _apply_brand(brand: str, alias: str) -> None:
+    os.environ["FIGRECIPE_BRAND"] = brand
+    os.environ["FIGRECIPE_ALIAS"] = alias
+    importlib.reload(branding)
+
+
+@pytest.fixture
+def _branding_env():
+    """Snapshot + restore FIGRECIPE_BRAND/ALIAS and reload module."""
+    saved_brand = os.environ.get("FIGRECIPE_BRAND")
+    saved_alias = os.environ.get("FIGRECIPE_ALIAS")
+    try:
+        yield _apply_brand
+    finally:
+        if saved_brand is None:
+            os.environ.pop("FIGRECIPE_BRAND", None)
+        else:
+            os.environ["FIGRECIPE_BRAND"] = saved_brand
+        if saved_alias is None:
+            os.environ.pop("FIGRECIPE_ALIAS", None)
+        else:
+            os.environ["FIGRECIPE_ALIAS"] = saved_alias
+        importlib.reload(branding)
+
 
 class TestRebrandText:
-    """Tests for rebrand_text function."""
+    """Tests for ``figrecipe._branding.rebrand_text``."""
 
-    def test_no_branding_returns_unchanged(self):
-        """When env vars are default, text is unchanged."""
-
+    def test_default_brand_returns_text_unchanged(self, _branding_env):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("figrecipe", "fr")
         text = "import figrecipe as fr"
-        # With default branding, should return unchanged
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "figrecipe", "FIGRECIPE_ALIAS": "fr"},
-            clear=False,
-        ):
-            # Need to reimport to pick up env vars
-            import importlib
+        # Act
+        result = branding.rebrand_text(text)
+        # Assert
+        assert result == text
 
-            import figrecipe._branding as branding
+    def test_scitex_plt_rebrands_import_statement(self, _branding_env):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        text = "import figrecipe as fr"
+        # Act
+        result = branding.rebrand_text(text)
+        # Assert
+        assert result == "import scitex.plt as plt"
 
-            importlib.reload(branding)
-            result = branding.rebrand_text(text)
-            assert result == text
+    def test_scitex_plt_rebrands_variable_usage_in_examples(
+        self, _branding_env
+    ):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        text = ">>> fr.subplots()"
+        # Act
+        result = branding.rebrand_text(text)
+        # Assert
+        assert result == ">>> plt.subplots()"
 
-    def test_rebrand_import_statement(self):
-        """Test rebranding of import statement."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            text = "import figrecipe as fr"
-            result = branding.rebrand_text(text)
-            assert result == "import scitex.plt as plt"
-
-    def test_rebrand_variable_usage(self):
-        """Test rebranding of variable usage in examples."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            text = ">>> fr.subplots()"
-            result = branding.rebrand_text(text)
-            assert result == ">>> plt.subplots()"
-
-    def test_rebrand_from_import(self):
-        """Test rebranding of from...import statement."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            text = "from figrecipe import utils"
-            result = branding.rebrand_text(text)
-            assert result == "from scitex.plt import utils"
+    def test_scitex_plt_rebrands_from_import_statement(self, _branding_env):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        text = "from figrecipe import utils"
+        # Act
+        result = branding.rebrand_text(text)
+        # Assert
+        assert result == "from scitex.plt import utils"
 
     def test_none_input_returns_none(self):
-        """Test that None input returns None."""
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._branding import rebrand_text
+        # Act
+        result = rebrand_text(None)
+        # Assert
+        assert result is None
 
-        assert rebrand_text(None) is None
-
-    def test_preserves_urls(self):
-        """Test that URLs containing figrecipe are not mangled."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            text = "https://github.com/user/figrecipe"
-            result = branding.rebrand_text(text)
-            # URL should be preserved
-            assert "github.com" in result
+    def test_preserves_url_domain_when_rebranding(self, _branding_env):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        text = "https://github.com/user/figrecipe"
+        # Act
+        result = branding.rebrand_text(text)
+        # Assert
+        assert "github.com" in result
 
 
 class TestGetBrandedImportExample:
-    """Tests for get_branded_import_example function."""
+    """Tests for ``figrecipe._branding.get_branded_import_example``."""
 
-    def test_default_import(self):
-        """Test default import example."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "figrecipe", "FIGRECIPE_ALIAS": "fr"},
-            clear=False,
-        ):
-            import importlib
+    def test_default_brand_returns_import_figrecipe_as_fr(
+        self, _branding_env
+    ):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("figrecipe", "fr")
+        # Act
+        result = branding.get_branded_import_example()
+        # Assert
+        assert result == "import figrecipe as fr"
 
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            result = branding.get_branded_import_example()
-            assert result == "import figrecipe as fr"
-
-    def test_submodule_import(self):
-        """Test submodule import example."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            result = branding.get_branded_import_example()
-            assert result == "from scitex import plt as plt"
+    def test_submodule_brand_returns_from_scitex_import_plt(
+        self, _branding_env
+    ):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        # Act
+        result = branding.get_branded_import_example()
+        # Assert
+        assert result == "from scitex import plt as plt"
 
 
 class TestGetMcpServerName:
-    """Tests for get_mcp_server_name function."""
+    """Tests for ``figrecipe._branding.get_mcp_server_name``."""
 
-    def test_default_name(self):
-        """Test default MCP server name."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "figrecipe", "FIGRECIPE_ALIAS": "fr"},
-            clear=False,
-        ):
-            import importlib
+    def test_default_brand_returns_figrecipe_server_name(
+        self, _branding_env
+    ):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("figrecipe", "fr")
+        # Act
+        result = branding.get_mcp_server_name()
+        # Assert
+        assert result == "figrecipe"
 
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            result = branding.get_mcp_server_name()
-            assert result == "figrecipe"
-
-    def test_submodule_name_converts_dots(self):
-        """Test that dots are converted to dashes in MCP name."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            result = branding.get_mcp_server_name()
-            assert result == "scitex-plt"
+    def test_dotted_brand_converts_dots_to_dashes(self, _branding_env):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        # Act
+        result = branding.get_mcp_server_name()
+        # Assert
+        assert result == "scitex-plt"
 
 
 class TestGetMcpInstructions:
-    """Tests for get_mcp_instructions function."""
+    """Tests for ``figrecipe._branding.get_mcp_instructions``."""
 
-    def test_instructions_contain_brand_name(self):
-        """Test that instructions contain the brand name."""
-        with patch.dict(
-            os.environ,
-            {"FIGRECIPE_BRAND": "scitex.plt", "FIGRECIPE_ALIAS": "plt"},
-            clear=False,
-        ):
-            import importlib
-
-            import figrecipe._branding as branding
-
-            importlib.reload(branding)
-
-            result = branding.get_mcp_instructions()
-            assert "scitex.plt" in result
-            assert "MCP server" in result
-
-
-# Cleanup: restore default branding after tests
-@pytest.fixture(autouse=True)
-def restore_default_branding():
-    """Restore default branding after each test."""
-    yield
-    # Restore defaults
-    with patch.dict(
-        os.environ,
-        {"FIGRECIPE_BRAND": "figrecipe", "FIGRECIPE_ALIAS": "fr"},
-        clear=False,
+    def test_instructions_contain_configured_brand_name(
+        self, _branding_env
     ):
-        import importlib
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        # Act
+        result = branding.get_mcp_instructions()
+        # Assert
+        assert "scitex.plt" in result
 
-        import figrecipe._branding as branding
-
-        importlib.reload(branding)
+    def test_instructions_mention_mcp_server(self, _branding_env):
+        # Arrange
+        # Arrange
+        # Act
+        # Assert
+        _branding_env("scitex.plt", "plt")
+        # Act
+        result = branding.get_mcp_instructions()
+        # Assert
+        assert "MCP server" in result
 
 
 # EOF
