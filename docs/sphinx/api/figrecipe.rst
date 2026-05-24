@@ -1,27 +1,26 @@
 FigRecipe API Reference
 =======================
 
+The full public surface of ``figrecipe`` is documented inline below
+via ``automodule``. The ``__all__`` declaration in
+``figrecipe/__init__.py`` is the single source of truth for what
+appears here; do NOT add explicit ``autofunction`` / ``autoclass``
+directives below — Sphinx already discovers them through
+``automodule :members:`` and a second declaration triggers
+``duplicate object description`` warnings (treated as errors on PR
+builds).
+
 .. automodule:: figrecipe
    :members:
    :undoc-members:
    :show-inheritance:
 
-Core Functions
---------------
+Recording Wrappers (internal)
+-----------------------------
 
-.. autofunction:: figrecipe.subplots
-.. autofunction:: figrecipe.save
-.. autofunction:: figrecipe.reproduce
-.. autofunction:: figrecipe.compose
-.. autofunction:: figrecipe.validate
-.. autofunction:: figrecipe.crop
-.. autofunction:: figrecipe.info
-.. autofunction:: figrecipe.extract_data
-
-Recording Classes
------------------
-
-These classes are available via ``from figrecipe import utils`` or ``from figrecipe._wrappers import RecordingFigure, RecordingAxes``.
+These classes back the public ``subplots()`` return value. They live
+under ``figrecipe._wrappers`` rather than the top-level namespace, so
+they're documented here separately.
 
 .. autoclass:: figrecipe._wrappers.RecordingFigure
    :members:
@@ -32,29 +31,3 @@ These classes are available via ``from figrecipe import utils`` or ``from figrec
    :members:
    :undoc-members:
    :show-inheritance:
-
-Style Management
-----------------
-
-.. autofunction:: figrecipe.load_style
-.. autofunction:: figrecipe.unload_style
-.. autofunction:: figrecipe.list_presets
-
-Alignment Functions
--------------------
-
-.. autofunction:: figrecipe.align_panels
-.. autofunction:: figrecipe.align_smart
-.. autofunction:: figrecipe.distribute_panels
-
-GUI Editor
-----------
-
-.. autofunction:: figrecipe.gui
-
-Diagram Class
--------------
-
-.. autoclass:: figrecipe.Diagram
-   :members:
-   :undoc-members:
