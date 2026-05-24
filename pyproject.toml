@@ -46,7 +46,7 @@ dependencies = [
     "rich>=13.0.0",
     "scitex-app>=0.2.0",
     "scitex-config>=0.3.0",
-    "scitex-dev>=0.11.7",
+    "scitex-dev>=0.12.0",
 ]
 
 [project.optional-dependencies]
@@ -56,7 +56,7 @@ dev = [
     "pytest-xdist>=3.0.0",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    "scitex-dev>=0.11.7",
+    "scitex-dev>=0.12.0",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.1.0",
@@ -158,16 +158,6 @@ Homepage = "https://github.com/ywatanabe1989/figrecipe"
 Documentation = "https://figrecipe.readthedocs.io"
 Repository = "https://github.com/ywatanabe1989/figrecipe.git"
 Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
-
-[tool.scitex_dev]
-# figrecipe's MCP surface mirrors matplotlib Axes methods (plot / scatter /
-# bar / hist / …); those ~74 tools have no standalone Python-function
-# counterpart by design, so the §6 MCP↔Python-API parity rule is a false
-# positive for this package. Declare the exemption here (read by
-# scitex-dev's audit-mcp-tools / audit-all). Requires scitex-dev with the
-# mcp_parity_exempt knob; until that release lands, tests/develop/test_audit.py
-# keeps skip_rules=("§6",) as the active mechanism.
-mcp_parity_exempt = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/figrecipe"]

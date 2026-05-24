@@ -5,6 +5,14 @@
 project-type:
   - pip
 
+# figrecipe's MCP surface mirrors matplotlib Axes methods (plot / scatter /
+# bar / hist / …); those ~74 tools have no standalone Python-function
+# counterpart by design, so the §6 MCP<->Python-API parity rule is a false
+# positive for this package. Opt out of the §6 parity/orphan-tool check.
+# Read by scitex-dev >= 0.12.0's audit-mcp-tools / audit-all.
+audit:
+  mcp-parity-exempt: true
+
 # audit:
 #   skip:
 #     - PS-108
