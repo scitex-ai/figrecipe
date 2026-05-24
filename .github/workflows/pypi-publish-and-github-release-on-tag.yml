@@ -57,6 +57,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[all,dev]" || pip install -e ".[dev]" || pip install -e .
+      - name: Install fd (Rust file finder; preferred fast path for audit discovery)
+        run: |
+          # tests/develop/test_audit.py runs scitex-dev's audit-project, whose
+          # orphan-hinter prefers fd/fdfind for file discovery. This repo sets
+          # audit.require-fd: true (.scitex/dev/config.yaml), so fd-absence
+          # ERRORS rather than falling back — install it here. Debian/Ubuntu
+          # ships the binary as `fdfind`; symlink to `fd` so the `fd` lookup
+          # resolves too. Mirrors the pytest-matrix workflow (#123).
+          sudo apt-get update && sudo apt-get install -y fd-find
+          sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
+          fd --version
       - name: Run pytest
         run: |
           if [ -d tests ]; then
