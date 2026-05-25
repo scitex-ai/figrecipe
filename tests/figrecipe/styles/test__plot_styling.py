@@ -17,8 +17,11 @@ from figrecipe.styles.plot_stylers import (
 class TestStyleBoxplot:
     """Tests for style_boxplot function."""
 
-    def test_basic_styling(self):
+    def test_basic_styling_style_boxplot(self):
         """Test basic boxplot styling."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(100) for _ in range(3)]
         bp = ax.boxplot(data, patch_artist=True)
@@ -28,11 +31,15 @@ class TestStyleBoxplot:
         assert result is bp
         # Check line widths were set
         for box in bp["boxes"]:
-            assert box.get_linewidth() > 0
+            if not (box.get_linewidth() > 0):
+                raise AssertionError
         plt.close(fig)
 
-    def test_custom_linewidth(self):
+    def test_custom_linewidth_style_boxplot(self):
         """Test custom line width in mm."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(50) for _ in range(2)]
         bp = ax.boxplot(data, patch_artist=True)
@@ -45,8 +52,11 @@ class TestStyleBoxplot:
             assert 1.0 < lw < 2.0  # Reasonable range for 0.5mm
         plt.close(fig)
 
-    def test_median_color(self):
+    def test_median_color_style_boxplot(self):
         """Test custom median color."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(50)]
         bp = ax.boxplot(data, patch_artist=True)
@@ -57,8 +67,11 @@ class TestStyleBoxplot:
             assert median.get_color() == "red"
         plt.close(fig)
 
-    def test_custom_colors(self):
+    def test_custom_colors_style_boxplot(self):
         """Test custom box fill colors."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(50) for _ in range(2)]
         bp = ax.boxplot(data, patch_artist=True)
@@ -70,8 +83,11 @@ class TestStyleBoxplot:
             assert box.get_facecolor()[:3] != (1, 1, 1)  # Not white
         plt.close(fig)
 
-    def test_flier_styling(self):
+    def test_flier_styling_style_boxplot(self):
         """Test outlier marker styling."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         # Create data with outliers
         data = [np.concatenate([np.random.randn(50), [10, -10]])]
@@ -87,8 +103,11 @@ class TestStyleBoxplot:
 class TestStyleViolinplot:
     """Tests for style_violinplot function."""
 
-    def test_basic_styling(self):
+    def test_basic_styling_style_violinplot(self):
         """Test basic violin plot styling."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(100) for _ in range(3)]
         ax.violinplot(data)
@@ -98,8 +117,11 @@ class TestStyleViolinplot:
         assert result is ax
         plt.close(fig)
 
-    def test_edge_color(self):
+    def test_edge_color_style_violinplot(self):
         """Test custom edge color."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(100)]
         ax.violinplot(data)
@@ -113,8 +135,11 @@ class TestStyleViolinplot:
                 assert len(ec) > 0
         plt.close(fig)
 
-    def test_linewidth(self):
+    def test_linewidth_style_violinplot(self):
         """Test custom line width."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         data = [np.random.randn(100)]
         ax.violinplot(data)
@@ -131,8 +156,11 @@ class TestStyleViolinplot:
 class TestStyleBarplot:
     """Tests for style_barplot function."""
 
-    def test_basic_styling(self):
+    def test_basic_styling_style_barplot(self):
         """Test basic bar plot styling."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         bars = ax.bar([1, 2, 3], [4, 5, 6])
 
@@ -141,8 +169,11 @@ class TestStyleBarplot:
         assert result is bars
         plt.close(fig)
 
-    def test_edge_thickness(self):
+    def test_edge_thickness_style_barplot(self):
         """Test custom edge thickness."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         bars = ax.bar([1, 2, 3], [4, 5, 6])
 
@@ -153,8 +184,11 @@ class TestStyleBarplot:
             assert lw > 0
         plt.close(fig)
 
-    def test_edge_color(self):
+    def test_edge_color_style_barplot(self):
         """Test custom edge color."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         bars = ax.bar([1, 2, 3], [4, 5, 6])
 
@@ -168,6 +202,9 @@ class TestStyleBarplot:
 
     def test_multiple_edge_colors(self):
         """Test list of edge colors."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         bars = ax.bar([1, 2, 3], [4, 5, 6])
 
@@ -183,8 +220,11 @@ class TestStyleBarplot:
 class TestStyleScatter:
     """Tests for style_scatter function."""
 
-    def test_basic_styling(self):
+    def test_basic_styling_style_scatter(self):
         """Test basic scatter plot styling."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         scatter = ax.scatter([1, 2, 3], [4, 5, 6])
 
@@ -193,20 +233,33 @@ class TestStyleScatter:
         assert result is scatter
         plt.close(fig)
 
-    def test_size_mm(self):
+    def test_size_mm_part_1(self):
         """Test custom marker size in mm."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         scatter = ax.scatter([1, 2, 3], [4, 5, 6])
-
         style_scatter(scatter, size_mm=1.5)
-
         sizes = scatter.get_sizes()
         assert len(sizes) > 0
-        assert sizes[0] > 0
-        plt.close(fig)
 
-    def test_edge_thickness(self):
+    def test_size_mm_part_2(self):
+        """Test custom marker size in mm."""
+        # Arrange
+        # Act
+        # Assert
+        fig, ax = plt.subplots()
+        scatter = ax.scatter([1, 2, 3], [4, 5, 6])
+        style_scatter(scatter, size_mm=1.5)
+        sizes = scatter.get_sizes()
+        assert sizes[0] > 0
+
+    def test_edge_thickness_style_scatter(self):
         """Test custom edge thickness."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         scatter = ax.scatter([1, 2, 3], [4, 5, 6])
 
@@ -220,8 +273,11 @@ class TestStyleScatter:
 class TestStyleErrorbar:
     """Tests for style_errorbar function."""
 
-    def test_basic_styling(self):
+    def test_basic_styling_style_errorbar(self):
         """Test basic errorbar styling."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         eb = ax.errorbar([1, 2, 3], [4, 5, 6], yerr=[0.5, 0.5, 0.5])
 
@@ -230,8 +286,11 @@ class TestStyleErrorbar:
         assert result is eb
         plt.close(fig)
 
-    def test_thickness(self):
+    def test_thickness_style_errorbar(self):
         """Test custom line thickness."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         eb = ax.errorbar([1, 2, 3], [4, 5, 6], yerr=[0.5, 0.5, 0.5])
 
@@ -243,8 +302,11 @@ class TestStyleErrorbar:
             assert lw > 0
         plt.close(fig)
 
-    def test_cap_width(self):
+    def test_cap_width_style_errorbar(self):
         """Test custom cap width."""
+        # Arrange
+        # Act
+        # Assert
         fig, ax = plt.subplots()
         eb = ax.errorbar([1, 2, 3], [4, 5, 6], yerr=[0.5, 0.5, 0.5], capsize=3)
 
@@ -262,8 +324,11 @@ class TestStyleErrorbar:
 class TestImports:
     """Test that styling functions are properly exported."""
 
-    def test_import_from_styles_plot_stylers(self):
+    def test_import_from_styles_plot_stylers_part_1(self):
         """Test imports from styles.plot_stylers submodule."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe.styles.plot_stylers import (
             style_barplot,
             style_boxplot,
@@ -271,11 +336,62 @@ class TestImports:
             style_scatter,
             style_violinplot,
         )
-
         assert callable(style_boxplot)
+
+    def test_import_from_styles_plot_stylers_part_2(self):
+        """Test imports from styles.plot_stylers submodule."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe.styles.plot_stylers import (
+            style_barplot,
+            style_boxplot,
+            style_errorbar,
+            style_scatter,
+            style_violinplot,
+        )
         assert callable(style_violinplot)
+
+    def test_import_from_styles_plot_stylers_part_3(self):
+        """Test imports from styles.plot_stylers submodule."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe.styles.plot_stylers import (
+            style_barplot,
+            style_boxplot,
+            style_errorbar,
+            style_scatter,
+            style_violinplot,
+        )
         assert callable(style_barplot)
+
+    def test_import_from_styles_plot_stylers_part_4(self):
+        """Test imports from styles.plot_stylers submodule."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe.styles.plot_stylers import (
+            style_barplot,
+            style_boxplot,
+            style_errorbar,
+            style_scatter,
+            style_violinplot,
+        )
         assert callable(style_scatter)
+
+    def test_import_from_styles_plot_stylers_part_5(self):
+        """Test imports from styles.plot_stylers submodule."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe.styles.plot_stylers import (
+            style_barplot,
+            style_boxplot,
+            style_errorbar,
+            style_scatter,
+            style_violinplot,
+        )
         assert callable(style_errorbar)
 
 

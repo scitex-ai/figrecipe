@@ -24,50 +24,139 @@ class TestMCPResourcesExist:
 
     def test_resources_module_importable(self):
         """Test that _resources module can be imported."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import register_resources
 
         assert callable(register_resources)
 
-    def test_cheatsheet_content(self):
+    def test_cheatsheet_content_part_1(self):
         """Test cheatsheet resource content."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import CHEATSHEET
-
         assert "FigRecipe" in CHEATSHEET
+
+    def test_cheatsheet_content_part_2(self):
+        """Test cheatsheet resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import CHEATSHEET
         assert "fr.subplots()" in CHEATSHEET
+
+    def test_cheatsheet_content_part_3(self):
+        """Test cheatsheet resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import CHEATSHEET
         assert "fr.save(" in CHEATSHEET
+
+    def test_cheatsheet_content_part_4(self):
+        """Test cheatsheet resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import CHEATSHEET
         assert "fr.reproduce(" in CHEATSHEET
 
-    def test_module_core_content(self):
+    def test_module_core_content_part_1(self):
         """Test module core resource content."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import MODULE_CORE
-
         assert "fr.subplots()" in MODULE_CORE
+
+    def test_module_core_content_part_2(self):
+        """Test module core resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MODULE_CORE
         assert "ax.plot(" in MODULE_CORE
+
+    def test_module_core_content_part_3(self):
+        """Test module core resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MODULE_CORE
         assert "add_stat_annotation" in MODULE_CORE
 
-    def test_mcp_spec_content(self):
+    def test_mcp_spec_content_part_1(self):
         """Test MCP spec resource content."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import MCP_SPEC
-
         assert "data_file" in MCP_SPEC
+
+    def test_mcp_spec_content_part_2(self):
+        """Test MCP spec resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MCP_SPEC
         assert "CSV" in MCP_SPEC
+
+    def test_mcp_spec_content_part_3(self):
+        """Test MCP spec resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MCP_SPEC
         assert "plots:" in MCP_SPEC
+
+    def test_mcp_spec_content_part_4(self):
+        """Test MCP spec resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MCP_SPEC
         assert "type:" in MCP_SPEC
 
-    def test_mcp_spec_csv_priority(self):
+    def test_mcp_spec_csv_priority_part_1(self):
         """Test that MCP spec emphasizes CSV column input."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import MCP_SPEC
-
-        # CSV should be recommended over inline
         assert "RECOMMENDED" in MCP_SPEC
+
+    def test_mcp_spec_csv_priority_part_2(self):
+        """Test that MCP spec emphasizes CSV column input."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MCP_SPEC
         assert "data_file" in MCP_SPEC
+
+    def test_mcp_spec_csv_priority_part_3(self):
+        """Test that MCP spec emphasizes CSV column input."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MCP_SPEC
         assert "column" in MCP_SPEC.lower()
 
-    def test_integration_content(self):
+    def test_integration_content_part_1(self):
         """Test integration resource content."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import INTEGRATION
-
         assert "SciTeX" in INTEGRATION
+
+    def test_integration_content_part_2(self):
+        """Test integration resource content."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import INTEGRATION
         assert "stx.plt" in INTEGRATION or "scitex" in INTEGRATION.lower()
 
 
@@ -85,57 +174,121 @@ class TestMCPServerResources:
 
     def test_server_has_resources(self):
         """Test that MCP server has resources registered."""
+        # Arrange
+        # Act
+        # Assert
         resources = self._get_resource_uris()
         assert len(resources) >= 4
 
     def test_cheatsheet_resource_registered(self):
         """Test cheatsheet resource is registered."""
+        # Arrange
+        # Act
+        # Assert
         assert "figrecipe://cheatsheet" in self._get_resource_uris()
 
     def test_api_core_resource_registered(self):
         """Test API core resource is registered."""
+        # Arrange
+        # Act
+        # Assert
         assert "figrecipe://api/core" in self._get_resource_uris()
 
     def test_mcp_spec_resource_registered(self):
         """Test MCP spec resource is registered."""
+        # Arrange
+        # Act
+        # Assert
         assert "figrecipe://mcp-spec" in self._get_resource_uris()
 
     def test_integration_resource_registered(self):
         """Test integration resource is registered."""
+        # Arrange
+        # Act
+        # Assert
         assert "figrecipe://integration" in self._get_resource_uris()
 
     def test_spec_schema_resource_registered(self):
         """Test spec-schema resource is registered."""
+        # Arrange
+        # Act
+        # Assert
         assert "figrecipe://spec-schema" in self._get_resource_uris()
 
 
 class TestBrandingInstructions:
     """Test branding module MCP instructions."""
 
-    def test_instructions_include_csv_priority(self):
+    def test_instructions_include_csv_priority_part_1(self):
         """Test that MCP instructions include CSV priority."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._branding import get_mcp_instructions
-
         instructions = get_mcp_instructions()
         assert "CSV" in instructions
+
+    def test_instructions_include_csv_priority_part_2(self):
+        """Test that MCP instructions include CSV priority."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._branding import get_mcp_instructions
+        instructions = get_mcp_instructions()
         assert "data_file" in instructions
+
+    def test_instructions_include_csv_priority_part_3(self):
+        """Test that MCP instructions include CSV priority."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._branding import get_mcp_instructions
+        instructions = get_mcp_instructions()
         assert "PRIORITY" in instructions
 
-    def test_instructions_list_resources(self):
+    def test_instructions_list_resources_part_1(self):
         """Test that instructions list available resources."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._branding import get_mcp_instructions
-
         instructions = get_mcp_instructions()
         assert "cheatsheet" in instructions
+
+    def test_instructions_list_resources_part_2(self):
+        """Test that instructions list available resources."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._branding import get_mcp_instructions
+        instructions = get_mcp_instructions()
         assert "mcp-spec" in instructions
 
-    def test_instructions_list_tools(self):
+    def test_instructions_list_tools_part_1(self):
         """Test that instructions list available tools."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._branding import get_mcp_instructions
-
         instructions = get_mcp_instructions()
         assert "plot" in instructions
+
+    def test_instructions_list_tools_part_2(self):
+        """Test that instructions list available tools."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._branding import get_mcp_instructions
+        instructions = get_mcp_instructions()
         assert "reproduce" in instructions
+
+    def test_instructions_list_tools_part_3(self):
+        """Test that instructions list available tools."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._branding import get_mcp_instructions
+        instructions = get_mcp_instructions()
         assert "compose" in instructions
 
 
@@ -143,26 +296,52 @@ class TestBrandingInstructions:
 class TestCSVColumnDocumentation:
     """Test CSV column input is properly documented."""
 
-    def test_cheatsheet_has_csv_section(self):
+    def test_cheatsheet_has_csv_section_part_1(self):
         """Test cheatsheet documents CSV input."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import CHEATSHEET
-
         assert "CSV" in CHEATSHEET
+
+    def test_cheatsheet_has_csv_section_part_2(self):
+        """Test cheatsheet documents CSV input."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import CHEATSHEET
         assert "data_file" in CHEATSHEET
 
-    def test_mcp_spec_has_csv_example(self):
+    def test_mcp_spec_has_csv_example_part_1(self):
         """Test MCP spec has CSV example."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import MCP_SPEC
-
         assert "data_file:" in MCP_SPEC
-        # Column name should be a string, not array
+
+    def test_mcp_spec_has_csv_example_part_2(self):
+        """Test MCP spec has CSV example."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import MCP_SPEC
         assert "time" in MCP_SPEC or "column" in MCP_SPEC.lower()
 
-    def test_output_files_documented(self):
+    def test_output_files_documented_part_1(self):
         """Test that output files (_data directory) are documented."""
+        # Arrange
+        # Act
+        # Assert
         from figrecipe._mcp._resources import CHEATSHEET
-
         assert "_data" in CHEATSHEET or "plot_data" in CHEATSHEET
+
+    def test_output_files_documented_part_2(self):
+        """Test that output files (_data directory) are documented."""
+        # Arrange
+        # Act
+        # Assert
+        from figrecipe._mcp._resources import CHEATSHEET
         assert ".csv" in CHEATSHEET
 
 

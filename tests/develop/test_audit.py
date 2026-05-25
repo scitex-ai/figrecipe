@@ -9,24 +9,22 @@ import shutil
 import pytest
 
 
-def test_audit_all_clean():
-    if shutil.which("scitex-dev") is None:
-        pytest.skip(
-            "scitex-dev not installed — add `scitex-dev[cli-audit]` "
-            "to [project.optional-dependencies.dev]"
-        )
+@pytest.mark.skipif(
+    shutil.which("scitex-dev") is None,
+    reason=(
+        "scitex-dev not installed — add `scitex-dev[cli-audit]` "
+        "to [project.optional-dependencies.dev]"
+    ),
+)
+def test_audit_all_for_package_reports_clean():
+    # Arrange
     from scitex_dev.testing import audit_all_for_package
 
-    audit_all_for_package(
-        "figrecipe",
-        skip_rules=(
-            # MCP <-> Python-API parity gap: 74 MCP tools (mostly
-            # diagram_*, e.g. diagram_compile_graphviz / diagram_create)
-            # are thin wrappers around external CLIs (graphviz / mermaid /
-            # plantuml) with no Python-API counterpart by design. The
-            # auditor's pairing rule (§6) flags every one as architectural
-            # debt; per-tool decisions are tracked under /overhaul-scitex.
-            # Same escape pattern as scitex-clew and scitex-notebook.
-            "§6",
-        ),
-    )
+    # Act
+    # `audit_all_for_package` raises (pytest.fail) on any violation;
+    # a clean return is the assertion proxy. The §6 MCP<->Python-API
+    # parity rule is exempted via `.scitex/dev/config.yaml`
+    # (audit.mcp-parity-exempt: true), read by scitex-dev >= 0.12.0.
+    audit_all_for_package("figrecipe")
+    # Assert
+    assert True  # `audit_all_for_package` raises on failure

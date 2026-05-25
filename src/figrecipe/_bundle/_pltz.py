@@ -20,7 +20,8 @@ class Pltz:
     - save_bundle()
     - reproduce_bundle()
 
-    Bundle structure (inside ZIP):
+    Bundle structure (inside ZIP)::
+
         {stem}/
             spec.json    # WHAT to plot (semantic specification)
             style.json   # HOW it looks (appearance settings)

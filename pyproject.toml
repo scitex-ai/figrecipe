@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.28.10"
+version = "0.28.11"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -46,7 +46,7 @@ dependencies = [
     "rich>=13.0.0",
     "scitex-app>=0.2.0",
     "scitex-config>=0.3.0",
-    "scitex-dev>=0.11.7",
+    "scitex-dev>=0.12.2",
 ]
 
 [project.optional-dependencies]
@@ -56,7 +56,7 @@ dev = [
     "pytest-xdist>=3.0.0",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    "scitex-dev>=0.11.7",
+    "scitex-dev>=0.12.2",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.1.0",

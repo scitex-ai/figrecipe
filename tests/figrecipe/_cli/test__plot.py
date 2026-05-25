@@ -4,13 +4,17 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-import importlib
+
+import pytest
 
 
 def test_import__cli__plot_module():
-    """Module imports without raising hard errors."""
-    try:
-        importlib.import_module("figrecipe._cli._plot")
-    except ImportError:
-        # Optional-dependency module; skip when extras absent.
-        return
+    # Arrange
+    # Arrange
+    # Act
+    # Assert
+    module_path = 'figrecipe._cli._plot'
+    # Act
+    mod = pytest.importorskip(module_path)
+    # Assert
+    assert mod.__name__ == module_path

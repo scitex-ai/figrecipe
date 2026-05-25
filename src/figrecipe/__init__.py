@@ -54,11 +54,13 @@ Reproducing a figure:
 >>> fig, ax = fr.reproduce('my_figure.yaml')
 >>> plt.show()
 
-Submodules
-----------
-- fr.utils: Unit conversions, font checks, low-level recipe access
-- fr.styles: Axis helpers, spine management, plot styling functions
-- fr.viz: Diagram and graph visualization utilities
+Notes
+-----
+Submodules:
+
+- ``fr.utils``: Unit conversions, font checks, low-level recipe access
+- ``fr.styles``: Axis helpers, spine management, plot styling functions
+- ``fr.viz``: Diagram and graph visualization utilities
 
 >>> from figrecipe import utils
 >>> utils.mm_to_inch(25.4)  # Unit conversions

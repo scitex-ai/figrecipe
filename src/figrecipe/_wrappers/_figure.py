@@ -466,7 +466,7 @@ class RecordingFigure:
         """Save figure — equivalent to fr.save(). Same DPI, crop, recipe.
 
         Returns (image_path, yaml_path, result).
-        **kwargs passed to matplotlib savefig for file-like objects.
+        ``**kwargs`` passed to matplotlib savefig for file-like objects.
         """
         # Handle file-like objects (BytesIO, etc.) - direct matplotlib save
         if hasattr(fname, "write"):

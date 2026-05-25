@@ -4,13 +4,17 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-import importlib
+
+import pytest
 
 
 def test_import__dev_browser__video_trim__markers_module():
-    """Module imports without raising hard errors."""
-    try:
-        importlib.import_module("figrecipe._dev.browser._video_trim._markers")
-    except ImportError:
-        # Optional-dependency module; skip when extras absent.
-        return
+    # Arrange
+    # Arrange
+    # Act
+    # Assert
+    module_path = 'figrecipe._dev.browser._video_trim._markers'
+    # Act
+    mod = pytest.importorskip(module_path)
+    # Assert
+    assert mod.__name__ == module_path

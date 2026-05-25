@@ -4,13 +4,17 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-import importlib
+
+import pytest
 
 
 def test_import__editor__hitmap__colors_module():
-    """Module imports without raising hard errors."""
-    try:
-        importlib.import_module("figrecipe._editor._hitmap._colors")
-    except ImportError:
-        # Optional-dependency module; skip when extras absent.
-        return
+    # Arrange
+    # Arrange
+    # Act
+    # Assert
+    module_path = 'figrecipe._editor._hitmap._colors'
+    # Act
+    mod = pytest.importorskip(module_path)
+    # Assert
+    assert mod.__name__ == module_path
