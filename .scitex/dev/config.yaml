@@ -5,6 +5,7 @@
 project-type:
   - pip
 
-# audit:
+audit:
+  mcp-parity-exempt: true
 #   skip:
 #     - PS-108

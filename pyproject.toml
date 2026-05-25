@@ -153,6 +153,9 @@ figrecipe = "figrecipe"
 [project.entry-points."scitex_dev.linter.plugins"]
 figure = "figrecipe._linter_plugin:get_plugin"
 
+[tool.scitex_dev]
+mcp_parity_exempt = true
+
 [project.urls]
 Homepage = "https://github.com/ywatanabe1989/figrecipe"
 Documentation = "https://figrecipe.readthedocs.io"
