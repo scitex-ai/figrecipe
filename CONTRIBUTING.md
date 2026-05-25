@@ -62,6 +62,19 @@ pytest tests/ -x -q
 4. Open a PR targeting `develop` with a clear description.
 5. The CLA bot will check your CLA status on your first PR.
 
+## Local Audit Caveats
+
+Running `scitex-dev ecosystem audit-all figrecipe` locally can produce a
+**misleadingly large violation count** compared to CI. This happens because
+editable installs (`pip install -e .`) leave an incomplete/empty RECORD file
+in the package's `.dist-info` directory. Local audit tooling misreads the
+missing RECORD and flags every file as a violation.
+
+CI uses a full non-editable wheel install with a complete RECORD, so the
+same rules pass cleanly there. Treat inflated local counts with skepticism
+— check whether violations cluster around RECORD-related rules. For a
+definitive result, run the audit from CI or on a non-editable install.
+
 ## License
 
 By contributing, you agree to the terms of the [CLA](CLA.md), which includes
