@@ -292,6 +292,15 @@
 <li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#figrecipe.Diagram.from_dict"><code class="docutils literal notranslate"><span class="pre">Diagram.from_dict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.build_spec"><code class="docutils literal notranslate"><span class="pre">build_spec()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.build_spec_from_csv"><code class="docutils literal notranslate"><span class="pre">build_spec_from_csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.render_spec_to_bytes"><code class="docutils literal notranslate"><span class="pre">render_spec_to_bytes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.termplot"><code class="docutils literal notranslate"><span class="pre">termplot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.draw_graph"><code class="docutils literal notranslate"><span class="pre">draw_graph()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.smart_align"><code class="docutils literal notranslate"><span class="pre">smart_align()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.edit"><code class="docutils literal notranslate"><span class="pre">edit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.enable_svg"><code class="docutils literal notranslate"><span class="pre">enable_svg()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.apply_style"><code class="docutils literal notranslate"><span class="pre">apply_style()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.signature"><code class="docutils literal notranslate"><span class="pre">signature()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.caption_with_signature"><code class="docutils literal notranslate"><span class="pre">caption_with_signature()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#recording-wrappers-internal">Recording Wrappers (internal)</a><ul>
@@ -391,6 +400,7 @@
 <div class="genindex-jumpbox">
  <a href="#_"><strong>_</strong></a>
  | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
@@ -488,11 +498,25 @@
 </li>
       <li><a href="api/figrecipe.html#figrecipe.align_smart">align_smart() (in module figrecipe)</a>
 </li>
+      <li><a href="api/figrecipe.html#figrecipe.apply_style">apply_style() (in module figrecipe)</a>
+</li>
       <li><a href="api/figrecipe.html#figrecipe.Diagram.auto_layout">auto_layout() (figrecipe.Diagram method)</a>
 </li>
       <li><a href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.ax">ax (figrecipe._wrappers.RecordingAxes property)</a>
 </li>
       <li><a href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.axes">axes (figrecipe._wrappers.RecordingFigure property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/figrecipe.html#figrecipe.build_spec">build_spec() (in module figrecipe)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/figrecipe.html#figrecipe.build_spec_from_csv">build_spec_from_csv() (in module figrecipe)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -538,12 +562,20 @@
 </li>
       <li><a href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.draw">draw() (figrecipe._wrappers.RecordingFigure method)</a>
 </li>
+      <li><a href="api/figrecipe.html#figrecipe.draw_graph">draw_graph() (in module figrecipe)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/figrecipe.html#figrecipe.edit">edit() (in module figrecipe)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/figrecipe.html#figrecipe.enable_svg">enable_svg() (in module figrecipe)</a>
+</li>
       <li><a href="api/figrecipe.html#figrecipe.extract_data">extract_data() (in module figrecipe)</a>
 </li>
   </ul></td>
@@ -674,14 +706,16 @@
 </li>
       <li><a href="api/figrecipe.html#figrecipe.Diagram.render">render() (figrecipe.Diagram method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/figrecipe.html#figrecipe.Figz.render_preview">render_preview() (figrecipe.Figz method)</a>
 
       <ul>
         <li><a href="api/figrecipe.html#figrecipe.Pltz.render_preview">(figrecipe.Pltz method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/figrecipe.html#figrecipe.render_spec_to_bytes">render_spec_to_bytes() (in module figrecipe)</a>
+</li>
       <li><a href="api/figrecipe.html#figrecipe.Diagram.render_to_file">render_to_file() (figrecipe.Diagram method)</a>
 </li>
       <li><a href="api/figrecipe.html#figrecipe.Pltz.reproduce">reproduce() (figrecipe.Pltz method)</a>
@@ -736,6 +770,8 @@
 </li>
       <li><a href="api/figrecipe.html#figrecipe.signature">signature() (in module figrecipe)</a>
 </li>
+      <li><a href="api/figrecipe.html#figrecipe.smart_align">smart_align() (in module figrecipe)</a>
+</li>
       <li><a href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.stats">stats (figrecipe._wrappers.RecordingAxes property)</a>
 
       <ul>
@@ -756,6 +792,8 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/figrecipe.html#figrecipe.termplot">termplot() (in module figrecipe)</a>
+</li>
       <li><a href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.text">text() (figrecipe._wrappers.RecordingFigure method)</a>
 </li>
   </ul></td>
