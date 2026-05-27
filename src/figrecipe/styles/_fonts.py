@@ -8,10 +8,47 @@ Provides font availability checking and listing for publication-quality figures.
 __all__ = [
     "list_available_fonts",
     "check_font",
+    "register_arial_fonts",
 ]
 
+import os
 import warnings
 from typing import List
+
+
+def register_arial_fonts() -> bool:
+    """Register Arial fonts from the system if available.
+
+    Searches the system font directories for any ``arial*`` font file and
+    registers it with matplotlib's font manager so ``font.family = "Arial"``
+    resolves correctly. Safe to call repeatedly (idempotent).
+
+    Returns
+    -------
+    bool
+        True if Arial is available after registration, False otherwise.
+    """
+    import matplotlib.font_manager as fm
+
+    try:
+        fm.findfont("Arial", fallback_to_default=False)
+        return True
+    except Exception:
+        arial_paths = [
+            f
+            for f in fm.findSystemFonts()
+            if os.path.basename(f).lower().startswith("arial")
+        ]
+        for path in arial_paths:
+            try:
+                fm.fontManager.addfont(path)
+            except Exception:
+                pass
+        try:
+            fm.findfont("Arial", fallback_to_default=False)
+            return True
+        except Exception:
+            return False
 
 
 def list_available_fonts() -> List[str]:

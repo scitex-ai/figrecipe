@@ -17,7 +17,20 @@ try:
 except Exception:
     pass
 
+from ._branding import BRAND_NAME as _BRAND_NAME
 from ._branding import rebrand_text as _rebrand_text
+
+# Brand-triggered house style: when a parent package (e.g. scitex.plt) sets
+# FIGRECIPE_BRAND, auto-apply that brand's global plotting style on import so
+# the parent needs zero in-tree auto-config. No-op for the default brand, so
+# plain `import figrecipe` pays no matplotlib import cost here.
+if _BRAND_NAME != "figrecipe":
+    try:
+        from ._brand_style import apply_brand_style as _apply_brand_style
+
+        _apply_brand_style(_BRAND_NAME)
+    except Exception:
+        pass
 
 # Define module docstring with branding applied
 _RAW_DOC = """
