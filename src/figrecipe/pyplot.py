@@ -210,6 +210,27 @@ _LAZY_FR_ATTRS: dict[str, tuple[str, str]] = {
     "load_style": ("._api._style_manager", "load_style"),
     "unload_style": ("._api._style_manager", "unload_style"),
     "list_presets": ("._api._style_manager", "list_presets"),
+    # Flat SCITEX_STYLE preset (subplots() kwargs)
+    "SCITEX_STYLE": (".presets._scitex_style", "SCITEX_STYLE"),
+    # figrecipe top-level public API (so figrecipe.pyplot is a COMPLETE superset
+    # of the figrecipe namespace — lets scitex.plt be a pure alias to this module)
+    "compose": (".", "compose"),
+    "crop": (".", "crop"),
+    "Diagram": (".", "Diagram"),
+    "align_panels": (".", "align_panels"),
+    "distribute_panels": (".", "distribute_panels"),
+    "extract_data": (".", "extract_data"),
+    "get_graph_preset": (".", "get_graph_preset"),
+    "list_graph_presets": (".", "list_graph_presets"),
+    "register_graph_preset": (".", "register_graph_preset"),
+    "info": (".", "info"),
+    "load": (".", "load"),
+    "load_bundle": (".", "load_bundle"),
+    "save_bundle": (".", "save_bundle"),
+    "reproduce": (".", "reproduce"),
+    "reproduce_bundle": (".", "reproduce_bundle"),
+    "validate": (".", "validate"),
+    "sns": (".", "sns"),
 }
 
 # Submodules surfaced by name (resolved lazily as modules).
@@ -349,6 +370,7 @@ __all__ = [
     "edit",
     "gui",
     "STYLE",
+    "SCITEX_STYLE",
     "apply_style",
     "load_style",
     "unload_style",
@@ -359,4 +381,22 @@ __all__ = [
     "presets",
     "utils",
     "gallery",
+    # figrecipe top-level public API (complete-superset)
+    "compose",
+    "crop",
+    "Diagram",
+    "align_panels",
+    "distribute_panels",
+    "extract_data",
+    "get_graph_preset",
+    "list_graph_presets",
+    "register_graph_preset",
+    "info",
+    "load",
+    "load_bundle",
+    "save_bundle",
+    "reproduce",
+    "reproduce_bundle",
+    "validate",
+    "sns",
 ]

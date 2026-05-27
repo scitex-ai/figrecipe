@@ -161,6 +161,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     # ._api._style_manager (style helpers)
     "STYLE": ("._api._style_manager", "STYLE"),
     "apply_style": ("._api._style_manager", "apply_style"),
+    # .presets (flat SCITEX_STYLE preset — subplots() kwargs)
+    "SCITEX_STYLE": (".presets._scitex_style", "SCITEX_STYLE"),
     # ._api._notebook
     "enable_svg": ("._api._notebook", "enable_svg"),
     # ._api._public (editor alias)
@@ -274,6 +276,7 @@ __all__ = [
     "edit",
     "enable_svg",
     "STYLE",
+    "SCITEX_STYLE",
     "apply_style",
     # Signature
     "signature",

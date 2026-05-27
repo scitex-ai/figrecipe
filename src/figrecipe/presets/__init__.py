@@ -15,11 +15,40 @@ Usage:
 """
 
 from ._journals import get_journal, get_journals, mm_to_pixels
+from ._scitex_style import (
+    DPI_DISPLAY,
+    DPI_PREVIEW,
+    DPI_SAVE,
+    SCITEX_STYLE,
+    STYLE,
+    get_default_dpi,
+    get_display_dpi,
+    get_preview_dpi,
+    get_style,
+    load_style,
+    resolve_style_value,
+    save_style,
+    set_style,
+)
 
 __all__ = [
     "get_journals",
     "get_journal",
     "mm_to_pixels",
+    # Flat SCITEX_STYLE preset (single source of truth: SCITEX_STYLE.yaml)
+    "SCITEX_STYLE",
+    "STYLE",
+    "load_style",
+    "save_style",
+    "set_style",
+    "get_style",
+    "resolve_style_value",
+    "get_default_dpi",
+    "get_display_dpi",
+    "get_preview_dpi",
+    "DPI_SAVE",
+    "DPI_DISPLAY",
+    "DPI_PREVIEW",
 ]
 
 # EOF

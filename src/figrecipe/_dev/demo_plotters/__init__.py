@@ -27,6 +27,7 @@ from ._figure_creators import (
     run_all_demos,
     run_individual_demos,
 )
+from ._gallery_api import generate, get_plot_data, get_plot_spec
 from ._helpers import (
     get_plotter,
     get_representative_plots,
@@ -38,6 +39,10 @@ from ._registry import REGISTRY
 # Legacy exports for backwards compatibility
 __all__ = [
     "REGISTRY",
+    # scitex.plt.gallery-compatible API
+    "generate",
+    "get_plot_spec",
+    "get_plot_data",
     "CATEGORIES",
     "CATEGORY_DISPLAY_NAMES",
     "REPRESENTATIVES",
