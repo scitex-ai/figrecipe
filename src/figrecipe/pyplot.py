@@ -177,6 +177,75 @@ get_cmap = _plt.get_cmap
 colormaps = _plt.colormaps
 
 
+# =============================================================================
+# Extended figrecipe surface (so `from figrecipe.pyplot import *` is a
+# superset of matplotlib.pyplot + the figrecipe public API). These are the
+# names the scitex.plt umbrella aliases. Heavy submodules are resolved lazily
+# via __getattr__ to keep `import figrecipe.pyplot` cheap.
+# =============================================================================
+_LAZY_FR_ATTRS: dict[str, tuple[str, str]] = {
+    # Spec builders / kind registries
+    "build_spec": ("._spec_builders", "build_spec"),
+    "build_spec_from_csv": ("._spec_builders", "build_spec_from_csv"),
+    "XY_KINDS": ("._spec_builders", "XY_KINDS"),
+    "DATA_KINDS": ("._spec_builders", "DATA_KINDS"),
+    "LABEL_KINDS": ("._spec_builders", "LABEL_KINDS"),
+    "MATRIX_KINDS": ("._spec_builders", "MATRIX_KINDS"),
+    "ALL_KINDS": ("._spec_builders", "ALL_KINDS"),
+    "KIND_ALIASES": ("._spec_builders", "KIND_ALIASES"),
+    # Rendering
+    "render_spec_to_bytes": ("._render", "render_spec_to_bytes"),
+    # Terminal plotting
+    "termplot": ("._utils._termplot", "termplot"),
+    # Graph / composition / editor / svg
+    "draw_graph": ("._graph", "draw_graph"),
+    "smart_align": ("._composition", "align_smart"),
+    "align_smart": ("._composition", "align_smart"),
+    "enable_svg": ("._api._notebook", "enable_svg"),
+    "edit": ("._api._public", "gui"),
+    "gui": ("._api._public", "gui"),
+    # Style management
+    "STYLE": ("._api._style_manager", "STYLE"),
+    "apply_style": ("._api._style_manager", "apply_style"),
+    "load_style": ("._api._style_manager", "load_style"),
+    "unload_style": ("._api._style_manager", "unload_style"),
+    "list_presets": ("._api._style_manager", "list_presets"),
+}
+
+# Submodules surfaced by name (resolved lazily as modules).
+_LAZY_FR_MODULES: dict[str, str] = {
+    "color": ".colors",
+    "colors": ".colors",
+    "styles": ".styles",
+    "presets": ".presets",
+    "utils": ".utils",
+    "gallery": "._dev.demo_plotters",
+}
+
+
+def __getattr__(name):
+    """PEP 562 lazy resolution for the extended figrecipe.pyplot surface."""
+    import importlib
+
+    if name in _LAZY_FR_ATTRS:
+        module_path, attr = _LAZY_FR_ATTRS[name]
+        module = importlib.import_module(module_path, __package__)
+        value = getattr(module, attr)
+        globals()[name] = value
+        return value
+    if name in _LAZY_FR_MODULES:
+        value = importlib.import_module(_LAZY_FR_MODULES[name], __package__)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(
+        set(__all__) | set(_LAZY_FR_ATTRS) | set(_LAZY_FR_MODULES) | set(globals())
+    )
+
+
 __all__ = [
     # Core functions (recording-enabled)
     "subplots",
@@ -262,4 +331,32 @@ __all__ = [
     "cm",
     "get_cmap",
     "colormaps",
+    # Extended figrecipe surface (lazy via __getattr__)
+    "build_spec",
+    "build_spec_from_csv",
+    "XY_KINDS",
+    "DATA_KINDS",
+    "LABEL_KINDS",
+    "MATRIX_KINDS",
+    "ALL_KINDS",
+    "KIND_ALIASES",
+    "render_spec_to_bytes",
+    "termplot",
+    "draw_graph",
+    "smart_align",
+    "align_smart",
+    "enable_svg",
+    "edit",
+    "gui",
+    "STYLE",
+    "apply_style",
+    "load_style",
+    "unload_style",
+    "list_presets",
+    "color",
+    "colors",
+    "styles",
+    "presets",
+    "utils",
+    "gallery",
 ]

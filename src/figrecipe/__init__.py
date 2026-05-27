@@ -143,6 +143,30 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "get_graph_preset": ("._graph._presets", "get_preset"),
     "list_graph_presets": ("._graph._presets", "list_presets"),
     "register_graph_preset": ("._graph._presets", "register_preset"),
+    # ._graph (draw)
+    "draw_graph": ("._graph", "draw_graph"),
+    # ._spec_builders
+    "build_spec": ("._spec_builders", "build_spec"),
+    "build_spec_from_csv": ("._spec_builders", "build_spec_from_csv"),
+    "XY_KINDS": ("._spec_builders", "XY_KINDS"),
+    "DATA_KINDS": ("._spec_builders", "DATA_KINDS"),
+    "LABEL_KINDS": ("._spec_builders", "LABEL_KINDS"),
+    "MATRIX_KINDS": ("._spec_builders", "MATRIX_KINDS"),
+    "ALL_KINDS": ("._spec_builders", "ALL_KINDS"),
+    "KIND_ALIASES": ("._spec_builders", "KIND_ALIASES"),
+    # ._render
+    "render_spec_to_bytes": ("._render", "render_spec_to_bytes"),
+    # ._utils._termplot
+    "termplot": ("._utils._termplot", "termplot"),
+    # ._api._style_manager (style helpers)
+    "STYLE": ("._api._style_manager", "STYLE"),
+    "apply_style": ("._api._style_manager", "apply_style"),
+    # ._api._notebook
+    "enable_svg": ("._api._notebook", "enable_svg"),
+    # ._api._public (editor alias)
+    "edit": ("._api._public", "gui"),
+    # ._composition (alias)
+    "smart_align": ("._composition", "align_smart"),
 }
 
 
@@ -158,18 +182,30 @@ def __getattr__(name: str):
         value = getattr(module, attr)
         globals()[name] = value  # cache subsequent accesses
         return value
-    if name == "colors":
+    _MODULE_ALIASES = {
+        "colors": ".colors",
+        "color": ".colors",
+        "styles": ".styles",
+        "presets": ".presets",
+        "utils": ".utils",
+        "gallery": "._dev.demo_plotters",
+    }
+    if name in _MODULE_ALIASES:
         import importlib
 
-        value = importlib.import_module(".colors", __name__)
-        globals()["colors"] = value
+        value = importlib.import_module(_MODULE_ALIASES[name], __name__)
+        globals()[name] = value
         return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def __dir__() -> list[str]:
     """Expose lazy names for tab completion in REPLs."""
-    return sorted(set(__all__) | set(_LAZY_ATTRS.keys()) | {"colors"})
+    return sorted(
+        set(__all__)
+        | set(_LAZY_ATTRS.keys())
+        | {"colors", "color", "styles", "presets", "utils", "gallery"}
+    )
 
 
 # Lazy seaborn access (avoids import error if seaborn not installed)
@@ -215,6 +251,30 @@ __all__ = [
     "Diagram",
     # Color utilities
     "colors",
+    "color",
+    # Submodules surfaced as figrecipe attributes
+    "styles",
+    "presets",
+    "utils",
+    "gallery",
+    # Spec builders / kind registries
+    "build_spec",
+    "build_spec_from_csv",
+    "XY_KINDS",
+    "DATA_KINDS",
+    "LABEL_KINDS",
+    "MATRIX_KINDS",
+    "ALL_KINDS",
+    "KIND_ALIASES",
+    "render_spec_to_bytes",
+    "termplot",
+    # Graph / style / editor helpers
+    "draw_graph",
+    "smart_align",
+    "edit",
+    "enable_svg",
+    "STYLE",
+    "apply_style",
     # Signature
     "signature",
     "caption_with_signature",
