@@ -172,6 +172,19 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
 }
 
 
+# Module-level so PA-102's PEP-562 detector sees these names as bound
+# (it pulls keys from any module-level dict subscripted with `name` inside
+# __getattr__). Maps public submodule names → relative import paths.
+_MODULE_ALIASES: dict[str, str] = {
+    "colors": ".colors",
+    "color": ".colors",
+    "styles": ".styles",
+    "presets": ".presets",
+    "utils": ".utils",
+    "gallery": "._dev.demo_plotters",
+}
+
+
 def __getattr__(name: str):
     """PEP 562 lazy attribute resolution for the figrecipe public surface."""
     if name in _LAZY_ATTRS:
@@ -184,14 +197,6 @@ def __getattr__(name: str):
         value = getattr(module, attr)
         globals()[name] = value  # cache subsequent accesses
         return value
-    _MODULE_ALIASES = {
-        "colors": ".colors",
-        "color": ".colors",
-        "styles": ".styles",
-        "presets": ".presets",
-        "utils": ".utils",
-        "gallery": "._dev.demo_plotters",
-    }
     if name in _MODULE_ALIASES:
         import importlib
 
