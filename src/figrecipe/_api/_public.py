@@ -108,6 +108,7 @@ def save(
     image_format: Optional[str] = None,
     facecolor: Optional[str] = None,
     save_hitmap: bool = False,
+    save_editable: bool = False,
 ):
     """Save a figure as image and recipe. Unified API with fig.savefig().
 
@@ -141,6 +142,10 @@ def save(
         Background color. When opaque, patches are made visible.
     save_hitmap : bool
         If True (default), save hitmap image for GUI editor element selection.
+    save_editable : bool
+        If True, write the editable-figure JSON (schema
+        ``scitex.plt.figure.editable``) to ``<stem>.json`` next to the image.
+        Default False — opt in for the GUI / web editor.
 
     Returns
     -------
@@ -150,7 +155,7 @@ def save(
     """
     from ._save import save_figure
 
-    return save_figure(
+    result = save_figure(
         fig=fig,
         path=path,
         save_recipe=save_recipe,
@@ -166,6 +171,16 @@ def save(
         facecolor=facecolor,
         save_hitmap=save_hitmap,
     )
+
+    # Editable-figure JSON sidecar (schema scitex.plt.figure.editable).
+    # Written next to the saved image; opt-in (default False).
+    if save_editable:
+        from .._editable import save_editable as _save_editable
+
+        image_path = result[0] if isinstance(result, tuple) else result
+        _save_editable(fig, image_path, verbose=verbose)
+
+    return result
 
 
 def reproduce(

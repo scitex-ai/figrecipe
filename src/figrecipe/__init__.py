@@ -167,6 +167,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "enable_svg": ("._api._notebook", "enable_svg"),
     # ._api._public (editor alias)
     "edit": ("._api._public", "gui"),
+    # ._editable
+    "export_editable": ("._editable", "export_editable"),
     # ._composition (alias)
     "smart_align": ("._composition", "align_smart"),
 }
@@ -279,6 +281,7 @@ __all__ = [
     "draw_graph",
     "smart_align",
     "edit",
+    "export_editable",
     "enable_svg",
     "STYLE",
     "SCITEX_STYLE",
