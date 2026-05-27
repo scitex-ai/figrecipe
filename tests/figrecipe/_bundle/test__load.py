@@ -123,7 +123,7 @@ class TestSaveBundle:
                 raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
-        assert "ax_0_0" in spec["axes"]
+        assert "r0c0" in spec["axes"]
 
     def test_save_creates_spec_json_part_5(self, tmp_path):
         """Test that spec.json is created with correct structure."""
@@ -139,7 +139,7 @@ class TestSaveBundle:
                 raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
-        assert len(spec["axes"]["ax_0_0"]["traces"]) == 1
+        assert len(spec["axes"]["r0c0"]["traces"]) == 1
 
     def test_save_creates_spec_json_part_6(self, tmp_path):
         """Test that spec.json is created with correct structure."""
@@ -155,7 +155,7 @@ class TestSaveBundle:
                 raise AssertionError(f'spec.json not found in {zf.namelist()}')
             with zf.open(spec_path) as f:
                 spec = json.load(f)
-        assert spec["axes"]["ax_0_0"]["traces"][0]["id"] == "myplot"
+        assert spec["axes"]["r0c0"]["traces"][0]["id"] == "myplot"
 
     def test_save_creates_style_json_part_1(self, tmp_path):
         """Test that style.json is created."""

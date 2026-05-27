@@ -647,7 +647,7 @@ class TestFigrecipeIntegration:
         fig, ax = fr.subplots()
         ax.graph(G, id="test_graph")
         record = fig._recorder.figure_record
-        ax_record = record.axes["ax_0_0"]
+        ax_record = record.axes["r0c0"]
         assert len(ax_record.calls) == 1
 
     def test_ax_graph_recording_part_2(self):
@@ -661,7 +661,7 @@ class TestFigrecipeIntegration:
         fig, ax = fr.subplots()
         ax.graph(G, id="test_graph")
         record = fig._recorder.figure_record
-        ax_record = record.axes["ax_0_0"]
+        ax_record = record.axes["r0c0"]
         assert ax_record.calls[0].function == "graph"
 
     def test_ax_graph_recording_part_3(self):
@@ -675,7 +675,7 @@ class TestFigrecipeIntegration:
         fig, ax = fr.subplots()
         ax.graph(G, id="test_graph")
         record = fig._recorder.figure_record
-        ax_record = record.axes["ax_0_0"]
+        ax_record = record.axes["r0c0"]
         assert ax_record.calls[0].id == "test_graph"
 
     def test_graph_save_recipe(self):

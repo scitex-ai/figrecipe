@@ -110,8 +110,8 @@ class TestCompose:
         fig, axes = fr.compose(
             layout=(1, 2),
             sources={
-                (0, 0): (recipe, "ax_0_0"),
-                (0, 1): (recipe, "ax_0_1"),
+                (0, 0): (recipe, "r0c0"),
+                (0, 1): (recipe, "r0c1"),
             },
         )
         assert len(axes) == 2
@@ -130,11 +130,11 @@ class TestCompose:
         fig, axes = fr.compose(
             layout=(1, 2),
             sources={
-                (0, 0): (recipe, "ax_0_0"),
-                (0, 1): (recipe, "ax_0_1"),
+                (0, 0): (recipe, "r0c0"),
+                (0, 1): (recipe, "r0c1"),
             },
         )
-        assert "ax_0_0" in fig.record.axes
+        assert "r0c0" in fig.record.axes
 
     def test_compose_with_specific_axes_part_3(self, tmp_path):
         """Compose selecting specific axes from multi-panel source."""
@@ -150,11 +150,11 @@ class TestCompose:
         fig, axes = fr.compose(
             layout=(1, 2),
             sources={
-                (0, 0): (recipe, "ax_0_0"),
-                (0, 1): (recipe, "ax_0_1"),
+                (0, 0): (recipe, "r0c0"),
+                (0, 1): (recipe, "r0c1"),
             },
         )
-        assert "ax_0_1" in fig.record.axes
+        assert "r0c1" in fig.record.axes
 
     def test_compose_with_figure_record_part_1(self, tmp_path):
         """Compose using FigureRecord directly."""
@@ -186,7 +186,7 @@ class TestCompose:
             layout=(1, 1),
             sources={(0, 0): record},
         )
-        assert "ax_0_0" in fig.record.axes
+        assert "r0c0" in fig.record.axes
 
     def test_compose_invalid_axes_key_raises(self, tmp_path):
         """Compose with invalid axes key raises ValueError."""
@@ -201,7 +201,7 @@ class TestCompose:
         with pytest.raises(ValueError, match="not found"):
             fr.compose(
                 layout=(1, 1),
-                sources={(0, 0): (recipe, "ax_99_99")},
+                sources={(0, 0): (recipe, "r99c99")},
             )
 
     def test_compose_preserves_mm_layout_part_1(self, temp_recipes):
@@ -278,7 +278,7 @@ class TestImportAxes:
         fig, axes = fr.subplots(1, 2)
         axes[0].plot([1, 2], [1, 2], id="existing")
         result = utils.import_axes(fig, (0, 1), recipe)
-        assert "ax_0_1" in fig.record.axes
+        assert "r0c1" in fig.record.axes
 
     def test_import_replaces_content(self, tmp_path):
         """Import replaces existing panel content."""
@@ -299,7 +299,7 @@ class TestImportAxes:
         utils.import_axes(fig, (0, 0), recipe)
 
         # Check that the imported calls are present
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         call_ids = [c.id for c in calls]
         assert "new_line" in call_ids
 
@@ -319,9 +319,9 @@ class TestImportAxes:
         fig, ax = fr.subplots()
 
         # Import the second panel (ax_0_1) from source
-        utils.import_axes(fig, (0, 0), recipe, source_axes="ax_0_1")
+        utils.import_axes(fig, (0, 0), recipe, source_axes="r0c1")
 
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         call_ids = [c.id for c in calls]
         assert "right_bar" in call_ids
 
@@ -343,7 +343,7 @@ class TestImportAxes:
         fig, ax = fr.subplots()
         utils.import_axes(fig, (0, 0), record)
 
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         call_ids = [c.id for c in calls]
         assert "from_record" in call_ids
 
@@ -370,7 +370,7 @@ class TestImportAxes:
         fig, ax = fr.subplots()
 
         with pytest.raises(ValueError, match="not found"):
-            utils.import_axes(fig, (0, 0), recipe, source_axes="ax_99_99")
+            utils.import_axes(fig, (0, 0), recipe, source_axes="r99c99")
 
 
 class TestComposeAndSave:
@@ -418,7 +418,7 @@ class TestComposeAndSave:
         composed_recipe = tmp_path / "composed.yaml"
         fr.save(composed_fig, composed_recipe, validate=False, verbose=False)
         repro_fig, repro_axes = fr.reproduce(composed_recipe)
-        assert "ax_0_0" in repro_fig.record.axes
+        assert "r0c0" in repro_fig.record.axes
 
     def test_compose_save_reproduce_part_3(self, tmp_path):
         """Composed figure can be saved and reproduced."""
@@ -440,7 +440,7 @@ class TestComposeAndSave:
         composed_recipe = tmp_path / "composed.yaml"
         fr.save(composed_fig, composed_recipe, validate=False, verbose=False)
         repro_fig, repro_axes = fr.reproduce(composed_recipe)
-        assert "ax_0_1" in repro_fig.record.axes
+        assert "r0c1" in repro_fig.record.axes
 
 
 class TestPanelVisibility:
@@ -455,7 +455,7 @@ class TestPanelVisibility:
         axes[0].plot([1, 2], [1, 2], id="left")
         axes[1].bar([1, 2], [2, 1], id="right")
         utils.hide_panel(fig, (0, 1))
-        assert not fig.record.axes["ax_0_1"].visible
+        assert not fig.record.axes["r0c1"].visible
 
     def test_hide_panel_part_2(self):
         """Hidden panel not visible but data preserved."""
@@ -477,7 +477,7 @@ class TestPanelVisibility:
         axes[0].plot([1, 2], [1, 2], id="left")
         axes[1].bar([1, 2], [2, 1], id="right")
         utils.hide_panel(fig, (0, 1))
-        assert len(fig.record.axes["ax_0_1"].calls) > 0
+        assert len(fig.record.axes["r0c1"].calls) > 0
 
     def test_show_panel_part_1(self):
         """Show restores visibility."""
@@ -488,7 +488,7 @@ class TestPanelVisibility:
         axes[0].plot([1, 2], [1, 2])
         axes[1].plot([1, 2], [2, 1])  # Add content to create axes record
         utils.hide_panel(fig, (0, 1))
-        assert not fig.record.axes["ax_0_1"].visible
+        assert not fig.record.axes["r0c1"].visible
 
     def test_show_panel_part_2(self):
         """Show restores visibility."""
@@ -500,7 +500,7 @@ class TestPanelVisibility:
         axes[1].plot([1, 2], [2, 1])  # Add content to create axes record
         utils.hide_panel(fig, (0, 1))
         utils.show_panel(fig, (0, 1))
-        assert fig.record.axes["ax_0_1"].visible
+        assert fig.record.axes["r0c1"].visible
 
     def test_show_panel_part_3(self):
         """Show restores visibility."""
@@ -532,7 +532,7 @@ class TestPanelVisibility:
         fig, ax = fr.subplots()
         ax.plot([1, 2], [1, 2])
         result1 = utils.toggle_panel(fig, (0, 0))
-        assert not fig.record.axes["ax_0_0"].visible
+        assert not fig.record.axes["r0c0"].visible
 
     def test_toggle_panel_part_3(self):
         """Toggle switches visibility state."""
@@ -554,7 +554,7 @@ class TestPanelVisibility:
         ax.plot([1, 2], [1, 2])
         result1 = utils.toggle_panel(fig, (0, 0))
         result2 = utils.toggle_panel(fig, (0, 0))
-        assert fig.record.axes["ax_0_0"].visible
+        assert fig.record.axes["r0c0"].visible
 
     def test_toggle_nonexistent_panel(self):
         """Toggle on nonexistent panel returns False."""
@@ -577,7 +577,7 @@ class TestPanelVisibility:
         recipe = tmp_path / "hidden.yaml"
         fr.save(fig, recipe, validate=False, verbose=False)
         fig2, axes2 = fr.reproduce(recipe)
-        assert fig2.record.axes["ax_0_0"].visible is True
+        assert fig2.record.axes["r0c0"].visible is True
 
     def test_visibility_serialization_part_2(self, tmp_path):
         """Visibility state persists in recipe."""
@@ -591,7 +591,7 @@ class TestPanelVisibility:
         recipe = tmp_path / "hidden.yaml"
         fr.save(fig, recipe, validate=False, verbose=False)
         fig2, axes2 = fr.reproduce(recipe)
-        assert fig2.record.axes["ax_0_1"].visible is False
+        assert fig2.record.axes["r0c1"].visible is False
 
     def test_hidden_panel_not_rendered(self, tmp_path):
         """Hidden panels are skipped during reproduction."""
@@ -625,7 +625,7 @@ class TestPanelVisibility:
                 axes[i, j].plot([1, 2], [i + j, i + j + 1])
         utils.hide_panel(fig, (0, 1))
         utils.hide_panel(fig, (1, 0))
-        assert fig.record.axes["ax_0_0"].visible is True
+        assert fig.record.axes["r0c0"].visible is True
 
     def test_hide_multiple_panels_part_2(self):
         """Can hide multiple panels."""
@@ -638,7 +638,7 @@ class TestPanelVisibility:
                 axes[i, j].plot([1, 2], [i + j, i + j + 1])
         utils.hide_panel(fig, (0, 1))
         utils.hide_panel(fig, (1, 0))
-        assert fig.record.axes["ax_0_1"].visible is False
+        assert fig.record.axes["r0c1"].visible is False
 
     def test_hide_multiple_panels_part_3(self):
         """Can hide multiple panels."""
@@ -651,7 +651,7 @@ class TestPanelVisibility:
                 axes[i, j].plot([1, 2], [i + j, i + j + 1])
         utils.hide_panel(fig, (0, 1))
         utils.hide_panel(fig, (1, 0))
-        assert fig.record.axes["ax_1_0"].visible is False
+        assert fig.record.axes["r1c0"].visible is False
 
     def test_hide_multiple_panels_part_4(self):
         """Can hide multiple panels."""
@@ -664,7 +664,7 @@ class TestPanelVisibility:
                 axes[i, j].plot([1, 2], [i + j, i + j + 1])
         utils.hide_panel(fig, (0, 1))
         utils.hide_panel(fig, (1, 0))
-        assert fig.record.axes["ax_1_1"].visible is True
+        assert fig.record.axes["r1c1"].visible is True
 
 
 class TestVisibilityWithComposition:
@@ -688,7 +688,7 @@ class TestVisibilityWithComposition:
             sources={(0, 0): recipe1, (0, 1): recipe2},
         )
         utils.hide_panel(fig, (0, 1))
-        assert fig.record.axes["ax_0_0"].visible is True
+        assert fig.record.axes["r0c0"].visible is True
 
     def test_compose_then_hide_part_2(self, tmp_path):
         """Can hide panels after composition."""
@@ -708,7 +708,7 @@ class TestVisibilityWithComposition:
             sources={(0, 0): recipe1, (0, 1): recipe2},
         )
         utils.hide_panel(fig, (0, 1))
-        assert fig.record.axes["ax_0_1"].visible is False
+        assert fig.record.axes["r0c1"].visible is False
 
     def test_compose_hide_save_reproduce_part_1(self, tmp_path):
         """Full workflow: compose, hide, save, reproduce."""
@@ -729,7 +729,7 @@ class TestVisibilityWithComposition:
         output = tmp_path / "composed.yaml"
         fr.save(fig, output, validate=False, verbose=False)
         fig2, axes2 = fr.reproduce(output)
-        assert fig2.record.axes["ax_0_0"].visible is True
+        assert fig2.record.axes["r0c0"].visible is True
 
     def test_compose_hide_save_reproduce_part_2(self, tmp_path):
         """Full workflow: compose, hide, save, reproduce."""
@@ -751,8 +751,8 @@ class TestVisibilityWithComposition:
         fr.save(fig, output, validate=False, verbose=False)
         fig2, axes2 = fr.reproduce(output)
         assert (
-            fig2.record.axes.get("ax_0_1", None) is None
-            or not fig2.record.axes["ax_0_1"].visible
+            fig2.record.axes.get("r0c1", None) is None
+            or not fig2.record.axes["r0c1"].visible
         )
 
 
@@ -823,7 +823,7 @@ class TestComposeRawImages:
             layout=(1, 1),
             sources={(0, 0): temp_image},
         )
-        assert "ax_0_0" in fig.record.axes
+        assert "r0c0" in fig.record.axes
 
     def test_compose_single_raw_image_part_4(self, temp_image):
         """Compose a single raw image."""
@@ -834,7 +834,7 @@ class TestComposeRawImages:
             layout=(1, 1),
             sources={(0, 0): temp_image},
         )
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         assert len(calls) == 1
 
     def test_compose_single_raw_image_part_5(self, temp_image):
@@ -846,7 +846,7 @@ class TestComposeRawImages:
             layout=(1, 1),
             sources={(0, 0): temp_image},
         )
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         assert calls[0].function == "imshow"
 
     def test_compose_multiple_raw_images_part_1(self, temp_image, temp_jpg_image):
@@ -889,7 +889,7 @@ class TestComposeRawImages:
                 (0, 1): temp_jpg_image,
             },
         )
-        assert "ax_0_0" in fig.record.axes
+        assert "r0c0" in fig.record.axes
 
     def test_compose_multiple_raw_images_part_4(self, temp_image, temp_jpg_image):
         """Compose multiple raw images."""
@@ -903,7 +903,7 @@ class TestComposeRawImages:
                 (0, 1): temp_jpg_image,
             },
         )
-        assert "ax_0_1" in fig.record.axes
+        assert "r0c1" in fig.record.axes
 
     def test_compose_mixed_recipe_and_image_part_1(self, tmp_path, temp_image):
         """Compose mixing recipe files and raw images."""
@@ -957,7 +957,7 @@ class TestComposeRawImages:
                 (0, 1): recipe_path,  # Recipe file
             },
         )
-        img_calls = fig.record.axes["ax_0_0"].calls
+        img_calls = fig.record.axes["r0c0"].calls
         assert img_calls[0].function == "imshow"
 
     def test_compose_mixed_recipe_and_image_part_4(self, tmp_path, temp_image):
@@ -976,8 +976,8 @@ class TestComposeRawImages:
                 (0, 1): recipe_path,  # Recipe file
             },
         )
-        img_calls = fig.record.axes["ax_0_0"].calls
-        plot_calls = fig.record.axes["ax_0_1"].calls
+        img_calls = fig.record.axes["r0c0"].calls
+        plot_calls = fig.record.axes["r0c1"].calls
         assert plot_calls[0].function == "plot"
 
     def test_compose_raw_image_has_axis_off(self, temp_image):
@@ -991,7 +991,7 @@ class TestComposeRawImages:
         )
 
         # Check that axis_off decoration was added
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         axis_funcs = [d.function for d in decorations]
         assert "axis" in axis_funcs
 
@@ -1006,7 +1006,7 @@ class TestComposeRawImages:
         )
 
         # Check imshow was called with aspect='equal'
-        imshow_call = fig.record.axes["ax_0_0"].calls[0]
+        imshow_call = fig.record.axes["r0c0"].calls[0]
         assert imshow_call.kwargs.get("aspect") == "equal"
 
     def test_compose_save_and_reproduce_with_image_part_1(self, tmp_path, temp_image):
@@ -1049,7 +1049,7 @@ class TestComposeRawImages:
         output_path = tmp_path / "composed.yaml"
         fr.save(fig, output_path, validate=False, verbose=False)
         fig2, axes2 = fr.reproduce(output_path)
-        assert "ax_0_0" in fig2.record.axes
+        assert "r0c0" in fig2.record.axes
 
     def test_compose_save_and_reproduce_with_image_part_3(self, tmp_path, temp_image):
         """Composed figure with raw image can be saved and reproduced."""
@@ -1070,7 +1070,7 @@ class TestComposeRawImages:
         output_path = tmp_path / "composed.yaml"
         fr.save(fig, output_path, validate=False, verbose=False)
         fig2, axes2 = fr.reproduce(output_path)
-        assert "ax_0_1" in fig2.record.axes
+        assert "r0c1" in fig2.record.axes
 
     def test_compose_image_grid_layout_part_1(self, tmp_path):
         """Compose images in a 2x2 grid layout."""

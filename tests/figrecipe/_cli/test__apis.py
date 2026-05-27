@@ -29,7 +29,7 @@ class TestValidateRecipe:
             },
             "calls": [
                 {
-                    "ax": "ax_0_0",
+                    "ax": "r0c0",
                     "method": "plot",
                     "args": [[1, 2, 3], [1, 4, 9]],
                     "kwargs": {},
@@ -154,7 +154,7 @@ class TestValidationResultDetails:
                 "figure": {"figsize": [4, 3]},
                 "calls": [
                     {
-                        "ax": "ax_0_0",
+                        "ax": "r0c0",
                         "method": "scatter",
                         "args": [[1, 2, 3], [1, 4, 9]],
                         "kwargs": {},
@@ -182,7 +182,7 @@ class TestValidationResultDetails:
                 "figure": {"figsize": [4, 3]},
                 "calls": [
                     {
-                        "ax": "ax_0_0",
+                        "ax": "r0c0",
                         "method": "bar",
                         "args": [["A", "B"], [3, 5]],
                         "kwargs": {},

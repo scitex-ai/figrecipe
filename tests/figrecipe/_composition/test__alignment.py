@@ -399,7 +399,7 @@ class TestAlignmentWithComposition:
         )
         fr.distribute_panels(fig, [(0, 0), (0, 1), (0, 2)], direction="horizontal")
         fr.align_smart(fig)
-        assert "ax_0_0" in fig.record.axes
+        assert "r0c0" in fig.record.axes
 
     def test_compose_distribute_smart_part_3(self, tmp_path):
         """Full workflow: compose, distribute, smart align."""
@@ -420,7 +420,7 @@ class TestAlignmentWithComposition:
         )
         fr.distribute_panels(fig, [(0, 0), (0, 1), (0, 2)], direction="horizontal")
         fr.align_smart(fig)
-        assert "ax_0_1" in fig.record.axes
+        assert "r0c1" in fig.record.axes
 
     def test_compose_distribute_smart_part_4(self, tmp_path):
         """Full workflow: compose, distribute, smart align."""
@@ -441,4 +441,4 @@ class TestAlignmentWithComposition:
         )
         fr.distribute_panels(fig, [(0, 0), (0, 1), (0, 2)], direction="horizontal")
         fr.align_smart(fig)
-        assert "ax_0_2" in fig.record.axes
+        assert "r0c2" in fig.record.axes

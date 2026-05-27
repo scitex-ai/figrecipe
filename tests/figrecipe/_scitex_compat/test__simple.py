@@ -357,7 +357,7 @@ class TestCsvFormatLoadSingleCsv:
         csv_path = tmpdir / "short_format.csv"
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
-        assert "ax_0_0" in result
+        assert "r0c0" in result
 
     def test_load_short_format_part_2(self, tmpdir):
         """Test loading CSV with short format column names."""
@@ -377,7 +377,7 @@ class TestCsvFormatLoadSingleCsv:
         csv_path = tmpdir / "short_format.csv"
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
-        assert "ax_0_1" in result
+        assert "r0c1" in result
 
     def test_load_short_format_part_3(self, tmpdir):
         """Test loading CSV with short format column names."""
@@ -397,7 +397,7 @@ class TestCsvFormatLoadSingleCsv:
         csv_path = tmpdir / "short_format.csv"
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
-        assert "trace1" in result["ax_0_0"]
+        assert "trace1" in result["r0c0"]
 
     def test_load_short_format_part_4(self, tmpdir):
         """Test loading CSV with short format column names."""
@@ -417,7 +417,7 @@ class TestCsvFormatLoadSingleCsv:
         csv_path = tmpdir / "short_format.csv"
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
-        assert "trace2" in result["ax_0_1"]
+        assert "trace2" in result["r0c1"]
 
     def test_load_legacy_format_part_1(self, tmpdir):
         """Test loading CSV with legacy format column names."""
@@ -435,7 +435,7 @@ class TestCsvFormatLoadSingleCsv:
         csv_path = tmpdir / "legacy_format.csv"
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
-        assert "ax_0_0" in result
+        assert "r0c0" in result
 
     def test_load_legacy_format_part_2(self, tmpdir):
         """Test loading CSV with legacy format column names."""
@@ -453,4 +453,4 @@ class TestCsvFormatLoadSingleCsv:
         csv_path = tmpdir / "legacy_format.csv"
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
-        assert "trace1" in result["ax_0_0"]
+        assert "trace1" in result["r0c0"]

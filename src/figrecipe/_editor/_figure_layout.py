@@ -9,6 +9,8 @@ from typing import Any, Dict, Optional
 
 from matplotlib.figure import Figure
 
+from .._utils._grid import parse_grid_id
+
 
 def apply_figure_layout_overrides(
     fig: Figure, overrides: Dict[str, Any], record: Optional[Any] = None
@@ -147,10 +149,10 @@ def _get_grid_dimensions(record: Optional[Any], axes_list: list) -> tuple:
 
     if record and hasattr(record, "axes"):
         for ax_key in record.axes.keys():
-            parts = ax_key.split("_")
-            if len(parts) >= 3:
-                nrows = max(nrows, int(parts[1]) + 1)
-                ncols = max(ncols, int(parts[2]) + 1)
+            parsed = parse_grid_id(ax_key)
+            if parsed is not None:
+                nrows = max(nrows, parsed[0] + 1)
+                ncols = max(ncols, parsed[1] + 1)
     else:
         # Infer from axes count (assume square-ish grid)
         import math

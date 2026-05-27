@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from numpy.typing import NDArray
 
 from .._recorder import FigureRecord
+from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
@@ -143,7 +144,20 @@ def _compose_grid_based(
 
     for (row, col), source_spec in sources.items():
         source_record, ax_key, source_path = _parse_source_spec_with_path(source_spec)
+        # Accept either "rRcC" or legacy "ax_R_C" regardless of which form the
+        # source record uses for its keys.
         ax_record = source_record.axes.get(ax_key)
+        if ax_record is None:
+            parsed_key = parse_grid_id(ax_key)
+            if parsed_key is not None:
+                for cand in (
+                    grid_id(*parsed_key),
+                    f"ax_{parsed_key[0]}_{parsed_key[1]}",
+                ):
+                    ax_record = source_record.axes.get(cand)
+                    if ax_record is not None:
+                        ax_key = cand
+                        break
 
         if ax_record is None:
             available = list(source_record.axes.keys())
@@ -157,7 +171,7 @@ def _compose_grid_based(
         if source_path is not None:
             data_dir = source_path.parent / f"{source_path.stem}_data"
             if data_dir.exists():
-                target_ax_key = f"ax_{row}_{col}"
+                target_ax_key = grid_id(row, col)
                 source_data_dirs[target_ax_key] = data_dir
 
     if source_data_dirs:
@@ -384,7 +398,7 @@ def _replay_axes_record(
         if result is not None:
             result_cache[call.id] = result
 
-    ax_key = f"ax_{row}_{col}"
+    ax_key = grid_id(row, col)
     fig_record.axes[ax_key] = ax_record
 
 

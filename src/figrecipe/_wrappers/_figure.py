@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Uni
 
 from matplotlib.figure import Figure
 
+from .._utils._grid import grid_id
 from ._axes import RecordingAxes
 
 if TYPE_CHECKING:
@@ -87,6 +88,7 @@ class RecordingFigure:
                 finalize_special_plots,
                 finalize_ticks,
             )
+
             for ax in self._fig.get_axes():
                 try:
                     finalize_ticks(ax)
@@ -280,7 +282,7 @@ class RecordingFigure:
         for row in self._axes:
             for rec_ax in row:
                 if rec_ax._ax is mpl_ax:
-                    ax_key = f"ax_{rec_ax._position[0]}_{rec_ax._position[1]}"
+                    ax_key = grid_id(rec_ax._position[0], rec_ax._position[1])
                     break
         ser_kw = {
             k: v

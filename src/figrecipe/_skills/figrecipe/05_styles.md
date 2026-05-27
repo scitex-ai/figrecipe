@@ -8,6 +8,56 @@ tags: [figrecipe-styles, figrecipe]
 
 # Styles
 
+## What the SCITEX style is
+
+`SCITEX` is figrecipe's default **publication-quality** style — a Nature/journal-
+oriented look defined in millimetres (so figures are print-exact regardless of
+DPI) rather than inches/points. It is the house style of the SciTeX ecosystem;
+`scitex.plt` activates it automatically (via `FIGRECIPE_BRAND="scitex.plt"`, which
+triggers `figrecipe._brand_style`).
+
+Source of truth: `figrecipe/styles/presets/SCITEX.yaml` (the `load_style("SCITEX")`
+preset) and the flat-kwargs variant `figrecipe/presets/SCITEX_STYLE.yaml`
+(`SCITEX_STYLE`, splatted into `subplots(**SCITEX_STYLE)`).
+
+What it sets (from `SCITEX.yaml`):
+
+```yaml
+axes:
+  width_mm: 40        # ~1 : 0.7 aspect
+  height_mm: 28
+  thickness_mm: 0.2   # spines; top/right hidden
+margins:              # final output margin after auto-crop
+  left_mm: 1
+  right_mm: 1
+  bottom_mm: 1
+  top_mm: 1
+spacing:
+  horizontal_mm: 10   # between columns
+  vertical_mm: 15     # between rows (title + xlabel space)
+fonts:
+  family: "Arial"     # DejaVu Sans fallback (Docker)
+  axis_label_pt: 7
+  tick_label_pt: 7
+  title_pt: 8
+  suptitle_pt: 9
+  legend_pt: 6
+ticks:
+  length_mm: 0.8
+  thickness_mm: 0.2
+  direction: "out"
+  n_ticks_min: 3      # 3–4 per axis
+  n_ticks_max: 4
+lines:
+  trace_mm: 0.12
+markers:
+  scatter_mm: 0.8
+# + legend frameon=False, mathtext upright (regular fontset),
+#   300 DPI save, SCITEX colour palette ("blue" → SciTeX blue).
+```
+
+Variants: `SCITEX_DARK` (dark background), `MATPLOTLIB` (vanilla defaults).
+
 ## fr.load_style()
 
 ```python

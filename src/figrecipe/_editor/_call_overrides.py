@@ -31,7 +31,8 @@ def apply_call_overrides(
     axes_list = fig.get_axes()
 
     # Build mapping from ax_key to axes index
-    # ax_keys are in format "ax_{row}_{col}", need to map to actual axes indices
+    # ax_keys are in format "r{row}c{col}" (legacy "ax_{row}_{col}" also loads);
+    # map them to actual axes indices via sorted key order
     ax_keys_sorted = sorted(record.axes.keys())
     ax_key_to_index = {key: idx for idx, key in enumerate(ax_keys_sorted)}
 

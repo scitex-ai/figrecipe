@@ -8,6 +8,8 @@ import zipfile
 from pathlib import Path
 from typing import Optional, Tuple
 
+from .._utils._grid import parse_grid_id
+
 BUNDLE_RECIPE_NAME = "recipe.yaml"
 
 
@@ -166,18 +168,14 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
         # Find corresponding AxesRecord
         # Try to match by checking if this ax corresponds to a known position
         for key, ax_record in fig.record.axes.items():
-            # Parse key like "ax_0_0" or "ax_mm_0" to get position
-            parts = key.split("_")
-            if len(parts) >= 3 and parts[1] != "mm":
-                # Standard grid format: ax_row_col
-                try:
-                    row, col = int(parts[1]), int(parts[2])
-                    if ax_record.position == (row, col):
-                        ax_record.bbox = bbox_list
-                        break
-                except ValueError:
-                    continue
-            elif len(parts) >= 3 and parts[1] == "mm":
+            # Parse key (accepts "r0c0" or legacy "ax_0_0"); "ax_mm_idx" -> None
+            parsed = parse_grid_id(key)
+            if parsed is not None:
+                # Standard grid format
+                if ax_record.position == parsed:
+                    ax_record.bbox = bbox_list
+                    break
+            elif key.startswith("ax_mm_"):
                 # Mm-based format: ax_mm_idx
                 ax_record.bbox = bbox_list
                 break

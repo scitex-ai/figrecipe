@@ -8,6 +8,8 @@ from typing import Literal, Union
 
 import numpy as np
 
+from ._grid import grid_id, parse_grid_id
+
 # Threshold for inline vs file storage (in elements)
 # Set to 0 for consistent CSV storage (all data in CSV, YAML contains only structure)
 INLINE_THRESHOLD = 0
@@ -303,7 +305,7 @@ def _get_csv_column_name(
         Full column name (e.g., "r0c0_sine_wave_x").
     """
     safe_id = _sanitize_trace_id(trace_id) if trace_id else "0"
-    return f"r{ax_row}c{ax_col}_{safe_id}_{variable.lower()}"
+    return f"{grid_id(ax_row, ax_col)}_{safe_id}_{variable.lower()}"
 
 
 def save_arrays_single_csv(
@@ -346,10 +348,9 @@ def save_arrays_single_csv(
     max_len = 0
 
     for ax_key, traces in arrays_by_trace.items():
-        # Parse ax_key like "ax_0_0" to get row, col
-        parts = ax_key.split("_")
-        ax_row = int(parts[1]) if len(parts) > 1 else 0
-        ax_col = int(parts[2]) if len(parts) > 2 else 0
+        # Parse ax_key (accepts "r0c0" or legacy "ax_0_0") to get row, col
+        parsed = parse_grid_id(ax_key)
+        ax_row, ax_col = parsed if parsed else (0, 0)
 
         for trace_id, variables in traces.items():
             for var_name, arr in variables.items():
@@ -440,7 +441,7 @@ def load_single_csv(path: Union[str, Path]) -> dict:
         if ax_row is None:
             continue
 
-        ax_key = f"ax_{ax_row}_{ax_col}"
+        ax_key = grid_id(ax_row, ax_col)
 
         if ax_key not in result:
             result[ax_key] = {}

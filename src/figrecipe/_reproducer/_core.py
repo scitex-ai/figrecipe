@@ -12,6 +12,8 @@ from matplotlib.axes import Axes
 from .._recorder import CallRecord, FigureRecord
 from .._serializer import load_recipe
 from .._utils._bundle import resolve_recipe_path
+from .._utils._grid import parse_grid_id
+from ._colorbars import _replay_colorbars
 
 
 def reproduce(
@@ -122,10 +124,10 @@ def reproduce_from_record(
     max_row = 0
     max_col = 0
     for ax_key in record.axes.keys():
-        parts = ax_key.split("_")
-        if len(parts) >= 3:
-            max_row = max(max_row, int(parts[1]))
-            max_col = max(max_col, int(parts[2]))
+        parsed = parse_grid_id(ax_key)
+        if parsed is not None:
+            max_row = max(max_row, parsed[0])
+            max_col = max(max_col, parsed[1])
 
     nrows = max_row + 1
     ncols = max_col + 1
@@ -169,11 +171,8 @@ def reproduce_from_record(
 
     # Replay calls on each axes
     for ax_key, ax_record in record.axes.items():
-        parts = ax_key.split("_")
-        if len(parts) >= 3:
-            row, col = int(parts[1]), int(parts[2])
-        else:
-            row, col = 0, 0
+        parsed = parse_grid_id(ax_key)
+        row, col = parsed if parsed else (0, 0)
 
         ax = axes_2d[row, col]
 
@@ -398,85 +397,6 @@ def _replay_call(
 
         warnings.warn(f"Failed to replay {method_name}: {e}")
         return None
-
-
-def _replay_colorbars(fig, axes_2d, record, result_cache):
-    """Replay recorded colorbars for exact reproduction."""
-    # Get recorded colorbars
-    colorbars = getattr(record, "colorbars", []) or []
-
-    if not colorbars:
-        # No recorded colorbars - nothing to do
-        # (Old recipes without colorbar recording won't reproduce colorbars)
-        return
-
-    # 2D plot methods that return ScalarMappable (for finding mappable)
-    COLORBAR_METHODS = {
-        "imshow",
-        "pcolormesh",
-        "pcolor",
-        "contourf",
-        "contour",
-        "hexbin",
-        "hist2d",
-        "tripcolor",
-        "tricontourf",
-        "tricontour",
-        "matshow",
-        "spy",
-        "specgram",
-    }
-
-    # Replay each recorded colorbar
-    for cbar_info in colorbars:
-        ax_key = cbar_info.get("ax_key")
-        kwargs = cbar_info.get("kwargs", {})
-
-        if ax_key is None:
-            continue
-
-        # Parse ax position
-        parts = ax_key.split("_")
-        if len(parts) >= 3:
-            row, col = int(parts[1]), int(parts[2])
-        else:
-            continue
-
-        ax = axes_2d[row, col]
-
-        # Find the mappable for this axes from result_cache
-        ax_record = record.axes.get(ax_key)
-        if ax_record is None:
-            continue
-
-        mappable = None
-        method_name = None
-        for call in ax_record.calls:
-            if call.function in COLORBAR_METHODS and call.id in result_cache:
-                mappable = result_cache[call.id]
-                method_name = call.function
-                break
-
-        if mappable is None:
-            continue
-
-        # Some methods return tuples - extract the actual mappable
-        if isinstance(mappable, tuple):
-            if method_name == "hist2d":
-                # hist2d returns (counts, xedges, yedges, image)
-                mappable = mappable[3]
-            elif method_name == "specgram":
-                # specgram returns (spectrum, freqs, t, image)
-                mappable = mappable[3]
-
-        # Add colorbar with recorded kwargs - use raw fig.colorbar to avoid
-        # add_colorbar adding extra styling kwargs that weren't in original
-        cbar = fig.colorbar(mappable, ax=ax, **kwargs)
-
-        # Apply styling to match original (style_colorbar is called by add_colorbar)
-        from .._utils._colorbar import style_colorbar
-
-        style_colorbar(cbar, record.style)
 
 
 def get_recipe_info(path: Union[str, Path]) -> Dict[str, Any]:

@@ -306,7 +306,7 @@ class TestStatsInPlotKwargs:
         # Assert
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3.2, 5.1], stats={"groups": ["A", "B"], "n": [50, 48]})
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         assert len(calls) == 1
 
     def test_bar_with_stats_part_2(self):
@@ -316,7 +316,7 @@ class TestStatsInPlotKwargs:
         # Assert
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3.2, 5.1], stats={"groups": ["A", "B"], "n": [50, 48]})
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         assert calls[0].stats == {"groups": ["A", "B"], "n": [50, 48]}
 
     def test_plot_with_stats(self):
@@ -326,7 +326,7 @@ class TestStatsInPlotKwargs:
         # Assert
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [4, 5, 6], stats={"n": 100, "r2": 0.95})
-        calls = fig.record.axes["ax_0_0"].calls
+        calls = fig.record.axes["r0c0"].calls
         assert calls[0].stats == {"n": 100, "r2": 0.95}
 
 
@@ -408,7 +408,7 @@ class TestStatsRoundtrip:
 
             fig2, ax2 = fr.reproduce(png_path)
 
-            calls = fig2.record.axes["ax_0_0"].calls
+            calls = fig2.record.axes["r0c0"].calls
             assert calls[0].stats == {"groups": ["A", "B"]}
 
     def test_combined_stats_roundtrip(self):
@@ -438,8 +438,8 @@ class TestStatsRoundtrip:
                 raise AssertionError
             if not (axes2[1].stats['n'] == 48):
                 raise AssertionError
-            if not (fig2.record.axes['ax_0_0'].calls[0].stats['group'] == 'control'):
+            if not (fig2.record.axes['r0c0'].calls[0].stats['group'] == 'control'):
                 raise AssertionError
-            if not (fig2.record.axes['ax_0_1'].calls[0].stats['group'] == 'treatment'):
+            if not (fig2.record.axes['r0c1'].calls[0].stats['group'] == 'treatment'):
                 raise AssertionError
         assert True  # TQ001-placeholder: body exercises code under test

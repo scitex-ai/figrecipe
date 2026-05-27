@@ -32,6 +32,8 @@ Legacy format (still supported for parsing):
 
 import re
 
+from ._grid import grid_id
+
 __all__ = [
     "get_csv_column_name",
     "get_csv_column_prefix",
@@ -177,7 +179,7 @@ def get_csv_column_prefix(
     else:
         safe_id = "0"
 
-    return f"r{ax_row}c{ax_col}_{caller}-{safe_id}_"
+    return f"{grid_id(ax_row, ax_col)}_{caller}-{safe_id}_"
 
 
 def _extract_caller_and_id(trace_id: str) -> tuple:

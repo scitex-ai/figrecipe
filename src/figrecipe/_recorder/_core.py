@@ -15,6 +15,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import matplotlib
 import numpy as np
 
+from .._utils._grid import grid_id, parse_grid_id
+
 
 @dataclass
 class CallRecord:
@@ -142,7 +144,7 @@ class FigureRecord:
 
     def get_axes_key(self, row: int, col: int) -> str:
         """Get dictionary key for axes at position."""
-        return f"ax_{row}_{col}"
+        return grid_id(row, col)
 
     def get_or_create_axes(self, row: int, col: int) -> AxesRecord:
         """Get or create axes record at position."""
@@ -238,12 +240,9 @@ class FigureRecord:
 
         # Reconstruct axes
         for ax_key, ax_data in data.get("axes", {}).items():
-            # Parse position from key like "ax_0_1"
-            parts = ax_key.split("_")
-            if len(parts) >= 3:
-                row, col = int(parts[1]), int(parts[2])
-            else:
-                row, col = 0, 0
+            # Parse position from key (accepts "r0c1" or legacy "ax_0_1")
+            parsed = parse_grid_id(ax_key)
+            row, col = parsed if parsed else (0, 0)
 
             ax_record = AxesRecord(
                 position=(row, col),
@@ -257,7 +256,10 @@ class FigureRecord:
             for dec_data in ax_data.get("decorations", []):
                 ax_record.decorations.append(CallRecord.from_dict(dec_data, (row, col)))
 
-            record.axes[ax_key] = ax_record
+            # Re-key to canonical grid id so downstream consumers always see
+            # "r{row}c{col}" regardless of whether the recipe used the legacy
+            # "ax_{row}_{col}" form.
+            record.axes[grid_id(row, col)] = ax_record
 
         return record
 
