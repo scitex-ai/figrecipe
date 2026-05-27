@@ -404,6 +404,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">grid_id</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -491,6 +492,7 @@
                 <span class="n">finalize_special_plots</span><span class="p">,</span>
                 <span class="n">finalize_ticks</span><span class="p">,</span>
             <span class="p">)</span>
+
             <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">get_axes</span><span class="p">():</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">finalize_ticks</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
@@ -708,7 +710,7 @@
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">rec_ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="ow">is</span> <span class="n">mpl_ax</span><span class="p">:</span>
-                    <span class="n">ax_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ax_</span><span class="si">{</span><span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">ax_key</span> <span class="o">=</span> <span class="n">grid_id</span><span class="p">(</span><span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
                     <span class="k">break</span>
         <span class="n">ser_kw</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
