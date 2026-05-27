@@ -4,7 +4,7 @@
 !-- File: /home/ywatanabe/proj/figrecipe/README.md
 !-- --- -->
 
-# FigRecipe (<code>scitex-plt</code>)
+# FigRecipe
 
 <p align="center">
   <a href="https://scitex.ai">
@@ -33,8 +33,8 @@
 
 | # | Problem | Solution |
 |---|---------|----------|
-| 1 | **Figures drift from data** -- `plt.savefig(...)` produces a PNG whose source data disappears the moment the notebook closes | **Recipe + data + PNG atomic** -- each `ax.stx_*()` call records inputs; `stx.io.save(fig)` writes `.png + .csv + .yaml` so figures are replayable from the recipe |
-| 2 | **Restyling requires re-running analysis** -- changing fonts/colors/layout means rebuilding the figure from scratch | **Reproduce from recipe** -- `stx.plt.reproduce("fig.yaml", style="nature")` restyles without touching data; hashes stay valid for Clew |
+| 1 | **Figures drift from data** -- `plt.savefig(...)` produces a PNG whose source data disappears the moment the notebook closes | **Recipe + data + PNG atomic** -- each `ax.plot()` call records inputs; `fr.save(fig)` writes `.png + .csv + .yaml` so figures are replayable from the recipe |
+| 2 | **Restyling requires re-running analysis** -- changing fonts/colors/layout means rebuilding the figure from scratch | **Reproduce from recipe** -- `fr.reproduce("fig.yaml", style="nature")` restyles without touching data; hashes stay valid for Clew |
 | 3 | **mm-precision layout hard** -- matplotlib uses inches/pixels; journals demand mm | **Native mm layout** -- `figure_mm()` + `figure_from_axes_mm()` give journal-grade column widths without conversion math |
 
 ## Installation
