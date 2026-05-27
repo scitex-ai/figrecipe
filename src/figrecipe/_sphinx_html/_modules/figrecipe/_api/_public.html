@@ -299,6 +299,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.draw_graph"><code class="docutils literal notranslate"><span class="pre">draw_graph()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.smart_align"><code class="docutils literal notranslate"><span class="pre">smart_align()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.edit"><code class="docutils literal notranslate"><span class="pre">edit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.export_editable"><code class="docutils literal notranslate"><span class="pre">export_editable()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.enable_svg"><code class="docutils literal notranslate"><span class="pre">enable_svg()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.apply_style"><code class="docutils literal notranslate"><span class="pre">apply_style()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.signature"><code class="docutils literal notranslate"><span class="pre">signature()</span></code></a></li>
@@ -510,6 +511,7 @@
     <span class="n">image_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">facecolor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">save_hitmap</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">save_editable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Save a figure as image and recipe. Unified API with fig.savefig().</span>
 
@@ -543,6 +545,10 @@
 <span class="sd">        Background color. When opaque, patches are made visible.</span>
 <span class="sd">    save_hitmap : bool</span>
 <span class="sd">        If True (default), save hitmap image for GUI editor element selection.</span>
+<span class="sd">    save_editable : bool</span>
+<span class="sd">        If True, write the editable-figure JSON (schema</span>
+<span class="sd">        ``scitex.plt.figure.editable``) to ``&lt;stem&gt;.json`` next to the image.</span>
+<span class="sd">        Default False — opt in for the GUI / web editor.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -552,7 +558,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">._save</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_figure</span>
 
-    <span class="k">return</span> <span class="n">save_figure</span><span class="p">(</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">save_figure</span><span class="p">(</span>
         <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
         <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
         <span class="n">save_recipe</span><span class="o">=</span><span class="n">save_recipe</span><span class="p">,</span>
@@ -567,7 +573,17 @@
         <span class="n">image_format</span><span class="o">=</span><span class="n">image_format</span><span class="p">,</span>
         <span class="n">facecolor</span><span class="o">=</span><span class="n">facecolor</span><span class="p">,</span>
         <span class="n">save_hitmap</span><span class="o">=</span><span class="n">save_hitmap</span><span class="p">,</span>
-    <span class="p">)</span></div>
+    <span class="p">)</span>
+
+    <span class="c1"># Editable-figure JSON sidecar (schema scitex.plt.figure.editable).</span>
+    <span class="c1"># Written next to the saved image; opt-in (default False).</span>
+    <span class="k">if</span> <span class="n">save_editable</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.._editable</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_editable</span> <span class="k">as</span> <span class="n">_save_editable</span>
+
+        <span class="n">image_path</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">result</span>
+        <span class="n">_save_editable</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">image_path</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
 
 
 
