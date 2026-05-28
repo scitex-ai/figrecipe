@@ -2,15 +2,10 @@
 # -*- coding: utf-8 -*-
 """Helper functions for save operations (extracted for modularity)."""
 
-import shutil
-import tempfile
-import zipfile
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 from .._utils._grid import parse_grid_id
-
-BUNDLE_RECIPE_NAME = "recipe.yaml"
 
 
 def _crop_to_axes_size(
@@ -179,86 +174,6 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                 # Mm-based format: ax_mm_idx
                 ax_record.bbox = bbox_list
                 break
-
-
-def _is_bundle_path(path: Path) -> bool:
-    """Check if path represents a bundle (directory, ZIP, .fig.zip, or .plt.zip)."""
-    suffix = path.suffix.lower()
-    suffixes = [s.lower() for s in path.suffixes]
-    # .fig.zip or .plt.zip
-    if suffixes[-2:] in ([".fig", ".zip"], [".plt", ".zip"]):
-        return True
-    # ZIP file
-    if suffix == ".zip":
-        return True
-    # Existing directory
-    if path.is_dir():
-        return True
-    # Path ending with / (explicit directory)
-    if str(path).endswith("/"):
-        return True
-    # No extension and doesn't look like a file
-    if not suffix and not path.exists():
-        return True
-    return False
-
-
-def _save_as_bundle(
-    fig,
-    path: Path,
-    include_data: bool,
-    data_format: str,
-    csv_format: str,
-    dpi: int,
-    transparent: bool,
-    image_format: str,
-    verbose: bool,
-) -> Tuple[Path, Path]:
-    """Save figure as a bundle (directory or ZIP)."""
-    from ._save import _get_default_image_format
-
-    suffix = path.suffix.lower()
-    is_zip = suffix == ".zip"
-
-    # Create temporary directory for bundle contents
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-
-        # Determine image format
-        img_format = image_format or _get_default_image_format()
-        image_name = f"figure.{img_format}"
-
-        # Save image (no bbox_inches to preserve mm layout)
-        image_path = tmpdir / image_name
-        fig.fig.savefig(image_path, dpi=dpi, transparent=transparent)
-
-        # Save recipe
-        yaml_path = tmpdir / BUNDLE_RECIPE_NAME
-        fig.save_recipe(
-            yaml_path,
-            include_data=include_data,
-            data_format=data_format,
-            csv_format=csv_format,
-        )
-
-        if is_zip:
-            # Create ZIP bundle
-            zip_path = path.with_suffix(".zip")
-            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                zf.write(yaml_path, BUNDLE_RECIPE_NAME)
-                zf.write(image_path, image_name)
-            if verbose:
-                print(f"Saved: {zip_path} (ZIP bundle)")
-            return zip_path, zip_path
-        else:
-            # Create directory bundle
-            bundle_dir = Path(str(path).rstrip("/"))
-            bundle_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(yaml_path, bundle_dir / BUNDLE_RECIPE_NAME)
-            shutil.copy2(image_path, bundle_dir / image_name)
-            if verbose:
-                print(f"Saved: {bundle_dir}/ (directory bundle)")
-            return bundle_dir, bundle_dir / BUNDLE_RECIPE_NAME
 
 
 def save_hitmap(

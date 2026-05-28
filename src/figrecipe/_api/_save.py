@@ -6,11 +6,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 # Import helpers from separate module
-from ._save_helpers import (
-    _capture_axes_bboxes,
-    _is_bundle_path,
-    _save_as_bundle,
-)
+from ._save_helpers import _capture_axes_bboxes
 from ._save_helpers import (
     save_hitmap as _save_hitmap,
 )
@@ -270,45 +266,9 @@ def save_figure(
             print(f"Saved: {path} (Pltz bundle)")
         return path, None, None
 
-    # Check if saving as ZIP bundle (layered format: spec.json + style.json + data.csv)
-    if path.suffix.lower() == ".zip":
-        from .._bundle import save_bundle
-
-        bundle_path = save_bundle(
-            fig,
-            path,
-            dpi=dpi,
-            save_hitmap=save_hitmap,
-            verbose=verbose,
-        )
-        # Also save recipe alongside ZIP for easy fr.reproduce() access
-        yaml_path = None
-        if save_recipe:
-            yaml_path = path.with_suffix(".yaml")
-            fig.save_recipe(
-                yaml_path,
-                include_data=include_data,
-                data_format=data_format,
-                csv_format=csv_format,
-            )
-            if verbose:
-                print(f"Saved recipe: {yaml_path}")
-        return bundle_path, yaml_path, None
-
-    # Check if saving as directory bundle (legacy recipe.yaml format)
-    if save_recipe and _is_bundle_path(path):
-        bundle_path, yaml_path = _save_as_bundle(
-            fig,
-            path,
-            include_data,
-            data_format,
-            csv_format,
-            dpi,
-            transparent,
-            image_format or _get_default_image_format(),
-            verbose,
-        )
-        return bundle_path, yaml_path, None
+    # Bare .zip (no .plt./.fig. infix) and directory-bundle dispatch are
+    # intentionally NOT supported. figrecipe owns I/O via .plt.zip / .fig.zip;
+    # anything else routes to standard image+recipe save below.
 
     # Resolve paths for standard save
     image_path, yaml_path, _ = resolve_save_paths(path, image_format)
