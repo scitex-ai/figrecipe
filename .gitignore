@@ -92,6 +92,7 @@ outputs/
 !pyproject.toml
 !outputs/notebook/*.yaml
 !src/figrecipe/styles/presets/*.yaml
+!src/figrecipe/presets/*.yaml
 *.npy
 *.npz
 *.csv
