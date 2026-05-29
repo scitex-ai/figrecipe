@@ -19,6 +19,7 @@ except Exception:
 
 from ._branding import BRAND_NAME as _BRAND_NAME
 from ._branding import rebrand_text as _rebrand_text
+from ._qr import add_qr_to_figure
 
 # Brand-triggered house style: when a parent package (e.g. scitex.plt) sets
 # FIGRECIPE_BRAND, auto-apply that brand's global plotting style on import so
@@ -246,6 +247,7 @@ __all__ = [
     "info",
     "validate",
     "extract_data",
+    "add_qr_to_figure",
     # Bundle format
     "Figz",
     "Pltz",
