@@ -243,6 +243,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#figrecipe.validate"><code class="docutils literal notranslate"><span class="pre">validate()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#figrecipe.extract_data"><code class="docutils literal notranslate"><span class="pre">extract_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#figrecipe.add_qr_to_figure"><code class="docutils literal notranslate"><span class="pre">add_qr_to_figure()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#figrecipe.Figz"><code class="docutils literal notranslate"><span class="pre">Figz</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#figrecipe.Figz.__init__"><code class="docutils literal notranslate"><span class="pre">Figz.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#figrecipe.Figz.create"><code class="docutils literal notranslate"><span class="pre">Figz.create()</span></code></a></li>
@@ -846,6 +847,33 @@ returns (path, offset_dict).</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="figrecipe.add_qr_to_figure">
+<span class="sig-prename descclassname"><span class="pre">figrecipe.</span></span><span class="sig-name descname"><span class="pre">add_qr_to_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bottom-right'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.08</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_qr.html#add_qr_to_figure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe.add_qr_to_figure" title="Link to this definition"></a></dt>
+<dd><p>Add a minimal QR code to a matplotlib figure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fig</strong> (<a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="(in Matplotlib v3.10.9)"><em>matplotlib.figure.Figure</em></a>) – Target figure to overlay onto.</p></li>
+<li><p><strong>metadata</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Payload to encode. If <code class="docutils literal notranslate"><span class="pre">&quot;url&quot;</span></code> is absent, <code class="docutils literal notranslate"><span class="pre">&quot;https://scitex.ai&quot;</span></code>
+is added so the QR resolves to something even when consumers
+don’t provide one.</p></li>
+<li><p><strong>position</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – One of <code class="docutils literal notranslate"><span class="pre">&quot;bottom-right&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;bottom-left&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;top-right&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;top-left&quot;</span></code>. Unknown values fall back to <code class="docutils literal notranslate"><span class="pre">&quot;bottom-right&quot;</span></code>.</p></li>
+<li><p><strong>size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Relative size of the QR overlay (fraction of figure width).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The same figure, with a QR overlay axes added. If the optional
+<code class="docutils literal notranslate"><span class="pre">qrcode</span></code> / <code class="docutils literal notranslate"><span class="pre">Pillow</span></code> dependencies are not installed, the
+figure is returned unmodified and a warning is logged.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure" title="(in Matplotlib v3.10.9)">matplotlib.figure.Figure</a></p>
 </dd>
 </dl>
 </dd></dl>

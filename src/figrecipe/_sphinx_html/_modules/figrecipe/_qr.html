@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._spec_builders &mdash; FigRecipe v0.28.12</title>
+  <title>figrecipe._qr &mdash; FigRecipe v0.28.12</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/plot_directive.css" />
@@ -387,7 +387,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">figrecipe._spec_builders</li>
+      <li class="breadcrumb-item active">figrecipe._qr</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -396,327 +396,97 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for figrecipe._spec_builders</h1><div class="highlight"><pre>
+  <h1>Source code for figrecipe._qr</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Build figrecipe spec dicts from parameter dicts.</span>
+<span class="sd">&quot;&quot;&quot;QR-code overlay for figure-level metadata visualization.</span>
 
-<span class="sd">This module converts query-style parameter dicts (from REST APIs, CLIs, etc.)</span>
-<span class="sd">into figrecipe-compatible spec dicts. It is the single source of truth for</span>
-<span class="sd">kind registries and spec construction logic.</span>
+<span class="sd">Adds a minimal QR code to a matplotlib figure encoding arbitrary</span>
+<span class="sd">metadata (typically a URL + provenance dict). Used for embedding</span>
+<span class="sd">reproducibility / source links directly on a publication-ready figure.</span>
 
-<span class="sd">Usage</span>
-<span class="sd">-----</span>
-<span class="sd">&gt;&gt;&gt; from figrecipe import build_spec, build_spec_from_csv</span>
-<span class="sd">&gt;&gt;&gt; spec = build_spec({&quot;kind&quot;: &quot;line&quot;, &quot;y&quot;: &quot;1,2,3,4&quot;, &quot;title&quot;: &quot;Demo&quot;})</span>
-<span class="sd">&gt;&gt;&gt; spec = build_spec_from_csv(&quot;/tmp/data.csv&quot;, {&quot;kind&quot;: &quot;scatter&quot;, &quot;x_col&quot;: &quot;x&quot;, &quot;y_col&quot;: &quot;y&quot;})</span>
+<span class="sd">Migrated from ``scitex.io._qr_utils`` (2026-05-29) per SoC: QR</span>
+<span class="sd">annotation is figure-domain, not I/O-domain.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>  <span class="c1"># noqa: F401 — used in &quot;Path&quot; forward-ref annotation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;XY_KINDS&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DATA_KINDS&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;LABEL_KINDS&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;MATRIX_KINDS&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ALL_KINDS&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;KIND_ALIASES&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;build_spec&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;build_spec_from_csv&quot;</span><span class="p">,</span>
-<span class="p">]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
-<span class="c1"># ---- Kind registries --------------------------------------------------------</span>
-
-<span class="n">XY_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="s2">&quot;scatter&quot;</span><span class="p">,</span> <span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="s2">&quot;errorbar&quot;</span><span class="p">,</span> <span class="s2">&quot;stem&quot;</span><span class="p">,</span> <span class="s2">&quot;bar&quot;</span><span class="p">,</span> <span class="s2">&quot;barh&quot;</span><span class="p">}</span>
-<span class="n">DATA_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span> <span class="s2">&quot;box&quot;</span><span class="p">,</span> <span class="s2">&quot;boxplot&quot;</span><span class="p">,</span> <span class="s2">&quot;violin&quot;</span><span class="p">,</span> <span class="s2">&quot;violinplot&quot;</span><span class="p">}</span>
-<span class="n">LABEL_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pie&quot;</span><span class="p">}</span>
-<span class="n">MATRIX_KINDS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;heatmap&quot;</span><span class="p">,</span> <span class="s2">&quot;imshow&quot;</span><span class="p">}</span>
-
-<span class="n">ALL_KINDS</span> <span class="o">=</span> <span class="n">XY_KINDS</span> <span class="o">|</span> <span class="n">DATA_KINDS</span> <span class="o">|</span> <span class="n">LABEL_KINDS</span> <span class="o">|</span> <span class="n">MATRIX_KINDS</span>
-<span class="n">KIND_ALIASES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;box&quot;</span><span class="p">:</span> <span class="s2">&quot;boxplot&quot;</span><span class="p">,</span> <span class="s2">&quot;violin&quot;</span><span class="p">:</span> <span class="s2">&quot;violinplot&quot;</span><span class="p">}</span>
-
-<span class="n">_UNSUPPORTED_MSG</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;Use: line, scatter, bar, barh, hist, box, violin, pie, &quot;</span>
-    <span class="s2">&quot;heatmap, step, errorbar, stem&quot;</span>
-<span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<span class="c1"># ---- Parse helpers ----------------------------------------------------------</span>
+<div class="viewcode-block" id="add_qr_to_figure">
+<a class="viewcode-back" href="../../api/figrecipe.html#figrecipe.add_qr_to_figure">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_qr_to_figure</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="s2">&quot;bottom-right&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mf">0.08</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a minimal QR code to a matplotlib figure.</span>
 
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fig : matplotlib.figure.Figure</span>
+<span class="sd">        Target figure to overlay onto.</span>
+<span class="sd">    metadata : dict</span>
+<span class="sd">        Payload to encode. If ``&quot;url&quot;`` is absent, ``&quot;https://scitex.ai&quot;``</span>
+<span class="sd">        is added so the QR resolves to something even when consumers</span>
+<span class="sd">        don&#39;t provide one.</span>
+<span class="sd">    position : str</span>
+<span class="sd">        One of ``&quot;bottom-right&quot;``, ``&quot;bottom-left&quot;``, ``&quot;top-right&quot;``,</span>
+<span class="sd">        ``&quot;top-left&quot;``. Unknown values fall back to ``&quot;bottom-right&quot;``.</span>
+<span class="sd">    size : float</span>
+<span class="sd">        Relative size of the QR overlay (fraction of figure width).</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_parse_floats</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_parse_strings</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_try_parse_floats</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    matplotlib.figure.Figure</span>
+<span class="sd">        The same figure, with a QR overlay axes added. If the optional</span>
+<span class="sd">        ``qrcode`` / ``Pillow`` dependencies are not installed, the</span>
+<span class="sd">        figure is returned unmodified and a warning is logged.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_parse_floats</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_parse_strings</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">qrcode</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;qrcode library not available. Install with: pip install qrcode[pil]&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span>
 
+    <span class="k">if</span> <span class="s2">&quot;url&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;url&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;https://scitex.ai&quot;</span>
 
-<span class="c1"># ---- Internal builders ------------------------------------------------------</span>
+    <span class="n">metadata_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">qr</span> <span class="o">=</span> <span class="n">qrcode</span><span class="o">.</span><span class="n">QRCode</span><span class="p">(</span>
+        <span class="n">version</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">error_correction</span><span class="o">=</span><span class="n">qrcode</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">ERROR_CORRECT_L</span><span class="p">,</span>
+        <span class="n">box_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">border</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">qr</span><span class="o">.</span><span class="n">add_data</span><span class="p">(</span><span class="n">metadata_json</span><span class="p">)</span>
+    <span class="n">qr</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">fit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">qr_img</span> <span class="o">=</span> <span class="n">qr</span><span class="o">.</span><span class="n">make_image</span><span class="p">(</span><span class="n">fill_color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">back_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">)</span>
 
+    <span class="n">positions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;bottom-right&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.92</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span>
+        <span class="s2">&quot;bottom-left&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span>
+        <span class="s2">&quot;top-right&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.92</span><span class="p">,</span> <span class="mf">0.88</span><span class="p">),</span>
+        <span class="s2">&quot;top-left&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.88</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">position</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">positions</span><span class="p">:</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="s2">&quot;bottom-right&quot;</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[</span><span class="n">position</span><span class="p">]</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_init_spec</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-    <span class="n">kind</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">kind</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;kind&#39; parameter is required&quot;</span><span class="p">)</span>
+    <span class="n">ax_qr</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">size</span> <span class="o">*</span> <span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">get_figheight</span><span class="p">()</span> <span class="o">/</span> <span class="n">fig</span><span class="o">.</span><span class="n">get_figwidth</span><span class="p">())]</span>
+    <span class="p">)</span>
+    <span class="n">ax_qr</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">qr_img</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">)</span>
+    <span class="n">ax_qr</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
 
-    <span class="n">plot_kind</span> <span class="o">=</span> <span class="n">KIND_ALIASES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
-
-    <span class="n">figure</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="s2">&quot;SCITEX&quot;</span><span class="p">}</span>
-    <span class="k">if</span> <span class="s2">&quot;width&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
-        <span class="n">figure</span><span class="p">[</span><span class="s2">&quot;width_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;width&quot;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="s2">&quot;height&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
-        <span class="n">figure</span><span class="p">[</span><span class="s2">&quot;height_mm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;height&quot;</span><span class="p">])</span>
-
-    <span class="n">spec</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;figure&quot;</span><span class="p">:</span> <span class="n">figure</span><span class="p">,</span> <span class="s2">&quot;plots&quot;</span><span class="p">:</span> <span class="p">[]}</span>
-    <span class="n">plot_entry</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">plot_kind</span><span class="p">}</span>
-
-    <span class="k">return</span> <span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">plot_kind</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_finalize_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-    <span class="n">color</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
-
-    <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;plots&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">plot_entry</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;xlabel&quot;</span><span class="p">,</span> <span class="s2">&quot;ylabel&quot;</span><span class="p">):</span>
-        <span class="n">val</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">val</span><span class="p">:</span>
-            <span class="n">spec</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
-
-    <span class="k">return</span> <span class="n">spec</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_validate_kind</span><span class="p">(</span><span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALL_KINDS</span> <span class="ow">and</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">KIND_ALIASES</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported kind: &#39;</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&#39;. </span><span class="si">{</span><span class="n">_UNSUPPORTED_MSG</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_xy</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
-    <span class="n">y_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">y_str</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;y&#39; parameter is required for kind=</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parse_floats</span><span class="p">(</span><span class="n">y_str</span><span class="p">)</span>
-
-    <span class="n">x_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">x_str</span><span class="p">:</span>
-        <span class="n">x_vals</span> <span class="o">=</span> <span class="n">_try_parse_floats</span><span class="p">(</span><span class="n">x_str</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;xticks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;positions&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_vals</span><span class="p">))),</span>
-                <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="n">x_vals</span><span class="p">,</span>
-            <span class="p">}</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_vals</span>
-
-    <span class="n">yerr_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;yerr&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">yerr_str</span><span class="p">:</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;yerr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parse_floats</span><span class="p">(</span><span class="n">yerr_str</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="o">!=</span> <span class="s2">&quot;errorbar&quot;</span><span class="p">:</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;errorbar&quot;</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_distribution</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">plot_kind</span><span class="p">):</span>
-    <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">group_labels</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="n">data_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">data_str</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;data&#39; parameter is required for kind=</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_floats</span><span class="p">(</span><span class="n">data_str</span><span class="p">))</span>
-    <span class="n">group_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Group 1&quot;</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
-        <span class="n">extra</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">extra</span><span class="p">:</span>
-            <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_parse_floats</span><span class="p">(</span><span class="n">extra</span><span class="p">))</span>
-            <span class="n">group_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Group </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="n">labels_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;labels&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">labels_str</span><span class="p">:</span>
-        <span class="n">group_labels</span> <span class="o">=</span> <span class="n">_parse_strings</span><span class="p">(</span><span class="n">labels_str</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">plot_kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;boxplot&quot;</span><span class="p">,</span> <span class="s2">&quot;violinplot&quot;</span><span class="p">):</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">groups</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)))</span>
-        <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;xticks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;positions&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">))),</span>
-            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="n">group_labels</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)],</span>
-        <span class="p">}</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">groups</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">groups</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_pie</span><span class="p">(</span><span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="n">data_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">data_str</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;data&#39; parameter is required for kind=pie&quot;</span><span class="p">)</span>
-    <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parse_floats</span><span class="p">(</span><span class="n">data_str</span><span class="p">)</span>
-
-    <span class="n">labels_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;labels&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">labels_str</span><span class="p">:</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_parse_strings</span><span class="p">(</span><span class="n">labels_str</span><span class="p">)</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_matrix</span><span class="p">(</span><span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">kind</span><span class="p">):</span>
-    <span class="n">data_str</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">data_str</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;data&#39; parameter is required for kind=</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">flat</span> <span class="o">=</span> <span class="n">_parse_floats</span><span class="p">(</span><span class="n">data_str</span><span class="p">)</span>
-    <span class="n">nrows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nrows&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-    <span class="n">ncols</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ncols&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-
-    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-    <span class="k">if</span> <span class="n">nrows</span> <span class="ow">and</span> <span class="n">ncols</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span> <span class="o">!=</span> <span class="n">nrows</span> <span class="o">*</span> <span class="n">ncols</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;data length </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span><span class="si">}</span><span class="s2"> != nrows*ncols (</span><span class="si">{</span><span class="n">nrows</span><span class="si">}</span><span class="s2">*</span><span class="si">{</span><span class="n">ncols</span><span class="si">}</span><span class="s2">)&quot;</span>
-            <span class="p">)</span>
-        <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nrows</span><span class="p">,</span> <span class="n">ncols</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span>
-        <span class="n">side</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)))</span>
-        <span class="n">padded</span> <span class="o">=</span> <span class="n">flat</span> <span class="o">+</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">side</span> <span class="o">*</span> <span class="n">side</span> <span class="o">-</span> <span class="n">n</span><span class="p">)</span>
-        <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">padded</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">side</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-
-    <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix</span>
-    <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;imshow&quot;</span>
-
-
-<span class="c1"># ---- Public API -------------------------------------------------------------</span>
-
-
-<div class="viewcode-block" id="build_spec">
-<a class="viewcode-back" href="../../api/figrecipe.html#figrecipe.build_spec">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">build_spec</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a parameter dict to a figrecipe spec dict.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    params : dict</span>
-<span class="sd">        Flat parameter dict. Required key: ``kind``.</span>
-<span class="sd">        For XY plots: ``x``, ``y`` (comma-separated floats or strings).</span>
-<span class="sd">        For distributions: ``data``, ``data2`` .. ``data6``, ``labels``.</span>
-<span class="sd">        For pie: ``data``, ``labels``.</span>
-<span class="sd">        For heatmap: ``data``, ``nrows``, ``ncols``.</span>
-<span class="sd">        Optional: ``color``, ``title``, ``xlabel``, ``ylabel``,</span>
-<span class="sd">        ``width``, ``height``, ``yerr``.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Figrecipe-compatible spec.</span>
-
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    ValueError</span>
-<span class="sd">        If required parameters are missing or kind is unsupported.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">plot_kind</span> <span class="o">=</span> <span class="n">_init_spec</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">XY_KINDS</span><span class="p">:</span>
-        <span class="n">_build_xy</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">DATA_KINDS</span> <span class="ow">or</span> <span class="n">plot_kind</span> <span class="ow">in</span> <span class="n">DATA_KINDS</span><span class="p">:</span>
-        <span class="n">_build_distribution</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">plot_kind</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">LABEL_KINDS</span><span class="p">:</span>
-        <span class="n">_build_pie</span><span class="p">(</span><span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">MATRIX_KINDS</span><span class="p">:</span>
-        <span class="n">_build_matrix</span><span class="p">(</span><span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">_validate_kind</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">_finalize_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">fig</span></div>
 
 
 
-<div class="viewcode-block" id="build_spec_from_csv">
-<a class="viewcode-back" href="../../api/figrecipe.html#figrecipe.build_spec_from_csv">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">build_spec_from_csv</span><span class="p">(</span>
-    <span class="n">csv_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;Path&quot;</span><span class="p">],</span>
-    <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a figrecipe spec from a CSV file path and parameters.</span>
-
-<span class="sd">    Uses figrecipe&#39;s native ``data_file`` + column name resolution.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    csv_path : str or Path</span>
-<span class="sd">        Path to the CSV file.</span>
-<span class="sd">    params : dict</span>
-<span class="sd">        Flat parameter dict. Required: ``kind``.</span>
-<span class="sd">        For XY: ``x_col``, ``y_col``.</span>
-<span class="sd">        For distributions: ``data_col``.</span>
-<span class="sd">        For pie: ``data_col``, ``labels_col``.</span>
-<span class="sd">        For heatmap: ``data_col``.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Figrecipe-compatible spec.</span>
-
-<span class="sd">    Raises</span>
-<span class="sd">    ------</span>
-<span class="sd">    ValueError</span>
-<span class="sd">        If required parameters are missing or kind is unsupported.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">plot_kind</span> <span class="o">=</span> <span class="n">_init_spec</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-    <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;data_file&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">csv_path</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">XY_KINDS</span><span class="p">:</span>
-        <span class="n">y_col</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">y_col</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;y_col&#39; is required for XY plot kinds&quot;</span><span class="p">)</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_col</span>
-        <span class="n">x_col</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">x_col</span><span class="p">:</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_col</span>
-
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">DATA_KINDS</span> <span class="ow">or</span> <span class="n">plot_kind</span> <span class="ow">in</span> <span class="n">DATA_KINDS</span><span class="p">:</span>
-        <span class="n">data_col</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_col</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;data_col&#39; is required for distribution plots&quot;</span><span class="p">)</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_col</span>
-
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">LABEL_KINDS</span><span class="p">:</span>
-        <span class="n">data_col</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_col</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;data_col&#39; is required for pie charts&quot;</span><span class="p">)</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_col</span>
-        <span class="n">labels_col</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;labels_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">labels_col</span><span class="p">:</span>
-            <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels_col</span>
-
-    <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">MATRIX_KINDS</span><span class="p">:</span>
-        <span class="n">data_col</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_col&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_col</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;data_col&#39; is required for heatmaps&quot;</span><span class="p">)</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_col</span>
-        <span class="n">plot_entry</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;imshow&quot;</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">_validate_kind</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">_finalize_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">plot_entry</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span></div>
-
-
-
-<span class="c1"># EOF</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;add_qr_to_figure&quot;</span><span class="p">]</span>
 </pre></div>
 
            </div>
