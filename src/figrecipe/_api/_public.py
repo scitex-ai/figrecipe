@@ -102,7 +102,7 @@ def save(
     csv_format: CsvFormat = "separate",
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
-    validate_error_level: str = "error",
+    validate_error_level: str = "warning",
     verbose: bool = True,
     dpi: Optional[int] = None,
     image_format: Optional[str] = None,
@@ -131,7 +131,15 @@ def save(
     validate_mse_threshold : float
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
-        How to handle failures: 'error', 'warning', or 'debug'.
+        How to handle failures: 'error', 'warning' (default), or 'debug'.
+        Default is ``"warning"`` so a successful save followed by an
+        informational reproducibility check does NOT raise on the user
+        — the PNG is already on disk by the time validation runs, and
+        common matplotlib primitives that are not yet captured by the
+        recipe (``axhspan``, ``fill_between``, ``symlog``, ``set_xticks``
+        with arrays, etc.) routinely produce pixel-MSE above the
+        default 100 threshold even though the saved image is visually
+        correct. See issue #134 for the failure pattern and rationale.
     verbose : bool
         If True (default), print save status.
     dpi : int, optional
