@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.14] - 2026-06-02
+
+### Added
+- **STX-FIG001 `axis-range-alignment` static lint rule** (#136). AST checker that fires when two or more subplots on the same figure carry explicit literal `set_xlim` / `set_ylim` calls with disagreeing tuples — mismatched ranges destroy the visual comparison the subplots are presumably trying to make (scientific-figure standards rule #4). Severity WARNING; opt-out via `# stx-allow: STX-FIG001`. Covers the literal-mismatch case only.
+- **`axis_range_alignment` runtime validator** (#137). Fires at savefig time, walks `fig.axes`, groups peers by inferred shared quantity (matching xlabel/ylabel or same gridspec row/col), warns when `get_xlim`/`get_ylim` disagree above tolerance. Honors matplotlib `sharex`/`sharey`, twin axes, and a `fig._figrecipe_allow_axis_mismatch` opt-out sentinel. Default `validate_error_level="warning"` per issue #134 preference. Covers the dominant autoscale-with-different-data case that the static checker provably cannot detect.
+
 ## [0.28.9] - 2026-05-16
 
 ### Fixed
