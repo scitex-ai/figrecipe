@@ -1,10 +1,13 @@
-"""Linter plugin for figrecipe: figure/layout and plot rules (FM001-FM009, P001-P005).
+"""Linter plugin for figrecipe: figure/layout, scientific-figure, and plot rules.
 
-Registered via entry point 'scitex_linter.plugins' so scitex-linter
+Rule families:
+- FM001-FM009  — inch-based matplotlib patterns; suggest mm-based alternatives.
+- FIG001       — scientific-figure hygiene (axis-range alignment across subplots).
+- P001-P009    — bare matplotlib calls; suggest scitex/figrecipe tracked variants
+                 and flag style-override kwargs.
+
+Registered via entry point 'scitex_dev.linter.plugins' so scitex-linter
 discovers these rules automatically when figrecipe is installed.
-
-FM rules flag inch-based matplotlib patterns and suggest mm-based alternatives.
-P rules flag bare matplotlib calls and suggest scitex/figrecipe tracked variants.
 """
 
 
@@ -188,6 +191,32 @@ def get_plugin():
     )
 
     # ------------------------------------------------------------------
+    # FIG: Scientific-figure hygiene rules (FIG001+)
+    # FIG001 — multiple subplots that declare different literal axis
+    # ranges via set_xlim / set_ylim without sharex/sharey will look
+    # incomparable to the reader (rule #4 of the scientific-figure
+    # standards). Warning, not error: two subplots can legitimately
+    # plot different quantities.
+    # ------------------------------------------------------------------
+    FIG001 = Rule(
+        id="STX-FIG001",
+        severity="warning",
+        category="figure",
+        message=(
+            "Subplots on the same figure declare different axis ranges via "
+            "set_xlim/set_ylim. If these axes plot the same quantity, "
+            "mismatched ranges destroy visual comparison (rule #4 of the "
+            "scientific-figure standards)."
+        ),
+        suggestion=(
+            "Either align the ranges (e.g., min(all)..max(all)), use "
+            "sharex=True/sharey=True when calling plt.subplots, or annotate "
+            "the call site with `# stx-allow: STX-FIG001` if the axes "
+            "intentionally plot different quantities."
+        ),
+    )
+
+    # ------------------------------------------------------------------
     # P: Plot rules (P001-P005)
     # ------------------------------------------------------------------
     P001 = Rule(
@@ -305,6 +334,20 @@ def get_plugin():
     if style_checker is not None:
         checkers.append(style_checker)
 
+    # FIG001 axis-range-alignment checker. We subclass the base checker
+    # here so it ships the FIG001 rule object without the plugin loader
+    # needing to know about it.
+    try:
+        from figrecipe._axis_alignment_checker import AxisAlignmentChecker
+
+        class _AxisAlignmentChecker(AxisAlignmentChecker):  # type: ignore[misc, valid-type]
+            def __init__(self, source_lines, config):
+                super().__init__(source_lines, config, rule=FIG001)
+
+        checkers.append(_AxisAlignmentChecker)
+    except ImportError:
+        pass
+
     return {
         "rules": [
             FM001,
@@ -316,6 +359,7 @@ def get_plugin():
             FM007,
             FM008,
             FM009,
+            FIG001,
             P001,
             P002,
             P003,
