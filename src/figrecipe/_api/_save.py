@@ -152,6 +152,8 @@ def save_figure(
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
     validate_error_level: str = "error",
+    validate_axis_range_alignment: bool = True,
+    validate_axis_range_alignment_error_level: str = "warning",
     verbose: bool = True,
     dpi: Optional[int] = None,
     image_format: Optional[str] = None,
@@ -190,6 +192,15 @@ def save_figure(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle validation failures: 'error', 'warning', or 'debug'.
+    validate_axis_range_alignment : bool
+        If True (default), run the runtime ``axis_range_alignment``
+        check on the rendered figure before saving. Complements the
+        static ``STX-FIG001`` lint rule by catching the autoscale-
+        with-different-data case.
+    validate_axis_range_alignment_error_level : str
+        Dispatch level for the axis-range-alignment check:
+        'warning' (default — never kills the script), 'error', or
+        'debug' (silent).
     verbose : bool
         If True (default), print save status.
     dpi : int, optional
@@ -235,6 +246,17 @@ def save_figure(
     for ax in fig.fig.get_axes():
         finalize_ticks(ax)
         finalize_special_plots(ax, style_dict)
+
+    # Runtime axis-range-alignment check (complements static STX-FIG001).
+    # Default warning-level — per operator preference (figrecipe #134), never
+    # kill the script after the PNG has been written.
+    if validate_axis_range_alignment:
+        from .._axis_range_alignment import run_axis_range_alignment
+
+        run_axis_range_alignment(
+            fig.fig,
+            validate_error_level=validate_axis_range_alignment_error_level,
+        )
 
     # Check for .fig.zip (multi-panel Figz bundle) or .plt.zip (single-plot Pltz bundle)
     suffixes = [s.lower() for s in path.suffixes]
