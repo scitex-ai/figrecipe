@@ -103,6 +103,8 @@ def save(
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
     validate_error_level: str = "error",
+    validate_axis_range_alignment: bool = True,
+    validate_axis_range_alignment_error_level: str = "warning",
     verbose: bool = True,
     dpi: Optional[int] = None,
     image_format: Optional[str] = None,
@@ -132,6 +134,13 @@ def save(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle failures: 'error', 'warning', or 'debug'.
+    validate_axis_range_alignment : bool
+        If True (default), run the runtime ``axis_range_alignment``
+        check on the rendered figure. Catches the autoscale-with-
+        different-data case that the static STX-FIG001 lint misses.
+    validate_axis_range_alignment_error_level : str
+        Dispatch level for the axis-range-alignment check:
+        'warning' (default), 'error', or 'debug' (silent).
     verbose : bool
         If True (default), print save status.
     dpi : int, optional
@@ -165,6 +174,10 @@ def save(
         validate=validate,
         validate_mse_threshold=validate_mse_threshold,
         validate_error_level=validate_error_level,
+        validate_axis_range_alignment=validate_axis_range_alignment,
+        validate_axis_range_alignment_error_level=(
+            validate_axis_range_alignment_error_level
+        ),
         verbose=verbose,
         dpi=dpi,
         image_format=image_format,
