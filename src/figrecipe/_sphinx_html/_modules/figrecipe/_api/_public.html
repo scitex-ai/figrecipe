@@ -507,6 +507,8 @@
     <span class="n">validate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">validate_mse_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
     <span class="n">validate_error_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="n">validate_axis_range_alignment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">validate_axis_range_alignment_error_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">dpi</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">image_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -536,6 +538,13 @@
 <span class="sd">        Maximum acceptable MSE for validation (default: 100).</span>
 <span class="sd">    validate_error_level : str</span>
 <span class="sd">        How to handle failures: &#39;error&#39;, &#39;warning&#39;, or &#39;debug&#39;.</span>
+<span class="sd">    validate_axis_range_alignment : bool</span>
+<span class="sd">        If True (default), run the runtime ``axis_range_alignment``</span>
+<span class="sd">        check on the rendered figure. Catches the autoscale-with-</span>
+<span class="sd">        different-data case that the static STX-FIG001 lint misses.</span>
+<span class="sd">    validate_axis_range_alignment_error_level : str</span>
+<span class="sd">        Dispatch level for the axis-range-alignment check:</span>
+<span class="sd">        &#39;warning&#39; (default), &#39;error&#39;, or &#39;debug&#39; (silent).</span>
 <span class="sd">    verbose : bool</span>
 <span class="sd">        If True (default), print save status.</span>
 <span class="sd">    dpi : int, optional</span>
@@ -569,6 +578,10 @@
         <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span>
         <span class="n">validate_mse_threshold</span><span class="o">=</span><span class="n">validate_mse_threshold</span><span class="p">,</span>
         <span class="n">validate_error_level</span><span class="o">=</span><span class="n">validate_error_level</span><span class="p">,</span>
+        <span class="n">validate_axis_range_alignment</span><span class="o">=</span><span class="n">validate_axis_range_alignment</span><span class="p">,</span>
+        <span class="n">validate_axis_range_alignment_error_level</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">validate_axis_range_alignment_error_level</span>
+        <span class="p">),</span>
         <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
         <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">,</span>
         <span class="n">image_format</span><span class="o">=</span><span class="n">image_format</span><span class="p">,</span>
