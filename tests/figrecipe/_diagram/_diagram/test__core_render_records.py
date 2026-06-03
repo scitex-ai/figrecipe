@@ -14,9 +14,9 @@ gets a single high-level ``CallRecord(function="diagram",
 kwargs={"diagram_data": diagram.to_dict()})`` that the reproducer's
 existing ``replay_diagram_native_call`` already knows how to replay.
 
-These tests assert the recording side only. The replay side has its own
-coverage under ``tests/figrecipe/_reproducer/test__replay_diagram.py``;
-together they close the round-trip.
+Each test focuses on a single observable property of that recording
+hook (one assertion per test, AAA-structured) to satisfy STX-TQ002 /
+STX-TQ007.
 """
 
 from __future__ import annotations
@@ -24,23 +24,18 @@ from __future__ import annotations
 import pytest
 
 
-def _make_recording_axes():
-    """Return a real fr-wrapped figure + axes wired to a fresh Recorder."""
+def _make_recording_fig_ax():
+    """Real fr-wrapped figure + axes wired to a fresh Recorder."""
     import matplotlib
 
     matplotlib.use("Agg")
     import figrecipe as fr
 
-    fig, ax = fr.subplots(figsize_mm=(80, 60))
-    return fig, ax
+    return fr.subplots(figsize_mm=(80, 60))
 
 
-def test_render_on_recording_axes_appends_diagram_call_record():
-    """Direct ``Diagram.render(ax)`` records the diagram for replay."""
-    fr = pytest.importorskip("figrecipe")
-    _make_recording_axes_fn = _make_recording_axes  # local alias for readability
-    fig, ax = _make_recording_axes_fn()
-
+def _build_and_render_diagram(ax):
+    """Build a minimal two-box Diagram and render it onto ``ax``."""
     from figrecipe.diagram import Diagram
 
     diag = Diagram(title="GH139 smoke", width_mm=80, height_mm=60)
@@ -48,34 +43,50 @@ def test_render_on_recording_axes_appends_diagram_call_record():
     diag.add_box("b", "B", x_mm=40, y_mm=5)
     diag.add_arrow("a", "b")
     diag.render(ax)
+    return diag
 
-    # The recording axes carries a back-pointer to the Recorder; pluck it.
-    recorder = getattr(ax, "_recorder", None)
-    assert recorder is not None, "fr.subplots axes should expose ._recorder"
 
-    fig_record = recorder.figure_record
-    assert fig_record is not None
-    ax_record = fig_record.get_or_create_axes(*ax._position)
-
+def test_render_appends_exactly_one_diagram_call_record():
+    # Arrange
+    pytest.importorskip("figrecipe")
+    _, ax = _make_recording_fig_ax()
+    # Act
+    _build_and_render_diagram(ax)
+    ax_record = ax._recorder.figure_record.get_or_create_axes(*ax._position)
     diagram_calls = [c for c in ax_record.calls if c.function == "diagram"]
-    assert len(diagram_calls) == 1, (
-        f"expected exactly one recorded diagram call, got {len(diagram_calls)}"
-    )
+    # Assert
+    assert len(diagram_calls) == 1
 
-    rec = diagram_calls[0]
-    assert "diagram_data" in rec.kwargs, (
-        "recorded diagram call must carry diagram_data for replay"
-    )
-    diagram_data = rec.kwargs["diagram_data"]
-    assert isinstance(diagram_data, dict)
-    # diagram_data must round-trip through Diagram.from_dict so the reproducer
-    # can rebuild the renderer at replay time.
-    rebuilt = Diagram.from_dict(diagram_data)
+
+def test_recorded_diagram_call_carries_diagram_data_kwarg():
+    # Arrange
+    pytest.importorskip("figrecipe")
+    _, ax = _make_recording_fig_ax()
+    _build_and_render_diagram(ax)
+    ax_record = ax._recorder.figure_record.get_or_create_axes(*ax._position)
+    # Act
+    rec = next(c for c in ax_record.calls if c.function == "diagram")
+    # Assert
+    assert "diagram_data" in rec.kwargs
+
+
+def test_recorded_diagram_data_round_trips_through_from_dict():
+    # Arrange
+    pytest.importorskip("figrecipe")
+    from figrecipe.diagram import Diagram
+
+    _, ax = _make_recording_fig_ax()
+    _build_and_render_diagram(ax)
+    ax_record = ax._recorder.figure_record.get_or_create_axes(*ax._position)
+    rec = next(c for c in ax_record.calls if c.function == "diagram")
+    # Act
+    rebuilt = Diagram.from_dict(rec.kwargs["diagram_data"])
+    # Assert
     assert rebuilt.title == "GH139 smoke"
 
 
-def test_render_without_recording_axes_is_a_silent_noop():
-    """``Diagram.render(ax)`` on a plain matplotlib axes must not raise."""
+def test_render_on_plain_mpl_axes_does_not_raise():
+    # Arrange
     pytest.importorskip("figrecipe")
     import matplotlib
 
@@ -84,11 +95,10 @@ def test_render_without_recording_axes_is_a_silent_noop():
 
     from figrecipe.diagram import Diagram
 
-    fig, ax = plt.subplots(figsize=(3, 2))
-    # Plain axes has no ._recorder / ._position; the recording branch
-    # should short-circuit without raising and without polluting the
-    # bare matplotlib axes object.
+    _, ax = plt.subplots(figsize=(3, 2))
     diag = Diagram(title="GH139 noop", width_mm=80, height_mm=60)
     diag.add_box("only", "Only", x_mm=5, y_mm=5)
-    diag.render(ax)  # must not raise
+    # Act
+    diag.render(ax)
+    # Assert
     assert not hasattr(ax, "_recorder")
