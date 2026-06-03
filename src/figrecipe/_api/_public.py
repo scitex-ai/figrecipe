@@ -18,7 +18,7 @@ from .._reproducer import get_recipe_info
 from .._reproducer import reproduce as _reproduce_core
 from .._serializer import load_recipe
 from .._utils._numpy_io import CsvFormat, DataFormat
-from .._validator import ValidationResult
+from .._quality._validator import ValidationResult
 from .._wrappers import RecordingAxes, RecordingFigure
 
 

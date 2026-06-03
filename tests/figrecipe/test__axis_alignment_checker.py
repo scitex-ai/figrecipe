@@ -15,8 +15,8 @@ import pytest
 # environment — the checker itself is import-guarded the same way.
 pytest.importorskip("scitex_dev.linter.checker")
 
-from figrecipe._axis_alignment_checker import AxisAlignmentChecker  # noqa: E402
-from figrecipe._linter_plugin import get_plugin  # noqa: E402
+from figrecipe._quality._axis_alignment_checker import AxisAlignmentChecker  # noqa: E402
+from figrecipe._quality._linter_plugin import get_plugin  # noqa: E402
 
 # Locate the FIG001 rule object once via the plugin registration. Tests
 # instantiate the checker directly with this rule, mirroring the wiring

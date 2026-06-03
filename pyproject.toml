@@ -151,7 +151,7 @@ figrecipe = "figrecipe"
 figrecipe = "figrecipe"
 
 [project.entry-points."scitex_dev.linter.plugins"]
-figure = "figrecipe._linter_plugin:get_plugin"
+figure = "figrecipe._quality._linter_plugin:get_plugin"
 
 [tool.scitex_dev]
 mcp_parity_exempt = true

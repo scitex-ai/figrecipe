@@ -27,7 +27,7 @@ from dataclasses import replace as _replace
 def _scitex_linter_runtime():
     """Lazily import ``(Issue, _is_allowed_by_comment)`` from scitex-linter.
 
-    Deferred to call-time because ``figrecipe._linter_plugin.get_plugin``
+    Deferred to call-time because ``figrecipe._quality._linter_plugin.get_plugin``
     is itself invoked by ``scitex_dev.linter._plugin_loader.load_plugins``
     while ``scitex_dev.linter.checker`` is still mid-initialization. A
     top-level ``from scitex_dev.linter.checker import Issue`` would race
