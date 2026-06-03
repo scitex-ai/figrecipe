@@ -251,7 +251,7 @@ def save_figure(
     # Default warning-level — per operator preference (figrecipe #134), never
     # kill the script after the PNG has been written.
     if validate_axis_range_alignment:
-        from .._axis_range_alignment import run_axis_range_alignment
+        from .._quality._axis_range_alignment import run_axis_range_alignment
 
         run_axis_range_alignment(
             fig.fig,
@@ -474,7 +474,7 @@ def save_figure(
 
     # Validate if requested
     if validate:
-        from .._validator import validate_on_save
+        from .._quality._validator import validate_on_save
 
         result = validate_on_save(fig, saved_yaml, mse_threshold=validate_mse_threshold)
         status = "PASSED" if result.valid else "FAILED"

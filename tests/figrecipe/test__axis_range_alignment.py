@@ -18,7 +18,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 
-from figrecipe._axis_range_alignment import (  # noqa: E402
+from figrecipe._quality._axis_range_alignment import (  # noqa: E402
     WARNING_MESSAGE,
     check_axis_range_alignment,
     run_axis_range_alignment,

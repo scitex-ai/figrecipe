@@ -338,7 +338,7 @@ def get_plugin():
     # here so it ships the FIG001 rule object without the plugin loader
     # needing to know about it.
     try:
-        from figrecipe._axis_alignment_checker import AxisAlignmentChecker
+        from figrecipe._quality._axis_alignment_checker import AxisAlignmentChecker
 
         class _AxisAlignmentChecker(AxisAlignmentChecker):  # type: ignore[misc, valid-type]
             def __init__(self, source_lines, config):
