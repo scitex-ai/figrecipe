@@ -24,6 +24,7 @@ from ._im2grid import im2grid  # noqa: F401
 from ._is_valid_axis import assert_valid_axis, is_valid_axis  # noqa: F401
 from ._mk_colorbar import mk_colorbar  # noqa: F401
 from ._mk_patches import mk_patches  # noqa: F401
+from ._nice_lim import nice_lim
 from ._numpy_io import load_array, save_array
 from ._units import inch_to_mm, mm_to_inch, mm_to_pt, pt_to_mm
 
@@ -52,6 +53,7 @@ __all__ = [
     "mk_patches",
     "mm_to_inch",
     "mm_to_pt",
+    "nice_lim",
     "parse_csv_column_name",
     "parse_grid_id",
     "print_dimension_info",

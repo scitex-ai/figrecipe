@@ -157,6 +157,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "KIND_ALIASES": ("._spec_builders", "KIND_ALIASES"),
     # ._render
     "render_spec_to_bytes": ("._render", "render_spec_to_bytes"),
+    # ._utils._nice_lim  (issue #140)
+    "nice_lim": ("._utils._nice_lim", "nice_lim"),
     # ._utils._termplot
     "termplot": ("._utils._termplot", "termplot"),
     # ._api._style_manager (style helpers)
