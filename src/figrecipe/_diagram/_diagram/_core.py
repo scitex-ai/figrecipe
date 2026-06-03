@@ -398,9 +398,23 @@ class Diagram:
             and getattr(ax, "_position", None) is not None
         ):
             try:
-                from .._wrappers._axes_diagram import _record_diagram_call
+                # NB: from figrecipe/_diagram/_diagram/_core.py, `..` is
+                # figrecipe._diagram (NOT figrecipe). To reach figrecipe.
+                # _wrappers we need a third dot. v0.28.15/16/17 had `..` here
+                # and the recording silently swallowed the ImportError, so
+                # `Diagram.render(ax)` looked fine but produced ZERO recipe
+                # entries — exactly the symptom that surfaced in #139.
+                from ..._wrappers._axes_diagram import _record_diagram_call
 
                 _record_diagram_call(ax._recorder, ax._position, None, self)
+            except ImportError as _e:
+                # Make this LOUD, not silent — a silent ImportError here
+                # turns the round-trip fix back into the original bug.
+                logger.error(
+                    "Failed to import _record_diagram_call for GH #139 recording "
+                    "(diagram round-trip will silently regress): %s",
+                    _e,
+                )
             except Exception as _e:  # noqa: BLE001 - defensive: never break render
                 logger.warning(f"Failed to record diagram for recipe replay: {_e}")
 

@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.18] - 2026-06-03
+
+### Fixed
+- **`Diagram.render(ax)` recipe-recording silently no-op'd because the
+  relative import was one dot too shallow (#144 regression).** The hook
+  added in #144 to record a `function="diagram"` `CallRecord` on the
+  recording axes used `from .._wrappers._axes_diagram import
+  _record_diagram_call`. From `src/figrecipe/_diagram/_diagram/_core.py`,
+  `..` resolves to `figrecipe._diagram`, NOT `figrecipe`, so the import
+  raised `ImportError` (`figrecipe._diagram._wrappers` doesn't exist).
+  The defensive `except Exception` then swallowed it silently, so
+  `Diagram.render(ax)` "succeeded" but produced **zero** recipe entries
+  — exactly the original #139 symptom this PR was supposed to fix.
+  v0.28.15/16/17 all shipped this regression; v0.28.15 was caught by the
+  release CI on a *different* import bug, v0.28.16 on a fictional test
+  kwarg, and **v0.28.17 was caught by the release CI on THIS bug**
+  (`assert 0 == 1` in the recording-hook smoke test). No broken wheel
+  ever reached PyPI in any of the three attempts.
+  Fix: `from ..._wrappers._axes_diagram` (three dots, hitting
+  `figrecipe._wrappers`). Promoted the `ImportError` branch to
+  `logger.error` so any future "did this hook actually run" silent
+  regression is LOUD — the catch-all `Exception` branch stays so the
+  recording never breaks the render itself.
+
 ## [0.28.17] - 2026-06-03
 
 ### Fixed
