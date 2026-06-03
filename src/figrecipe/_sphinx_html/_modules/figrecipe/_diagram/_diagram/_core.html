@@ -820,6 +820,29 @@
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
             <span class="n">fig</span><span class="o">.</span><span class="n">_figrecipe_diagram</span> <span class="o">=</span> <span class="bp">self</span>
 
+        <span class="c1"># GH #139: record this render as a single high-level &quot;diagram&quot; call so</span>
+        <span class="c1"># the recipe&#39;s reproducer can replay it via replay_diagram_native_call</span>
+        <span class="c1"># (already wired to function=&quot;diagram&quot; in _reproducer/_core.py via</span>
+        <span class="c1"># _replay_diagram.py). Without this hook, users who call</span>
+        <span class="c1"># `Diagram.render(ax)` directly on a figrecipe-recording axes get a</span>
+        <span class="c1"># recipe with NO record of the diagram render, so</span>
+        <span class="c1"># `fr.save(fig, validate=True)` round-trips into a blank panel and</span>
+        <span class="c1"># fails the MSE check (figrecipe-concept violation per #139). The</span>
+        <span class="c1"># `ax.diagram(...)` wrapper path already records via</span>
+        <span class="c1"># _wrappers/_axes_diagram::_record_diagram_call; this mirrors that</span>
+        <span class="c1"># for the direct-render path so the two entry points stay in sync.</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;_recorder&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;_position&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.._wrappers._axes_diagram</span><span class="w"> </span><span class="kn">import</span> <span class="n">_record_diagram_call</span>
+
+                <span class="n">_record_diagram_call</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">_recorder</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">_position</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - defensive: never break render</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to record diagram for recipe replay: </span><span class="si">{</span><span class="n">_e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="c1"># Auto-crop SVG on any savefig call (stx.io.save, direct, etc.)</span>
         <span class="c1"># Pixel-analysis approach: renders temp PNG → find_content_area → adjust viewBox</span>
         <span class="n">_original_savefig</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span>
