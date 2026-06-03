@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.17] - 2026-06-03
+
+### Fixed
+- **`tests/figrecipe/_diagram/_diagram/test__core_render_records.py` used
+  a fictional `figsize_mm` kwarg on `fr.subplots`.** The #144 / #145 test
+  scaffolding copied the API shape from the issue #139 reproduction body
+  literally, but `fr.subplots` takes per-axes sizing as
+  `axes_width_mm` / `axes_height_mm` — there is no `figsize_mm`
+  parameter. v0.28.16's release CI test-matrix surfaced this
+  (`AttributeError: Figure.set() got an unexpected keyword argument
+  'figsize_mm'`), correctly skipped build/publish/release, so **no
+  broken wheel reached PyPI**. Fixed the test helper; behaviour
+  unchanged everywhere else.
+
 ## [0.28.16] - 2026-06-03
 
 ### Fixed
