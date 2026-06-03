@@ -104,7 +104,8 @@ def test_data_max_equals_zero_returns_one_round_to_step_high():
 def test_negative_round_to_raises_value_error():
     # Arrange
     fr = pytest.importorskip("figrecipe")
-    # Act / Assert
+    # Act
+    # Assert
     with pytest.raises(ValueError):
         fr.nice_lim([1, 2, 3], round_to=-5)
 
@@ -112,7 +113,8 @@ def test_negative_round_to_raises_value_error():
 def test_zero_round_to_raises_value_error():
     # Arrange
     fr = pytest.importorskip("figrecipe")
-    # Act / Assert
+    # Act
+    # Assert
     with pytest.raises(ValueError):
         fr.nice_lim([1, 2, 3], round_to=0)
 
