@@ -98,8 +98,14 @@ def validate_recipe(
     """
     import matplotlib.pyplot as plt
 
-    from ._reproducer import reproduce
-    from ._utils._image_diff import compare_images
+    # NB: these are siblings of figrecipe/, NOT siblings of figrecipe/_quality/.
+    # Pre-#141 this file lived at figrecipe/_validator.py, so `from ._reproducer`
+    # / `from ._utils._image_diff` resolved correctly. After the move into
+    # _quality/, the original rename pass updated other files' references to
+    # the moved modules but missed THIS file's internal relative imports back
+    # to its (former) siblings. Bump one level.
+    from .._reproducer import reproduce
+    from .._utils._image_diff import compare_images
 
     recipe_path = Path(recipe_path)
 

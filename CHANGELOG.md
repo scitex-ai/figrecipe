@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.16] - 2026-06-03
+
+### Fixed
+- **`_quality/_validator.py` sibling-relative imports broken by the #141
+  topical move.** When `_validator.py` moved from `figrecipe/` into
+  `figrecipe/_quality/`, two of its internal lazy imports —
+  `from ._reproducer import reproduce` and
+  `from ._utils._image_diff import compare_images` — kept the single-dot
+  form, so at runtime they resolved to non-existent
+  `figrecipe._quality._reproducer` / `figrecipe._quality._utils`. v0.28.15
+  shipped this regression and `fr.save(..., validate=True)` raised
+  `ModuleNotFoundError` on the validate path (caught by the release CI's
+  test-matrix — release publish was skipped, no broken wheel hit PyPI).
+  Bump both imports to `from .._reproducer` / `from .._utils._image_diff`
+  to point at the actual sibling packages of `figrecipe/`, not of
+  `figrecipe/_quality/`. Adds an inline comment so the next move catches
+  it. The rename-symbols pass at #141 only rewrote OUTSIDE-pointing
+  references; this PR closes the inside-pointing gap.
+
 ## [0.28.15] - 2026-06-03
 
 ### Added
