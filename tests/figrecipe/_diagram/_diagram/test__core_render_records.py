@@ -25,13 +25,18 @@ import pytest
 
 
 def _make_recording_fig_ax():
-    """Real fr-wrapped figure + axes wired to a fresh Recorder."""
+    """Real fr-wrapped figure + axes wired to a fresh Recorder.
+
+    `fr.subplots` takes per-axes sizing in mm (`axes_width_mm` /
+    `axes_height_mm`), NOT a Matplotlib-style `figsize_mm` tuple — the
+    earlier copy-paste from the issue body used a fictional kwarg.
+    """
     import matplotlib
 
     matplotlib.use("Agg")
     import figrecipe as fr
 
-    return fr.subplots(figsize_mm=(80, 60))
+    return fr.subplots(axes_width_mm=80, axes_height_mm=60)
 
 
 def _build_and_render_diagram(ax):
