@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.15] - 2026-06-03
+
+### Added
+- **`fr.nice_lim(data, lower=0.0, round_to=None)` — tick-friendly axis limit
+  helper (closes #140, PR #146).** Snaps an axis limit to a "round" boundary
+  above (and optionally below) the data extent so the right (or top) spine
+  doesn't get its own tick label. `round_to=None` auto-picks the data's
+  order of magnitude. `lower=None` snaps the left edge down to a round
+  boundary below `data.min()` (negative-friendly). Edge cases handled:
+  empty input, all-NaN, `data.max() == 0`, exact round-boundary `data.max()`
+  (lifted one step), `round_to <= 0` raises `ValueError`. Exposed via
+  PEP-562 lazy-attr so `import figrecipe as fr; fr.nice_lim(...)` works at
+  zero matplotlib-import cost on plain `import figrecipe`.
+
+### Changed
+- **`fr.compose()` default `gap_mm=2` (was 5) + panel-label fontsize from
+  `SCITEX_STYLE.yaml` (PR #138).** Multi-panel mm-based layouts looked too
+  sparse at 5 mm; 2 mm gives the close-pack default users expect. Explicit
+  `gap_mm=...` callers unaffected. `_add_panel_labels_{grid,mm}` now read
+  `fontsize` from a `_panel_label_fontsize()` helper that consults
+  `SCITEX_STYLE.yaml`'s new `panel_label_pt` key (default 10 — Nature-style
+  panel label convention).
+- **Topical refactor: four quality-gate modules grouped into
+  `src/figrecipe/_quality/` (PR #141).** `_axis_alignment_checker`,
+  `_axis_range_alignment`, `_linter_plugin`, `_validator` moved under
+  `_quality/` per the audit-all `PS-108b` recommendation (flat-file count
+  16 → 14, well under threshold). All import paths updated via
+  `scitex-dev rename-symbols --regex` (3 passes, 9 files, 11 substitutions,
+  0 collisions). Public surface (`figrecipe.fr.*`) unaffected — moved
+  modules were private (underscore-prefixed) throughout. Test mirror
+  created at `tests/figrecipe/_quality/` (PR #142).
+
+### Fixed
+- **`Diagram.render(ax)` now emits a recipe `CallRecord` so
+  `fr.save(fig, validate=True)` round-trips cleanly on figures containing
+  a `figrecipe.diagram.Diagram` panel (closes #139, PR #144).** Previously,
+  the direct-render path bypassed the recipe-recording mechanism that the
+  `ax.diagram(...)` wrapper path uses, so the reproducer rendered an empty
+  panel where the diagram should be → MSE > 100 → validation raised. Round
+  trip is figrecipe's core concept. Single-call high-level recording via
+  the existing `_record_diagram_call` helper; the replay side
+  (`_reproducer/_replay_diagram.py`) was already in place.
+- **Test-quality fix-forwards** for #144 and #146: split combined
+  `# Act / Assert` markers and multi-assert tests into AAA-marked
+  one-assertion siblings per STX-TQ002 / STX-TQ007 (#145, #147).
+
 ## [0.28.14] - 2026-06-02
 
 ### Added
