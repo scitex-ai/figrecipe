@@ -43,7 +43,7 @@ def compose(
     sources: Dict[Any, Any],
     layout: Optional[Tuple[int, int]] = None,
     canvas_size_mm: Optional[Tuple[float, float]] = None,
-    gap_mm: float = 5.0,
+    gap_mm: float = 2.0,
     dpi: int = DEFAULT_DPI,
     panel_labels: bool = False,
     label_style: str = "uppercase",
@@ -308,9 +308,30 @@ def _replay_axes_record_mm(
     fig_record.axes[ax_key] = ax_record_copy
 
 
+def _panel_label_fontsize() -> float:
+    """Resolve the panel-label font size from the active SCITEX_STYLE.
+
+    Default: 10pt bold (Nature-style panel labels).  Reads ``fonts.panel_label_pt``
+    from SCITEX_STYLE if set; otherwise falls back to 10pt.  ``title_pt`` is
+    *not* used as a fallback because panel labels (A, B, C, ...) follow a
+    different convention than axis titles.
+    """
+    try:
+        from ..presets._scitex_style import SCITEX_STYLE
+
+        if isinstance(SCITEX_STYLE, dict):
+            fonts = SCITEX_STYLE.get("fonts") or {}
+            if "panel_label_pt" in fonts:
+                return float(fonts["panel_label_pt"])
+    except Exception:
+        pass
+    return 10.0
+
+
 def _add_panel_labels_grid(axes, nrows: int, ncols: int, style: str) -> None:
     """Add panel labels to grid-based composition."""
     labels = _get_panel_labels(nrows * ncols, style)
+    fs = _panel_label_fontsize()
     idx = 0
     for row in range(nrows):
         for col in range(ncols):
@@ -321,7 +342,7 @@ def _add_panel_labels_grid(axes, nrows: int, ncols: int, style: str) -> None:
                 1.1,
                 labels[idx],
                 transform=mpl_ax.transAxes,
-                fontsize=10,
+                fontsize=fs,
                 fontweight="bold",
                 va="top",
                 ha="right",
@@ -332,6 +353,7 @@ def _add_panel_labels_grid(axes, nrows: int, ncols: int, style: str) -> None:
 def _add_panel_labels_mm(fig, sources: Dict, canvas_size_mm: Tuple, style: str) -> None:
     """Add panel labels to mm-based composition."""
     labels = _get_panel_labels(len(sources), style)
+    fs = _panel_label_fontsize()
     for idx, (_, spec) in enumerate(sources.items()):
         xy_mm = spec["xy_mm"]
         x_frac = xy_mm[0] / canvas_size_mm[0]
@@ -340,7 +362,7 @@ def _add_panel_labels_mm(fig, sources: Dict, canvas_size_mm: Tuple, style: str) 
             x_frac - 0.02,
             y_frac + 0.02,
             labels[idx],
-            fontsize=10,
+            fontsize=fs,
             fontweight="bold",
             va="bottom",
             ha="right",
