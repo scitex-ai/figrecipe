@@ -311,9 +311,10 @@ def _replay_axes_record_mm(
 def _panel_label_fontsize() -> float:
     """Resolve the panel-label font size from the active SCITEX_STYLE.
 
-    Falls back to title_pt, then to 8 if neither is configured.  Returning
-    the value lets compose stay consistent with axis/title typography
-    instead of forcing a hardcoded 10pt.
+    Default: 10pt bold (Nature-style panel labels).  Reads ``fonts.panel_label_pt``
+    from SCITEX_STYLE if set; otherwise falls back to 10pt.  ``title_pt`` is
+    *not* used as a fallback because panel labels (A, B, C, ...) follow a
+    different convention than axis titles.
     """
     try:
         from ..presets._scitex_style import SCITEX_STYLE
@@ -322,11 +323,9 @@ def _panel_label_fontsize() -> float:
             fonts = SCITEX_STYLE.get("fonts") or {}
             if "panel_label_pt" in fonts:
                 return float(fonts["panel_label_pt"])
-            if "title_pt" in fonts:
-                return float(fonts["title_pt"])
     except Exception:
         pass
-    return 8.0
+    return 10.0
 
 
 def _add_panel_labels_grid(axes, nrows: int, ncols: int, style: str) -> None:
