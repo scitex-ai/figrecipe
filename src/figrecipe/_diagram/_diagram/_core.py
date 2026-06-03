@@ -381,6 +381,29 @@ class Diagram:
                 logger.warning(str(e))
             fig._figrecipe_diagram = self
 
+        # GH #139: record this render as a single high-level "diagram" call so
+        # the recipe's reproducer can replay it via replay_diagram_native_call
+        # (already wired to function="diagram" in _reproducer/_core.py via
+        # _replay_diagram.py). Without this hook, users who call
+        # `Diagram.render(ax)` directly on a figrecipe-recording axes get a
+        # recipe with NO record of the diagram render, so
+        # `fr.save(fig, validate=True)` round-trips into a blank panel and
+        # fails the MSE check (figrecipe-concept violation per #139). The
+        # `ax.diagram(...)` wrapper path already records via
+        # _wrappers/_axes_diagram::_record_diagram_call; this mirrors that
+        # for the direct-render path so the two entry points stay in sync.
+        if (
+            ax is not None
+            and getattr(ax, "_recorder", None) is not None
+            and getattr(ax, "_position", None) is not None
+        ):
+            try:
+                from .._wrappers._axes_diagram import _record_diagram_call
+
+                _record_diagram_call(ax._recorder, ax._position, None, self)
+            except Exception as _e:  # noqa: BLE001 - defensive: never break render
+                logger.warning(f"Failed to record diagram for recipe replay: {_e}")
+
         # Auto-crop SVG on any savefig call (stx.io.save, direct, etc.)
         # Pixel-analysis approach: renders temp PNG → find_content_area → adjust viewBox
         _original_savefig = fig.savefig
