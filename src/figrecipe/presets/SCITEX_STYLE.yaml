@@ -46,7 +46,7 @@ fonts:
   suptitle_pt: 8         # Super title font size
   legend_pt: 6           # Legend font size
   annotation_pt: 6       # Annotation text (stats, etc.)
-  panel_label_pt: 8      # Panel labels (A, B, C, ...) in compose()
+  panel_label_pt: 10     # Panel labels (A, B, C, ...) in compose() — 10pt bold Arial
 
 # =============================================================================
 # PADDING (in points)
