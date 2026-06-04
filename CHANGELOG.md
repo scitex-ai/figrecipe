@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.19] - 2026-06-04
+
+### Added
+- **Module-rename back-compat via `figrecipe._compat` (operator direct via
+  Telegram).** The #141 topical refactor moved four private modules into
+  `figrecipe._quality.*`. Per the YAGNI grep the ecosystem had zero
+  runtime consumers of the old paths, but the operator asked for uniform
+  scitex-compat-style deprecation messaging when *any* code touches a
+  moved path. New `figrecipe._compat._module_aliases` registers
+  transparent `sys.modules` aliases at the old paths so legacy imports
+  still resolve AND emit a single-fire `DeprecationWarning` pointing at
+  the new path. No flat shim files at the package root (PS-108b
+  threshold unaffected).
+
+  Aliases installed (eagerly, from `figrecipe.__init__`):
+  - `figrecipe._validator`              → `figrecipe._quality._validator`
+  - `figrecipe._linter_plugin`          → `figrecipe._quality._linter_plugin`
+  - `figrecipe._axis_alignment_checker` → `figrecipe._quality._axis_alignment_checker`
+  - `figrecipe._axis_range_alignment`   → `figrecipe._quality._axis_range_alignment`
+
+- **Entry-point regression guard (lead msg b4e3dc7e).** New parametrized
+  smoke test (`tests/figrecipe/test__entry_points.py`) parses every
+  `[project.entry-points.*]` group in `pyproject.toml` and asserts each
+  `<module>:<attr>` value resolves to a real importable attribute.
+  Catches the "moved module + stale entry-point string + aggregator
+  silent-skip" failure class generically — new entry points + future
+  moves are covered with zero extra test maintenance.
+
 ## [0.28.18] - 2026-06-03
 
 ### Fixed
