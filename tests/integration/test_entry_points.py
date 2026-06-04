@@ -12,14 +12,16 @@ pyproject.toml and asserts each ``<module>:<attr>`` value resolves to a
 real importable attribute. New entry points + future moves are covered
 automatically without extra test maintenance.
 
-AAA-marked, single-assertion per test (STX-TQ002 / STX-TQ007).
+AAA-marked, single-assertion per parametrized leg (STX-TQ002 / TQ006 /
+TQ007). The value-splitting is extracted into a helper so the test body
+has no top-level ``if``.
 """
 
 from __future__ import annotations
 
 import importlib
-import sys
 from pathlib import Path
+from typing import List, Tuple
 
 import pytest
 
@@ -29,52 +31,56 @@ except ImportError:  # pragma: no cover
     tomllib = pytest.importorskip("tomli")  # type: ignore[assignment]
 
 
-def _read_entry_points() -> dict[str, dict[str, str]]:
+def _read_entry_points() -> dict:
     """Return ``{group: {name: value}}`` from figrecipe's pyproject.toml.
 
     Discovered by walking up from this test file to the repo root.
     """
     here = Path(__file__).resolve()
-    for parent in [here, *here.parents]:
+    for parent in here.parents:
         candidate = parent / "pyproject.toml"
-        if candidate.exists() and candidate.read_text(encoding="utf-8").startswith(
-            "[build-system]"
-        ) or (
-            candidate.exists() and 'name = "figrecipe"' in candidate.read_text(encoding="utf-8")
-        ):
-            with candidate.open("rb") as fh:
-                data = tomllib.load(fh)
-            return (
-                data.get("project", {})
-                .get("entry-points", {})
-            )
+        if not candidate.exists():
+            continue
+        with candidate.open("rb") as fh:
+            data = tomllib.load(fh)
+        if data.get("project", {}).get("name") == "figrecipe":
+            return data.get("project", {}).get("entry-points", {})
     return {}
 
 
-def _value_pairs() -> list[tuple[str, str, str]]:
-    """Yield (group, name, value) tuples for every entry point declared."""
-    out = []
+def _value_pairs() -> List[Tuple[str, str, str]]:
+    """Yield (group, name, value) for every entry point declared."""
+    out: List[Tuple[str, str, str]] = []
     for group, entries in _read_entry_points().items():
         for name, value in entries.items():
             out.append((group, name, value))
     return out
 
 
+def _resolve(value: str):
+    """Resolve a ``<module>[:<attr>]`` entry-point value.
+
+    Extracted so the test body has no top-level ``if`` (STX-TQ006).
+    Returns the module itself when no attr suffix is present; otherwise
+    returns ``getattr(module, attr)``.
+    """
+    parts = value.split(":", 1)
+    mod = importlib.import_module(parts[0])
+    return getattr(mod, parts[1]) if len(parts) == 2 else mod
+
+
+_PAIRS = _value_pairs()
+
+
 @pytest.mark.parametrize(
     "group,name,value",
-    _value_pairs(),
-    ids=[f"{g}::{n}" for g, n, _ in _value_pairs()] or ["no-entry-points"],
+    _PAIRS,
+    ids=[f"{g}::{n}" for g, n, _ in _PAIRS] or ["no-entry-points"],
 )
 def test_every_entry_point_resolves_to_real_attribute(group, name, value):
     # Arrange
-    if not value:
-        pytest.skip("no entry points declared")
-    if ":" in value:
-        module_path, attr = value.split(":", 1)
-    else:
-        module_path, attr = value, None
+    pytest.importorskip("figrecipe")
     # Act
-    mod = importlib.import_module(module_path)
-    resolved = getattr(mod, attr) if attr else mod
+    resolved = _resolve(value)
     # Assert
     assert resolved is not None

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.20] - 2026-06-04
+
+### Fixed
+- **`tests/integration/test_entry_points.py` PA-307 TQ006 + TQ007.**
+  v0.28.19 shipped the entry-point regression-guard test with a
+  parametrized body containing a top-level `if`/`else` for the
+  `<module>:<attr>` splitting (TQ006) and multiple assertions disguised
+  by the same `if` branches (TQ007). v0.28.19 release CI's audit-all
+  gate caught it (no broken wheel reached PyPI). Refactor: extract the
+  value-splitting into a `_resolve(value)` helper so the test body has
+  no `if` and exactly one `assert`. Behaviour unchanged.
+
 ## [0.28.19] - 2026-06-04
 
 ### Added
