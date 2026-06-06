@@ -151,12 +151,18 @@ def __getattr__(name: str):
         value = importlib.import_module(".colors", __name__)
         globals()["colors"] = value
         return value
+    if name == "media":
+        import importlib
+
+        value = importlib.import_module(".media", __name__)
+        globals()["media"] = value
+        return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def __dir__() -> list[str]:
     """Expose lazy names for tab completion in REPLs."""
-    return sorted(set(__all__) | set(_LAZY_ATTRS.keys()) | {"colors"})
+    return sorted(set(__all__) | set(_LAZY_ATTRS.keys()) | {"colors", "media"})
 
 
 # Lazy seaborn access (avoids import error if seaborn not installed)
@@ -207,6 +213,10 @@ __all__ = [
     "caption_with_signature",
     # Seaborn integration
     "sns",
+    # Media handling (absorbed from scitex-python umbrella via
+    # scitex-etc, per Phase B routing): detect / classify / show
+    # for figures, csvs, and other rendered media.
+    "media",
     # Version
     "__version__",
 ]

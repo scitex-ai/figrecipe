@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] — 2026-06-07
+
+### Added
+
+- **`figrecipe.media` submodule** — media handling (detect / classify / show)
+  absorbed from the scitex-python umbrella per Phase B routing. The operator
+  reneged scitex-python ADR-0001 (which had this module landing in
+  scitex-etc): media belongs with figure rendering, not with the etc
+  catch-all. Public surface:
+  - `figrecipe.media.render.classify(path)`
+  - `figrecipe.media.render.detect(text, root_path=...)`
+  - `figrecipe.media.render.show(path, target=...)`
+  - `python -m figrecipe.media.render {show,classify,detect} ...` CLI
+  - `figrecipe.media.render.mcp_server` MCP tools (optional fastmcp dep)
+
 ## [0.28.9] - 2026-05-16
 
 ### Fixed
