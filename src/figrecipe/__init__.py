@@ -138,6 +138,9 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "save_bundle": ("._bundle", "save_bundle"),
     "load_bundle": ("._bundle", "load_bundle"),
     "reproduce_bundle": ("._bundle", "reproduce_bundle"),
+    # ._captions (public caption API)
+    "add_figure_caption": ("._captions._public", "add_figure_caption"),
+    "add_panel_captions": ("._captions._public", "add_panel_captions"),
     # ._composition
     "align_panels": ("._composition", "align_panels"),
     "align_smart": ("._composition", "align_smart"),
@@ -181,6 +184,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "edit": ("._api._public", "gui"),
     # ._editable
     "export_editable": ("._editable", "export_editable"),
+    # ._wrappers
+    "panel_label": ("._wrappers._panel_labels", "panel_label"),
     # ._composition (alias)
     "smart_align": ("._composition", "align_smart"),
 }
@@ -259,6 +264,10 @@ __all__ = [
     "validate",
     "extract_data",
     "add_qr_to_figure",
+    # Caption API
+    "add_figure_caption",
+    "add_panel_captions",
+    "panel_label",
     # Bundle format
     "Figz",
     "Pltz",

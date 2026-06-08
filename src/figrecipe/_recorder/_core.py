@@ -141,6 +141,8 @@ class FigureRecord:
     source_data_dirs: Optional[Dict[str, Path]] = None
     # Colorbar calls: list of {mappable_id, ax_key, kwargs}
     colorbars: List[Dict[str, Any]] = field(default_factory=list)
+    # Per-panel caption texts (set via fr.compose(panel_captions=...))
+    figure_panel_captions: Optional[List[str]] = None
 
     def get_axes_key(self, row: int, col: int) -> str:
         """Get dictionary key for axes at position."""
@@ -209,6 +211,9 @@ class FigureRecord:
         # Add colorbars if set
         if self.colorbars:
             result["figure"]["colorbars"] = self.colorbars
+        # Add per-panel caption texts if set
+        if self.figure_panel_captions is not None:
+            result["figure"]["panel_captions"] = self.figure_panel_captions
         return result
 
     @classmethod
@@ -236,6 +241,7 @@ class FigureRecord:
             crop_info=fig_data.get("crop_info"),
             mm_layout=fig_data.get("mm_layout"),
             colorbars=fig_data.get("colorbars", []),
+            figure_panel_captions=fig_data.get("panel_captions"),
         )
 
         # Reconstruct axes

@@ -237,6 +237,7 @@ def create_subplots(
     style: Optional[Dict[str, Any]] = None,
     apply_style_mm: bool = True,
     panel_labels: Optional[bool] = None,
+    caption: Optional[str] = None,
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray]]:
     """Core subplots implementation."""
@@ -349,6 +350,13 @@ def create_subplots(
     # Add panel labels if enabled (for multi-panel figures)
     if use_panel_labels and (nrows > 1 or ncols > 1):
         fig.add_panel_labels()
+
+    # Render caption if provided
+    if caption is not None:
+        fig.record.caption = caption
+        from .._captions._public import add_figure_caption
+
+        add_figure_caption(fig, caption, position="bottom")
 
     return fig, axes
 
