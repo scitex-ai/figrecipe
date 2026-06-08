@@ -47,6 +47,8 @@ def compose(
     dpi: int = DEFAULT_DPI,
     panel_labels: bool = False,
     label_style: str = "uppercase",
+    caption: Optional[str] = None,
+    panel_captions: Optional[List[str]] = None,
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray, List[RecordingAxes]]]:
     """Compose a new figure from multiple sources (recipes or raw images).
@@ -77,6 +79,12 @@ def compose(
         If True, add panel labels (A, B, C...) to each panel.
     label_style : str
         'uppercase', 'lowercase', or 'numeric'.
+    caption : str, optional
+        Figure-level caption text.  Rendered on the figure and persisted
+        in the recipe so it survives save→reproduce.
+    panel_captions : list of str, optional
+        Per-panel caption texts.  When provided, panel labels (A, B, C...)
+        are placed with the corresponding caption text on each panel.
     **kwargs
         Additional arguments passed to figure creation.
 
@@ -99,6 +107,17 @@ def compose(
     ...     }
     ... )
 
+    Composition with figure-level caption:
+
+    >>> fig, axes = fr.compose(
+    ...     layout=(2, 2),
+    ...     sources={
+    ...         (0, 0): "a.yaml", (0, 1): "b.yaml",
+    ...         (1, 0): "c.yaml", (1, 1): "d.yaml",
+    ...     },
+    ...     caption="Figure 1. Four-condition comparison (n=3).",
+    ... )
+
     Mm-based free-form composition:
 
     >>> fig, axes = fr.compose(
@@ -112,10 +131,14 @@ def compose(
     """
     if _is_mm_based_sources(sources):
         return _compose_mm_based(
-            sources, canvas_size_mm, dpi, panel_labels, label_style, **kwargs
+            sources, canvas_size_mm, dpi, panel_labels, label_style,
+            caption=caption, panel_captions=panel_captions, **kwargs,
         )
     else:
-        return _compose_grid_based(sources, layout, panel_labels, label_style, **kwargs)
+        return _compose_grid_based(
+            sources, layout, panel_labels, label_style,
+            caption=caption, panel_captions=panel_captions, **kwargs,
+        )
 
 
 def _compose_grid_based(
@@ -123,10 +146,13 @@ def _compose_grid_based(
     layout: Optional[Tuple[int, int]],
     panel_labels: bool,
     label_style: str,
+    caption: Optional[str],
+    panel_captions: Optional[List[str]],
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray]]:
     """Grid-based composition using subplots."""
     from .. import subplots
+    from ._caption_render import render_compose_captions
 
     # Auto-detect layout from source positions
     if layout is None:
@@ -189,6 +215,9 @@ def _compose_grid_based(
     if panel_labels:
         _add_panel_labels_grid(axes, nrows, ncols, label_style)
 
+    # Render caption and panel captions
+    render_compose_captions(fig, axes, caption, panel_captions)
+
     return fig, axes
 
 
@@ -198,6 +227,8 @@ def _compose_mm_based(
     dpi: int,
     panel_labels: bool,
     label_style: str,
+    caption: Optional[str],
+    panel_captions: Optional[List[str]],
     **kwargs,
 ) -> Tuple[RecordingFigure, List[RecordingAxes]]:
     """Mm-based composition using fig.add_axes() for precise positioning."""
@@ -276,6 +307,9 @@ def _compose_mm_based(
 
     if panel_labels:
         _add_panel_labels_mm(mpl_fig, sources, canvas_size_mm, label_style)
+
+    # Render caption and panel captions for mm-based
+    render_compose_captions(fig, axes_list, caption, panel_captions)
 
     return fig, axes_list
 
