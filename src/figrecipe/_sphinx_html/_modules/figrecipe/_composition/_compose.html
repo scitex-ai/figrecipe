@@ -242,6 +242,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.validate"><code class="docutils literal notranslate"><span class="pre">validate()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.extract_data"><code class="docutils literal notranslate"><span class="pre">extract_data()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_qr_to_figure"><code class="docutils literal notranslate"><span class="pre">add_qr_to_figure()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_figure_caption"><code class="docutils literal notranslate"><span class="pre">add_figure_caption()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_panel_captions"><code class="docutils literal notranslate"><span class="pre">add_panel_captions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.panel_label"><code class="docutils literal notranslate"><span class="pre">panel_label()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz"><code class="docutils literal notranslate"><span class="pre">Figz</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.__init__"><code class="docutils literal notranslate"><span class="pre">Figz.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.create"><code class="docutils literal notranslate"><span class="pre">Figz.create()</span></code></a></li>
@@ -448,6 +451,8 @@
     <span class="n">dpi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_DPI</span><span class="p">,</span>
     <span class="n">panel_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">label_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uppercase&quot;</span><span class="p">,</span>
+    <span class="n">caption</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">panel_captions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">RecordingFigure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compose a new figure from multiple sources (recipes or raw images).</span>
@@ -478,6 +483,12 @@
 <span class="sd">        If True, add panel labels (A, B, C...) to each panel.</span>
 <span class="sd">    label_style : str</span>
 <span class="sd">        &#39;uppercase&#39;, &#39;lowercase&#39;, or &#39;numeric&#39;.</span>
+<span class="sd">    caption : str, optional</span>
+<span class="sd">        Figure-level caption text.  Rendered on the figure and persisted</span>
+<span class="sd">        in the recipe so it survives save→reproduce.</span>
+<span class="sd">    panel_captions : list of str, optional</span>
+<span class="sd">        Per-panel caption texts.  When provided, panel labels (A, B, C...)</span>
+<span class="sd">        are placed with the corresponding caption text on each panel.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Additional arguments passed to figure creation.</span>
 
@@ -500,6 +511,17 @@
 <span class="sd">    ...     }</span>
 <span class="sd">    ... )</span>
 
+<span class="sd">    Composition with figure-level caption:</span>
+
+<span class="sd">    &gt;&gt;&gt; fig, axes = fr.compose(</span>
+<span class="sd">    ...     layout=(2, 2),</span>
+<span class="sd">    ...     sources={</span>
+<span class="sd">    ...         (0, 0): &quot;a.yaml&quot;, (0, 1): &quot;b.yaml&quot;,</span>
+<span class="sd">    ...         (1, 0): &quot;c.yaml&quot;, (1, 1): &quot;d.yaml&quot;,</span>
+<span class="sd">    ...     },</span>
+<span class="sd">    ...     caption=&quot;Figure 1. Four-condition comparison (n=3).&quot;,</span>
+<span class="sd">    ... )</span>
+
 <span class="sd">    Mm-based free-form composition:</span>
 
 <span class="sd">    &gt;&gt;&gt; fig, axes = fr.compose(</span>
@@ -513,10 +535,14 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">_is_mm_based_sources</span><span class="p">(</span><span class="n">sources</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_compose_mm_based</span><span class="p">(</span>
-            <span class="n">sources</span><span class="p">,</span> <span class="n">canvas_size_mm</span><span class="p">,</span> <span class="n">dpi</span><span class="p">,</span> <span class="n">panel_labels</span><span class="p">,</span> <span class="n">label_style</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">sources</span><span class="p">,</span> <span class="n">canvas_size_mm</span><span class="p">,</span> <span class="n">dpi</span><span class="p">,</span> <span class="n">panel_labels</span><span class="p">,</span> <span class="n">label_style</span><span class="p">,</span>
+            <span class="n">caption</span><span class="o">=</span><span class="n">caption</span><span class="p">,</span> <span class="n">panel_captions</span><span class="o">=</span><span class="n">panel_captions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_compose_grid_based</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">panel_labels</span><span class="p">,</span> <span class="n">label_style</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">_compose_grid_based</span><span class="p">(</span>
+            <span class="n">sources</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">panel_labels</span><span class="p">,</span> <span class="n">label_style</span><span class="p">,</span>
+            <span class="n">caption</span><span class="o">=</span><span class="n">caption</span><span class="p">,</span> <span class="n">panel_captions</span><span class="o">=</span><span class="n">panel_captions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 
@@ -525,10 +551,13 @@
     <span class="n">layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
     <span class="n">panel_labels</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">label_style</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">caption</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">panel_captions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">RecordingFigure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Grid-based composition using subplots.&quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="w"> </span><span class="kn">import</span> <span class="n">subplots</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._caption_render</span><span class="w"> </span><span class="kn">import</span> <span class="n">render_compose_captions</span>
 
     <span class="c1"># Auto-detect layout from source positions</span>
     <span class="k">if</span> <span class="n">layout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -591,6 +620,9 @@
     <span class="k">if</span> <span class="n">panel_labels</span><span class="p">:</span>
         <span class="n">_add_panel_labels_grid</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">nrows</span><span class="p">,</span> <span class="n">ncols</span><span class="p">,</span> <span class="n">label_style</span><span class="p">)</span>
 
+    <span class="c1"># Render caption and panel captions</span>
+    <span class="n">render_compose_captions</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">caption</span><span class="p">,</span> <span class="n">panel_captions</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span>
 
 
@@ -600,6 +632,8 @@
     <span class="n">dpi</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">panel_labels</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">label_style</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">caption</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">panel_captions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">RecordingFigure</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mm-based composition using fig.add_axes() for precise positioning.&quot;&quot;&quot;</span>
@@ -678,6 +712,9 @@
 
     <span class="k">if</span> <span class="n">panel_labels</span><span class="p">:</span>
         <span class="n">_add_panel_labels_mm</span><span class="p">(</span><span class="n">mpl_fig</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">canvas_size_mm</span><span class="p">,</span> <span class="n">label_style</span><span class="p">)</span>
+
+    <span class="c1"># Render caption and panel captions for mm-based</span>
+    <span class="n">render_compose_captions</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">axes_list</span><span class="p">,</span> <span class="n">caption</span><span class="p">,</span> <span class="n">panel_captions</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axes_list</span>
 

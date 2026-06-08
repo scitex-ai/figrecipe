@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._api._public &mdash; FigRecipe v0.28.12</title>
+  <title>figrecipe._wrappers._panel_labels &mdash; FigRecipe v0.28.12</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -390,7 +390,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">figrecipe._api._public</li>
+      <li class="breadcrumb-item active">figrecipe._wrappers._panel_labels</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -399,459 +399,189 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for figrecipe._api._public</h1><div class="highlight"><pre>
+  <h1>Source code for figrecipe._wrappers._panel_labels</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Public API wrapper functions for figrecipe.</span>
+<span class="sd">&quot;&quot;&quot;Panel label utilities for multi-panel figures.&quot;&quot;&quot;</span>
 
-<span class="sd">These functions provide the main user-facing API with full docstrings.</span>
-<span class="sd">They are re-exported from figrecipe.__init__.py.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._recorder</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureRecord</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._reproducer</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_recipe_info</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._reproducer</span><span class="w"> </span><span class="kn">import</span> <span class="n">reproduce</span> <span class="k">as</span> <span class="n">_reproduce_core</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_recipe</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._numpy_io</span><span class="w"> </span><span class="kn">import</span> <span class="n">CsvFormat</span><span class="p">,</span> <span class="n">DataFormat</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._quality._validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationResult</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">RecordingFigure</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span>
 
 
-<div class="viewcode-block" id="subplots">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.subplots">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">subplots</span><span class="p">(</span>
-    <span class="n">nrows</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">ncols</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="n">axes_width_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">axes_height_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">margin_left_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">margin_right_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">margin_bottom_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">margin_top_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">space_w_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">space_h_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">apply_style_mm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">panel_labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_panel_labels</span><span class="p">(</span>
+    <span class="n">all_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;RecordingAxes&quot;</span><span class="p">],</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">fontsize</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">fontweight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">text_color</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">record_callback</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">RecordingFigure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a figure with recording-enabled axes.</span>
-
-<span class="sd">    This is a drop-in replacement for plt.subplots() that wraps the</span>
-<span class="sd">    returned figure and axes with recording capabilities.</span>
-
-<span class="sd">    Supports mm-based layout control for publication-quality figures.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add panel labels (A, B, C, D, etc.) to axes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    nrows, ncols : int</span>
-<span class="sd">        Number of rows and columns of subplots.</span>
-<span class="sd">    axes_width_mm, axes_height_mm : float, optional</span>
-<span class="sd">        Axes dimensions in mm.</span>
-<span class="sd">    margin_left_mm, margin_right_mm : float, optional</span>
-<span class="sd">        Left/right margins in mm.</span>
-<span class="sd">    margin_bottom_mm, margin_top_mm : float, optional</span>
-<span class="sd">        Bottom/top margins in mm.</span>
-<span class="sd">    space_w_mm, space_h_mm : float, optional</span>
-<span class="sd">        Horizontal/vertical spacing between axes in mm.</span>
-<span class="sd">    style : dict, optional</span>
-<span class="sd">        Style configuration dictionary.</span>
-<span class="sd">    apply_style_mm : bool</span>
-<span class="sd">        If True (default), apply loaded style to axes.</span>
-<span class="sd">    panel_labels : bool or None</span>
-<span class="sd">        If True, add panel labels (A, B, C, ...).</span>
+<span class="sd">    all_axes : list of RecordingAxes</span>
+<span class="sd">        Flattened list of all axes.</span>
+<span class="sd">    labels : list of str or None</span>
+<span class="sd">        Custom labels. If None, uses uppercase letters.</span>
+<span class="sd">    loc : str</span>
+<span class="sd">        Location hint: &#39;upper left&#39;, &#39;upper right&#39;, &#39;lower left&#39;, &#39;lower right&#39;.</span>
+<span class="sd">    offset : tuple of float</span>
+<span class="sd">        (x, y) offset in axes coordinates.</span>
+<span class="sd">    fontsize : float</span>
+<span class="sd">        Font size in points.</span>
+<span class="sd">    fontweight : str</span>
+<span class="sd">        Font weight.</span>
+<span class="sd">    text_color : str</span>
+<span class="sd">        Text color.</span>
+<span class="sd">    record_callback : callable</span>
+<span class="sd">        Callback to record panel labels info.</span>
 <span class="sd">    **kwargs</span>
-<span class="sd">        Additional arguments passed to plt.subplots().</span>
+<span class="sd">        Additional arguments passed to ax.text().</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    fig : RecordingFigure</span>
-<span class="sd">        Wrapped figure object.</span>
-<span class="sd">    axes : RecordingAxes or ndarray</span>
-<span class="sd">        Wrapped axes.</span>
+<span class="sd">    list of Text</span>
+<span class="sd">        The matplotlib Text objects created.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">._subplots</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_subplots</span>
+    <span class="n">n_axes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_axes</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">create_subplots</span><span class="p">(</span>
-        <span class="n">nrows</span><span class="o">=</span><span class="n">nrows</span><span class="p">,</span>
-        <span class="n">ncols</span><span class="o">=</span><span class="n">ncols</span><span class="p">,</span>
-        <span class="n">axes_width_mm</span><span class="o">=</span><span class="n">axes_width_mm</span><span class="p">,</span>
-        <span class="n">axes_height_mm</span><span class="o">=</span><span class="n">axes_height_mm</span><span class="p">,</span>
-        <span class="n">margin_left_mm</span><span class="o">=</span><span class="n">margin_left_mm</span><span class="p">,</span>
-        <span class="n">margin_right_mm</span><span class="o">=</span><span class="n">margin_right_mm</span><span class="p">,</span>
-        <span class="n">margin_bottom_mm</span><span class="o">=</span><span class="n">margin_bottom_mm</span><span class="p">,</span>
-        <span class="n">margin_top_mm</span><span class="o">=</span><span class="n">margin_top_mm</span><span class="p">,</span>
-        <span class="n">space_w_mm</span><span class="o">=</span><span class="n">space_w_mm</span><span class="p">,</span>
-        <span class="n">space_h_mm</span><span class="o">=</span><span class="n">space_h_mm</span><span class="p">,</span>
-        <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">,</span>
-        <span class="n">apply_style_mm</span><span class="o">=</span><span class="n">apply_style_mm</span><span class="p">,</span>
-        <span class="n">panel_labels</span><span class="o">=</span><span class="n">panel_labels</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span></div>
+    <span class="c1"># Generate default labels if not provided</span>
+    <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span><span class="p">[:</span><span class="n">n_axes</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_axes</span><span class="p">:</span>
+        <span class="c1"># Extend with letters if not enough labels provided</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="p">:</span> <span class="n">n_axes</span><span class="p">])</span>
+
+    <span class="c1"># Calculate position based on loc</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="n">_calculate_position</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+
+    <span class="c1"># Record panel labels</span>
+    <span class="n">record_callback</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="n">labels</span><span class="p">[:</span><span class="n">n_axes</span><span class="p">],</span>
+            <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="n">loc</span><span class="p">,</span>
+            <span class="s2">&quot;offset&quot;</span><span class="p">:</span> <span class="n">offset</span><span class="p">,</span>
+            <span class="s2">&quot;fontsize&quot;</span><span class="p">:</span> <span class="n">fontsize</span><span class="p">,</span>
+            <span class="s2">&quot;fontweight&quot;</span><span class="p">:</span> <span class="n">fontweight</span><span class="p">,</span>
+            <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">text_color</span><span class="p">,</span>
+            <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add labels to each axes</span>
+    <span class="n">text_objects</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">all_axes</span><span class="p">,</span> <span class="n">labels</span><span class="p">[:</span><span class="n">n_axes</span><span class="p">]):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">,</span>
+            <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+            <span class="n">fontweight</span><span class="o">=</span><span class="n">fontweight</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">text_color</span><span class="p">,</span>
+            <span class="n">ha</span><span class="o">=</span><span class="n">ha</span><span class="p">,</span>
+            <span class="n">va</span><span class="o">=</span><span class="n">va</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">text_objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">text_objects</span>
 
 
-
-<div class="viewcode-block" id="save">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.save">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span>
-    <span class="n">fig</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">RecordingFigure</span><span class="p">,</span> <span class="n">Figure</span><span class="p">],</span>
-    <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-    <span class="n">save_recipe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">include_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">data_format</span><span class="p">:</span> <span class="n">DataFormat</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
-    <span class="n">csv_format</span><span class="p">:</span> <span class="n">CsvFormat</span> <span class="o">=</span> <span class="s2">&quot;separate&quot;</span><span class="p">,</span>
-    <span class="n">validate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">validate_mse_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
-    <span class="n">validate_error_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
-    <span class="n">validate_axis_range_alignment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">validate_axis_range_alignment_error_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">dpi</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">image_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">facecolor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">save_hitmap</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">save_editable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save a figure as image and recipe. Unified API with fig.savefig().</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    fig : RecordingFigure or Figure</span>
-<span class="sd">        The figure to save.</span>
-<span class="sd">    path : str or Path</span>
-<span class="sd">        Output path (.png, .pdf, .svg, .yaml, etc.)</span>
-<span class="sd">    save_recipe : bool</span>
-<span class="sd">        If True (default), save YAML recipe alongside the image.</span>
-<span class="sd">    include_data : bool</span>
-<span class="sd">        If True (default), save large arrays to separate files.</span>
-<span class="sd">    data_format : str</span>
-<span class="sd">        Format for data files: &#39;csv&#39;, &#39;npz&#39;, or &#39;inline&#39;.</span>
-<span class="sd">    csv_format : str</span>
-<span class="sd">        CSV structure: &#39;separate&#39; (default) or &#39;single&#39; (scitex-compatible).</span>
-<span class="sd">    validate : bool</span>
-<span class="sd">        If True (default), validate reproducibility after saving.</span>
-<span class="sd">    validate_mse_threshold : float</span>
-<span class="sd">        Maximum acceptable MSE for validation (default: 100).</span>
-<span class="sd">    validate_error_level : str</span>
-<span class="sd">        How to handle failures: &#39;error&#39;, &#39;warning&#39;, or &#39;debug&#39;.</span>
-<span class="sd">    validate_axis_range_alignment : bool</span>
-<span class="sd">        If True (default), run the runtime ``axis_range_alignment``</span>
-<span class="sd">        check on the rendered figure. Catches the autoscale-with-</span>
-<span class="sd">        different-data case that the static STX-FIG001 lint misses.</span>
-<span class="sd">    validate_axis_range_alignment_error_level : str</span>
-<span class="sd">        Dispatch level for the axis-range-alignment check:</span>
-<span class="sd">        &#39;warning&#39; (default), &#39;error&#39;, or &#39;debug&#39; (silent).</span>
-<span class="sd">    verbose : bool</span>
-<span class="sd">        If True (default), print save status.</span>
-<span class="sd">    dpi : int, optional</span>
-<span class="sd">        DPI for image output.</span>
-<span class="sd">    image_format : str, optional</span>
-<span class="sd">        Image format when path is YAML.</span>
-<span class="sd">    facecolor : str, optional</span>
-<span class="sd">        Background color. When opaque, patches are made visible.</span>
-<span class="sd">    save_hitmap : bool</span>
-<span class="sd">        If True (default), save hitmap image for GUI editor element selection.</span>
-<span class="sd">    save_editable : bool</span>
-<span class="sd">        If True, write the editable-figure JSON (schema</span>
-<span class="sd">        ``scitex.plt.figure.editable``) to ``&lt;stem&gt;.json`` next to the image.</span>
-<span class="sd">        Default False — opt in for the GUI / web editor.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_calculate_position</span><span class="p">(</span>
+    <span class="n">loc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate text position and alignment based on location.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    tuple</span>
-<span class="sd">        If save_recipe=True: (image_path, yaml_path, ValidationResult or None)</span>
-<span class="sd">        If save_recipe=False: (image_path, None, None)</span>
+<span class="sd">        (x, y, ha, va) where ha/va are horizontal/vertical alignment.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">._save</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_figure</span>
+    <span class="k">if</span> <span class="n">loc</span> <span class="o">==</span> <span class="s2">&quot;upper left&quot;</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;bottom&quot;</span>
+    <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s2">&quot;upper right&quot;</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;bottom&quot;</span>
+    <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s2">&quot;lower left&quot;</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">offset</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="n">offset</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1.0</span>
+        <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span>
+    <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s2">&quot;lower right&quot;</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">offset</span>
+        <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;bottom&quot;</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">save_figure</span><span class="p">(</span>
-        <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
-        <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
-        <span class="n">save_recipe</span><span class="o">=</span><span class="n">save_recipe</span><span class="p">,</span>
-        <span class="n">include_data</span><span class="o">=</span><span class="n">include_data</span><span class="p">,</span>
-        <span class="n">data_format</span><span class="o">=</span><span class="n">data_format</span><span class="p">,</span>
-        <span class="n">csv_format</span><span class="o">=</span><span class="n">csv_format</span><span class="p">,</span>
-        <span class="n">validate</span><span class="o">=</span><span class="n">validate</span><span class="p">,</span>
-        <span class="n">validate_mse_threshold</span><span class="o">=</span><span class="n">validate_mse_threshold</span><span class="p">,</span>
-        <span class="n">validate_error_level</span><span class="o">=</span><span class="n">validate_error_level</span><span class="p">,</span>
-        <span class="n">validate_axis_range_alignment</span><span class="o">=</span><span class="n">validate_axis_range_alignment</span><span class="p">,</span>
-        <span class="n">validate_axis_range_alignment_error_level</span><span class="o">=</span><span class="p">(</span>
-            <span class="n">validate_axis_range_alignment_error_level</span>
-        <span class="p">),</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
-        <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">,</span>
-        <span class="n">image_format</span><span class="o">=</span><span class="n">image_format</span><span class="p">,</span>
-        <span class="n">facecolor</span><span class="o">=</span><span class="n">facecolor</span><span class="p">,</span>
-        <span class="n">save_hitmap</span><span class="o">=</span><span class="n">save_hitmap</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1"># Editable-figure JSON sidecar (schema scitex.plt.figure.editable).</span>
-    <span class="c1"># Written next to the saved image; opt-in (default False).</span>
-    <span class="k">if</span> <span class="n">save_editable</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">.._editable</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_editable</span> <span class="k">as</span> <span class="n">_save_editable</span>
-
-        <span class="n">image_path</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">result</span>
-        <span class="n">_save_editable</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">image_path</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">result</span></div>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ha</span><span class="p">,</span> <span class="n">va</span>
 
 
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;add_panel_labels&quot;</span><span class="p">,</span> <span class="s2">&quot;panel_label&quot;</span><span class="p">]</span>
 
-<div class="viewcode-block" id="reproduce">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.reproduce">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reproduce</span><span class="p">(</span>
-    <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-    <span class="n">calls</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">skip_decorations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">apply_style</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Figure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Axes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Axes</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reproduce a figure from a recipe file or bundle.</span>
+
+<div class="viewcode-block" id="panel_label">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.panel_label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">panel_label</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;upper left&quot;</span><span class="p">,</span>
+    <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">),</span>
+    <span class="n">fontsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">fontweight</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bold&quot;</span><span class="p">,</span>
+    <span class="n">text_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Place a single panel label (A, B, C, etc.) on one axes.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    path : str or Path</span>
-<span class="sd">        Path to recipe. Supports multiple formats:</span>
-<span class="sd">        - .yaml/.yml file: Direct recipe file</span>
-<span class="sd">        - .png/.jpg/etc: Image with associated .yaml</span>
-<span class="sd">        - Directory: Bundle containing recipe.yaml</span>
-<span class="sd">        - .zip: ZIP bundle (both old recipe.yaml format and new spec.json format)</span>
-<span class="sd">    calls : list of str, optional</span>
-<span class="sd">        If provided, only reproduce these specific call IDs.</span>
-<span class="sd">    skip_decorations : bool</span>
-<span class="sd">        If True, skip decoration calls.</span>
-<span class="sd">    apply_style : bool</span>
-<span class="sd">        If True (default), apply saved style.</span>
+<span class="sd">    ax : matplotlib.axes.Axes</span>
+<span class="sd">        The axes to annotate.</span>
+<span class="sd">    label : str</span>
+<span class="sd">        The panel label text (e.g. &#39;A&#39;, &#39;B&#39;, &#39;(1)&#39;).</span>
+<span class="sd">    loc : str</span>
+<span class="sd">        Location hint: &#39;upper left&#39; (default), &#39;upper right&#39;,</span>
+<span class="sd">        &#39;lower left&#39;, &#39;lower right&#39;.</span>
+<span class="sd">    offset : tuple of float</span>
+<span class="sd">        (x, y) offset in axes coordinates. Default (-0.1, 1.05).</span>
+<span class="sd">    fontsize : float</span>
+<span class="sd">        Font size in points (default 10).</span>
+<span class="sd">    fontweight : str</span>
+<span class="sd">        Font weight (default &#39;bold&#39;).</span>
+<span class="sd">    text_color : str</span>
+<span class="sd">        Text color (default &#39;black&#39;).</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Additional arguments passed to ``ax.text()``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    fig : matplotlib.figure.Figure</span>
-<span class="sd">        Reproduced figure.</span>
-<span class="sd">    axes : Axes or list of Axes</span>
-<span class="sd">        Reproduced axes.</span>
+<span class="sd">    matplotlib.text.Text</span>
+<span class="sd">        The created text annotation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
-
-    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-
-    <span class="c1"># Check if this is a new-format bundle (ZIP with spec.json)</span>
-    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;.zip&quot;</span> <span class="ow">and</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">is_zipfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
-            <span class="n">namelist</span> <span class="o">=</span> <span class="n">zf</span><span class="o">.</span><span class="n">namelist</span><span class="p">()</span>
-            <span class="c1"># Check for spec.json (new bundle format)</span>
-            <span class="n">has_spec</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;spec.json&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">namelist</span><span class="p">)</span>
-            <span class="n">has_recipe</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
-                <span class="n">n</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;recipe.yaml&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;recipe.yml&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">namelist</span>
-            <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">has_spec</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_recipe</span><span class="p">:</span>
-                <span class="c1"># Use new bundle reproduction</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">.._bundle._load</span><span class="w"> </span><span class="kn">import</span> <span class="n">reproduce_bundle</span>
-
-                <span class="k">return</span> <span class="n">reproduce_bundle</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">apply_style</span><span class="o">=</span><span class="n">apply_style</span><span class="p">)</span>
-
-    <span class="c1"># Use old recipe-based reproduction</span>
-    <span class="k">return</span> <span class="n">_reproduce_core</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">calls</span><span class="o">=</span><span class="n">calls</span><span class="p">,</span> <span class="n">skip_decorations</span><span class="o">=</span><span class="n">skip_decorations</span><span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="info">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.info">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get information about a recipe without reproducing.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">get_recipe_info</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
-
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">load_record</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FigureRecord</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a recipe as a FigureRecord object (advanced use).&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">load_recipe</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="extract_data">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.extract_data">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">extract_data</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract data arrays from a saved recipe.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Nested dictionary: {call_id: {&#39;x&#39;: array, &#39;y&#39;: array, ...}}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">._extract</span><span class="w"> </span><span class="kn">import</span> <span class="n">DECORATION_FUNCS</span><span class="p">,</span> <span class="n">extract_call_data</span>
-
-    <span class="n">record</span> <span class="o">=</span> <span class="n">load_recipe</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">ax_key</span><span class="p">,</span> <span class="n">ax_record</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">ax_record</span><span class="o">.</span><span class="n">calls</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">function</span> <span class="ow">in</span> <span class="n">DECORATION_FUNCS</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="n">call_data</span> <span class="o">=</span> <span class="n">extract_call_data</span><span class="p">(</span><span class="n">call</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">call_data</span><span class="p">:</span>
-                <span class="n">result</span><span class="p">[</span><span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">call_data</span>
-
-    <span class="k">return</span> <span class="n">result</span></div>
-
-
-
-<div class="viewcode-block" id="validate">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.validate">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span>
-    <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-    <span class="n">mse_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ValidationResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that a saved recipe can reproduce its original figure.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path : str or Path</span>
-<span class="sd">        Path to .yaml recipe file.</span>
-<span class="sd">    mse_threshold : float</span>
-<span class="sd">        Maximum acceptable MSE for validation to pass (default: 100).</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    ValidationResult</span>
-<span class="sd">        Detailed comparison results.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">._validate</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_recipe</span> <span class="k">as</span> <span class="n">_validate</span>
-
-    <span class="k">return</span> <span class="n">_validate</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mse_threshold</span><span class="p">)</span></div>
-
-
-
-<span class="c1"># Backward compatibility alias</span>
-<span class="n">validate_recipe</span> <span class="o">=</span> <span class="n">validate</span>
-
-
-<div class="viewcode-block" id="crop">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.crop">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">crop</span><span class="p">(</span>
-    <span class="n">input_path</span><span class="p">,</span>
-    <span class="n">output_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">margin_mm</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">margin_px</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">return_offset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Crop a figure image to its content area with a specified margin.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    input_path : str or Path</span>
-<span class="sd">        Path to the input image.</span>
-<span class="sd">    output_path : str or Path, optional</span>
-<span class="sd">        Path to save the cropped image.</span>
-<span class="sd">    margin_mm : float, optional</span>
-<span class="sd">        Margin in millimeters (default: 1.0mm).</span>
-<span class="sd">    margin_px : int, optional</span>
-<span class="sd">        Margin in pixels (overrides margin_mm if provided).</span>
-<span class="sd">    overwrite : bool, optional</span>
-<span class="sd">        Whether to overwrite the input file (default: False)</span>
-<span class="sd">    verbose : bool, optional</span>
-<span class="sd">        Whether to print detailed information (default: False)</span>
-<span class="sd">    return_offset : bool, optional</span>
-<span class="sd">        If True, also return crop offset info dict (default: False)</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    Path or tuple</span>
-<span class="sd">        Path to the saved cropped image. If return_offset=True,</span>
-<span class="sd">        returns (path, offset_dict).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._crop</span><span class="w"> </span><span class="kn">import</span> <span class="n">crop</span> <span class="k">as</span> <span class="n">_crop</span>
-
-    <span class="k">return</span> <span class="n">_crop</span><span class="p">(</span>
-        <span class="n">input_path</span><span class="p">,</span>
-        <span class="n">output_path</span><span class="p">,</span>
-        <span class="n">margin_mm</span><span class="o">=</span><span class="n">margin_mm</span><span class="p">,</span>
-        <span class="n">margin_px</span><span class="o">=</span><span class="n">margin_px</span><span class="p">,</span>
-        <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
-        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
-        <span class="n">return_offset</span><span class="o">=</span><span class="n">return_offset</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ha</span><span class="p">,</span> <span class="n">va</span> <span class="o">=</span> <span class="n">_calculate_position</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">offset</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+        <span class="n">x</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">,</span>
+        <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span>
+        <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span>
+        <span class="n">fontweight</span><span class="o">=</span><span class="n">fontweight</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">text_color</span><span class="p">,</span>
+        <span class="n">ha</span><span class="o">=</span><span class="n">ha</span><span class="p">,</span>
+        <span class="n">va</span><span class="o">=</span><span class="n">va</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
-
-<div class="viewcode-block" id="gui">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.gui">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">gui</span><span class="p">(</span>
-    <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">style</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5050</span><span class="p">,</span>
-    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
-    <span class="n">open_browser</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">hot_reload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">working_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">desktop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Launch interactive GUI editor for figure styling.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    source : RecordingFigure, str, Path, or None</span>
-<span class="sd">        Either a live RecordingFigure object, path to a .yaml recipe file,</span>
-<span class="sd">        or None to create a new blank figure.</span>
-<span class="sd">    style : str or dict, optional</span>
-<span class="sd">        Style preset name or style dict.</span>
-<span class="sd">    port : int, optional</span>
-<span class="sd">        Django server port (default: 5050).</span>
-<span class="sd">    host : str, optional</span>
-<span class="sd">        Host to bind server (default: &quot;127.0.0.1&quot;, use &quot;0.0.0.0&quot; for Docker).</span>
-<span class="sd">    open_browser : bool, optional</span>
-<span class="sd">        Whether to open browser automatically (default: True).</span>
-<span class="sd">    hot_reload : bool, optional</span>
-<span class="sd">        Enable hot reload (default: False).</span>
-<span class="sd">    working_dir : str or Path, optional</span>
-<span class="sd">        Working directory for file browser (default: directory containing source).</span>
-<span class="sd">    desktop : bool, optional</span>
-<span class="sd">        Launch as native desktop window using pywebview (default: False).</span>
-<span class="sd">        Requires: pip install figrecipe[desktop]</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    dict</span>
-<span class="sd">        Final style overrides after editing session.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">.._editor</span><span class="w"> </span><span class="kn">import</span> <span class="n">gui</span> <span class="k">as</span> <span class="n">_gui</span>
-
-    <span class="k">return</span> <span class="n">_gui</span><span class="p">(</span>
-        <span class="n">source</span><span class="p">,</span>
-        <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">,</span>
-        <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
-        <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
-        <span class="n">open_browser</span><span class="o">=</span><span class="n">open_browser</span><span class="p">,</span>
-        <span class="n">hot_reload</span><span class="o">=</span><span class="n">hot_reload</span><span class="p">,</span>
-        <span class="n">working_dir</span><span class="o">=</span><span class="n">working_dir</span><span class="p">,</span>
-        <span class="n">desktop</span><span class="o">=</span><span class="n">desktop</span><span class="p">,</span>
-    <span class="p">)</span></div>
-
-
-
-<span class="c1"># Alias for intuitive save/load symmetry</span>
-<span class="n">load</span> <span class="o">=</span> <span class="n">reproduce</span>
-
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;subplots&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;save&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;reproduce&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;load&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;info&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;load_record&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;extract_data&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;validate&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;validate_recipe&quot;</span><span class="p">,</span>  <span class="c1"># backward compat alias</span>
-    <span class="s2">&quot;crop&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;gui&quot;</span><span class="p">,</span>
-<span class="p">]</span>
+<span class="c1"># EOF</span>
 </pre></div>
 
            </div>
