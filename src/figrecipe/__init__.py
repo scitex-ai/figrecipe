@@ -115,6 +115,11 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "save_bundle": ("._bundle", "save_bundle"),
     "load_bundle": ("._bundle", "load_bundle"),
     "reproduce_bundle": ("._bundle", "reproduce_bundle"),
+    # ._captions
+    "add_figure_caption": ("._captions", "add_figure_caption"),
+    "add_panel_captions": ("._captions", "add_panel_captions"),
+    # ._api._panel
+    "panel_label": ("._api._panel", "panel_label"),
     # ._composition
     "align_panels": ("._composition", "align_panels"),
     "align_smart": ("._composition", "align_smart"),
@@ -205,6 +210,10 @@ __all__ = [
     # Signature
     "signature",
     "caption_with_signature",
+    # Captions
+    "add_figure_caption",
+    "add_panel_captions",
+    "panel_label",
     # Seaborn integration
     "sns",
     # Version
