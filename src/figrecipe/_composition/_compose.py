@@ -46,6 +46,7 @@ def compose(
     dpi: int = DEFAULT_DPI,
     panel_labels: bool = False,
     label_style: str = "uppercase",
+    caption: Optional[str] = None,
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray, List[RecordingAxes]]]:
     """Compose a new figure from multiple sources (recipes or raw images).
@@ -76,6 +77,9 @@ def compose(
         If True, add panel labels (A, B, C...) to each panel.
     label_style : str
         'uppercase', 'lowercase', or 'numeric'.
+    caption : str, optional
+        Caption text to attach to the composed figure. Stored on the
+        FigureRecord (metadata.caption) so it survives save/reproduce.
     **kwargs
         Additional arguments passed to figure creation.
 
@@ -110,11 +114,24 @@ def compose(
     ... )
     """
     if _is_mm_based_sources(sources):
-        return _compose_mm_based(
+        fig, axes = _compose_mm_based(
             sources, canvas_size_mm, dpi, panel_labels, label_style, **kwargs
         )
     else:
-        return _compose_grid_based(sources, layout, panel_labels, label_style, **kwargs)
+        fig, axes = _compose_grid_based(
+            sources, layout, panel_labels, label_style, **kwargs
+        )
+
+    # Persist the caption on the composed figure's FigureRecord so it lands in
+    # the serialized recipe (metadata.caption) and survives save/reproduce.
+    if caption is not None:
+        try:
+            record = fig.record if hasattr(fig, "record") else fig._recorder.figure_record
+            record.caption = caption
+        except Exception:
+            pass
+
+    return fig, axes
 
 
 def _compose_grid_based(
