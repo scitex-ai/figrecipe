@@ -767,4 +767,21 @@ class TestImports:
         assert isinstance(caption_manager, ScientificCaption)
 
 
+def test_add_figure_caption_persists_on_figure_record():
+    """Card persist-caption-roundtrip [P1]: caption text persists on the
+    FigureRecord so it survives save -> reproduce."""
+    # Arrange
+    import figrecipe as fr
+    from figrecipe._captions import add_figure_caption, caption_manager
+
+    caption_manager.reset()
+    fig, ax = fr.subplots()
+    ax.plot([0, 1, 2], [0, 1, 4])
+
+    # Act
+    add_figure_caption(fig, "Quadratic growth example.")
+
+    # Assert
+    assert fig._recorder.figure_record.caption == "Quadratic growth example."
+
 # EOF
