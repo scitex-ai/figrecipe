@@ -18,3 +18,22 @@ def test_import__api__save_module():
     mod = pytest.importorskip(module_path)
     # Assert
     assert mod.__name__ == module_path
+
+
+import figrecipe as fr  # noqa: E402
+
+
+class TestSpineReproducibility:
+    def test_hidden_spines_reproduce_identically(self, tmp_path):
+        # Arrange
+        fig, ax = fr.subplots()
+        ax.scatter([0, 1, 2], [0, 1, 2])
+        for side in ("left", "right", "top", "bottom"):
+            ax.spines[side].set_visible(False)
+        # Act
+        _, _, result = fr.save(
+            fig, str(tmp_path / "fig.png"), verbose=False,
+            validate_error_level="warning",
+        )
+        # Assert
+        assert result.valid

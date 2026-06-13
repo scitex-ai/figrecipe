@@ -76,6 +76,11 @@ class AxesRecord:
     # Axes bounding box in figure coordinates [left, bottom, width, height]
     # Enables alignment/snap functionality
     bbox: Optional[List[float]] = None
+    # Per-side spine visibility {"left": bool, "right": ..., ...}, snapshotted
+    # at save. Needed because ``ax.spines[side].set_visible()`` targets the
+    # Spine object, NOT the axes, so it is never captured as a recorded method
+    # call -- without this, reproduce() redraws hidden spines (figrecipe #repro).
+    spines: Optional[Dict[str, bool]] = None
 
     def add_call(self, record: CallRecord) -> None:
         """Add a plotting call record."""
@@ -99,6 +104,8 @@ class AxesRecord:
             result["stats"] = self.stats
         if not self.visible:  # Only serialize if hidden (default is True)
             result["visible"] = False
+        if self.spines is not None:
+            result["spines"] = self.spines
         return result
 
 
@@ -256,6 +263,7 @@ class FigureRecord:
                 stats=ax_data.get("stats"),
                 visible=ax_data.get("visible", True),
                 bbox=ax_data.get("bbox"),
+                spines=ax_data.get("spines"),
             )
             for call_data in ax_data.get("calls", []):
                 ax_record.calls.append(CallRecord.from_dict(call_data, (row, col)))

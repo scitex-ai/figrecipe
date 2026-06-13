@@ -940,3 +940,36 @@ class TestRecorder:
         recorder.record_call((1, 0), "bar", (), {})
         record = recorder.figure_record
         assert len(record.axes["r1c0"].calls) == 1
+
+
+from figrecipe._recorder._core import AxesRecord, FigureRecord  # noqa: E402
+
+
+class TestAxesRecordSpines:
+    def test_spines_round_trip_through_dict(self):
+        # Arrange
+        rec = FigureRecord()
+        rec.get_or_create_axes(0, 0).spines = {
+            "left": False,
+            "right": False,
+            "top": True,
+            "bottom": True,
+        }
+        # Act
+        rebuilt = FigureRecord.from_dict(rec.to_dict())
+        # Assert
+        assert rebuilt.axes["r0c0"].spines == {
+            "left": False,
+            "right": False,
+            "top": True,
+            "bottom": True,
+        }
+
+    def test_spines_absent_when_not_set(self):
+        # Arrange
+        rec = FigureRecord()
+        rec.get_or_create_axes(0, 0)
+        # Act
+        axes_dict = rec.to_dict()["axes"]["r0c0"]
+        # Assert
+        assert "spines" not in axes_dict

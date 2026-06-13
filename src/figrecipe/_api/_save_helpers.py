@@ -5,7 +5,75 @@
 from pathlib import Path
 from typing import Optional
 
+from scitex_logging import getLogger as _getLogger
+
 from .._utils._grid import parse_grid_id
+
+logger = _getLogger(__name__)
+
+
+def format_saved_pair(image_path, yaml_path) -> str:
+    """Compact ``dir/stem.{png,yaml}`` when image + recipe share a stem.
+
+    Falls back to ``"<image> + <yaml>"`` when the stems differ.
+    """
+    image_path, yaml_path = Path(image_path), Path(yaml_path)
+    if image_path.with_suffix("") == yaml_path.with_suffix(""):
+        exts = ",".join(p.suffix.lstrip(".") for p in (image_path, yaml_path))
+        return f"{image_path.with_suffix('')}.{{{exts}}}"
+    return f"{image_path} + {yaml_path}"
+
+
+def snapshot_spine_visibility(fig) -> None:
+    """Snapshot each axes' spine visibility into its ``AxesRecord``.
+
+    ``ax.spines[side].set_visible()`` targets the Spine object, not the axes,
+    so it is never captured as a recorded method call -- without this snapshot,
+    ``reproduce()`` redraws spines the author had hidden, breaking pixel
+    reproducibility. Reads the LIVE matplotlib state at save time (robust to
+    however the visibility was set: style, direct call, despine, ...).
+    """
+    import numpy as np
+
+    record = getattr(getattr(fig, "_recorder", None), "figure_record", None)
+    if record is None:
+        return
+    flat = np.atleast_1d(np.asarray(fig.axes, dtype=object)).ravel()
+    for rax in flat:
+        ax = getattr(rax, "_ax", None)
+        if ax is None:
+            continue
+        ax_rec = record.get_or_create_axes(*rax.position)
+        ax_rec.spines = {
+            side: bool(ax.spines[side].get_visible())
+            for side in ("left", "right", "top", "bottom")
+            if side in ax.spines
+        }
+
+
+def log_save_result(
+    image_path, yaml_path, result, verbose: bool = True, *, _logger=None
+):
+    """Log a save through the scitex logger (never a bare ``print``).
+
+    The file write is always a SUCCESS (green) -- the artefact IS on disk.
+    A failed reproducibility check is an ERROR (red) carrying the full
+    ``ValidationResult.summary()`` so the WHY (dimension / MSE mismatch) is
+    visible instead of a bare "FAILED".
+
+    ``_logger`` injects a logger for testing; production uses the module logger.
+    """
+    if not verbose:
+        return
+    lg = _logger if _logger is not None else logger
+    pair = format_saved_pair(image_path, yaml_path)
+    if result is None:
+        lg.success(f"Saved: {pair}")
+    elif result.valid:
+        lg.success(f"Saved: {pair} (reproducible: PASSED)")
+    else:
+        lg.success(f"Saved: {pair}")
+        lg.error(f"Reproducible validation FAILED:\n{result.summary()}")
 
 
 def _crop_to_axes_size(
@@ -219,9 +287,9 @@ def save_hitmap(
             hitmap_img.save(hitmap_path)
 
         if verbose:
-            print(f"  Hitmap: {hitmap_path}")
+            logger.info(f"Hitmap: {hitmap_path}")
         return hitmap_path
     except Exception as e:
         if verbose:
-            print(f"  Hitmap generation failed: {e}")
+            logger.warning(f"Hitmap generation failed: {e}")
         return None

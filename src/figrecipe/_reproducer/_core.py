@@ -197,6 +197,15 @@ def reproduce_from_record(
         if not getattr(ax_record, "visible", True):
             ax.set_visible(False)
 
+        # Replay per-side spine visibility (snapshotted at save). Spine
+        # set_visible() targets the Spine object so it is not a recorded
+        # call; without this, hidden spines reappear and break pixel parity.
+        spines = getattr(ax_record, "spines", None)
+        if spines:
+            for side, visible in spines.items():
+                if side in ax.spines:
+                    ax.spines[side].set_visible(bool(visible))
+
     # Replay recorded colorbars (exact reproduction)
     _replay_colorbars(fig, axes_2d, record, result_cache)
 

@@ -5,11 +5,19 @@
 from pathlib import Path
 from typing import Optional, Tuple
 
+from scitex_logging import getLogger as _getLogger
+
 # Import helpers from separate module
-from ._save_helpers import _capture_axes_bboxes
+from ._save_helpers import (
+    _capture_axes_bboxes,
+    log_save_result,
+    snapshot_spine_visibility,
+)
 from ._save_helpers import (
     save_hitmap as _save_hitmap,
 )
+
+logger = _getLogger(__name__)
 
 # Image extensions supported for saving
 IMAGE_EXTENSIONS = {
@@ -277,7 +285,7 @@ def save_figure(
             if tmp_pltz.exists():
                 tmp_pltz.unlink()
         if verbose:
-            print(f"Saved: {path} (Figz bundle)")
+            logger.success(f"Saved: {path} (Figz bundle)")
         return path, None, None
 
     if suffixes[-2:] == [".plt", ".zip"]:
@@ -285,7 +293,7 @@ def save_figure(
 
         Pltz.create(path, fig)
         if verbose:
-            print(f"Saved: {path} (Pltz bundle)")
+            logger.success(f"Saved: {path} (Pltz bundle)")
         return path, None, None
 
     # Bare .zip (no .plt./.fig. infix) and directory-bundle dispatch are
@@ -453,7 +461,7 @@ def save_figure(
     # If not saving recipe, return early
     if not save_recipe:
         if verbose:
-            print(f"Saved: {image_path}")
+            logger.success(f"Saved: {image_path}")
         if _diagram_errors:
             raise ValueError("\n  ".join(_diagram_errors))
         return image_path, None, None
@@ -461,10 +469,11 @@ def save_figure(
     # Raise diagram validation errors after saving image (before recipe)
     if _diagram_errors:
         if verbose:
-            print(f"Saved (with errors): {image_path}")
+            logger.error(f"Saved (with errors): {image_path}")
         raise ValueError("\n  ".join(_diagram_errors))
 
-    # Save the recipe
+    # Snapshot live spine visibility so reproduce() replays hidden spines.
+    snapshot_spine_visibility(fig)
     saved_yaml = fig.save_recipe(
         yaml_path,
         include_data=include_data,
@@ -477,24 +486,16 @@ def save_figure(
         from .._quality._validator import validate_on_save
 
         result = validate_on_save(fig, saved_yaml, mse_threshold=validate_mse_threshold)
-        status = "PASSED" if result.valid else "FAILED"
-        if verbose:
-            print(
-                f"Saved: {image_path} + {yaml_path} (Reproducible Validation: {status})"
+        # Log via scitex logger: green success; red error + summary on failure.
+        log_save_result(image_path, yaml_path, result, verbose)
+        if not result.valid and validate_error_level == "error":
+            raise ValueError(
+                f"Reproducibility validation failed "
+                f"(MSE={result.mse:.1f}): {result.message}"
             )
-        if not result.valid:
-            msg = f"Reproducibility validation failed (MSE={result.mse:.1f}): {result.message}"
-            if validate_error_level == "error":
-                raise ValueError(msg)
-            elif validate_error_level == "warning":
-                import warnings
-
-                warnings.warn(msg, UserWarning)
-            # "debug" level: silent, just return the result
         return image_path, yaml_path, result
 
-    if verbose:
-        print(f"Saved: {image_path} + {yaml_path}")
+    log_save_result(image_path, yaml_path, None, verbose)
     return image_path, yaml_path, None
 
 
