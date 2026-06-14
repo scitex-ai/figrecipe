@@ -304,6 +304,7 @@ def stx_scatter_hist(
     hist_alpha=0.5,
     scatter_ratio=0.8,
     kde=False,
+    kde_fill=False,
     groups=None,
     palette=None,
     marginal_label=None,
@@ -335,6 +336,11 @@ def stx_scatter_hist(
         When True, draw smooth KDE density curves on the marginals instead of
         histograms. With ``groups`` set, one KDE per group is drawn on each
         marginal, coloured to match the scatter.
+    kde_fill : bool, default False
+        When ``kde=True``, controls whether the area under each KDE curve is
+        shaded. Default ``False`` draws the KDE marginals as line outlines only
+        (no fill) for readability. Set ``True`` to restore the filled look
+        (a translucent band under each curve).
     groups : array-like, optional
         Per-point group labels (``len == len(x)``). One KDE per unique group.
     palette : dict, optional
@@ -414,14 +420,18 @@ def stx_scatter_hist(
                 if gx is not None:
                     gx_plot = _x_grid_to_plot(gx)
                     ax_histx.plot(gx_plot, dx, color=color, alpha=hist_alpha)
-                    ax_histx.fill_between(
-                        gx_plot, dx, color=color, alpha=hist_alpha * 0.4
-                    )
+                    if kde_fill:
+                        ax_histx.fill_between(
+                            gx_plot, dx, color=color, alpha=hist_alpha * 0.4
+                        )
                 # Right marginal: KDE over y (plotted horizontally).
                 gy, dy = _kde_curve(y_arr[mask])
                 if gy is not None:
                     ax_histy.plot(dy, gy, color=color, alpha=hist_alpha)
-                    ax_histy.fill_betweenx(gy, dy, color=color, alpha=hist_alpha * 0.4)
+                    if kde_fill:
+                        ax_histy.fill_betweenx(
+                            gy, dy, color=color, alpha=hist_alpha * 0.4
+                        )
         else:
             gx, dx = _kde_curve(x_float)
             if gx is not None:

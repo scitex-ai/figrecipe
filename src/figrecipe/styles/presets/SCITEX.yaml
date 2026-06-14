@@ -28,7 +28,7 @@ fonts:
   axis_label_pt: 7
   tick_label_pt: 7
   title_pt: 8
-  suptitle_pt: 9      # Figure suptitle (slightly larger than subplot titles)
+  suptitle_pt: 7      # Figure suptitle (inherits style; small + non-bold)
   supxlabel_pt: 7     # Figure-level x-label (same as axis labels)
   supylabel_pt: 7     # Figure-level y-label (same as axis labels)
   panel_label_pt: 10  # Panel labels (A, B, C, ...) - bold, prominent
