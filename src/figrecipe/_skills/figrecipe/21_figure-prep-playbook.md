@@ -1,7 +1,7 @@
 ---
 description: |
   [TOPIC] Figure Prep Playbook (ecosystem-wide)
-  [DETAILS] Canonical playbook for preparing publication-quality figures across the SciTeX ecosystem — real-data-only rule, NaN handling, common-scale-across-panels, representative-example selection criteria, config-as-single-source-of-truth, and the figrecipe-dogfood principle (use figrecipe in figrecipe's own examples). Every paper / poster / report figure produced anywhere in the ecosystem should pass this checklist before it lands.
+  [DETAILS] Canonical playbook for preparing publication-quality figures across the SciTeX ecosystem — real-data-only rule, NaN handling, common-scale-across-panels, representative-example selection criteria, config-as-single-source-of-truth, the figrecipe-dogfood principle (use figrecipe in figrecipe's own examples), and the L-shaped scale-bar convention for signal-trace panels. Every paper / poster / report figure produced anywhere in the ecosystem should pass this checklist before it lands.
 tags: [figrecipe-figure-prep-playbook, figrecipe]
 ---
 
@@ -32,7 +32,7 @@ Do **not** load this skill for:
   throwaway — just `ax.plot` and move on).
 - Unit-test fixtures that exercise the figrecipe API surface.
 
-## The six rules
+## The seven rules
 
 ### 1. Real data only
 
@@ -153,6 +153,36 @@ The same rule applies to any docstring example: if you would teach
 a user to call `fr.subplots`, your own docstring must call
 `fr.subplots`.
 
+### 7. L-shaped scale bar on signal-trace panels
+
+For **representative / paper figures showing signal traces** (EEG,
+ECoG, LFP, spike, ECG, audio, kinematics), do **not** draw full
+ticked x and y axes on the trace panel. Instead:
+
+- Hide the surrounding axes (`ax.set_axis_off()` or remove spines /
+  ticks).
+- Draw a small **L-shaped scale bar** in the lower-left of the
+  panel: one short horizontal bar (time scale, e.g. `100 ms`) and
+  one short vertical bar (amplitude scale, e.g. `50 μV`), sharing a
+  corner. The L-bar **is** the scale legend.
+- Pick **round, reader-expectation magnitudes** — powers of 10 for
+  time, biology-relevant rounds for amplitude (e.g. `50 μV` EEG,
+  `100 μV` LFP, `1 mV` ECG). Drive the magnitudes from `CONFIG.*`
+  (rule 5) so the bar label and the data agree when the data is
+  rescaled.
+
+Applies to: representative traces in paper / poster / talk figures.
+Does **not** apply to stats plots (bar / line / scatter where ticked
+axes carry quantitative claims), schematics, or multi-panel
+comparison grids where readers must cross-read absolute values
+between panels (use shared ticked axes per rule 3).
+
+Don't keep full ticked axes AND add an L-bar — pick one. Don't
+silently rescale the data and forget to update the bar label.
+
+See `24_l-shaped-scale-bar.md` for the worked-example leaf with the
+matplotlib pattern and a longer DO/DON'T list.
+
 ## Pre-render checklist
 
 Before a figure script is allowed into a publication pipeline:
@@ -169,6 +199,9 @@ Before a figure script is allowed into a publication pipeline:
 - [ ] Output saved via `fr.save(fig, ...)` (not `fig.savefig`).
 - [ ] Caption / docstring explicitly names the data source and the
       NaN-handling choice.
+- [ ] Signal-trace panels use an L-shaped scale bar (axes hidden,
+      magnitudes from `CONFIG.SCALE_BAR.*`) — see
+      `24_l-shaped-scale-bar.md`.
 
 ## Anti-patterns
 
@@ -182,6 +215,10 @@ Before a figure script is allowed into a publication pipeline:
   `plt.savefig`, even inside a project that has figrecipe installed.
 - "I'll fix the NaN sentinel handling in the figure" — no, you fix it
   in the loader. The figure layer assumes clean `np.nan`.
+- A representative signal-trace panel with full ticked axes *and* an
+  L-shaped scale bar — redundant and visually noisy. Pick one (use
+  the L-bar for representative traces; see rule 7 and
+  `24_l-shaped-scale-bar.md`).
 
 ## Cross-references
 
@@ -189,6 +226,8 @@ Before a figure script is allowed into a publication pipeline:
   (e.g. `-32768` → `np.nan` on read) at the figure layer.
 - `23_no-synthetic-data-policy.md` — figrecipe rendering-side guard
   for the no-synthetic-data policy.
+- `24_l-shaped-scale-bar.md` — L-shaped scale-bar convention for
+  signal-trace panels (rule 7 worked example).
 - `05_styles.md` — `SCITEX` and dark-variant presets.
 - `17_composition.md` — multi-panel mm-precision composition.
 - `scitex-dev/_skills/scientific/01_figures_01_standards.md` —
