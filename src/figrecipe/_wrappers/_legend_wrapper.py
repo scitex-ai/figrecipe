@@ -176,11 +176,37 @@ def _apply_frame_styling(legend) -> None:
             frame.set_edgecolor(edgecolor)
 
 
+# Legend kwargs whose values are render-time matplotlib objects
+# (artists, custom HandlerBase instances, ...) that are NOT YAML- or
+# pickle-serializable. Capturing them verbatim makes the recipe dump
+# raise, which previously left a 0-byte recipe on disk. We drop them
+# from the recorded recipe: they affect only how the legend is drawn,
+# not its semantic content (labels/handles metadata are captured
+# separately via ``_handle_specs``).
+_NON_SERIALIZABLE_LEGEND_KWARGS = frozenset(
+    {
+        "handler_map",  # {handle: HandlerBase} -> live artists + handlers
+        "handles",  # handled below via _handle_specs
+    }
+)
+
+
 def _record_legend_call(recorder, position, args, kwargs, call_id) -> None:
-    """Record the legend call into the recorder for later reproduction."""
+    """Record the legend call into the recorder for later reproduction.
+
+    Render-time matplotlib objects (a custom ``handler_map`` of
+    :class:`~matplotlib.legend_handler.HandlerBase` instances, live
+    artist handles, ...) are *not* recorded verbatim: they are not
+    YAML-serializable and would otherwise make the recipe dump raise.
+    The legend's semantic content (handle labels + colors) is captured
+    via ``_handle_specs`` instead, and a safe summary of any dropped
+    ``handler_map`` is kept for debugging.
+    """
     record_kwargs = dict(kwargs)
+
+    # Capture handle metadata before dropping the live artists.
     if "handles" in record_kwargs:
-        handles = record_kwargs.pop("handles")
+        handles = record_kwargs.get("handles")
         handle_specs = []
         for h in handles:
             spec: dict[str, Any] = {"label": h.get_label()}
@@ -190,6 +216,22 @@ def _record_legend_call(recorder, position, args, kwargs, call_id) -> None:
                 spec["edgecolor"] = list(h.get_edgecolor())
             handle_specs.append(spec)
         record_kwargs["_handle_specs"] = handle_specs
+
+    # Record that a custom handler_map was used (safe repr) but drop the
+    # live, non-serializable objects so the recipe dump never breaks.
+    handler_map = record_kwargs.get("handler_map")
+    if handler_map:
+        try:
+            record_kwargs["_handler_map_summary"] = [
+                type(handler).__name__ for handler in handler_map.values()
+            ]
+        except Exception:
+            record_kwargs["_handler_map_summary"] = "custom"
+
+    # Drop all render-time-only legend objects from the recorded recipe.
+    for key in _NON_SERIALIZABLE_LEGEND_KWARGS:
+        record_kwargs.pop(key, None)
+
     recorder.record_call(
         ax_position=position,
         method_name="legend",

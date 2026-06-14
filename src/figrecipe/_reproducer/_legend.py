@@ -51,6 +51,13 @@ def replay_legend_call(
             handles.append(patch)
         kwargs["handles"] = handles
 
+    # Drop figrecipe-internal metadata keys (underscore-prefixed) that
+    # were recorded for provenance/debugging only and are NOT valid
+    # matplotlib legend kwargs (e.g. ``_handler_map_summary``, the safe
+    # summary of a dropped non-serializable custom handler_map).
+    for meta_key in [k for k in kwargs if isinstance(k, str) and k.startswith("_")]:
+        kwargs.pop(meta_key)
+
     # Create legend
     legend = ax.legend(*args, **kwargs)
 

@@ -79,13 +79,35 @@ def save_recipe(
     # Convert numpy types to native Python types
     data = _convert_numpy_types(data)
 
-    # Save YAML
+    # Save YAML.
+    #
+    # Write atomically via a sibling temp file + os.replace so a dump that
+    # raises mid-serialization (e.g. a non-YAML-able object that slipped
+    # into the record) NEVER leaves a truncated 0-byte recipe on disk that
+    # would silently break downstream compose()/load_recipe(). Either the
+    # full valid recipe lands, or the write fails loud and the previous
+    # file (if any) is untouched.
+    import os
+    import tempfile
+
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.indent(mapping=2, sequence=4, offset=2)
 
-    with open(path, "w") as f:
-        yaml.dump(data, f)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=f".{path.stem}.", suffix=".yaml.tmp"
+    )
+    try:
+        with os.fdopen(fd, "w") as f:
+            yaml.dump(data, f)
+    except Exception:
+        # Fail loud: clean up the partial temp file, do not clobber path.
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+    os.replace(tmp_name, path)
 
     return path
 
