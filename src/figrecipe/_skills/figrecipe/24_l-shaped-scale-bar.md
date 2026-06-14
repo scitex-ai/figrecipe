@@ -2,7 +2,7 @@
 description: |
   [TOPIC] L-shaped scale bar for axis-off trace / EEG panels
   [DETAILS] ax.stx_scalebar() draws an L-shaped time/amplitude scale bar instead of x/y axes. Use after ax.axis("off") on raw time-series / iEEG plots.
-tags: [figrecipe-plot, figrecipe-trace, figrecipe-eeg, figrecipe]
+tags: [figrecipe-l-shaped-scale-bar, figrecipe-plot, figrecipe-trace, figrecipe-eeg, figrecipe]
 ---
 
 
