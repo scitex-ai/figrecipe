@@ -23,6 +23,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          # Built-in pip cache keyed on (pyproject.toml, py-version).
+          # Cuts the dependency-install step from ~60-90s to <10s on
+          # cache hit (pip skips wheel downloads + reuses the resolver
+          # output). Cold-cache runs (first push after a pyproject
+          # bump) pay full cost; warm runs short-circuit. Safe: the
+          # cache key encodes the lockfile-equivalent (pyproject.toml),
+          # so any dep change invalidates the cache — no stale-deps
+          # risk.
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
