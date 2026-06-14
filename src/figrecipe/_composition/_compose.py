@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 from .._recorder import FigureRecord
 from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
+from ._caption_render import render_compose_captions
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
 
@@ -131,13 +132,24 @@ def compose(
     """
     if _is_mm_based_sources(sources):
         return _compose_mm_based(
-            sources, canvas_size_mm, dpi, panel_labels, label_style,
-            caption=caption, panel_captions=panel_captions, **kwargs,
+            sources,
+            canvas_size_mm,
+            dpi,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
         )
     else:
         return _compose_grid_based(
-            sources, layout, panel_labels, label_style,
-            caption=caption, panel_captions=panel_captions, **kwargs,
+            sources,
+            layout,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
         )
 
 
@@ -152,7 +164,6 @@ def _compose_grid_based(
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray]]:
     """Grid-based composition using subplots."""
     from .. import subplots
-    from ._caption_render import render_compose_captions
 
     # Auto-detect layout from source positions
     if layout is None:
