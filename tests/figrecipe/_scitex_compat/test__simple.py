@@ -114,6 +114,7 @@ class TestCsvFormat:
         csv_path = tmpdir / "test.csv"
         data_dir = tmpdir / "test_data"
         import pandas as pd
+
         df = pd.read_csv(csv_path)
         assert len(df.columns) >= 2
 
@@ -129,6 +130,7 @@ class TestCsvFormat:
         output_path = tmpdir / "test.yaml"
         fr.save(fig, output_path, csv_format="single")
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "test.csv")
         assert "r0c0_my-trace_x" in df.columns
 
@@ -144,6 +146,7 @@ class TestCsvFormat:
         output_path = tmpdir / "test.yaml"
         fr.save(fig, output_path, csv_format="single")
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "test.csv")
         assert "r0c0_my-trace_y" in df.columns
 
@@ -221,6 +224,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multi.yaml"
         fr.save(fig, output_path, csv_format="single")
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multi.csv")
         assert "r0c0_sine_x" in df.columns
 
@@ -236,6 +240,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multi.yaml"
         fr.save(fig, output_path, csv_format="single")
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multi.csv")
         assert "r0c0_sine_y" in df.columns
 
@@ -251,6 +256,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multi.yaml"
         fr.save(fig, output_path, csv_format="single")
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multi.csv")
         assert "r0c0_cosine_x" in df.columns
 
@@ -266,6 +272,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multi.yaml"
         fr.save(fig, output_path, csv_format="single")
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multi.csv")
         assert "r0c0_cosine_y" in df.columns
 
@@ -281,6 +288,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multiax.yaml"
         fr.save(fig, output_path, csv_format="single", validate=False)
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multiax.csv")
         assert "r0c0_left-plot_x" in df.columns
 
@@ -296,6 +304,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multiax.yaml"
         fr.save(fig, output_path, csv_format="single", validate=False)
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multiax.csv")
         assert "r0c0_left-plot_y" in df.columns
 
@@ -311,6 +320,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multiax.yaml"
         fr.save(fig, output_path, csv_format="single", validate=False)
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multiax.csv")
         assert "r0c1_right-plot_x" in df.columns
 
@@ -326,6 +336,7 @@ class TestCsvFormat:
         output_path = tmpdir / "multiax.yaml"
         fr.save(fig, output_path, csv_format="single", validate=False)
         import pandas as pd
+
         df = pd.read_csv(tmpdir / "multiax.csv")
         assert "r0c1_right-plot_y" in df.columns
 
@@ -345,7 +356,9 @@ class TestCsvFormatLoadSingleCsv:
         # Act
         # Assert
         import pandas as pd
+
         from figrecipe._utils._numpy_io import load_single_csv
+
         df = pd.DataFrame(
             {
                 "r0c0_trace1_x": [1, 2, 3],
@@ -365,7 +378,9 @@ class TestCsvFormatLoadSingleCsv:
         # Act
         # Assert
         import pandas as pd
+
         from figrecipe._utils._numpy_io import load_single_csv
+
         df = pd.DataFrame(
             {
                 "r0c0_trace1_x": [1, 2, 3],
@@ -385,7 +400,9 @@ class TestCsvFormatLoadSingleCsv:
         # Act
         # Assert
         import pandas as pd
+
         from figrecipe._utils._numpy_io import load_single_csv
+
         df = pd.DataFrame(
             {
                 "r0c0_trace1_x": [1, 2, 3],
@@ -405,7 +422,9 @@ class TestCsvFormatLoadSingleCsv:
         # Act
         # Assert
         import pandas as pd
+
         from figrecipe._utils._numpy_io import load_single_csv
+
         df = pd.DataFrame(
             {
                 "r0c0_trace1_x": [1, 2, 3],
@@ -425,7 +444,9 @@ class TestCsvFormatLoadSingleCsv:
         # Act
         # Assert
         import pandas as pd
+
         from figrecipe._utils._numpy_io import load_single_csv
+
         df = pd.DataFrame(
             {
                 "ax-row-0-col-0_trace-id-trace1_variable-x": [1, 2, 3],
@@ -443,7 +464,9 @@ class TestCsvFormatLoadSingleCsv:
         # Act
         # Assert
         import pandas as pd
+
         from figrecipe._utils._numpy_io import load_single_csv
+
         df = pd.DataFrame(
             {
                 "ax-row-0-col-0_trace-id-trace1_variable-x": [1, 2, 3],
@@ -454,3 +477,150 @@ class TestCsvFormatLoadSingleCsv:
         df.to_csv(csv_path, index=False)
         result = load_single_csv(csv_path)
         assert "trace1" in result["r0c0"]
+
+
+def _trace_axes():
+    """An axis-off trace panel, like an iEEG strip."""
+    fig, ax = plt.subplots()
+    t = np.linspace(0, 600, 600)  # 600 s
+    ax.plot(t, np.sin(t / 20.0) * 50)
+    ax.axis("off")
+    return fig, ax
+
+
+class TestScalebar:
+    """Tests for the L-shaped stx_scalebar primitive."""
+
+    @pytest.fixture(autouse=True)
+    def reset_matplotlib(self):
+        plt.close("all")
+        matplotlib.rcdefaults()
+        yield
+        plt.close("all")
+
+    def test_returns_same_axes(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        # Act
+        out = stx_scalebar(ax, 60, 100, x_label="1 min", y_label="unknown")
+        # Assert
+        assert out is ax
+
+    def test_draws_two_arms(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        n_before = len(ax.lines)
+        # Act
+        stx_scalebar(ax, 60, 100, x_label="1 min", y_label="unknown")
+        # Assert
+        assert len(ax.lines) == n_before + 2
+
+    def test_horizontal_arm_spans_x_len(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        # Act
+        stx_scalebar(ax, 60, 100)
+        horiz = ax.lines[-2]
+        hx, hy = horiz.get_xdata(), horiz.get_ydata()
+        # Assert
+        assert hy[0] == hy[1] and np.isclose(abs(hx[1] - hx[0]), 60)
+
+    def test_vertical_arm_spans_y_len(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        # Act
+        stx_scalebar(ax, 60, 100)
+        vert = ax.lines[-1]
+        vx, vy = vert.get_xdata(), vert.get_ydata()
+        # Assert
+        assert vx[0] == vx[1] and np.isclose(abs(vy[1] - vy[0]), 100)
+
+    def test_arms_share_a_vertex(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        # Act
+        stx_scalebar(ax, 60, 100)
+        horiz, vert = ax.lines[-2], ax.lines[-1]
+        # Assert
+        assert np.isclose(horiz.get_xdata()[0], vert.get_xdata()[0]) and np.isclose(
+            horiz.get_ydata()[0], vert.get_ydata()[0]
+        )
+
+    def test_arms_are_black(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        # Act
+        stx_scalebar(ax, 60, 100, color="black")
+        arms = ax.lines[-2:]
+        # Assert
+        assert all(matplotlib.colors.to_hex(ln.get_color()) == "#000000" for ln in arms)
+
+    def test_two_labels_with_expected_text(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        n_txt = len(ax.texts)
+        # Act
+        stx_scalebar(ax, 60, 100, x_label="1 min", y_label="unknown")
+        labels = {t.get_text() for t in ax.texts[n_txt:]}
+        # Assert
+        assert labels == {"1 min", "unknown"}
+
+    def test_labels_do_not_overlap(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        n_txt = len(ax.texts)
+        # Act
+        stx_scalebar(ax, 60, 100, x_label="1 min", y_label="unknown")
+        by_text = {t.get_text(): t.get_position() for t in ax.texts[n_txt:]}
+        # Assert
+        assert by_text["1 min"] != by_text["unknown"]
+
+    def test_y_label_is_rotated_vertical(self):
+        # Arrange
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        _, ax = _trace_axes()
+        n_txt = len(ax.texts)
+        # Act
+        stx_scalebar(ax, 60, 100, x_label="1 min", y_label="unknown")
+        by_text = {t.get_text(): t for t in ax.texts[n_txt:]}
+        # Assert
+        assert by_text["unknown"].get_rotation() == 90
+
+    def test_no_hardcoded_fontsize(self):
+        # Arrange: labels should inherit the rcParams font size.
+        from figrecipe._scitex_compat._simple import stx_scalebar
+
+        matplotlib.rcParams["font.size"] = 7.0
+        _, ax = _trace_axes()
+        n_txt = len(ax.texts)
+        # Act
+        stx_scalebar(ax, 60, 100)
+        # Assert
+        assert all(t.get_fontsize() == 7.0 for t in ax.texts[n_txt:])
+
+    def test_recording_axes_method(self):
+        # Arrange
+        fig, ax = fr.subplots()
+        ax.plot(np.linspace(0, 600, 600), np.zeros(600))
+        ax.axis("off")
+        # Act
+        out = ax.stx_scalebar(60, 100, x_label="1 min", y_label="unknown")
+        # Assert
+        assert out is not None
