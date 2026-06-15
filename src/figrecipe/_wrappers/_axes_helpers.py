@@ -80,6 +80,30 @@ def inject_clip_on_from_style(kwargs: dict, method_name: str = None) -> dict:
     return kwargs
 
 
+def _resolve_signal_linewidth_token(kwargs: dict) -> dict:
+    """Resolve the special ``linewidth="signal"`` / ``lw="signal"`` token.
+
+    ``"signal"`` maps to the SCITEX style's thin signal-trace width
+    (``lines.signal_linewidth_mm``, ~0.12mm) converted to points. Numeric
+    linewidths pass through untouched. The token is resolved to a number
+    *before* the call is recorded, so recipe replay stays faithful (no
+    figrecipe-specific token leaks into the recorded kwargs).
+    """
+    from .._utils._units import mm_to_pt
+    from ..styles._style_loader import _STYLE_CACHE
+
+    for key in ("linewidth", "lw"):
+        if kwargs.get(key) == "signal":
+            signal_mm = 0.12
+            if _STYLE_CACHE is not None:
+                lines = _STYLE_CACHE.get("lines", {})
+                signal_mm = lines.get(
+                    "signal_linewidth_mm", lines.get("trace_mm", 0.12)
+                )
+            kwargs[key] = mm_to_pt(signal_mm)
+    return kwargs
+
+
 def inject_method_defaults(kwargs: dict, method_name: str) -> dict:
     """Inject method-specific defaults from SCITEX style.
 
@@ -96,6 +120,10 @@ def inject_method_defaults(kwargs: dict, method_name: str) -> dict:
         Updated kwargs with style defaults applied.
     """
     from ..styles._style_loader import _STYLE_CACHE
+
+    # Special linewidth token works regardless of whether a style is loaded
+    # (falls back to 0.12mm) and applies to every wrapped plotting method.
+    kwargs = _resolve_signal_linewidth_token(kwargs)
 
     if _STYLE_CACHE is None:
         return kwargs

@@ -139,7 +139,12 @@ def configure_mpl(
         dpi_display = int(_s("output", "display_dpi", max(100, output_dpi // 3)))
 
     if line_width is None:
-        line_width = _s("lines", "trace_mm", 0.2) * _MM_TO_PT
+        # General/default ordinary line width (KDE curves, single plots, …).
+        # Falls back to trace_mm only on legacy presets without the key.
+        _general_mm = _s("lines", "linewidth_mm", None)
+        if _general_mm is None:
+            _general_mm = _s("lines", "trace_mm", 0.2)
+        line_width = _general_mm * _MM_TO_PT
 
     if n_ticks is None:
         n_ticks = int(_s("ticks", "n_ticks", 4))

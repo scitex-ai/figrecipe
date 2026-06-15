@@ -95,13 +95,39 @@ def _route_positional_loc(args: tuple, kwargs: dict) -> tuple:
     return args
 
 
-def _record_separate_legend(ax, kwargs: dict) -> None:
+def _stable_axis_id(ax, axis_id=None) -> str:
+    """Deterministic id for the separate-legend filename.
+
+    The downstream saver (scitex.io) builds the legend filename as
+    ``<figstem>_<axis_id>_legend.png``. Previously ``axis_id`` fell back
+    to ``hash(ax)``, which is non-deterministic across processes/renders,
+    so every render emitted a NEW file with a different id. We instead
+    derive a STABLE id from the axes' grid position (row, col), so the
+    same panel always writes the same ``_legend.png`` and overwrites in
+    place. Multiple distinct axes still get distinct (stable) ids.
+    """
+    if axis_id is not None:
+        return str(axis_id)
+    pos = getattr(ax, "_id", None)
+    if pos is not None:
+        return str(pos)
+    # Fallback: position within the figure's axes list (stable per figure).
+    try:
+        fig = ax.get_figure()
+        return f"ax{fig.axes.index(ax)}"
+    except (ValueError, AttributeError):
+        return "ax0"
+
+
+def _record_separate_legend(ax, kwargs: dict, axis_id=None) -> None:
     """Capture handles + labels onto fig._separate_legend_params.
 
     Implements the protocol that
     :func:`scitex.io._save_modules._legends.save_separate_legends`
     consumes — at save time, that function writes the legend to a
-    standalone file alongside the main figure.
+    standalone file alongside the main figure. ``axis_id`` is a STABLE
+    identifier (derived from the panel's grid position) so the legend
+    filename is deterministic and overwrites in place across renders.
     """
     h_kw = kwargs.pop("handles", None)
     l_kw = kwargs.pop("labels", None)
@@ -121,7 +147,7 @@ def _record_separate_legend(ax, kwargs: dict) -> None:
         {
             "handles": list(h_kw),
             "labels": list(l_kw),
-            "axis_id": getattr(ax, "_id", None) or hash(ax),
+            "axis_id": _stable_axis_id(ax, axis_id),
             "figsize": sep_kw.pop("figsize", (4, 2)),
             "frameon": sep_kw.pop("frameon", True),
             "fancybox": sep_kw.pop("fancybox", False),
@@ -131,7 +157,7 @@ def _record_separate_legend(ax, kwargs: dict) -> None:
     )
 
 
-def _resolve_loc_kwargs(ax, kwargs: dict) -> None:
+def _resolve_loc_kwargs(ax, kwargs: dict, axis_id=None) -> None:
     """Translate figrecipe-extended loc strings to matplotlib kwargs.
 
     Mutates *kwargs* in place. Falls back to ``loc='best'`` when the
@@ -146,7 +172,7 @@ def _resolve_loc_kwargs(ax, kwargs: dict) -> None:
             kwargs["loc"] = OUTER_VARIANTS[norm]["loc"]
             kwargs.setdefault("borderaxespad", 0.0)
         elif norm == "separate":
-            _record_separate_legend(ax, kwargs)
+            _record_separate_legend(ax, kwargs, axis_id=axis_id)
             outer = OUTER_VARIANTS["outer right"]
             kwargs["loc"] = outer["loc"]
             kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
@@ -258,8 +284,14 @@ def build_legend_wrapper(recording_ax) -> Any:
         # Step 1: catch the `ax.legend('upper right')` anti-pattern.
         args = _route_positional_loc(args, kwargs)
 
-        # Step 2: resolve figrecipe-extended `loc=` strings.
-        _resolve_loc_kwargs(recording_ax._ax, kwargs)
+        # Step 2: resolve figrecipe-extended `loc=` strings. Pass the
+        # RecordingAxes' stable grid position so a 'separate' legend gets a
+        # deterministic filename (no random per-render id).
+        _pos = getattr(recording_ax, "_position", None)
+        _axis_id = (
+            "_".join(str(p) for p in _pos) if isinstance(_pos, (tuple, list)) else _pos
+        )
+        _resolve_loc_kwargs(recording_ax._ax, kwargs, axis_id=_axis_id)
 
         # Step 3: call matplotlib.
         legend = original_legend(*args, **kwargs)
