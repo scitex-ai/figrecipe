@@ -62,8 +62,11 @@ def create_recording_subplots(
     figsize = kwargs.get("figsize", fig.get_size_inches())
     dpi = kwargs.get("dpi", fig.dpi)
 
-    # Start recording
-    recorder.start_figure(figsize=tuple(figsize), dpi=int(dpi))
+    # Start recording (record grid shape so panel-letter assignment for
+    # data-file / legend-file naming agrees with the rendered panel labels).
+    recorder.start_figure(
+        figsize=tuple(figsize), dpi=int(dpi), nrows=nrows, ncols=ncols
+    )
 
     # Wrap axes
     if nrows == 1 and ncols == 1:

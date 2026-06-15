@@ -243,6 +243,7 @@ def stx_scatter_hist(
     hist_color_y="red",
     hist_alpha=0.5,
     scatter_ratio=0.8,
+    marginal_label=None,
     **kwargs,
 ):
     """Scatter plot with marginal histograms.
@@ -260,6 +261,14 @@ def stx_scatter_hist(
     hist_color_x, hist_color_y, hist_alpha : histogram styling
     scatter_ratio : float
         Fraction of axes used for scatter.
+    marginal_label : str, optional
+        Text label for the count/density dimension of the marginal axes. When
+        set, it becomes the y-label of the top marginal and the x-label of
+        the right marginal so the reader knows what the marginal encodes
+        even though the numeric ticks are hidden. When left as ``None`` (the
+        default) the histogram marginals auto-label as ``"Count"`` — the
+        operator should not have to set this on every call. Pass an empty
+        string (``""``) to opt out entirely.
 
     Returns
     -------
@@ -275,6 +284,12 @@ def stx_scatter_hist(
 
     # Main scatter
     ax.scatter(x, y, s=scatter_size, alpha=scatter_alpha, c=scatter_color, **kwargs)
+
+    # Default the marginal label to "Count" for histogram marginals when the
+    # caller passed nothing (None == auto). An explicit value (incl. "") still
+    # wins, so callers can opt out without surprising defaults.
+    if marginal_label is None:
+        marginal_label = "Count"
 
     # Marginal size as percentage string (e.g. scatter_ratio=0.8 → margin=20%)
     margin_pct = f"{int(round((1 - scatter_ratio) * 100))}%"
@@ -300,6 +315,14 @@ def stx_scatter_hist(
     ax_histy.tick_params(labelleft=False, labelbottom=False, bottom=False)
     ax_histy.spines["top"].set_visible(False)
     ax_histy.spines["right"].set_visible(False)
+
+    # Auto-applied label for the count dimension of the marginals. Numeric
+    # ticks stay hidden because the absolute count value is arbitrary (bin
+    # width depends on `hist_bins`); only the text label is shown so the
+    # reader knows what the marginal encodes.
+    if marginal_label:
+        ax_histx.set_ylabel(marginal_label)
+        ax_histy.set_xlabel(marginal_label)
 
     df = pd.DataFrame({"x": x, "y": y})
     return ax, df
