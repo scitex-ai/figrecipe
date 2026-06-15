@@ -5,7 +5,7 @@
 from pathlib import Path
 from typing import Optional
 
-from .._utils._grid import parse_grid_id
+from .._utils._grid import grid_id
 
 
 def _crop_to_axes_size(
@@ -127,53 +127,67 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
         Contains: left, upper, right, lower, original_width, original_height,
         new_width, new_height (all in pixels).
     """
-    for ax in fig.fig.get_axes():
-        # Get axes position in figure coordinates (0-1 range)
-        bbox = ax.get_position()
+
+    def _to_cropped(bbox) -> list:
+        """Convert an mpl axes position to (cropped) figure-fraction bbox."""
         bbox_list = [bbox.x0, bbox.y0, bbox.width, bbox.height]
+        if crop_offset is None:
+            return bbox_list
+        # Convert from figure coords to pixel coords, then to cropped coords
+        orig_w = crop_offset["original_width"]
+        orig_h = crop_offset["original_height"]
+        new_w = crop_offset["new_width"]
+        new_h = crop_offset["new_height"]
+        crop_left = crop_offset["left"]
+        crop_upper = crop_offset["upper"]
 
-        # Adjust for crop offset if provided
-        if crop_offset is not None:
-            # Convert from figure coords to pixel coords, then to cropped coords
-            orig_w = crop_offset["original_width"]
-            orig_h = crop_offset["original_height"]
-            new_w = crop_offset["new_width"]
-            new_h = crop_offset["new_height"]
-            crop_left = crop_offset["left"]
-            crop_upper = crop_offset["upper"]
+        # Original pixel positions (matplotlib y=0 is bottom, image y=0 is top)
+        x0_px = bbox.x0 * orig_w
+        y0_px = (1 - bbox.y0 - bbox.height) * orig_h  # Convert to image coords
+        w_px = bbox.width * orig_w
+        h_px = bbox.height * orig_h
 
-            # Original pixel positions (matplotlib y=0 is bottom, image y=0 is top)
-            x0_px = bbox.x0 * orig_w
-            y0_px = (1 - bbox.y0 - bbox.height) * orig_h  # Convert to image coords
-            w_px = bbox.width * orig_w
-            h_px = bbox.height * orig_h
+        # Adjust for crop (translate origin)
+        x0_cropped = x0_px - crop_left
+        y0_cropped = y0_px - crop_upper
 
-            # Adjust for crop (translate origin)
-            x0_cropped = x0_px - crop_left
-            y0_cropped = y0_px - crop_upper
+        # Convert back to figure coordinates (0-1 range in cropped image)
+        new_x0 = x0_cropped / new_w
+        new_y0 = 1 - (y0_cropped + h_px) / new_h  # Back to matplotlib coords
+        new_w_frac = w_px / new_w
+        new_h_frac = h_px / new_h
+        return [new_x0, new_y0, new_w_frac, new_h_frac]
 
-            # Convert back to figure coordinates (0-1 range in cropped image)
-            new_x0 = x0_cropped / new_w
-            new_y0 = 1 - (y0_cropped + h_px) / new_h  # Back to matplotlib coords
-            new_w_frac = w_px / new_w
-            new_h_frac = h_px / new_h
+    # Map each AxesRecord to ITS OWN mpl axes via the wrapped RecordingAxes
+    # (which carry both ``_position`` and the underlying ``_ax``). The previous
+    # implementation looped over fig.get_axes() and matched by position, but
+    # every mpl axes matched the first record whose key-derived position equalled
+    # its own — so for a multi-subplot figure all subplots overwrote r0c0's bbox,
+    # and r1c0/r2c0 ended up with no bbox at all. Marginal axes created via
+    # make_axes_locatable are not wrapped, so they are correctly skipped here.
+    matched_records = set()
+    for row in fig.axes:
+        for rec_ax in row:
+            mpl_ax = getattr(rec_ax, "_ax", rec_ax)
+            position = getattr(rec_ax, "_position", None)
+            if position is None:
+                continue
+            key = grid_id(position[0], position[1])
+            ax_record = fig.record.axes.get(key)
+            if ax_record is None:
+                continue
+            ax_record.bbox = _to_cropped(mpl_ax.get_position())
+            matched_records.add(key)
 
-            bbox_list = [new_x0, new_y0, new_w_frac, new_h_frac]
-
-        # Find corresponding AxesRecord
-        # Try to match by checking if this ax corresponds to a known position
-        for key, ax_record in fig.record.axes.items():
-            # Parse key (accepts "r0c0" or legacy "ax_0_0"); "ax_mm_idx" -> None
-            parsed = parse_grid_id(key)
-            if parsed is not None:
-                # Standard grid format
-                if ax_record.position == parsed:
-                    ax_record.bbox = bbox_list
-                    break
-            elif key.startswith("ax_mm_"):
-                # Mm-based format: ax_mm_idx
-                ax_record.bbox = bbox_list
-                break
+    # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
+    # not represented in fig.axes positions. Match in order against any
+    # remaining mpl axes.
+    remaining = [k for k in fig.record.axes if k not in matched_records]
+    if remaining:
+        mpl_axes = list(fig.fig.get_axes())
+        for key, mpl_ax in zip(remaining, mpl_axes):
+            if key.startswith("ax_mm_"):
+                fig.record.axes[key].bbox = _to_cropped(mpl_ax.get_position())
 
 
 def save_hitmap(

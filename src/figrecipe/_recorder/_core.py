@@ -451,6 +451,15 @@ class Recorder:
                 if default_val is None and value is None:
                     continue
 
+            # Serialize matplotlib transforms as portable markers so replay can
+            # resolve them to the target axes' transforms; otherwise they fall
+            # through to str() and replay crashes with "'str' object has no
+            # attribute 'contains_branch_seperately'". transAxes reprs as
+            # "BboxTransformTo..."; treat that as the "axes" marker.
+            if key == "transform" and repr(value).startswith("BboxTransformTo"):
+                processed[key] = "axes"
+                continue
+
             if self._is_serializable(value):
                 processed[key] = value
             elif isinstance(value, np.ndarray):
