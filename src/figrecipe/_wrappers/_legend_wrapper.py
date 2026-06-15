@@ -131,11 +131,15 @@ def _record_separate_legend(ax, kwargs: dict) -> None:
     )
 
 
-def _resolve_loc_kwargs(ax, kwargs: dict) -> None:
+def _resolve_loc_kwargs(ax, kwargs: dict) -> bool:
     """Translate figrecipe-extended loc strings to matplotlib kwargs.
 
     Mutates *kwargs* in place. Falls back to ``loc='best'`` when the
     caller specified neither ``loc`` nor ``bbox_to_anchor``.
+
+    Returns ``True`` when the legend is ``'separate'`` -- recorded for
+    save-time extraction to its OWN file and NOT drawn on the main axes
+    (otherwise it appears both inline AND in the separate file).
     """
     user_loc = kwargs.get("loc")
     if isinstance(user_loc, str):
@@ -147,15 +151,13 @@ def _resolve_loc_kwargs(ax, kwargs: dict) -> None:
             kwargs.setdefault("borderaxespad", 0.0)
         elif norm == "separate":
             _record_separate_legend(ax, kwargs)
-            outer = OUTER_VARIANTS["outer right"]
-            kwargs["loc"] = outer["loc"]
-            kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
-            kwargs.setdefault("borderaxespad", 0.0)
+            return True
     elif "loc" not in kwargs and "bbox_to_anchor" not in kwargs:
         # matplotlib auto-pick. Earlier figrecipe versions defaulted
         # to outer right; that consistently shrank wide plots via
         # constrained_layout. Defer to matplotlib's heuristic.
         kwargs["loc"] = "best"
+    return False
 
 
 def _apply_frame_styling(legend) -> None:
@@ -217,13 +219,16 @@ def build_legend_wrapper(recording_ax) -> Any:
         args = _route_positional_loc(args, kwargs)
 
         # Step 2: resolve figrecipe-extended `loc=` strings.
-        _resolve_loc_kwargs(recording_ax._ax, kwargs)
+        is_separate = _resolve_loc_kwargs(recording_ax._ax, kwargs)
 
-        # Step 3: call matplotlib.
-        legend = original_legend(*args, **kwargs)
-
-        # Step 4: apply SCITEX legend frame styling.
-        _apply_frame_styling(legend)
+        # Step 3: draw on the main axes -- UNLESS 'separate', which is
+        # extracted to its own file at save time and must NOT appear inline.
+        if is_separate:
+            legend = None
+        else:
+            legend = original_legend(*args, **kwargs)
+            # Step 4: apply SCITEX legend frame styling.
+            _apply_frame_styling(legend)
 
         # Step 5: record for reproduction.
         if recording_ax._track and track:
