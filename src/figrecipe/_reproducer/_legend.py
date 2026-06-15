@@ -36,19 +36,40 @@ def replay_legend_call(
     args = [reconstruct_value(arg_data, result_cache) for arg_data in call.args]
     kwargs = reconstruct_kwargs(call.kwargs)
 
-    # Handle custom handles stored as _handle_specs
+    # Rebuild custom legend handles from their recorded specs, reproducing the
+    # original swatch type: a Line2D (colour + marker, e.g. scatter legends) or
+    # a Patch (filled rectangle). Older recipes stored only facecolor/edgecolor
+    # with no "kind" -> fall through to Patch (back-compat).
     if "_handle_specs" in kwargs:
+        from matplotlib.lines import Line2D
         from matplotlib.patches import Patch
 
-        handle_specs = kwargs.pop("_handle_specs")
         handles = []
-        for spec in handle_specs:
-            patch = Patch(
-                facecolor=spec.get("facecolor", "gray"),
-                edgecolor=spec.get("edgecolor", "black"),
-                label=spec.get("label", ""),
-            )
-            handles.append(patch)
+        for spec in kwargs.pop("_handle_specs"):
+            if spec.get("kind") == "line" or "marker" in spec:
+                color = spec.get("color", "gray")
+                handles.append(
+                    Line2D(
+                        [],
+                        [],
+                        color=color,
+                        marker=spec.get("marker", "o"),
+                        markersize=spec.get("markersize", 6),
+                        markerfacecolor=spec.get("markerfacecolor", color),
+                        markeredgecolor=spec.get("markeredgecolor", "none"),
+                        linestyle=spec.get("linestyle", "none"),
+                        linewidth=spec.get("linewidth", 0),
+                        label=spec.get("label", ""),
+                    )
+                )
+            else:
+                handles.append(
+                    Patch(
+                        facecolor=spec.get("facecolor", "gray"),
+                        edgecolor=spec.get("edgecolor", "black"),
+                        label=spec.get("label", ""),
+                    )
+                )
         kwargs["handles"] = handles
 
     # Drop figrecipe-internal metadata keys (underscore-prefixed) that

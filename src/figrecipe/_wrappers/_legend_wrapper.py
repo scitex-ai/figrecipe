@@ -25,6 +25,46 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+
+def _ser_color(color: Any) -> Any:
+    """Color -> YAML-serializable form (keep strings; tuples/arrays -> list)."""
+    if color is None or isinstance(color, str):
+        return color
+    try:
+        return [float(c) for c in color]
+    except TypeError:
+        return str(color)
+
+
+def _handle_spec(handle: Any) -> dict:
+    """Capture a legend handle's visual spec for faithful replay.
+
+    Records the artist KIND (line/marker vs patch) plus its colour and marker
+    so the composed legend reproduces the original swatch -- colour AND shape --
+    instead of a grey rectangle. Live artist handles are not YAML-serializable,
+    so only this semantic spec is stored.
+    """
+    from matplotlib.lines import Line2D
+
+    spec: dict[str, Any] = {"label": handle.get_label()}
+    if isinstance(handle, Line2D):
+        spec["kind"] = "line"
+        spec["color"] = _ser_color(handle.get_color())
+        spec["marker"] = str(handle.get_marker())
+        spec["markersize"] = float(handle.get_markersize())
+        spec["markerfacecolor"] = _ser_color(handle.get_markerfacecolor())
+        spec["markeredgecolor"] = _ser_color(handle.get_markeredgecolor())
+        spec["linestyle"] = str(handle.get_linestyle())
+        spec["linewidth"] = float(handle.get_linewidth())
+    else:
+        spec["kind"] = "patch"
+        if hasattr(handle, "get_facecolor"):
+            spec["facecolor"] = _ser_color(handle.get_facecolor())
+        if hasattr(handle, "get_edgecolor"):
+            spec["edgecolor"] = _ser_color(handle.get_edgecolor())
+    return spec
+
+
 # ---------------------------------------------------------------------------
 # Lookup tables — exposed at module scope so they're cheap to construct
 # (don't rebuild on every legend call) and easy to test.
@@ -233,14 +273,7 @@ def _record_legend_call(recorder, position, args, kwargs, call_id) -> None:
     # Capture handle metadata before dropping the live artists.
     if "handles" in record_kwargs:
         handles = record_kwargs.get("handles")
-        handle_specs = []
-        for h in handles:
-            spec: dict[str, Any] = {"label": h.get_label()}
-            if hasattr(h, "get_facecolor"):
-                spec["facecolor"] = list(h.get_facecolor())
-            if hasattr(h, "get_edgecolor"):
-                spec["edgecolor"] = list(h.get_edgecolor())
-            handle_specs.append(spec)
+        handle_specs = [_handle_spec(h) for h in handles]
         record_kwargs["_handle_specs"] = handle_specs
 
     # Record that a custom handler_map was used (safe repr) but drop the

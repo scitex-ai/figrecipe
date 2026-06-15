@@ -7,6 +7,12 @@ from typing import Optional
 
 from .._utils._grid import grid_id
 
+# stx_* plotters that build their own make_axes_locatable marginals at draw
+# time and re-build them on replay. Their recorded axes is the POST-divide
+# (shrunken) main axes, so for crop-aware compose we record its PRE-divide
+# extent (union with the marginals) -- see _capture_content_layout.
+_DIVIDER_PLOTTERS = {"stx_scatter_hist"}
+
 
 def _crop_to_axes_size(
     fig,
@@ -229,6 +235,8 @@ def _capture_content_layout(fig) -> None:
             fig.record.content_bbox = cb
             fig.record.content_size_mm = [cb[2] * fw_in * 25.4, cb[3] * fh_in * 25.4]
 
+        recorded_ids = set()
+        divider_axes = []  # (ax_record, center_x, center_y) for re-splitting plots
         for row in fig.axes:
             for rec_ax in row:
                 mpl_ax = getattr(rec_ax, "_ax", rec_ax)
@@ -240,6 +248,29 @@ def _capture_content_layout(fig) -> None:
                     continue
                 pos = mpl_ax.get_position()
                 ax_record.bbox_uncropped = [pos.x0, pos.y0, pos.width, pos.height]
+                recorded_ids.add(id(mpl_ax))
+                if any(c.function in _DIVIDER_PLOTTERS for c in ax_record.calls):
+                    divider_axes.append(
+                        (ax_record, pos.x0 + pos.width / 2, pos.y0 + pos.height / 2)
+                    )
+
+        # make_axes_locatable marginals are NOT recorded as RecordingAxes, so a
+        # divider plotter's axes is captured at its POST-divide (shrunken) size.
+        # The plotter re-splits on replay, so place it at the PRE-divide extent:
+        # union each divider axes with its nearest un-recorded marginal axes.
+        for m in mpl_fig.get_axes() if divider_axes else []:
+            if id(m) in recorded_ids:
+                continue
+            mp = m.get_position()
+            mcx, mcy = mp.x0 + mp.width / 2, mp.y0 + mp.height / 2
+            rec = min(
+                divider_axes, key=lambda d: (d[1] - mcx) ** 2 + (d[2] - mcy) ** 2
+            )[0]
+            bx0, by0, bw, bh = rec.bbox_uncropped
+            nx0, ny0 = min(bx0, mp.x0), min(by0, mp.y0)
+            nx1 = max(bx0 + bw, mp.x0 + mp.width)
+            ny1 = max(by0 + bh, mp.y0 + mp.height)
+            rec.bbox_uncropped = [nx0, ny0, nx1 - nx0, ny1 - ny0]
     except Exception:
         pass
 
