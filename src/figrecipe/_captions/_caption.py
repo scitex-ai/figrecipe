@@ -50,6 +50,7 @@ class ScientificCaption:
         wrap_width: int = 80,
         save_to_file: bool = False,
         file_path: Optional[str] = None,
+        render: bool = True,
     ) -> str:
         """Add a scientific caption to a figure.
 
@@ -76,6 +77,14 @@ class ScientificCaption:
             Whether to save caption to separate file. Default: False.
         file_path : str, optional
             Path for caption file. Default: None.
+        render : bool, optional
+            If True (default), draw the caption onto the figure and
+            adjust the layout to reserve room for it.  Set to False to
+            register/number the caption only — the public
+            ``figrecipe.add_figure_caption`` API uses ``render=False`` so
+            that ONE rendering pipeline (its own ``mpl_fig.text`` call)
+            owns the visual output; otherwise the caption is drawn twice
+            and the two stacked copies overlap each other.
 
         Returns
         -------
@@ -95,10 +104,13 @@ class ScientificCaption:
             caption, figure_label, style, wrap_width
         )
 
-        # Add caption to figure
-        self._add_caption_to_figure(
-            mpl_fig, formatted_caption, position, width_ratio, font_size
-        )
+        # Add caption to figure — only when the caller asks us to render.
+        # The public figrecipe.add_figure_caption draws the caption itself
+        # and passes render=False here so we don't double-render.
+        if render:
+            self._add_caption_to_figure(
+                mpl_fig, formatted_caption, position, width_ratio, font_size
+            )
 
         # Register caption
         self.caption_registry[figure_label] = {
@@ -236,7 +248,13 @@ class ScientificCaption:
         width_ratio: float,
         font_size: Union[str, int],
     ):
-        """Add caption text to figure."""
+        """Add caption text to figure.
+
+        Markdown markers (``**``, ``*``) introduced by ``_format_caption``'s
+        style templates (e.g. ``**Figure 1.**``) are stripped here.
+        matplotlib renders text literally — leaving the markers in would
+        show ``**Figure 1.**`` as four asterisks instead of a bold label.
+        """
         if position == "bottom":
             y_pos = 0.02
             va = "bottom"
@@ -244,10 +262,11 @@ class ScientificCaption:
             y_pos = 0.98
             va = "top"
 
+        clean = caption.replace("**", "").replace("*", "")
         fig.text(
             0.5,
             y_pos,
-            caption,
+            clean,
             ha="center",
             va=va,
             fontsize=font_size,
