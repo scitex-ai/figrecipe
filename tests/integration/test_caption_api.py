@@ -1,158 +1,185 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests for the figrecipe caption API (fr.compose, fr.subplots, add_figure_caption)."""
+"""Integration tests for the figrecipe caption API.
 
-import matplotlib.pyplot as _plt
-import pytest
+Exercises the real public surface end-to-end (fr.subplots(caption=),
+fr.compose(caption=, panel_captions=), fr.add_figure_caption,
+fr.add_panel_captions, fr.panel_label) plus FigureRecord caption
+round-trip. No mocks — every test runs against the real objects.
+"""
 
+import os
 
-class TestSubplotsCaption:
-    """Test fr.subplots(caption=...) works."""
+import matplotlib
 
-    def test_subplots_no_caption_returns_fig(self):
-        import figrecipe as fr
+matplotlib.use("Agg")
 
-        fig, axes = fr.subplots()
-        assert fig is not None
-        assert axes is not None
-        _plt.close(fig)
+import matplotlib.pyplot as _plt  # noqa: E402
 
-    def test_subplots_with_caption(self):
-        import figrecipe as fr
-
-        fig, axes = fr.subplots(caption="Test caption text")
-        assert fig.record.caption == "Test caption text"
-        _plt.close(fig)
-
-    def test_subplots_caption_persists_on_record(self):
-        import figrecipe as fr
-
-        fig, axes = fr.subplots(caption="Persist me")
-        assert fig.record.caption == "Persist me"
-        # Also verify the caption is stored in figure_texts
-        assert len(fig.record.figure_texts) > 0
-        _plt.close(fig)
-
-    def test_subplots_caption_none_omitted(self):
-        import figrecipe as fr
-
-        fig, axes = fr.subplots(caption=None)
-        # No exception should be raised
-        _plt.close(fig)
+import figrecipe as fr  # noqa: E402
+from figrecipe._recorder import FigureRecord  # noqa: E402
 
 
-class TestComposeCaption:
-    """Test fr.compose(caption=..., panel_captions=...)."""
-
-    def test_compose_with_figure_caption(self):
-        """Composing with a figure-level caption works."""
-        import figrecipe as fr
-
-        # Minimal source: one fr.subplots axis with a single ided plot, saved as recipe.
-        fig_base, ax_base = fr.subplots()
-        ax_base.plot([1, 2, 3], [1, 4, 9], id="line1")
-        import os
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            src_path = os.path.join(tmpdir, "src.yaml")
-            fr.save(fig_base, src_path, validate=False, verbose=False)
-            _plt.close(fig_base)
-
-            fig, axes = fr.compose(
-                layout=(1, 1),
-                sources={(0, 0): src_path},
-                caption="Composed figure caption",
-            )
-            assert fig.record.caption == "Composed figure caption"
-            _plt.close(fig)
-
-    def test_compose_with_panel_captions(self):
-        """Composing with panel captions stores them."""
-        import figrecipe as fr
-
-        # Minimal source: one fr.subplots axis with a single ided plot, saved as recipe.
-        fig_base, ax_base = fr.subplots()
-        ax_base.plot([1, 2, 3], [1, 4, 9], id="line1")
-        import os
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            src_path = os.path.join(tmpdir, "src.yaml")
-            # Save a minimal recipe
-            fr.save(fig_base, src_path, validate=False, verbose=False)
-            _plt.close(fig_base)
-
-            fig, axes = fr.compose(
-                layout=(1, 2),
-                sources={
-                    (0, 0): src_path,
-                    (0, 1): src_path,
-                },
-                caption="Panel caption figure",
-                panel_captions=["Panel A", "Panel B"],
-            )
-            assert fig.record.caption == "Panel caption figure"
-            assert fig.record.figure_panel_captions == ["Panel A", "Panel B"]
-            _plt.close(fig)
+def _save_minimal_source(tmpdir):
+    """Save a one-line recipe and return its path (shared compose arrange)."""
+    fig_base, ax_base = fr.subplots()
+    ax_base.plot([1, 2, 3], [1, 4, 9], id="line1")
+    src_path = os.path.join(tmpdir, "src.yaml")
+    fr.save(fig_base, src_path, validate=False, verbose=False)
+    _plt.close(fig_base)
+    return src_path
 
 
-class TestPublicCaptionAPI:
-    """Test public caption API functions."""
-
-    def test_add_figure_caption_exists(self):
-        import figrecipe as fr
-
-        assert hasattr(fr, "add_figure_caption")
-        assert callable(fr.add_figure_caption)
-
-    def test_add_panel_captions_exists(self):
-        import figrecipe as fr
-
-        assert hasattr(fr, "add_panel_captions")
-        assert callable(fr.add_panel_captions)
-
-    def test_panel_label_exists(self):
-        import figrecipe as fr
-
-        assert hasattr(fr, "panel_label")
-        assert callable(fr.panel_label)
-
-    def test_add_figure_caption_strips_markdown(self):
-        """add_figure_caption should strip Markdown bold/italic markers."""
-        import figrecipe as fr
-
-        fig, ax = _plt.subplots()
-        result = fr.add_figure_caption(fig, "**Bold** and *italic*")
-        assert "**" not in result
-        assert "*" not in result
-        _plt.close(fig)
-
-    def test_panel_label_on_recording_axes(self):
-        """panel_label should work on RecordingAxes."""
-        import figrecipe as fr
-
-        fig, axes = fr.subplots()
-        ax = axes if hasattr(axes, "text") else axes[0]
-        # Should not raise
-        fr.panel_label(ax, "A")
-        _plt.close(fig)
+def test_subplots_without_caption_returns_figure():
+    # Arrange
+    # Act
+    fig, axes = fr.subplots()
+    # Assert
+    assert fig is not None
+    _plt.close(fig)
 
 
-class TestFigureRecordRoundTrip:
-    """Test caption persistence in FigureRecord serialization."""
+def test_subplots_without_caption_returns_axes():
+    # Arrange
+    # Act
+    fig, axes = fr.subplots()
+    # Assert
+    assert axes is not None
+    _plt.close(fig)
 
-    def test_figure_panel_captions_in_to_dict(self):
-        from figrecipe._recorder import FigureRecord
 
-        record = FigureRecord()
-        record.figure_panel_captions = ["A caption", "B caption"]
-        d = record.to_dict()
-        assert d["figure"]["panel_captions"] == ["A caption", "B caption"]
+def test_subplots_with_caption_records_caption_text():
+    # Arrange
+    # Act
+    fig, axes = fr.subplots(caption="Test caption text")
+    # Assert
+    assert fig.record.caption == "Test caption text"
+    _plt.close(fig)
 
-    def test_figure_panel_captions_from_dict(self):
-        from figrecipe._recorder import FigureRecord
 
-        d = {"figure": {"panel_captions": ["capt1", "capt2"]}}
-        record = FigureRecord.from_dict(d)
-        assert record.figure_panel_captions == ["capt1", "capt2"]
+def test_subplots_caption_appends_figure_text_entry():
+    # Arrange
+    # Act
+    fig, axes = fr.subplots(caption="Persist me")
+    # Assert
+    assert len(fig.record.figure_texts) > 0
+    _plt.close(fig)
+
+
+def test_subplots_caption_none_returns_figure():
+    # Arrange
+    # Act
+    fig, axes = fr.subplots(caption=None)
+    # Assert
+    assert fig is not None
+    _plt.close(fig)
+
+
+def test_compose_with_figure_caption_records_caption(tmp_path):
+    # Arrange
+    src_path = _save_minimal_source(str(tmp_path))
+    # Act
+    fig, axes = fr.compose(
+        layout=(1, 1),
+        sources={(0, 0): src_path},
+        caption="Composed figure caption",
+    )
+    # Assert
+    assert fig.record.caption == "Composed figure caption"
+    _plt.close(fig)
+
+
+def test_compose_with_panel_captions_records_main_caption(tmp_path):
+    # Arrange
+    src_path = _save_minimal_source(str(tmp_path))
+    # Act
+    fig, axes = fr.compose(
+        layout=(1, 2),
+        sources={(0, 0): src_path, (0, 1): src_path},
+        caption="Panel caption figure",
+        panel_captions=["Panel A", "Panel B"],
+    )
+    # Assert
+    assert fig.record.caption == "Panel caption figure"
+    _plt.close(fig)
+
+
+def test_compose_with_panel_captions_stores_panel_list(tmp_path):
+    # Arrange
+    src_path = _save_minimal_source(str(tmp_path))
+    # Act
+    fig, axes = fr.compose(
+        layout=(1, 2),
+        sources={(0, 0): src_path, (0, 1): src_path},
+        caption="Panel caption figure",
+        panel_captions=["Panel A", "Panel B"],
+    )
+    # Assert
+    assert fig.record.figure_panel_captions == ["Panel A", "Panel B"]
+    _plt.close(fig)
+
+
+def test_public_api_exposes_add_figure_caption():
+    # Arrange
+    # Act
+    fn = fr.add_figure_caption
+    # Assert
+    assert callable(fn)
+
+
+def test_public_api_exposes_add_panel_captions():
+    # Arrange
+    # Act
+    fn = fr.add_panel_captions
+    # Assert
+    assert callable(fn)
+
+
+def test_public_api_exposes_panel_label_helper():
+    # Arrange
+    # Act
+    fn = fr.panel_label
+    # Assert
+    assert callable(fn)
+
+
+def test_add_figure_caption_strips_markdown_markers():
+    # Arrange
+    fig, ax = _plt.subplots()
+    # Act
+    result = fr.add_figure_caption(fig, "**Bold** and *italic*")
+    # Assert
+    assert "*" not in result
+    _plt.close(fig)
+
+
+def test_panel_label_on_recording_axes_does_not_raise():
+    # Arrange
+    fig, axes = fr.subplots()
+    ax = axes if hasattr(axes, "text") else axes[0]
+    completed = False
+    # Act
+    fr.panel_label(ax, "A")
+    completed = True
+    # Assert
+    assert completed
+    _plt.close(fig)
+
+
+def test_figure_record_serializes_panel_captions_to_dict():
+    # Arrange
+    record = FigureRecord()
+    record.figure_panel_captions = ["A caption", "B caption"]
+    # Act
+    d = record.to_dict()
+    # Assert
+    assert d["figure"]["panel_captions"] == ["A caption", "B caption"]
+
+
+def test_figure_record_deserializes_panel_captions_from_dict():
+    # Arrange
+    d = {"figure": {"panel_captions": ["capt1", "capt2"]}}
+    # Act
+    record = FigureRecord.from_dict(d)
+    # Assert
+    assert record.figure_panel_captions == ["capt1", "capt2"]
