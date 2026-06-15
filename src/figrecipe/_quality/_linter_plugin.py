@@ -2,83 +2,23 @@
 
 Rule families:
 - FM001-FM009  — inch-based matplotlib patterns; suggest mm-based alternatives.
+- FM010-FM011  — figure-method style rules (set_xlabel/set_ylabel/set_title
+                 → set_xyt; ax.spines[...].set_visible(False) → hide_spines).
 - FIG001       — scientific-figure hygiene (axis-range alignment across subplots).
 - P001-P009    — bare matplotlib calls; suggest scitex/figrecipe tracked variants
                  and flag style-override kwargs.
 
 Registered via entry point 'scitex_dev.linter.plugins' so scitex-linter
 discovers these rules automatically when figrecipe is installed.
+
+The AST NodeVisitor factories live in ``_linter_checkers.py`` so this
+file stays focused on the rule-object definitions + plugin wiring.
 """
 
-
-def _make_style_kwarg_checker(P006, P007, P008, P009):
-    """Build an AST NodeVisitor class that flags style-override kwargs:
-
-    - ``scatter(..., s=...)``  → P006
-    - any call with ``fontsize=...``  → P007
-    - any call with ``figsize=...``   → P008
-    - any call with ``linewidth=`` / ``lw=``  → P009
-
-    Returned class follows the scitex-linter checker contract:
-    ``__init__(source_lines, config)`` + ``.issues`` list + ``.category``.
-    """
-    import ast
-
-    try:
-        from scitex_dev.linter.checker import Issue, _is_allowed_by_comment
-    except ImportError:
-        return None
-
-    class StyleKwargChecker(ast.NodeVisitor):
-        category = "plot"
-
-        def __init__(self, source_lines, config):
-            self.source_lines = source_lines
-            self.config = config
-            self.issues: list = []
-
-        def _src(self, ln):
-            if 1 <= ln <= len(self.source_lines):
-                return self.source_lines[ln - 1].rstrip()
-            return ""
-
-        def _emit(self, rule, node):
-            from dataclasses import replace as _replace
-
-            line = self._src(node.lineno)
-            if rule.id in self.config.disable:
-                return
-            if _is_allowed_by_comment(line, rule.id):
-                return
-            sev = self.config.per_rule_severity.get(rule.id)
-            if sev:
-                rule = _replace(rule, severity=sev)
-            self.issues.append(
-                Issue(
-                    rule=rule, line=node.lineno, col=node.col_offset, source_line=line
-                )
-            )
-
-        def visit_Call(self, node):
-            func = node.func
-            if isinstance(func, ast.Attribute):
-                fname = func.attr
-            elif isinstance(func, ast.Name):
-                fname = func.id
-            else:
-                fname = ""
-            kwargs = {kw.arg for kw in node.keywords if kw.arg}
-            if fname in ("scatter", "stx_scatter") and "s" in kwargs:
-                self._emit(P006, node)
-            if "fontsize" in kwargs:
-                self._emit(P007, node)
-            if "figsize" in kwargs:
-                self._emit(P008, node)
-            if "linewidth" in kwargs or "lw" in kwargs:
-                self._emit(P009, node)
-            self.generic_visit(node)
-
-    return StyleKwargChecker
+from ._linter_checkers import (  # noqa: F401
+    _make_figure_method_checker,
+    _make_style_kwarg_checker,
+)
 
 
 def get_plugin():
@@ -188,6 +128,47 @@ def get_plugin():
             "or `stx.plt.subplots(margin_left_mm=15, margin_bottom_mm=12)` for deterministic layout."
         ),
         requires="figrecipe",
+    )
+
+    # FM010 — figrecipe axes wrapper provides `set_xyt(x, y, t)` which
+    # sets xlabel/ylabel/title in one call and records the metadata in
+    # the recipe (used by `figrecipe.save()` provenance). Separate
+    # set_xlabel/set_ylabel/set_title calls do not flow through the
+    # recipe wrapper. Per neurovista 2026-06-14 — gated `requires="scitex"`.
+    FM010 = Rule(
+        id="STX-FM010",
+        severity="warning",
+        category="figure",
+        message=(
+            "`set_xlabel`/`set_ylabel`/`set_title` detected — figrecipe's "
+            "`ax.set_xyt(x, y, t)` records the labels in the recipe in one call"
+        ),
+        suggestion=(
+            "Replace `ax.set_xlabel('X'); ax.set_ylabel('Y'); ax.set_title('T')` "
+            "with `ax.set_xyt('X', 'Y', 'T')` so the labels are tracked by the "
+            "recipe and stay consistent with figrecipe's panel-metadata model."
+        ),
+        requires="scitex",
+    )
+
+    # FM011 — direct `ax.spines[...].set_visible(False)` defeats the
+    # figrecipe spine helper which also handles tick/label cleanup and
+    # respects the global style. Per neurovista 2026-06-14.
+    FM011 = Rule(
+        id="STX-FM011",
+        severity="warning",
+        category="figure",
+        message=(
+            "`ax.spines[...].set_visible(False)` detected — figrecipe's "
+            "`ax.hide_spines(top=True, right=True, ...)` is the canonical helper"
+        ),
+        suggestion=(
+            "Replace `ax.spines['top'].set_visible(False); "
+            "ax.spines['right'].set_visible(False)` with "
+            "`ax.hide_spines(top=True, right=True)` — the wrapper also handles "
+            "tick/label cleanup and stays consistent with the SciTeX style."
+        ),
+        requires="scitex",
     )
 
     # ------------------------------------------------------------------
@@ -334,6 +315,11 @@ def get_plugin():
     if style_checker is not None:
         checkers.append(style_checker)
 
+    # FM010/FM011 AST checker. Deferred-import safe (see factory docstring).
+    figure_method_checker = _make_figure_method_checker(FM010, FM011)
+    if figure_method_checker is not None:
+        checkers.append(figure_method_checker)
+
     # FIG001 axis-range-alignment checker. We subclass the base checker
     # here so it ships the FIG001 rule object without the plugin loader
     # needing to know about it.
@@ -359,6 +345,8 @@ def get_plugin():
             FM007,
             FM008,
             FM009,
+            FM010,
+            FM011,
             FIG001,
             P001,
             P002,

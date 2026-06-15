@@ -47,6 +47,7 @@ This package does not ship as a submodule of the `scitex` umbrella.
 * [16_plot-types](16_plot-types.md) — All supported plot types with examples
 * [17_composition](17_composition.md) — Multi-panel figure composition (grid and mm-based)
 * [18_cropping](18_cropping.md) — Figure cropping, whitespace removal
+* [24_l-shaped-scale-bar](24_l-shaped-scale-bar.md) — L-shaped time/amplitude scale bar for axis-off trace / EEG panels
 
 ### Workflows
 * [10_workflows](10_workflows.md) — Common figure workflows

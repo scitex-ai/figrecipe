@@ -213,10 +213,113 @@ def _half_violin(ax, df, x_col, y_col, **kwargs):
     return ax
 
 
+def stx_scalebar(
+    ax: Axes,
+    x_len,
+    y_len,
+    x_label="1 min",
+    y_label="a.u.",
+    loc="lower left",
+    color="black",
+    lw=1.5,
+    pad_frac=(0.04, 0.06),
+    label_pad_frac=(0.015, 0.03),
+):
+    """Draw an L-shaped scale bar for axis-off trace / EEG panels.
+
+    Raw time-series / iEEG panels follow the EEG convention of having no
+    x/y axes; an L-shaped scale bar conveys the time (horizontal arm) and
+    amplitude (vertical arm) scales instead. The two arms share a corner;
+    ``x_label`` sits below the horizontal arm and ``y_label`` sits left of
+    the vertical arm, both padded clear so they never overlap the arms or
+    each other. Works with ``ax.axis("off")``.
+
+    Font sizes follow the active rcParams / SCITEX_STYLE (no hardcoded
+    ``fontsize=``).
+
+    Parameters
+    ----------
+    ax : Axes
+        Target axes. Its current ``xlim`` / ``ylim`` are used to position
+        the bar, so call this after the trace data is plotted.
+    x_len : float
+        Length of the horizontal (time) arm in data units.
+    y_len : float
+        Length of the vertical (amplitude) arm in data units.
+    x_label : str, default "1 min"
+        Label for the horizontal arm (a round time unit).
+    y_label : str, default "a.u."
+        Label for the vertical arm (amplitude unit; may legitimately be
+        ``"unknown"`` when the source has no documented gain).
+    loc : {"lower left", "lower right", "upper left", "upper right"}
+        Corner placement of the L's vertex.
+    color : color, default "black"
+        Colour of both arms and both labels.
+    lw : float, default 1.5
+        Line width of the arms.
+    pad_frac : (float, float), default (0.04, 0.06)
+        Corner inset from the axes edges as a fraction of the axes span
+        (x_frac, y_frac).
+    label_pad_frac : (float, float), default (0.015, 0.03)
+        Label offset off the arms as a fraction of the axes span
+        (x_frac, y_frac).
+
+    Returns
+    -------
+    ax : Axes
+    """
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    x_span = x1 - x0
+    y_span = y1 - y0
+
+    pad_x = pad_frac[0] * x_span
+    pad_y = pad_frac[1] * y_span
+    lbl_px = label_pad_frac[0] * x_span
+    lbl_py = label_pad_frac[1] * y_span
+
+    # Locate the L's vertex so both arms grow into the plot, regardless of
+    # corner. The horizontal arm runs along +x_dir, the vertical along +y_dir.
+    if "right" in loc:
+        xc = x1 - pad_x - x_len
+    else:  # left (default)
+        xc = x0 + pad_x
+    if "upper" in loc:
+        yc = y1 - pad_y - y_len
+    else:  # lower (default)
+        yc = y0 + pad_y
+
+    # Arms (shared vertex at (xc, yc)).
+    ax.plot([xc, xc + x_len], [yc, yc], color=color, lw=lw, solid_capstyle="butt")
+    ax.plot([xc, xc], [yc, yc + y_len], color=color, lw=lw, solid_capstyle="butt")
+
+    # Labels, padded clear of the arms (and thus each other).
+    ax.text(
+        xc + x_len / 2.0,
+        yc - lbl_py,
+        x_label,
+        ha="center",
+        va="top",
+        color=color,
+    )
+    ax.text(
+        xc - lbl_px,
+        yc + y_len / 2.0,
+        y_label,
+        ha="right",
+        va="center",
+        rotation=90,
+        color=color,
+    )
+
+    return ax
+
+
 __all__ = [
     "stx_fillv",
     "stx_image",
     "stx_rectangle",
+    "stx_scalebar",
     "stx_violin",
 ]
 

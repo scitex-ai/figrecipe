@@ -228,6 +228,23 @@ class SciTexMixin:
             self._record_stx_call("stx_violin", (values_list,), kwargs, id)
         return result
 
+    def stx_scalebar(self, x_len, y_len, *, id=None, track=True, **kwargs):
+        """Draw an L-shaped scale bar for axis-off trace / EEG panels.
+
+        The horizontal arm encodes time (``x_len``) and the vertical arm
+        encodes amplitude (``y_len``), sharing a corner, with padded labels
+        that do not overlap. Use with ``ax.axis("off")``. See the underlying
+        ``stx_scalebar`` for the full parameter list (``x_label``, ``y_label``,
+        ``loc``, ``color``, ``lw``, ``pad_frac``, ``label_pad_frac``).
+        """
+        from .._scitex_compat._simple import stx_scalebar
+
+        with self._no_record():
+            result = stx_scalebar(self._ax, x_len, y_len, **kwargs)
+        if self._track and track:
+            self._record_stx_call("stx_scalebar", (x_len, y_len), kwargs, id)
+        return result
+
 
 __all__ = ["SciTexMixin"]
 
