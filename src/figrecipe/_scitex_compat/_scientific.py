@@ -346,9 +346,10 @@ def stx_scatter_hist(
         and the x-label of the right marginal (``ax_histy``). The numeric ticks
         stay hidden (the density scale is arbitrary); only the text is shown.
         Applies in both ``kde=True`` (density) and ``kde=False`` (count) modes.
-        When ``kde=True`` and this is left as ``None``, it defaults to
-        ``"Density"`` so the KDE marginals are labelled automatically; pass an
-        explicit value (including ``""``) to override.
+        When left as ``None`` (the default) the marginals auto-label as
+        ``"Density"`` when ``kde=True`` and ``"Count"`` otherwise — the
+        operator should not have to set this on every call. Pass an empty
+        string (``""``) to opt out entirely.
 
     Returns
     -------
@@ -391,6 +392,12 @@ def stx_scatter_hist(
     # passed nothing (None == auto). An explicit value (incl. "") still wins.
     if kde and marginal_label is None:
         marginal_label = "Density"
+
+    # Default the marginal label to "Count" for histogram marginals when the
+    # caller passed nothing (None == auto). An explicit value (incl. "") still
+    # wins, so callers can opt out without surprising defaults.
+    if marginal_label is None:
+        marginal_label = "Count"
 
     # Marginal size as percentage string (e.g. scatter_ratio=0.8 → margin=20%)
     margin_pct = f"{int(round((1 - scatter_ratio) * 100))}%"
@@ -451,8 +458,10 @@ def stx_scatter_hist(
     ax_histy.spines["top"].set_visible(False)
     ax_histy.spines["right"].set_visible(False)
 
-    # Optional label for the density/count dimension of the marginals.
-    if marginal_label is not None:
+    # Auto-applied label for the density/count dimension of the marginals.
+    # Numeric ticks stay hidden because the absolute value is arbitrary; only
+    # the text label is shown. An empty string opts out entirely.
+    if marginal_label:
         ax_histx.set_ylabel(marginal_label)
         ax_histy.set_xlabel(marginal_label)
 

@@ -111,6 +111,13 @@ class FigureRecord:
     matplotlib_version: str = field(default_factory=lambda: matplotlib.__version__)
     figsize: Tuple[float, float] = (6.4, 4.8)
     dpi: int = 300
+    # Grid shape of the figure (nrows, ncols). Stored so the recipe / data-file
+    # naming layer can compute deterministic, row-major panel labels (A, B, C,
+    # …) from a panel's (row, col) position. ``None`` on legacy recipes loaded
+    # from disk that pre-date this field — the consumer must treat that as
+    # "single panel, no panel suffix".
+    nrows: Optional[int] = None
+    ncols: Optional[int] = None
     axes: Dict[str, AxesRecord] = field(default_factory=dict)
     # Layout parameters (subplots_adjust)
     layout: Optional[Dict[str, float]] = None
@@ -168,6 +175,11 @@ class FigureRecord:
             },
             "axes": {k: v.to_dict() for k, v in self.axes.items()},
         }
+        # Persist grid shape (nrows, ncols) so panel-letter assignment is
+        # deterministic when the recipe is re-loaded for reproduction.
+        if self.nrows is not None and self.ncols is not None:
+            result["figure"]["nrows"] = self.nrows
+            result["figure"]["ncols"] = self.ncols
         # Add layout if set
         if self.layout is not None:
             result["figure"]["layout"] = self.layout
@@ -227,6 +239,8 @@ class FigureRecord:
             matplotlib_version=data.get("matplotlib_version", ""),
             figsize=tuple(fig_data.get("figsize", [6.4, 4.8])),
             dpi=fig_data.get("dpi", 300),
+            nrows=fig_data.get("nrows"),
+            ncols=fig_data.get("ncols"),
             layout=fig_data.get("layout"),
             style=fig_data.get("style"),
             constrained_layout=fig_data.get("constrained_layout", False),
@@ -283,9 +297,18 @@ class Recorder:
         self,
         figsize: Tuple[float, float] = (6.4, 4.8),
         dpi: int = 300,
+        nrows: Optional[int] = None,
+        ncols: Optional[int] = None,
     ) -> FigureRecord:
-        """Start recording a new figure."""
-        self._figure_record = FigureRecord(figsize=figsize, dpi=dpi)
+        """Start recording a new figure.
+
+        ``nrows`` / ``ncols`` are optional but recommended — the data-file
+        and separate-legend filename builders use them to compute the panel
+        letter so filenames match the rendered panel labels (A, B, …).
+        """
+        self._figure_record = FigureRecord(
+            figsize=figsize, dpi=dpi, nrows=nrows, ncols=ncols
+        )
         self._method_counters = {}
         return self._figure_record
 

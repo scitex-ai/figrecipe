@@ -449,6 +449,9 @@ def save_figure(
         _hitmap_bbox = "tight" if use_constrained else None
         _hitmap_pad = pad_inches if use_constrained else 0.0
         _save_hitmap(fig, image_path, dpi, verbose, _hitmap_bbox, _hitmap_pad)
+    from ._separate_legend import save_separate_legends as _sl
+
+    _sl(fig, image_path, dpi=dpi, save_recipe=save_recipe)
 
     # If not saving recipe, return early
     if not save_recipe:
