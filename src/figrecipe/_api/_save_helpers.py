@@ -190,6 +190,60 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                 fig.record.axes[key].bbox = _to_cropped(mpl_ax.get_position())
 
 
+def _capture_content_layout(fig) -> None:
+    """Record the tight content layout for crop-aware composition.
+
+    Captures, into ``fig.record``:
+      * ``content_bbox``  -- the figure's tight ink bbox [l, b, w, h] in the
+        *uncropped* figure fraction (from ``get_tightbbox``); includes axis
+        labels, ticks, titles, legends and make_axes_locatable marginals, and
+        may exceed [0, 1] when content overflows the canvas.
+      * ``content_size_mm`` -- that bbox's [w, h] in millimetres.
+      * per-axes ``bbox_uncropped`` -- each axes' ``get_position()`` in the
+        uncropped fraction.
+
+    All values are dpi-independent fractions/mm, so a composer can size and
+    place each panel by its true (cropped) extent and reproduce the clean
+    standalone render pixel-for-pixel. Best-effort: failures leave the fields
+    unset and the composer falls back to the legacy ``bbox`` path.
+    """
+    mpl_fig = fig.fig
+    try:
+        mpl_fig.canvas.draw()
+        renderer = mpl_fig.canvas.get_renderer()
+        tight = mpl_fig.get_tightbbox(renderer)
+    except Exception:
+        tight = None
+
+    # Everything below is best-effort: any failure leaves the fields unset and
+    # the composer falls back to the legacy bbox path -- never crash a save.
+    try:
+        fw_in, fh_in = (float(v) for v in mpl_fig.get_size_inches())
+        if tight is not None and fw_in > 0 and fh_in > 0:
+            cb = [
+                tight.x0 / fw_in,
+                tight.y0 / fh_in,
+                tight.width / fw_in,
+                tight.height / fh_in,
+            ]
+            fig.record.content_bbox = cb
+            fig.record.content_size_mm = [cb[2] * fw_in * 25.4, cb[3] * fh_in * 25.4]
+
+        for row in fig.axes:
+            for rec_ax in row:
+                mpl_ax = getattr(rec_ax, "_ax", rec_ax)
+                position = getattr(rec_ax, "_position", None)
+                if position is None:
+                    continue
+                ax_record = fig.record.axes.get(grid_id(position[0], position[1]))
+                if ax_record is None:
+                    continue
+                pos = mpl_ax.get_position()
+                ax_record.bbox_uncropped = [pos.x0, pos.y0, pos.width, pos.height]
+    except Exception:
+        pass
+
+
 def save_hitmap(
     fig,
     image_path: Path,

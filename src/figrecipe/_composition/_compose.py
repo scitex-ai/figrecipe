@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 from .._recorder import FigureRecord
 from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
+from ._crop_aware import _apply_source_style, panel_rel_bbox, replay_panel_suptitle
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
 from ._source_parser import parse_source_spec_with_key as _parse_source_spec_with_key
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
@@ -313,14 +314,11 @@ def _compose_mm_based(
                 data_dir = candidate
 
         for src_key, ax_record in selected.items():
-            # Place this source-axes inside the panel rectangle, preserving its
-            # relative position/size within the original figure when a bbox was
-            # recorded. Without a bbox (single-axes panels), fill the panel.
-            bbox = getattr(ax_record, "bbox", None)
-            if bbox is not None and len(bbox) == 4:
-                bx0, by0, bw, bh = bbox
-            else:
-                bx0, by0, bw, bh = 0.0, 0.0, 1.0, 1.0
+            # Place this source-axes inside the panel rectangle relative to the
+            # source's tight content box (crop-aware), so the composed panel
+            # matches the clean cropped standalone render. Falls back to the
+            # legacy cropped-fraction bbox for older recipes.
+            bx0, by0, bw, bh = panel_rel_bbox(source_record, ax_record)
 
             sub_left = panel_left + bx0 * panel_width
             sub_bottom = panel_bottom + by0 * panel_height
@@ -328,6 +326,9 @@ def _compose_mm_based(
             sub_height = bh * panel_height
 
             mpl_ax = mpl_fig.add_axes([sub_left, sub_bottom, sub_width, sub_height])
+            # Match the panel's publication font/style so replayed text metrics
+            # equal the standalone render (else long tick labels clip).
+            _apply_source_style(mpl_ax, source_record)
 
             target_ax = RA(mpl_ax, recorder, position=(0, sub_idx))
             axes_list.append(target_ax)
@@ -340,6 +341,9 @@ def _compose_mm_based(
                 source_data_dirs[f"ax_mm_{sub_idx}"] = data_dir
 
             sub_idx += 1
+        replay_panel_suptitle(
+            mpl_fig, source_record, panel_left, panel_bottom, panel_width, panel_height
+        )
 
     fig = RF(mpl_fig, recorder, axes_list)
 

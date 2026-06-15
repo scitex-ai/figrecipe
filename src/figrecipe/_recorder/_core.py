@@ -73,9 +73,12 @@ class AxesRecord:
     stats: Optional[Dict[str, Any]] = None
     # Panel visibility (for composition)
     visible: bool = True
-    # Axes bounding box in figure coordinates [left, bottom, width, height]
-    # Enables alignment/snap functionality
+    # Axes bbox [left, bottom, width, height] in the *cropped* image fraction
+    # (see _capture_axes_bboxes) -- used for alignment/snap.
     bbox: Optional[List[float]] = None
+    # Same, but in the *uncropped* figure fraction (mpl ax.get_position()).
+    # Paired with FigureRecord.content_bbox it lets compose tile crop-aware.
+    bbox_uncropped: Optional[List[float]] = None
 
     def add_call(self, record: CallRecord) -> None:
         """Add a plotting call record."""
@@ -93,6 +96,8 @@ class AxesRecord:
         }
         if self.bbox is not None:
             result["bbox"] = self.bbox
+        if self.bbox_uncropped is not None:
+            result["bbox_uncropped"] = self.bbox_uncropped
         if self.caption is not None:
             result["caption"] = self.caption
         if self.stats is not None:
@@ -134,6 +139,11 @@ class FigureRecord:
     stats: Optional[Dict[str, Any]] = None
     # Crop information for post-save cropping (enables correct bbox recalculation)
     crop_info: Optional[Dict[str, Any]] = None
+    # Tight content bbox [l, b, w, h] in *uncropped* figure fraction (from
+    # get_tightbbox): real ink extent; may exceed [0,1]. Crop-aware compose.
+    content_bbox: Optional[List[float]] = None
+    # Tight content size [w_mm, h_mm] (content_bbox x figsize). dpi-independent.
+    content_size_mm: Optional[List[float]] = None
     # mm_layout for auto-cropping during save (enables consistent cropping on reproduce)
     mm_layout: Optional[Dict[str, Any]] = None
     # Source data directories for composition (enables symlinks instead of copying)
@@ -205,6 +215,11 @@ class FigureRecord:
         # Add crop_info if set (for bbox recalculation after cropping)
         if self.crop_info is not None:
             result["figure"]["crop_info"] = self.crop_info
+        # Add tight-content layout if captured (for crop-aware composition)
+        if self.content_bbox is not None:
+            result["figure"]["content_bbox"] = self.content_bbox
+        if self.content_size_mm is not None:
+            result["figure"]["content_size_mm"] = self.content_size_mm
         # Add mm_layout if set (for consistent cropping on reproduce)
         if self.mm_layout is not None:
             result["figure"]["mm_layout"] = self.mm_layout
@@ -239,6 +254,8 @@ class FigureRecord:
             caption=metadata.get("caption"),
             stats=metadata.get("stats"),
             crop_info=fig_data.get("crop_info"),
+            content_bbox=fig_data.get("content_bbox"),
+            content_size_mm=fig_data.get("content_size_mm"),
             mm_layout=fig_data.get("mm_layout"),
             colorbars=fig_data.get("colorbars", []),
             figure_panel_captions=fig_data.get("panel_captions"),
@@ -256,6 +273,7 @@ class FigureRecord:
                 stats=ax_data.get("stats"),
                 visible=ax_data.get("visible", True),
                 bbox=ax_data.get("bbox"),
+                bbox_uncropped=ax_data.get("bbox_uncropped"),
             )
             for call_data in ax_data.get("calls", []):
                 ax_record.calls.append(CallRecord.from_dict(call_data, (row, col)))
