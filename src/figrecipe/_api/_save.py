@@ -375,14 +375,19 @@ def save_figure(
         from .._quality._validator import validate_on_save
 
         result = validate_on_save(fig, saved_yaml, mse_threshold=validate_mse_threshold)
-        status = "PASSED" if result.valid else "FAILED"
         if verbose:
-            # Success path -> SUCC (green); failed validation -> ERROR (red), so
-            # the status reads correctly through scitex-logging instead of a flat,
-            # uncoloured print(). image + recipe collapse to fig.{png,yaml}.
+            # image + recipe collapse to fig.{png,yaml}. Through scitex-logging:
+            # green SUCC when reproducible, red ERROR *with the reason* otherwise
+            # (not a bare "FAILED"). "Reproducibility Validation" = we validated
+            # that the recipe reproduces the figure.
             target = format_saved_target(image_path, yaml_path)
-            line = f"Saved: {target} (Reproducible Validation: {status})"
-            (_log.success if result.valid else _log.error)(line)
+            if result.valid:
+                _log.success(f"Saved: {target} (Reproducibility Validation: PASSED)")
+            else:
+                _log.error(
+                    f"Saved: {target} "
+                    f"(Reproducibility Validation: FAILED - {result.message})"
+                )
         if not result.valid:
             msg = f"Reproducibility validation failed (MSE={result.mse:.1f}): {result.message}"
             if validate_error_level == "error":
