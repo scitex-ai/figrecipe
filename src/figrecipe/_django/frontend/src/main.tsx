@@ -93,8 +93,13 @@ if (root) {
 
 // Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
-  async fetchTree() {
-    const resp = await fetch("api/tree");
+  async fetchTree(rootPath?: string) {
+    // rootPath (breadcrumb navigation) re-roots the backend tree via the
+    // working_dir query param; omit it for the default launch folder.
+    const url = rootPath
+      ? `api/tree?working_dir=${encodeURIComponent(rootPath)}`
+      : "api/tree";
+    const resp = await fetch(url);
     if (!resp.ok)
       return {
         success: false,
@@ -102,7 +107,9 @@ const figrecipeFileTreeAdapter: FileTreeAdapter = {
         error: `HTTP ${resp.status}: ${resp.statusText}`,
       };
     const data = await resp.json();
-    return { success: true, tree: data.tree ?? [] };
+    // Return the absolute root the backend resolved so the breadcrumb shows the
+    // path from filesystem root.
+    return { success: true, tree: data.tree ?? [], rootPath: data.working_dir };
   },
   getCsrfToken() {
     const meta = document.querySelector<HTMLMetaElement>(
@@ -120,6 +127,7 @@ const fileTree = new WorkspaceFilesTree({
   adapter: figrecipeFileTreeAdapter,
   showGitStatus: false,
   showFolderActions: false,
+  showBreadcrumb: true,
   onFileSelect: (_path, item) => {
     window.dispatchEvent(
       new CustomEvent("figrecipe:file-select", {
