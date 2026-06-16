@@ -228,24 +228,13 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     [startPanning],
   );
 
-  // Double-click on ruler → zoom-to-fit (align top-left + fill pane)
-  const handleRulerDoubleClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const container = containerRef.current;
-      if (!container) return;
-      const cw = container.clientWidth - 40;
-      const ch = container.clientHeight - 40;
-      const zx = cw / 2480;
-      const zy = ch / 3508;
-      setState({
-        zoom: Math.max(Math.min(zx, zy, 1.0), 0.1),
-        panX: 0,
-        panY: 0,
-      });
-    },
-    [containerRef],
-  );
+  // Double-click on ruler → re-align the canvas to the top-left origin while
+  // KEEPING the current zoom level (it used to also zoom-to-fit, which was a
+  // surprising reset; double-click is "scroll back to origin", not "zoom").
+  const handleRulerDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setState((s) => ({ ...s, panX: 0, panY: 0 }));
+  }, []);
 
   // ── Programmatic controls ──────────────────────────────
 
