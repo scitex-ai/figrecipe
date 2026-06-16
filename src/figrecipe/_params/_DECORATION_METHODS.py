@@ -29,6 +29,7 @@ DECORATION_METHODS = {
     "set_yticklabels",
     "tick_params",
     "margins",  # For ax.margins(x=0.02) padding
+    "rotate_labels",  # figrecipe tick-label rotation (recorded so reproduce replays it)
     # Statistical annotations
     "stat_annotation",  # Comparison brackets with stars/p-values
 }

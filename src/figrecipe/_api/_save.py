@@ -374,7 +374,12 @@ def save_figure(
     if validate:
         from .._quality._validator import validate_on_save
 
-        result = validate_on_save(fig, saved_yaml, mse_threshold=validate_mse_threshold)
+        result = validate_on_save(
+            fig,
+            saved_yaml,
+            mse_threshold=validate_mse_threshold,
+            image_path=image_path,
+        )
         if verbose:
             # image + recipe collapse to fig.{png,yaml}. Through scitex-logging:
             # green SUCC when reproducible, red ERROR *with the reason* otherwise
@@ -384,9 +389,16 @@ def save_figure(
             if result.valid:
                 _log.success(f"Saved: {target} (Reproducibility Validation: PASSED)")
             else:
+                # Point at the persisted reproduced figure so the divergence is
+                # inspectable (saved beside the figure as <stem>-not-reproduced.<ext>).
+                hint = ""
+                if getattr(result, "not_reproduced_path", None):
+                    from pathlib import Path as _P
+
+                    hint = f"; see {_P(result.not_reproduced_path).name}"
                 _log.error(
                     f"Saved: {target} "
-                    f"(Reproducibility Validation: FAILED - {result.message})"
+                    f"(Reproducibility Validation: FAILED - {result.message}{hint})"
                 )
         if not result.valid:
             msg = f"Reproducibility validation failed (MSE={result.mse:.1f}): {result.message}"

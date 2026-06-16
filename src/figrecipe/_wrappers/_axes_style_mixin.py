@@ -147,9 +147,34 @@ class AxesStyleMixin:
         """
         from ..styles._axis_helpers import rotate_labels
 
-        return rotate_labels(
+        result = rotate_labels(
             self._ax, x=x, y=y, x_ha=x_ha, y_ha=y_ha, auto_adjust=auto_adjust
         )
+
+        # Record as a decoration so reproduce() replays the rotation (and the
+        # tick re-nicing it triggers). Without this, rotate_labels mutated only
+        # the raw matplotlib axes and never reached the recipe -- a reproduced
+        # figure kept horizontal labels + different limits, diverging from the
+        # original (scitex-io/figrecipe#: scatter_hist live-vs-reproduce). Guarded
+        # by self._track so internal/no-record contexts don't double-record.
+        if getattr(self, "_track", False) and self._recorder is not None:
+            try:
+                self._recorder.record_call(
+                    ax_position=self._position,
+                    method_name="rotate_labels",
+                    args=(),
+                    kwargs={
+                        "x": x,
+                        "y": y,
+                        "x_ha": x_ha,
+                        "y_ha": y_ha,
+                        "auto_adjust": auto_adjust,
+                    },
+                )
+            except Exception:
+                pass  # recording is best-effort; never break the styling call
+
+        return result
 
     def set_xyt(
         self,

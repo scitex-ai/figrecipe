@@ -45,6 +45,10 @@ class ValidationResult:
     same_size: bool
     file_size_diff: int
     message: str
+    # On failure, the reproduced figure is persisted here (``<stem>-not-
+    # reproduced.<ext>`` beside the saved figure) for visual inspection; None
+    # when validation passes or no image path was provided.
+    not_reproduced_path: Optional[str] = None
 
     def __repr__(self) -> str:
         status = "VALID" if self.valid else "INVALID"
@@ -103,6 +107,7 @@ def validate_recipe(
     recipe_path: Union[str, Path],
     mse_threshold: float = 100.0,
     dpi: int = 150,
+    image_path: Union[str, Path, None] = None,
 ) -> ValidationResult:
     """Validate that a recipe can faithfully reproduce the original figure.
 
@@ -156,13 +161,6 @@ def validate_recipe(
             reproduced_path, save_recipe=False, dpi=dpi, verbose=False
         )
 
-        # Close reproduced figure to prevent double display in notebooks
-        # Use .fig to get underlying matplotlib Figure since reproduce() returns RecordingFigure
-        mpl_fig = (
-            reproduced_fig.fig if hasattr(reproduced_fig, "fig") else reproduced_fig
-        )
-        plt.close(mpl_fig)
-
         # Compare images
         diff = compare_images(original_path, reproduced_path)
 
@@ -185,6 +183,37 @@ def validate_recipe(
             valid = True
             message = "Reproduction matches original within threshold"
 
+        # On FAILURE, persist the reproduced figure next to the saved one as
+        # ``<stem>-not-reproduced.<ext>`` so the divergence is inspectable (the
+        # whole point: see WHAT the recipe failed to reproduce). On success,
+        # remove any stale artifact from a previous failing run so a green save
+        # never leaves a misleading "-not-reproduced" file behind.
+        not_reproduced_path = None
+        if image_path is not None:
+            p = Path(image_path)
+            artifact = p.parent / f"{p.stem}-not-reproduced{p.suffix}"
+            if not valid:
+                try:
+                    reproduced_fig.savefig(
+                        artifact, save_recipe=False, dpi=dpi, verbose=False
+                    )
+                    not_reproduced_path = str(artifact)
+                except Exception:
+                    not_reproduced_path = None
+            elif artifact.exists():
+                try:
+                    artifact.unlink()
+                except OSError:
+                    pass
+
+        # Close reproduced figure to prevent double display in notebooks. Use
+        # .fig to get the underlying matplotlib Figure (reproduce() returns a
+        # RecordingFigure).
+        mpl_fig = (
+            reproduced_fig.fig if hasattr(reproduced_fig, "fig") else reproduced_fig
+        )
+        plt.close(mpl_fig)
+
         return ValidationResult(
             valid=valid,
             mse=mse if not np.isnan(mse) else float("inf"),
@@ -197,6 +226,7 @@ def validate_recipe(
             same_size=diff["same_size"],
             file_size_diff=diff["file_size2"] - diff["file_size1"],
             message=message,
+            not_reproduced_path=not_reproduced_path,
         )
 
 
@@ -206,6 +236,7 @@ def validate_on_save(
     mse_threshold: float = 100.0,
     dpi: int = 150,
     raise_on_failure: bool = False,
+    image_path: Union[str, Path, None] = None,
 ) -> Optional[ValidationResult]:
     """Validate recipe immediately after saving.
 
@@ -221,6 +252,10 @@ def validate_on_save(
         DPI for comparison.
     raise_on_failure : bool
         If True, raise ValueError when validation fails.
+    image_path : str or Path, optional
+        Path of the saved figure image. When given and validation fails, the
+        reproduced figure is written beside it as ``<stem>-not-reproduced.<ext>``
+        for inspection.
 
     Returns
     -------
@@ -232,7 +267,9 @@ def validate_on_save(
     ValueError
         If raise_on_failure=True and validation fails.
     """
-    result = validate_recipe(fig, recipe_path, mse_threshold, dpi)
+    result = validate_recipe(
+        fig, recipe_path, mse_threshold, dpi, image_path=image_path
+    )
 
     if raise_on_failure and not result.valid:
         raise ValueError(f"Recipe validation failed: {result.message}")
