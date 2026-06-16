@@ -15,6 +15,7 @@ from .._utils._numpy_io import (
     save_array,
     save_arrays_single_csv,
 )
+from ._clew import record_output
 from ._utils import _convert_numpy_types, _sanitize_filename
 
 
@@ -109,6 +110,10 @@ def save_recipe(
         raise
     os.replace(tmp_name, path)
 
+    # Record the recipe as a clew output of the active session (no-op without
+    # clew). This is the handle that connects a composed figure to its source
+    # panels: compose later record_inputs these recipes -> clew links sessions.
+    record_output(path)
     return path
 
 
@@ -138,6 +143,7 @@ def _process_arrays_for_save(
                         filename = f"{safe_call_id}_{arg.get('name', f'arg{i}')}"
                         file_path = save_array(arr, data_dir / filename, data_format)
                         arg["data"] = str(file_path.relative_to(data_dir.parent))
+                        record_output(file_path)  # clew: data file as session output
 
     return data
 

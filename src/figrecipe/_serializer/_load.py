@@ -14,6 +14,7 @@ from .._utils._numpy_io import (
     load_array,
     load_single_csv,
 )
+from ._clew import record_input
 
 
 def _convert_diagram_to_figure_recipe(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -97,6 +98,12 @@ def load_recipe(path: Union[str, Path]) -> FigureRecord:
         Loaded figure record.
     """
     path = Path(path)
+
+    # Record the recipe as a clew input of the active session (no-op without
+    # clew). When compose loads its source panel recipes, clew auto-links the
+    # panel sessions that produced them -> the provenance chain stays connected
+    # through composition.
+    record_input(path)
 
     yaml = YAML()
     with open(path) as f:
@@ -183,6 +190,7 @@ def _resolve_data_references(
 
                             # Store source file path for symlink support
                             arg["_source_file"] = str(file_path.resolve())
+                            record_input(file_path)  # clew: data file as input
                         else:
                             # Fail loud: a referenced data file that does not
                             # exist (e.g. a broken/stale compose symlink) must
