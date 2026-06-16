@@ -221,7 +221,7 @@ def handle_api_switch(request, editor):
         editor.recipe_path = full_path
         editor._hitmap_generated = False
         editor._color_map = {}
-        editor._init_style_overrides(None)
+        editor._overrides = None  # reset overrides; lazy rebuild from style
 
         img, bboxes, size = render_with_overrides(
             editor.fig, editor.get_effective_style(), editor.dark_mode
@@ -271,7 +271,7 @@ def handle_api_new(request, editor):
         editor.recipe_path = file_path
         editor._hitmap_generated = False
         editor._color_map = {}
-        editor._init_style_overrides(None)
+        editor._overrides = None  # reset overrides; lazy rebuild from style
 
         img, bboxes, size = render_with_overrides(
             editor.fig, editor.get_effective_style(), editor.dark_mode
