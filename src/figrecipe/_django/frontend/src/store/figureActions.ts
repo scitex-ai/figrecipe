@@ -1,7 +1,7 @@
 /** Figure composition actions — add/remove/select/move/align placed figures. */
 
 import { api } from "../api/client";
-import { getPanelBboxes } from "../hooks/useSnap";
+import { DPI, getPanelBboxes } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
 import type {
   BBox,
@@ -50,7 +50,7 @@ export function createFigureActions(set: Set, get: Get) {
             color_map?: Record<string, unknown>;
             working_dir?: string;
           }
-        >("api/switch", { path, dark_mode: get().darkMode });
+        >(`api/switch?dpi=${DPI}`, { path, dark_mode: get().darkMode });
 
         if (data.working_dir) set({ workingDir: data.working_dir });
 

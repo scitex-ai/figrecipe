@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { api } from "../api/client";
+import { DPI } from "../hooks/useSnap";
 import type { SnapGuide } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
 import type {
@@ -278,7 +279,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ loading: true });
     try {
       const dark = get().darkMode;
-      const data = await api.get<PreviewResponse>(`preview?dark_mode=${dark}`);
+      const data = await api.get<PreviewResponse>(
+        `preview?dark_mode=${dark}&dpi=${DPI}`,
+      );
       if (data.dark_mode !== undefined) set({ darkMode: data.dark_mode });
       const { placedFigures, selectedFigureId, currentFile } = get();
       if (placedFigures.length === 0) {
