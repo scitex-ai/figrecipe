@@ -43,8 +43,19 @@ jobs:
 
       - name: Ensure local develop ref exists (for --new-only diff)
         run: |
-          git fetch origin develop:develop || \
-            git fetch origin develop && git branch -f develop origin/develop
+          # --new-only stages develop via `git worktree add --detach`, which
+          # needs a local `develop` ref. On push-to-develop, actions/checkout
+          # already created and checked out the develop branch, so both
+          # `git fetch origin develop:develop` ("refusing to fetch into the
+          # checked-out branch") and `git branch -f develop ...` ("cannot force
+          # update the checked-out branch") exit 128. Only materialise the ref
+          # when it is missing — PR events check out a detached merge commit,
+          # so develop does not exist locally there and must be created.
+          if git show-ref --verify --quiet refs/heads/develop; then
+            echo "Local develop ref already exists ($(git rev-parse --short develop)); nothing to do."
+          else
+            git fetch origin develop && git branch develop FETCH_HEAD
+          fi
 
       - uses: actions/setup-python@v5
         with:
