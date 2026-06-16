@@ -137,6 +137,15 @@ def reproduce_from_record(
     from .._recorder import Recorder
     from .._wrappers import RecordingAxes, RecordingFigure
 
+    # mm-based composed figures (plt.compose) key their panels "ax_mm_*" and
+    # position each via add_axes(bbox); the grid model below can't represent that
+    # (every ax_mm_* collapses to grid cell (0,0) -> only one panel survives, wrong
+    # size). Rebuild them faithfully via the dedicated mm reproducer.
+    from ._mm_compose import is_mm_composed, reproduce_mm_composed
+
+    if is_mm_composed(record):
+        return reproduce_mm_composed(record)
+
     # Determine grid size from axes positions
     max_row = 0
     max_col = 0
