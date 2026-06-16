@@ -150,6 +150,7 @@ interface EditorState {
     bracket: Omit<StatBracket, "bracket_id"> & { bracket_id?: string },
   ) => Promise<string | null>;
   removeStatBracket: (axIndex: number, bracketId: string) => Promise<boolean>;
+  moveLegend: (axIndex: number, x: number, y: number) => Promise<boolean>;
 
   setDarkMode: (dark: boolean) => void;
   toggleHitmap: () => void;

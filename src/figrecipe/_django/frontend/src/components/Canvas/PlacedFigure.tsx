@@ -17,6 +17,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import type { PlacedFigure as PlacedFigureType } from "../../types/editor";
 import { getPanelColorByLetter } from "../../utils/panelColors";
 import { BboxOverlay } from "./BboxOverlay";
+import { LegendDragOverlay } from "./LegendDragOverlay";
 import { CaptionOverlay } from "./CaptionOverlay";
 import { PanelLetterOverlay } from "./PanelLetterOverlay";
 import type { LabelSnapTarget } from "./PanelLetterOverlay";
@@ -43,6 +44,7 @@ export function PlacedFigure({
     selectElement,
     showHitmap,
     moveFigure,
+    moveLegend,
     snapEnabled,
   } = useEditorStore();
   const isSelected = selectedFigureId === figure.id;
@@ -164,6 +166,26 @@ export function PlacedFigure({
     [figure.id, figure.bboxes, selectElement],
   );
 
+  // Legend drag → axes-fraction anchor → moveLegend.
+  // The legend bbox carries ax_index; its parent axes bbox is "ax{N}_axes".
+  // Convert the dropped top-left (image px) to axes fraction (y is bottom-up).
+  const handleLegendDrop = useCallback(
+    (axIndex: number, imgX: number, imgY: number) => {
+      const axBox = figure.bboxes[`ax${axIndex}_axes`];
+      if (!axBox || !axBox.width || !axBox.height) return;
+      const x = (imgX - axBox.x) / axBox.width;
+      const y = 1 - (imgY - axBox.y) / axBox.height;
+      selectFigure(figure.id);
+      void moveLegend(axIndex, x, y);
+    },
+    [figure.id, figure.bboxes, moveLegend, selectFigure],
+  );
+
+  // Legend elements (draggable). Each carries its ax_index.
+  const legendBboxes = Object.entries(figure.bboxes).filter(
+    ([key, b]) => b.type === "legend" && key !== "_meta",
+  );
+
   // Visual position during drag
   const displayX = isDragging ? figure.x + dragOffset.dx : figure.x;
   const displayY = isDragging ? figure.y + dragOffset.dy : figure.y;
@@ -221,6 +243,20 @@ export function PlacedFigure({
           onChange={handleLetterChange}
           onMove={handleLetterMove}
         />
+        {legendBboxes.map(([key, b]) => (
+          <LegendDragOverlay
+            key={key}
+            bbox={{ x: b.x, y: b.y, width: b.width, height: b.height }}
+            zoom={zoom}
+            onDragEnd={(imgX, imgY) =>
+              handleLegendDrop(
+                (b as { ax_index?: number }).ax_index ?? 0,
+                imgX,
+                imgY,
+              )
+            }
+          />
+        ))}
       </div>
       <CaptionOverlay
         figureId={figure.id}

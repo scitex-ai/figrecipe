@@ -525,3 +525,15 @@
 .canvas-outer.panning * {
   cursor: grabbing !important;
 }
+
+/* Legend drag handle — invisible until hovered, then a faint move-affordance. */
+.legend-drag-overlay {
+  border: 1px dashed transparent;
+  border-radius: 2px;
+  z-index: 6;
+}
+.legend-drag-overlay:hover,
+.legend-drag-overlay.dragging {
+  border-color: var(--stx-app-accent, #7c5cbf);
+  background: rgba(124, 92, 191, 0.08);
+}
