@@ -144,6 +144,22 @@ def _make_patches_opaque(fig):
     return restore
 
 
+def format_saved_target(image_path, yaml_path) -> str:
+    """Render the saved image + recipe compactly.
+
+    When the two outputs share a directory and stem (the common case --
+    ``fig.png`` + ``fig.yaml``), collapse them to shell brace-expansion form
+    ``.../fig.{png,yaml}`` instead of spelling both paths with a ``+``. Falls
+    back to ``"<image> + <yaml>"`` when they don't share a stem/parent.
+    """
+    img, yml = Path(image_path), Path(yaml_path)
+    if img.parent == yml.parent and img.stem == yml.stem:
+        img_ext = img.suffix.lstrip(".")
+        yml_ext = yml.suffix.lstrip(".")
+        return str(img.parent / f"{img.stem}.{{{img_ext},{yml_ext}}}")
+    return f"{image_path} + {yaml_path}"
+
+
 __all__ = [
     "IMAGE_EXTENSIONS",
     "YAML_EXTENSIONS",
@@ -153,6 +169,7 @@ __all__ = [
     "get_save_transparency",
     "_is_opaque_facecolor",
     "_make_patches_opaque",
+    "format_saved_target",
 ]
 
 # EOF

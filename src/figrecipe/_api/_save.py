@@ -21,6 +21,7 @@ from ._save_config import (  # noqa: F401
     _get_default_image_format,
     _is_opaque_facecolor,
     _make_patches_opaque,
+    format_saved_target,
     get_save_dpi,
     get_save_transparency,
     resolve_save_paths,
@@ -376,13 +377,12 @@ def save_figure(
         result = validate_on_save(fig, saved_yaml, mse_threshold=validate_mse_threshold)
         status = "PASSED" if result.valid else "FAILED"
         if verbose:
-            # Success path -> SUCC (green); failed validation -> WARN (yellow),
-            # so the status reads correctly through scitex-logging instead of a
-            # flat, uncoloured print().
-            line = (
-                f"Saved: {image_path} + {yaml_path} (Reproducible Validation: {status})"
-            )
-            (_log.success if result.valid else _log.warning)(line)
+            # Success path -> SUCC (green); failed validation -> ERROR (red), so
+            # the status reads correctly through scitex-logging instead of a flat,
+            # uncoloured print(). image + recipe collapse to fig.{png,yaml}.
+            target = format_saved_target(image_path, yaml_path)
+            line = f"Saved: {target} (Reproducible Validation: {status})"
+            (_log.success if result.valid else _log.error)(line)
         if not result.valid:
             msg = f"Reproducibility validation failed (MSE={result.mse:.1f}): {result.message}"
             if validate_error_level == "error":
@@ -395,7 +395,7 @@ def save_figure(
         return image_path, yaml_path, result
 
     if verbose:
-        _log.success(f"Saved: {image_path} + {yaml_path}")
+        _log.success(f"Saved: {format_saved_target(image_path, yaml_path)}")
     return image_path, yaml_path, None
 
 
