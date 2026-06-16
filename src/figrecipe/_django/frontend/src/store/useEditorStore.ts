@@ -475,7 +475,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }),
   showToast: (message, type = "info") => {
     set({ toast: { message, type } });
-    setTimeout(() => set({ toast: null }), 3000);
+    // Errors persist until dismissed (shown in the AlertBanner -- fail-loud);
+    // info/success auto-clear as transient toasts.
+    if (type !== "error") {
+      setTimeout(() => set({ toast: null }), 3000);
+    }
   },
   clearToast: () => set({ toast: null }),
 }));
