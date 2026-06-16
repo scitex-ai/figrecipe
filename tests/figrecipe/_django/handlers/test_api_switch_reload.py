@@ -59,10 +59,13 @@ class TestEditorReloadFlow:
 
 class TestNoStaleInitStyleOverrides:
     def test_handlers_module_has_no_init_style_overrides_caller(self):
-        # Arrange -- the removed method must not be referenced by any handler.
-        from figrecipe._django.handlers import files as files_handlers
+        # Arrange -- read the handler source by PATH; importing the handlers
+        # package pulls in scitex_app's Django models and needs configured
+        # settings. The removed method must not be referenced.
+        import figrecipe
 
-        source = Path(files_handlers.__file__).read_text(encoding="utf-8")
+        files_py = Path(figrecipe.__file__).parent / "_django" / "handlers" / "files.py"
+        source = files_py.read_text(encoding="utf-8")
         # Act
         has_stale_call = "_init_style_overrides" in source
         # Assert
