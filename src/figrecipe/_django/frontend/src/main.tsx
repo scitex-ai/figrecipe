@@ -8,6 +8,7 @@ import ReactDOM from "react-dom/client";
 
 // React app content (Plot/Canvas editor — NOT shell)
 import { InnerEditor } from "./InnerEditor";
+import { useEditorStore } from "./store/useEditorStore";
 
 // Styles (app-specific)
 import "./styles/app-variables.css";
@@ -67,7 +68,7 @@ import type { ViewerAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts
 
 // Vanilla TS shell ChatMode — full chat orchestration (scitex-ui)
 import { ChatMode } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
-import type { ChatAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
+import { figrecipeChatAdapter } from "./bootstrap/chatAdapter";
 
 // Vanilla TS shell SessionsPanel — chat session management (scitex-ui)
 import { SessionsPanel } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
@@ -225,29 +226,19 @@ window.addEventListener("figrecipe:file-select", ((e: CustomEvent) => {
   }
 }) as EventListener);
 
-// ChatMode — figrecipe adapter posts to scitex-app's chat endpoint
-const FIGRECIPE_SYSTEM =
-  "You are a helpful AI assistant in the FigRecipe figure editor. " +
-  "Help with YAML recipes, matplotlib plots, and figure composition.";
+// Wire file tree → canvas: selecting a recipe (.yaml/.yml) loads its rendered
+// figure onto the canvas. The WorkspaceFilesTree refactor (3a91d7f) dropped
+// this, so selecting a recipe only opened the YAML text and the canvas stayed
+// blank. switchFile() surfaces an error toast on failure (fail-loud).
+window.addEventListener("figrecipe:file-select", ((e: CustomEvent) => {
+  const path: string | undefined = e.detail?.path;
+  if (path && /\.ya?ml$/i.test(path)) {
+    void useEditorStore.getState().switchFile(path);
+  }
+}) as EventListener);
 
-const figrecipeChatAdapter: ChatAdapter = {
-  async streamChat(message, _context, images) {
-    return fetch("api/chat/stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: message,
-        history: [],
-        system_prompt: FIGRECIPE_SYSTEM,
-        ...(images?.length
-          ? {
-              images: images.map((b64) => `data:image/png;base64,${b64}`),
-            }
-          : {}),
-      }),
-    });
-  },
-};
+// ChatMode — figrecipe adapter posts to scitex-app's chat endpoint
+// (figrecipeChatAdapter + FIGRECIPE_SYSTEM extracted to ./bootstrap/chatAdapter)
 
 const chatPreview = document.getElementById("stx-shell-ai-image-preview");
 const chatFileInput = document.getElementById(
