@@ -29,13 +29,20 @@ def reproduce_mm_composed(record):
 
     Returns ``(wrapped_fig, axes_list)`` mirroring ``reproduce_from_record``.
     """
-    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
+    from matplotlib.figure import Figure
 
     from .._recorder import Recorder
     from .._wrappers import RecordingAxes, RecordingFigure
     from ._core import _replay_call
 
-    fig = plt.figure(figsize=record.figsize, dpi=record.dpi)
+    # Build the figure WITHOUT pyplot: plt.figure() asks matplotlib for a GUI
+    # figure manager, which under the GUI editor's Django worker thread tries to
+    # load the tkinter backend and crashes ("partially initialized module
+    # 'tkinter'" / "GUI outside main thread"). A bare Figure + Agg canvas is
+    # headless and thread-safe (matching the render path in _editor/_helpers).
+    fig = Figure(figsize=record.figsize, dpi=record.dpi)
+    FigureCanvasAgg(fig)
 
     result_cache: Dict[str, Any] = {}
     mpl_axes: List[Any] = []
