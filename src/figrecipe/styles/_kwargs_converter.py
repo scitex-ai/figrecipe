@@ -57,6 +57,13 @@ def to_subplots_kwargs(style: Optional["DotDict"] = None) -> Dict[str, Any]:
         "ticks_n_ticks_max": style.ticks.get("n_ticks_max", 4),
         # Lines (lines.* in YAML)
         "lines_trace_mm": style.lines.trace_mm,
+        # General/default ordinary line width (KDE curves, single plots, …).
+        # Falls back to the signal/trace width on legacy presets without it.
+        "lines_linewidth_mm": style.lines.get("linewidth_mm", style.lines.trace_mm),
+        # Thin width for dense signal traces (opt-in token lw="signal").
+        "lines_signal_linewidth_mm": style.lines.get(
+            "signal_linewidth_mm", style.lines.trace_mm
+        ),
         "lines_errorbar_mm": style.lines.get("errorbar_mm", 0.12),
         "lines_errorbar_cap_mm": style.lines.get("errorbar_cap_mm", 0.8),
         "lines_grid_mm": style.lines.get("grid_mm"),

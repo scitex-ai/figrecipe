@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Regression tests for mm-compose replay fidelity.
+
+Covers two previously-broken panel types when composed via mm-based
+``compose`` (smart recipe composer):
+
+1. MULTI-AXES figures (e.g. ``subplots(nrows=3, ncols=1)``) used to replay as
+   only the first axes; the other subplots were dropped because mm-compose only
+   fetched the default axes key from the source recipe.
+
+2. ``make_axes_locatable`` MARGINALS (``stx_scatter_hist``) used to vanish on
+   replay because ``stx_*`` methods were dispatched via ``getattr`` on a raw
+   matplotlib axes (which lacks them), silently dropping the call.
+"""
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+import numpy as np
+import pytest
+
+import figrecipe as fr
+
+
+@pytest.fixture
+def stacked_composed(tmp_path):
+    """Compose a 3-row source recipe into a single mm panel."""
+    fig, axes = fr.subplots(nrows=3, ncols=1)
+    for i, ax in enumerate(np.ravel(axes)):
+        ax.plot([0, 1, 2], [i, i + 1, i], id=f"line_{i}")
+    recipe = tmp_path / "stacked.yaml"
+    fr.save(fig, recipe, validate=False, verbose=False)
+
+    sources = {str(recipe): {"xy_mm": (0, 0), "size_mm": (80, 80)}}
+    comp_fig, _ = fr.compose(sources, canvas_size_mm=(90, 90))
+    return comp_fig.fig if hasattr(comp_fig, "fig") else comp_fig
+
+
+@pytest.fixture
+def joint_composed(tmp_path):
+    """Compose an stx_scatter_hist source recipe into a single mm panel."""
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=200)
+    y = rng.normal(size=200)
+
+    fig, ax = fr.subplots()
+    ax.stx_scatter_hist(x, y, kde=True, id="sh")
+    recipe = tmp_path / "joint.yaml"
+    fr.save(fig, recipe, validate=False, verbose=False)
+
+    sources = {str(recipe): {"xy_mm": (0, 0), "size_mm": (80, 80)}}
+    comp_fig, _ = fr.compose(sources, canvas_size_mm=(90, 90))
+    return comp_fig.fig if hasattr(comp_fig, "fig") else comp_fig
+
+
+def test_multiaxes_source_places_all_three_subplots(stacked_composed):
+    # Arrange
+    mpl = stacked_composed
+    # Act
+    n_axes = len(mpl.get_axes())
+    # Assert
+    assert n_axes == 3
+
+
+def test_multiaxes_subplots_each_keep_their_line(stacked_composed):
+    # Arrange
+    mpl = stacked_composed
+    # Act
+    line_counts = [len(a.lines) for a in mpl.get_axes()]
+    # Assert
+    assert all(n >= 1 for n in line_counts)
+
+
+def test_multiaxes_subplots_are_vertically_stacked(stacked_composed):
+    # Arrange
+    mpl = stacked_composed
+    # Act
+    bottoms = sorted(a.get_position().y0 for a in mpl.get_axes())
+    # Assert
+    assert bottoms[0] < bottoms[1] < bottoms[2]
+
+
+def test_scatter_hist_creates_main_plus_two_marginals(joint_composed):
+    # Arrange
+    mpl = joint_composed
+    # Act
+    n_axes = len(mpl.get_axes())
+    # Assert
+    assert n_axes >= 3
+
+
+def test_scatter_hist_scatter_collection_present(joint_composed):
+    # Arrange
+    mpl = joint_composed
+    # Act
+    has_scatter = any(len(a.collections) >= 1 for a in mpl.get_axes())
+    # Assert
+    assert has_scatter
+
+
+def test_scatter_hist_kde_marginal_lines_present(joint_composed):
+    # Arrange
+    mpl = joint_composed
+    # Act
+    has_marginal_lines = any(len(a.lines) >= 1 for a in mpl.get_axes())
+    # Assert
+    assert has_marginal_lines
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
+
+# EOF

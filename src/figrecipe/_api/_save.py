@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 # Import helpers from separate module
-from ._save_helpers import _capture_axes_bboxes
+from ._save_helpers import _capture_axes_bboxes, _capture_content_layout
 from ._save_helpers import (
     save_hitmap as _save_hitmap,
 )
@@ -433,6 +433,7 @@ def save_figure(
 
     # Capture axes bounding boxes (adjusted for crop if cropping occurred)
     _capture_axes_bboxes(fig, crop_offset)
+    _capture_content_layout(fig)  # tight-content layout for crop-aware compose
 
     # Store crop info in record for future reference
     if crop_offset is not None:

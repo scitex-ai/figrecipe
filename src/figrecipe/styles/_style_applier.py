@@ -178,9 +178,18 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     if style.get("hide_right_spine", True):
         ax.spines["right"].set_visible(False)
 
-    # Convert trace thickness from mm to points and set as default line width
+    # Set matplotlib's default line width from the GENERAL/default line width
+    # (lines.linewidth_mm; ~0.8mm). Ordinary lines (KDE curves, single plots)
+    # that pass no lw= inherit this. The thin signal/trace width is opt-in via
+    # lw="signal". Fall back to trace_thickness_mm on legacy presets.
+    general_lw_mm = style.get(
+        "lines_linewidth_mm", style.get("trace_thickness_mm", 0.3)
+    )
+    general_lw_pt = mm_to_pt(general_lw_mm)
+    mpl.rcParams["lines.linewidth"] = general_lw_pt
+    # Preserve the trace/signal line width for the documented return value
+    # (callers use it as ax.plot(..., lw=trace_lw) for dense signal traces).
     trace_lw_pt = mm_to_pt(style.get("trace_thickness_mm", 0.3))
-    mpl.rcParams["lines.linewidth"] = trace_lw_pt
 
     # Grid line width — update both rcParams (for future gridlines) and
     # existing gridline objects (created at axes init with default linewidth)

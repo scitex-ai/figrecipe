@@ -163,7 +163,15 @@ class SciTexMixin:
         return result
 
     def stx_scatter_hist(self, x, y, *, id=None, track=True, **kwargs):
-        """Scatter plot with marginal histograms."""
+        """Scatter plot with marginal histograms or per-class KDE curves.
+
+        Pass ``kde=True`` for smooth marginal densities, ``groups=<labels>``
+        for one KDE per class, and ``palette={group: color}`` to colour both
+        the per-group KDE curves and the scatter points. ``x`` may be a pandas
+        datetime Series (scatter stays on the datetime axis; the KDE is
+        estimated on the date2num float grid). See the underlying
+        ``stx_scatter_hist`` for the full parameter list.
+        """
         from .._scitex_compat._scientific import stx_scatter_hist
 
         with self._no_record():

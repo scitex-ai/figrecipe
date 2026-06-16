@@ -17,6 +17,7 @@ from .._utils._numpy_io import (
     save_array,
     save_arrays_single_csv,
 )
+from ._clew import record_output
 from ._utils import _convert_numpy_types, _sanitize_filename
 
 
@@ -108,14 +109,40 @@ def save_recipe(
     # Convert numpy types to native Python types
     data = _convert_numpy_types(data)
 
-    # Save YAML
+    # Save YAML.
+    #
+    # Write atomically via a sibling temp file + os.replace so a dump that
+    # raises mid-serialization (e.g. a non-YAML-able object that slipped
+    # into the record) NEVER leaves a truncated 0-byte recipe on disk that
+    # would silently break downstream compose()/load_recipe(). Either the
+    # full valid recipe lands, or the write fails loud and the previous
+    # file (if any) is untouched.
+    import os
+    import tempfile
+
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.indent(mapping=2, sequence=4, offset=2)
 
-    with open(path, "w") as f:
-        yaml.dump(data, f)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=f".{path.stem}.", suffix=".yaml.tmp"
+    )
+    try:
+        with os.fdopen(fd, "w") as f:
+            yaml.dump(data, f)
+    except Exception:
+        # Fail loud: clean up the partial temp file, do not clobber path.
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+    os.replace(tmp_name, path)
 
+    # Record the recipe as a clew output of the active session (no-op without
+    # clew). This is the handle that connects a composed figure to its source
+    # panels: compose later record_inputs these recipes -> clew links sessions.
+    record_output(path)
     return path
 
 
@@ -157,6 +184,7 @@ def _process_arrays_for_save(
                         )
                         file_path = save_array(arr, data_dir / filename, data_format)
                         arg["data"] = str(file_path.relative_to(data_dir.parent))
+                        record_output(file_path)  # clew: data file as session output
 
     return data
 
@@ -200,11 +228,22 @@ def _process_arrays_with_symlinks(
                         source_file = Path(source_file_path)
                         target_path = data_dir / source_file.name
 
-                        if not target_path.exists() and source_file.exists():
-                            rel_source = os.path.relpath(
-                                source_file, target_path.parent
+                        # Fail loud: composition references the REAL source data
+                        # (single source of truth); a missing source must never
+                        # produce a silently-broken recipe symlink.
+                        if not source_file.exists():
+                            raise FileNotFoundError(
+                                f"compose source data file missing: {source_file} "
+                                f"(call {call_id}). Cannot create a valid data "
+                                f"symlink for the composed recipe."
                             )
-                            os.symlink(rel_source, target_path)
+                        # Refresh: drop any stale/broken link left by a prior run
+                        # so the symlink always points at the CURRENT source, never
+                        # a renamed/moved phantom.
+                        if target_path.is_symlink() or target_path.exists():
+                            target_path.unlink()
+                        rel_source = os.path.relpath(source_file, target_path.parent)
+                        os.symlink(rel_source, target_path)
 
                         arg["data"] = str(target_path.relative_to(data_dir.parent))
 
