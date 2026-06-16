@@ -130,12 +130,23 @@ def _reset_to_light_mode(fig) -> None:
 
 
 def render_with_overrides(
-    fig, overrides: Optional[Dict[str, Any]], dark_mode: bool = False
+    fig,
+    overrides: Optional[Dict[str, Any]],
+    dark_mode: bool = False,
+    dpi: Optional[int] = None,
 ):
     """
     Re-render figure with overrides applied directly.
 
     Applies style overrides directly to the existing figure for reliable rendering.
+
+    ``dpi`` sets the preview render resolution. Pass the editor canvas's display
+    DPI so the returned image's pixel size equals the canvas's mm grid (a 180 mm
+    figure then lands exactly on the 180 mm ruler mark). When given, it is
+    remembered on the figure so every later edit re-render (axis/annotation/...
+    handlers that don't pass dpi) stays the same size; when omitted, the
+    remembered value is reused, falling back to 150. The bbox coordinates are
+    extracted at the same dpi, so element selection stays aligned.
     """
     import base64
     import io
@@ -150,8 +161,16 @@ def render_with_overrides(
     # RecordingFigure.__getattr__ issues with matplotlib internals (dpi etc.)
     mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
 
+    # Resolve the render DPI: an explicit dpi (from the canvas entry points) is
+    # remembered on the figure so subsequent edit re-renders that omit it keep
+    # the same pixel size; otherwise reuse the remembered value (default 150).
+    if dpi is None:
+        dpi = int(getattr(mpl_fig, "_editor_preview_dpi", 150))
+    else:
+        dpi = int(dpi)
+        mpl_fig._editor_preview_dpi = dpi
+
     fig_width, fig_height = fig.get_size_inches()
-    dpi = 150
     pixel_width = fig_width * dpi
     pixel_height = fig_height * dpi
 
@@ -226,7 +245,7 @@ def render_with_overrides(
             # Editor preview always renders transparent — the canvas
             # provides its own background (dark/light grid theme)
             transparent = True
-            render_dpi = 150
+            render_dpi = dpi
             if is_diagram:
                 fig_w, fig_h = fig.get_size_inches()
                 max_dim = max(fig_w, fig_h)
