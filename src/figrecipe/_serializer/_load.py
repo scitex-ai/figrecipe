@@ -184,6 +184,17 @@ def _resolve_data_references(
 
                                 arg["data"] = [a.tolist() for a in arrays]
                                 arg["_loaded_array"] = arrays
+                            elif np.issubdtype(arr.dtype, np.datetime64):
+                                # datetime64.tolist() yields raw nanosecond ints,
+                                # which on re-save would be written INLINE and then
+                                # reload as plain numbers (plotting at ~1.3e18
+                                # instead of as dates) -- a non-idempotent
+                                # save->reproduce->save round-trip. Keep the array
+                                # under _array so re-save re-files it as a CSV (ISO
+                                # strings, dtype preserved), exactly like the first
+                                # save. _loaded_array drives the in-memory replay.
+                                arg["_array"] = arr
+                                arg["_loaded_array"] = arr
                             else:
                                 arg["data"] = arr.tolist()
                                 arg["_loaded_array"] = arr

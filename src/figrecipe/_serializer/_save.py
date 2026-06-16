@@ -186,6 +186,13 @@ def _process_arrays_for_save(
                         arg["data"] = str(file_path.relative_to(data_dir.parent))
                         record_output(file_path)  # clew: data file as session output
 
+                    # Drop transient load-side artifacts so a re-saved recipe never
+                    # serializes the in-memory array or an absolute source path
+                    # (both set by load when resolving file refs); otherwise they
+                    # leak into the YAML, bloating it and breaking portability.
+                    arg.pop("_loaded_array", None)
+                    arg.pop("_source_file", None)
+
     return data
 
 
