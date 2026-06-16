@@ -372,6 +372,19 @@ def _replay_call(
         from ._stem import replay_stem_call
 
         return replay_stem_call(ax, call)
+    if method_name == "rotate_labels":
+        # figrecipe tick-label rotation: a styles helper, not an mpl axes method,
+        # so getattr(ax, "rotate_labels") fails on the raw replay axes. Dispatch
+        # to the helper so the rotation (and the tick re-nicing it applies) is
+        # reproduced -- otherwise labels stay horizontal + limits drift.
+        from ..styles._axis_helpers import rotate_labels as _rotate_labels
+
+        kw = {k: call.kwargs.get(k) for k in ("x", "y", "x_ha", "y_ha", "auto_adjust")}
+        try:
+            _rotate_labels(ax, **{k: v for k, v in kw.items() if v is not None})
+        except Exception:
+            pass
+        return None
     if method_name.startswith("stx_"):
         # figrecipe scitex-compat plot methods are functions taking a raw mpl
         # axes; a plain getattr(ax, name) fails on raw axes (e.g. mm-compose
