@@ -173,11 +173,22 @@ def _process_arrays_with_symlinks(
                         source_file = Path(source_file_path)
                         target_path = data_dir / source_file.name
 
-                        if not target_path.exists() and source_file.exists():
-                            rel_source = os.path.relpath(
-                                source_file, target_path.parent
+                        # Fail loud: composition references the REAL source data
+                        # (single source of truth); a missing source must never
+                        # produce a silently-broken recipe symlink.
+                        if not source_file.exists():
+                            raise FileNotFoundError(
+                                f"compose source data file missing: {source_file} "
+                                f"(call {call_id}). Cannot create a valid data "
+                                f"symlink for the composed recipe."
                             )
-                            os.symlink(rel_source, target_path)
+                        # Refresh: drop any stale/broken link left by a prior run
+                        # so the symlink always points at the CURRENT source, never
+                        # a renamed/moved phantom.
+                        if target_path.is_symlink() or target_path.exists():
+                            target_path.unlink()
+                        rel_source = os.path.relpath(source_file, target_path.parent)
+                        os.symlink(rel_source, target_path)
 
                         arg["data"] = str(target_path.relative_to(data_dir.parent))
 

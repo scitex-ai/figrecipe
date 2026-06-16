@@ -183,6 +183,17 @@ def _resolve_data_references(
 
                             # Store source file path for symlink support
                             arg["_source_file"] = str(file_path.resolve())
+                        else:
+                            # Fail loud: a referenced data file that does not
+                            # exist (e.g. a broken/stale compose symlink) must
+                            # NOT silently fall through and leave the path string
+                            # as the arg -- that surfaces later as a cryptic
+                            # "not a valid format string" deep in matplotlib.
+                            raise FileNotFoundError(
+                                f"recipe data file not found: {file_path} "
+                                f"(referenced as '{data_ref}'). Fix the source "
+                                f"data; do not reproduce from a broken recipe."
+                            )
 
     return data
 
