@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 # Directory-listing helpers extracted to _files_tree.py (tree enrichment,
 # recipe detection, working-dir/backend resolution).
-from ._core import _dpi_from_request  # noqa: E402
 from ._files_tree import (  # noqa: E402
     _enrich_tree,
     _find_default_working_dir,
@@ -21,6 +20,7 @@ from ._files_tree import (  # noqa: E402
     _is_figrecipe_yaml_rel,
     _local_build_tree,
 )
+from .core import _dpi_from_request  # noqa: E402
 
 __all__ = [
     "_enrich_tree",
