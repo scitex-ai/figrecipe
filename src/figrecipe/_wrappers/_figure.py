@@ -9,12 +9,13 @@ from matplotlib.figure import Figure
 
 from .._utils._grid import grid_id
 from ._axes import RecordingAxes
+from ._figure_text import FigureTextMixin
 
 if TYPE_CHECKING:
     from .._recorder import FigureRecord, Recorder
 
 
-class RecordingFigure:
+class RecordingFigure(FigureTextMixin):
     """Wrapper around matplotlib Figure that manages recording.
 
     Parameters
@@ -173,107 +174,9 @@ class RecordingFigure:
             pass
         return default
 
-    def suptitle(self, t: str, **kwargs) -> Any:
-        """Set super title for the figure and record it.
-
-        Parameters
-        ----------
-        t : str
-            The super title text.
-        **kwargs
-            Additional arguments passed to matplotlib's suptitle().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        # Auto-apply fontsize from style if not specified
-        if "fontsize" not in kwargs:
-            kwargs["fontsize"] = self._get_style_fontsize("suptitle_pt", 10)
-        # Record the suptitle call
-        self._recorder.figure_record.suptitle = {"text": t, "kwargs": kwargs}
-        # Call the underlying figure's suptitle
-        return self._fig.suptitle(t, **kwargs)
-
-    def supxlabel(self, t: str, **kwargs) -> Any:
-        """Set super x-label for the figure and record it.
-
-        Parameters
-        ----------
-        t : str
-            The super x-label text.
-        **kwargs
-            Additional arguments passed to matplotlib's supxlabel().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        # Auto-apply fontsize from style if not specified
-        if "fontsize" not in kwargs:
-            kwargs["fontsize"] = self._get_style_fontsize("supxlabel_pt", 8)
-        # Record the supxlabel call
-        self._recorder.figure_record.supxlabel = {"text": t, "kwargs": kwargs}
-        # Call the underlying figure's supxlabel
-        return self._fig.supxlabel(t, **kwargs)
-
-    def supylabel(self, t: str, **kwargs) -> Any:
-        """Set super y-label for the figure and record it.
-
-        Parameters
-        ----------
-        t : str
-            The super y-label text.
-        **kwargs
-            Additional arguments passed to matplotlib's supylabel().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        # Auto-apply fontsize from style if not specified
-        if "fontsize" not in kwargs:
-            kwargs["fontsize"] = self._get_style_fontsize("supylabel_pt", 8)
-        # Record the supylabel call
-        self._recorder.figure_record.supylabel = {"text": t, "kwargs": kwargs}
-        # Call the underlying figure's supylabel
-        return self._fig.supylabel(t, **kwargs)
-
-    def text(self, x: float, y: float, s: str, **kwargs) -> Any:
-        """Place text on the figure and record it.
-
-        Proxy for ``matplotlib.figure.Figure.text`` that also captures the
-        call in the recipe so ``reproduce()`` can replay it. Without this,
-        ``fig.text`` annotations would be rendered in the original figure
-        but missing from the reproduction, leading to dimension mismatches
-        during reproducibility validation.
-
-        Parameters
-        ----------
-        x, y : float
-            Position in figure coordinates.
-        s : str
-            The text string.
-        **kwargs
-            Additional arguments passed to matplotlib's fig.text().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        serializable_kwargs = {
-            k: v
-            for k, v in kwargs.items()
-            if isinstance(v, (str, int, float, bool, list, tuple, type(None)))
-        }
-        self._recorder.figure_record.figure_texts.append(
-            {"x": x, "y": y, "s": s, "kwargs": serializable_kwargs}
-        )
-        return self._fig.text(x, y, s, **kwargs)
+    # suptitle / supxlabel / supylabel / text live in FigureTextMixin
+    # (._figure_text); the suptitle there inherits SCITEX_STYLE (size +
+    # non-bold weight).
 
     def colorbar(self, mappable, ax=None, **kwargs) -> Any:
         """Add a colorbar and record it for reproduction."""
@@ -499,64 +402,7 @@ class RecordingFigure:
             save_hitmap=save_hitmap,
         )
 
-    def set_supxyt(
-        self,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        title: Optional[str] = None,
-        **kwargs,
-    ) -> "RecordingFigure":
-        """Set supxlabel, supylabel, and suptitle in one call.
-
-        Parameters
-        ----------
-        xlabel : str, optional
-        ylabel : str, optional
-        title : str, optional
-        **kwargs : dict
-            Passed to the underlying methods.
-
-        Examples
-        --------
-        >>> fig.set_supxyt('Time (s)', 'Amplitude', 'All Channels')
-        """
-        if xlabel is not None:
-            self.supxlabel(xlabel, **kwargs)
-        if ylabel is not None:
-            self.supylabel(ylabel, **kwargs)
-        if title is not None:
-            self.suptitle(title, **kwargs)
-        return self
-
-    def set_supxytc(
-        self,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        title: Optional[str] = None,
-        caption: Optional[str] = None,
-        **kwargs,
-    ) -> "RecordingFigure":
-        """Set supxlabel, supylabel, suptitle, and caption in one call.
-
-        Parameters
-        ----------
-        xlabel : str, optional
-        ylabel : str, optional
-        title : str, optional
-        caption : str, optional
-            Figure caption metadata (stored in recipe, not rendered).
-        **kwargs : dict
-            Passed to the underlying methods.
-
-        Examples
-        --------
-        >>> fig.set_supxytc('Time', 'Voltage', 'Neural Data',
-        ...                 'Figure 1. Overview of neural recordings.')
-        """
-        self.set_supxyt(xlabel, ylabel, title, **kwargs)
-        if caption is not None:
-            self.set_caption(caption)
-        return self
+    # set_supxyt / set_supxytc live in FigureTextMixin (._figure_text).
 
     def save_recipe(
         self,

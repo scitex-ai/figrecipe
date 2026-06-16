@@ -150,12 +150,29 @@ def parse_source_spec_with_path(
     raise TypeError(f"Invalid source spec type: {type(spec)}")
 
 
+def parse_source_spec_with_key(
+    spec: Union[str, Path, FigureRecord, Tuple],
+) -> Tuple[FigureRecord, str, Optional[Path], bool]:
+    """Like ``parse_source_spec_with_path`` but also report key explicitness.
+
+    Returns ``(FigureRecord, ax_key, source_path, explicit_key)`` where
+    ``explicit_key`` is True only when the caller selected a specific axes via a
+    ``(source, ax_key)`` tuple. When False, the source is a plain recipe/path
+    and composition should place ALL of its axes (so multi-subplot panels are
+    not silently reduced to their first axes).
+    """
+    explicit_key = isinstance(spec, tuple) and len(spec) == 2
+    record, ax_key, path = parse_source_spec_with_path(spec)
+    return record, ax_key, path, explicit_key
+
+
 __all__ = [
     "is_image_file",
     "find_companion_recipe",
     "create_image_record",
     "parse_source_spec",
     "parse_source_spec_with_path",
+    "parse_source_spec_with_key",
 ]
 
 # EOF

@@ -322,10 +322,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.record"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.record</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure._get_style_fontsize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontsize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure._get_theme_text_color"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_theme_text_color()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.suptitle"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.suptitle()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.supxlabel"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.supxlabel()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.supylabel"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.supylabel()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.text"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.text()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.colorbar"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.colorbar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.add_panel_labels"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.add_panel_labels()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.set_title_metadata"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_title_metadata()</span></code></a></li>
@@ -337,8 +333,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.generate_caption"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.generate_caption()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__getattr__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.savefig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.savefig()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.set_supxyt"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_supxyt()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.set_supxytc"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_supxytc()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure.save_recipe"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.save_recipe()</span></code></a></li>
 </ul>
 </li>
@@ -2002,7 +1996,7 @@ they’re documented here separately.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">figrecipe._wrappers.</span></span><span class="sig-name descname"><span class="pre">RecordingFigure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recorder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">FigureTextMixin</span></code></p>
 <p>Wrapper around matplotlib Figure that manages recording.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2099,93 +2093,6 @@ can do getattr(type(obj), ‘draw’) during _get_renderer.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.suptitle">
-<span class="sig-name descname"><span class="pre">suptitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.suptitle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.suptitle" title="Link to this definition"></a></dt>
-<dd><p>Set super title for the figure and record it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The super title text.</p></li>
-<li><p><strong>**kwargs</strong> – Additional arguments passed to matplotlib’s suptitle().</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The matplotlib Text object.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Text</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.supxlabel">
-<span class="sig-name descname"><span class="pre">supxlabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.supxlabel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.supxlabel" title="Link to this definition"></a></dt>
-<dd><p>Set super x-label for the figure and record it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The super x-label text.</p></li>
-<li><p><strong>**kwargs</strong> – Additional arguments passed to matplotlib’s supxlabel().</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The matplotlib Text object.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Text</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.supylabel">
-<span class="sig-name descname"><span class="pre">supylabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.supylabel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.supylabel" title="Link to this definition"></a></dt>
-<dd><p>Set super y-label for the figure and record it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The super y-label text.</p></li>
-<li><p><strong>**kwargs</strong> – Additional arguments passed to matplotlib’s supylabel().</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The matplotlib Text object.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Text</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.text">
-<span class="sig-name descname"><span class="pre">text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.text" title="Link to this definition"></a></dt>
-<dd><p>Place text on the figure and record it.</p>
-<p>Proxy for <code class="docutils literal notranslate"><span class="pre">matplotlib.figure.Figure.text</span></code> that also captures the
-call in the recipe so <code class="docutils literal notranslate"><span class="pre">reproduce()</span></code> can replay it. Without this,
-<code class="docutils literal notranslate"><span class="pre">fig.text</span></code> annotations would be rendered in the original figure
-but missing from the reproduction, leading to dimension mismatches
-during reproducibility validation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Position in figure coordinates.</p></li>
-<li><p><strong>y</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Position in figure coordinates.</p></li>
-<li><p><strong>s</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The text string.</p></li>
-<li><p><strong>**kwargs</strong> – Additional arguments passed to matplotlib’s fig.text().</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The matplotlib Text object.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Text</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2348,58 +2255,6 @@ typically used in scientific papers (e.g., “Fig. 1. Description…”).</p>
 <dd><p>Save figure — equivalent to fr.save(). Same DPI, crop, recipe.</p>
 <p>Returns (image_path, yaml_path, result).
 <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> passed to matplotlib savefig for file-like objects.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.set_supxyt">
-<span class="sig-name descname"><span class="pre">set_supxyt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.set_supxyt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.set_supxyt" title="Link to this definition"></a></dt>
-<dd><p>Set supxlabel, supylabel, and suptitle in one call.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>xlabel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>ylabel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>**kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Passed to the underlying methods.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure" title="figrecipe._wrappers._figure.RecordingFigure"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecordingFigure</span></code></a></span></p>
-</dd>
-</dl>
-<div class="admonition-examples admonition">
-<p class="admonition-title">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="o">.</span><span class="n">set_supxyt</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">,</span> <span class="s1">&#39;Amplitude&#39;</span><span class="p">,</span> <span class="s1">&#39;All Channels&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.set_supxytc">
-<span class="sig-name descname"><span class="pre">set_supxytc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">caption</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.set_supxytc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.set_supxytc" title="Link to this definition"></a></dt>
-<dd><p>Set supxlabel, supylabel, suptitle, and caption in one call.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>xlabel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>ylabel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>)</p></li>
-<li><p><strong>caption</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Figure caption metadata (stored in recipe, not rendered).</p></li>
-<li><p><strong>**kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Passed to the underlying methods.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#figrecipe._wrappers.RecordingFigure" title="figrecipe._wrappers._figure.RecordingFigure"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecordingFigure</span></code></a></span></p>
-</dd>
-</dl>
-<div class="admonition-examples admonition">
-<p class="admonition-title">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="o">.</span><span class="n">set_supxytc</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="s1">&#39;Voltage&#39;</span><span class="p">,</span> <span class="s1">&#39;Neural Data&#39;</span><span class="p">,</span>
-<span class="gp">... </span>                <span class="s1">&#39;Figure 1. Overview of neural recordings.&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
 </dd></dl>
 
 <dl class="py method">

@@ -16,7 +16,9 @@ from numpy.typing import NDArray
 from .._recorder import FigureRecord
 from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
+from ._crop_aware import _apply_source_style, panel_rel_bbox, replay_panel_suptitle
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
+from ._source_parser import parse_source_spec_with_key as _parse_source_spec_with_key
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
 
 # Default DPI for mm-based composition
@@ -131,13 +133,24 @@ def compose(
     """
     if _is_mm_based_sources(sources):
         return _compose_mm_based(
-            sources, canvas_size_mm, dpi, panel_labels, label_style,
-            caption=caption, panel_captions=panel_captions, **kwargs,
+            sources,
+            canvas_size_mm,
+            dpi,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
         )
     else:
         return _compose_grid_based(
-            sources, layout, panel_labels, label_style,
-            caption=caption, panel_captions=panel_captions, **kwargs,
+            sources,
+            layout,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
         )
 
 
@@ -238,6 +251,7 @@ def _compose_mm_based(
     from .._recorder import Recorder
     from .._wrappers import RecordingAxes as RA
     from .._wrappers import RecordingFigure as RF
+    from ._caption_render import render_compose_captions
 
     if canvas_size_mm is None:
         max_x = 0
@@ -262,35 +276,74 @@ def _compose_mm_based(
     axes_list = []
     source_data_dirs = {}
 
-    for idx, (source_path, spec) in enumerate(sources.items()):
+    sub_idx = 0  # global counter for ax_mm_* keys across all panels + subplots
+    for source_path, spec in sources.items():
         xy_mm = spec["xy_mm"]
         size_mm = spec["size_mm"]
 
-        left = xy_mm[0] / canvas_size_mm[0]
-        bottom = 1.0 - (xy_mm[1] + size_mm[1]) / canvas_size_mm[1]
-        width = size_mm[0] / canvas_size_mm[0]
-        height = size_mm[1] / canvas_size_mm[1]
+        # Panel rectangle in figure-fraction coords.
+        panel_left = xy_mm[0] / canvas_size_mm[0]
+        panel_bottom = 1.0 - (xy_mm[1] + size_mm[1]) / canvas_size_mm[1]
+        panel_width = size_mm[0] / canvas_size_mm[0]
+        panel_height = size_mm[1] / canvas_size_mm[1]
 
-        mpl_ax = mpl_fig.add_axes([left, bottom, width, height])
+        source_record, ax_key, path, explicit_key = _parse_source_spec_with_key(
+            source_path
+        )
 
-        source_record, ax_key, path = _parse_source_spec_with_path(source_path)
-        ax_record = source_record.axes.get(ax_key)
+        # Decide which axes of the source recipe to place into this panel.
+        # An explicit (source, ax_key) tuple selects a single axes; a plain
+        # recipe/path replays ALL of its axes (so multi-subplot panels such as
+        # the stacked raw-iEEG traces keep every subplot, not just the first).
+        if explicit_key:
+            selected = {ax_key: source_record.axes.get(ax_key)}
+            if selected[ax_key] is None:
+                available = list(source_record.axes.keys())
+                raise ValueError(
+                    f"Axes '{ax_key}' not found in source. Available: {available}"
+                )
+        else:
+            selected = dict(source_record.axes)
+            if not selected:
+                raise ValueError(f"Source '{source_path}' has no axes to compose.")
 
-        if ax_record is None:
-            available = list(source_record.axes.keys())
-            raise ValueError(
-                f"Axes '{ax_key}' not found in source. Available: {available}"
+        data_dir = None
+        if path is not None:
+            candidate = path.parent / f"{path.stem}_data"
+            if candidate.exists():
+                data_dir = candidate
+
+        for src_key, ax_record in selected.items():
+            # Place this source-axes inside the panel rectangle relative to the
+            # source's tight content box (crop-aware), so the composed panel
+            # matches the clean cropped standalone render. Falls back to the
+            # legacy cropped-fraction bbox for older recipes.
+            bx0, by0, bw, bh = panel_rel_bbox(source_record, ax_record)
+
+            sub_left = panel_left + bx0 * panel_width
+            sub_bottom = panel_bottom + by0 * panel_height
+            sub_width = bw * panel_width
+            sub_height = bh * panel_height
+
+            mpl_ax = mpl_fig.add_axes([sub_left, sub_bottom, sub_width, sub_height])
+            # Match the panel's publication font/style so replayed text metrics
+            # equal the standalone render (else long tick labels clip).
+            _apply_source_style(mpl_ax, source_record)
+
+            target_ax = RA(mpl_ax, recorder, position=(0, sub_idx))
+            axes_list.append(target_ax)
+
+            _replay_axes_record_mm(
+                mpl_ax, ax_record, recorder.figure_record, sub_idx, spec
             )
 
-        target_ax = RA(mpl_ax, recorder, position=(0, idx))
-        axes_list.append(target_ax)
+            if data_dir is not None:
+                source_data_dirs[f"ax_mm_{sub_idx}"] = data_dir
 
-        _replay_axes_record_mm(mpl_ax, ax_record, recorder.figure_record, idx, spec)
-
-        if path is not None:
-            data_dir = path.parent / f"{path.stem}_data"
-            if data_dir.exists():
-                source_data_dirs[f"ax_mm_{idx}"] = data_dir
+            sub_idx += 1
+        replay_panel_suptitle(
+            mpl_fig, source_record, panel_left, panel_bottom, panel_width, panel_height
+        )
 
     fig = RF(mpl_fig, recorder, axes_list)
 

@@ -9,13 +9,30 @@ import numpy as np
 from ruamel.yaml import YAML
 
 from .._recorder import FigureRecord
+from .._recorder._panel_id import panel_label_for_position
+from .._utils._grid import parse_grid_id
 from .._utils._numpy_io import (
     CsvFormat,
     DataFormat,
     save_array,
     save_arrays_single_csv,
 )
+from ._clew import record_output
 from ._utils import _convert_numpy_types, _sanitize_filename
+
+
+def _panel_prefix(ax_key: str, nrows, ncols) -> str:
+    """Return ``"A_"`` / ``"B_"`` / … for the panel at *ax_key*, or ``""``.
+
+    Empty string for single-panel figures and legacy recipes (missing grid
+    shape), so filenames stay clutter-free in those cases — matches the
+    rendered behaviour where ``fr.subplots(1, 1)`` skips the panel label.
+    """
+    pos = parse_grid_id(ax_key)
+    if pos is None:
+        return ""
+    label = panel_label_for_position(pos[0], pos[1], nrows, ncols)
+    return f"{label}_" if label else ""
 
 
 def save_recipe(
@@ -70,23 +87,62 @@ def save_recipe(
         elif use_symlinks and source_data_dirs:
             # Use symlinks to source data directories
             data = _process_arrays_with_symlinks(
-                data, data_dir, source_data_dirs, record.id, data_format
+                data,
+                data_dir,
+                source_data_dirs,
+                record.id,
+                data_format,
+                nrows=record.nrows,
+                ncols=record.ncols,
             )
         else:
             # Save to separate files (original behavior)
-            data = _process_arrays_for_save(data, data_dir, record.id, data_format)
+            data = _process_arrays_for_save(
+                data,
+                data_dir,
+                record.id,
+                data_format,
+                nrows=record.nrows,
+                ncols=record.ncols,
+            )
 
     # Convert numpy types to native Python types
     data = _convert_numpy_types(data)
 
-    # Save YAML
+    # Save YAML.
+    #
+    # Write atomically via a sibling temp file + os.replace so a dump that
+    # raises mid-serialization (e.g. a non-YAML-able object that slipped
+    # into the record) NEVER leaves a truncated 0-byte recipe on disk that
+    # would silently break downstream compose()/load_recipe(). Either the
+    # full valid recipe lands, or the write fails loud and the previous
+    # file (if any) is untouched.
+    import os
+    import tempfile
+
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.indent(mapping=2, sequence=4, offset=2)
 
-    with open(path, "w") as f:
-        yaml.dump(data, f)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=f".{path.stem}.", suffix=".yaml.tmp"
+    )
+    try:
+        with os.fdopen(fd, "w") as f:
+            yaml.dump(data, f)
+    except Exception:
+        # Fail loud: clean up the partial temp file, do not clobber path.
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+    os.replace(tmp_name, path)
 
+    # Record the recipe as a clew output of the active session (no-op without
+    # clew). This is the handle that connects a composed figure to its source
+    # panels: compose later record_inputs these recipes -> clew links sessions.
+    record_output(path)
     return path
 
 
@@ -95,11 +151,21 @@ def _process_arrays_for_save(
     data_dir: Path,
     fig_id: str,
     data_format: DataFormat = "csv",
+    nrows=None,
+    ncols=None,
 ) -> Dict[str, Any]:
-    """Process arrays in data dict, saving large ones to files."""
+    """Process arrays in data dict, saving large ones to files.
+
+    Data-file naming follows the rendered panel labels: for a 2x3 figure the
+    data from panel A (top-left) lands in ``A_<call_id>_<argname>.csv`` while
+    panel F's data lands in ``F_<call_id>_<argname>.csv``. Single-panel
+    figures and legacy recipes that don't carry the grid shape get no panel
+    prefix (the operator never thinks of them as having "panels").
+    """
     data_dir_created = False
 
     for ax_key, ax_data in data.get("axes", {}).items():
+        panel_prefix = _panel_prefix(ax_key, nrows, ncols)
         for call_list in [ax_data.get("calls", []), ax_data.get("decorations", [])]:
             for call in call_list:
                 call_id = call.get("id", "unknown")
@@ -113,9 +179,12 @@ def _process_arrays_for_save(
                             data_dir_created = True
 
                         arr = arg.pop("_array")
-                        filename = f"{safe_call_id}_{arg.get('name', f'arg{i}')}"
+                        filename = (
+                            f"{panel_prefix}{safe_call_id}_{arg.get('name', f'arg{i}')}"
+                        )
                         file_path = save_array(arr, data_dir / filename, data_format)
                         arg["data"] = str(file_path.relative_to(data_dir.parent))
+                        record_output(file_path)  # clew: data file as session output
 
     return data
 
@@ -126,13 +195,21 @@ def _process_arrays_with_symlinks(
     source_data_dirs: Dict[str, Path],
     fig_id: str,
     data_format: DataFormat = "csv",
+    nrows=None,
+    ncols=None,
 ) -> Dict[str, Any]:
-    """Process arrays using symlinks to source data directories."""
+    """Process arrays using symlinks to source data directories.
+
+    For arrays that aren't symlinked (no ``_source_file`` recorded), the
+    panel-letter prefix is applied to the resulting filename so the
+    composition path uses the same naming convention as the standard save.
+    """
     import os
 
     data_dir_created = False
 
     for ax_key, ax_data in data.get("axes", {}).items():
+        panel_prefix = _panel_prefix(ax_key, nrows, ncols)
         for call_list in [ax_data.get("calls", []), ax_data.get("decorations", [])]:
             for call in call_list:
                 call_id = call.get("id", "unknown")
@@ -151,11 +228,22 @@ def _process_arrays_with_symlinks(
                         source_file = Path(source_file_path)
                         target_path = data_dir / source_file.name
 
-                        if not target_path.exists() and source_file.exists():
-                            rel_source = os.path.relpath(
-                                source_file, target_path.parent
+                        # Fail loud: composition references the REAL source data
+                        # (single source of truth); a missing source must never
+                        # produce a silently-broken recipe symlink.
+                        if not source_file.exists():
+                            raise FileNotFoundError(
+                                f"compose source data file missing: {source_file} "
+                                f"(call {call_id}). Cannot create a valid data "
+                                f"symlink for the composed recipe."
                             )
-                            os.symlink(rel_source, target_path)
+                        # Refresh: drop any stale/broken link left by a prior run
+                        # so the symlink always points at the CURRENT source, never
+                        # a renamed/moved phantom.
+                        if target_path.is_symlink() or target_path.exists():
+                            target_path.unlink()
+                        rel_source = os.path.relpath(source_file, target_path.parent)
+                        os.symlink(rel_source, target_path)
 
                         arg["data"] = str(target_path.relative_to(data_dir.parent))
 
@@ -165,7 +253,7 @@ def _process_arrays_with_symlinks(
                             data_dir_created = True
 
                         var_name = arg.get("name", f"arg{i}")
-                        filename = f"{safe_call_id}_{var_name}"
+                        filename = f"{panel_prefix}{safe_call_id}_{var_name}"
                         file_path = save_array(arr, data_dir / filename, data_format)
                         arg["data"] = str(file_path.relative_to(data_dir.parent))
 

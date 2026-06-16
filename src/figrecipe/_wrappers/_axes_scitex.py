@@ -163,7 +163,15 @@ class SciTexMixin:
         return result
 
     def stx_scatter_hist(self, x, y, *, id=None, track=True, **kwargs):
-        """Scatter plot with marginal histograms."""
+        """Scatter plot with marginal histograms or per-class KDE curves.
+
+        Pass ``kde=True`` for smooth marginal densities, ``groups=<labels>``
+        for one KDE per class, and ``palette={group: color}`` to colour both
+        the per-group KDE curves and the scatter points. ``x`` may be a pandas
+        datetime Series (scatter stays on the datetime axis; the KDE is
+        estimated on the date2num float grid). See the underlying
+        ``stx_scatter_hist`` for the full parameter list.
+        """
         from .._scitex_compat._scientific import stx_scatter_hist
 
         with self._no_record():
@@ -226,6 +234,23 @@ class SciTexMixin:
             result = stx_violin(self._ax, values_list, **kwargs)
         if self._track and track:
             self._record_stx_call("stx_violin", (values_list,), kwargs, id)
+        return result
+
+    def stx_scalebar(self, x_len, y_len, *, id=None, track=True, **kwargs):
+        """Draw an L-shaped scale bar for axis-off trace / EEG panels.
+
+        The horizontal arm encodes time (``x_len``) and the vertical arm
+        encodes amplitude (``y_len``), sharing a corner, with padded labels
+        that do not overlap. Use with ``ax.axis("off")``. See the underlying
+        ``stx_scalebar`` for the full parameter list (``x_label``, ``y_label``,
+        ``loc``, ``color``, ``lw``, ``pad_frac``, ``label_pad_frac``).
+        """
+        from .._scitex_compat._simple import stx_scalebar
+
+        with self._no_record():
+            result = stx_scalebar(self._ax, x_len, y_len, **kwargs)
+        if self._track and track:
+            self._record_stx_call("stx_scalebar", (x_len, y_len), kwargs, id)
         return result
 
 

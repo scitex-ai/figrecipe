@@ -25,6 +25,46 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+
+def _ser_color(color: Any) -> Any:
+    """Color -> YAML-serializable form (keep strings; tuples/arrays -> list)."""
+    if color is None or isinstance(color, str):
+        return color
+    try:
+        return [float(c) for c in color]
+    except TypeError:
+        return str(color)
+
+
+def _handle_spec(handle: Any) -> dict:
+    """Capture a legend handle's visual spec for faithful replay.
+
+    Records the artist KIND (line/marker vs patch) plus its colour and marker
+    so the composed legend reproduces the original swatch -- colour AND shape --
+    instead of a grey rectangle. Live artist handles are not YAML-serializable,
+    so only this semantic spec is stored.
+    """
+    from matplotlib.lines import Line2D
+
+    spec: dict[str, Any] = {"label": handle.get_label()}
+    if isinstance(handle, Line2D):
+        spec["kind"] = "line"
+        spec["color"] = _ser_color(handle.get_color())
+        spec["marker"] = str(handle.get_marker())
+        spec["markersize"] = float(handle.get_markersize())
+        spec["markerfacecolor"] = _ser_color(handle.get_markerfacecolor())
+        spec["markeredgecolor"] = _ser_color(handle.get_markeredgecolor())
+        spec["linestyle"] = str(handle.get_linestyle())
+        spec["linewidth"] = float(handle.get_linewidth())
+    else:
+        spec["kind"] = "patch"
+        if hasattr(handle, "get_facecolor"):
+            spec["facecolor"] = _ser_color(handle.get_facecolor())
+        if hasattr(handle, "get_edgecolor"):
+            spec["edgecolor"] = _ser_color(handle.get_edgecolor())
+    return spec
+
+
 # ---------------------------------------------------------------------------
 # Lookup tables — exposed at module scope so they're cheap to construct
 # (don't rebuild on every legend call) and easy to test.
@@ -95,13 +135,39 @@ def _route_positional_loc(args: tuple, kwargs: dict) -> tuple:
     return args
 
 
-def _record_separate_legend(ax, kwargs: dict) -> None:
+def _stable_axis_id(ax, axis_id=None) -> str:
+    """Deterministic id for the separate-legend filename.
+
+    The downstream saver (scitex.io) builds the legend filename as
+    ``<figstem>_<axis_id>_legend.png``. Previously ``axis_id`` fell back
+    to ``hash(ax)``, which is non-deterministic across processes/renders,
+    so every render emitted a NEW file with a different id. We instead
+    derive a STABLE id from the axes' grid position (row, col), so the
+    same panel always writes the same ``_legend.png`` and overwrites in
+    place. Multiple distinct axes still get distinct (stable) ids.
+    """
+    if axis_id is not None:
+        return str(axis_id)
+    pos = getattr(ax, "_id", None)
+    if pos is not None:
+        return str(pos)
+    # Fallback: position within the figure's axes list (stable per figure).
+    try:
+        fig = ax.get_figure()
+        return f"ax{fig.axes.index(ax)}"
+    except (ValueError, AttributeError):
+        return "ax0"
+
+
+def _record_separate_legend(ax, kwargs: dict, axis_id=None) -> None:
     """Capture handles + labels onto fig._separate_legend_params.
 
     Implements the protocol that
     :func:`scitex.io._save_modules._legends.save_separate_legends`
     consumes — at save time, that function writes the legend to a
-    standalone file alongside the main figure.
+    standalone file alongside the main figure. ``axis_id`` is a STABLE
+    identifier (derived from the panel's grid position) so the legend
+    filename is deterministic and overwrites in place across renders.
     """
     h_kw = kwargs.pop("handles", None)
     l_kw = kwargs.pop("labels", None)
@@ -121,7 +187,7 @@ def _record_separate_legend(ax, kwargs: dict) -> None:
         {
             "handles": list(h_kw),
             "labels": list(l_kw),
-            "axis_id": getattr(ax, "_id", None) or hash(ax),
+            "axis_id": _stable_axis_id(ax, axis_id),
             "figsize": sep_kw.pop("figsize", (4, 2)),
             "frameon": sep_kw.pop("frameon", True),
             "fancybox": sep_kw.pop("fancybox", False),
@@ -131,7 +197,7 @@ def _record_separate_legend(ax, kwargs: dict) -> None:
     )
 
 
-def _resolve_loc_kwargs(ax, kwargs: dict) -> None:
+def _resolve_loc_kwargs(ax, kwargs: dict, axis_id=None) -> None:
     """Translate figrecipe-extended loc strings to matplotlib kwargs.
 
     Mutates *kwargs* in place. Falls back to ``loc='best'`` when the
@@ -146,7 +212,7 @@ def _resolve_loc_kwargs(ax, kwargs: dict) -> None:
             kwargs["loc"] = OUTER_VARIANTS[norm]["loc"]
             kwargs.setdefault("borderaxespad", 0.0)
         elif norm == "separate":
-            _record_separate_legend(ax, kwargs)
+            _record_separate_legend(ax, kwargs, axis_id=axis_id)
             outer = OUTER_VARIANTS["outer right"]
             kwargs["loc"] = outer["loc"]
             kwargs["bbox_to_anchor"] = outer["bbox_to_anchor"]
@@ -176,20 +242,55 @@ def _apply_frame_styling(legend) -> None:
             frame.set_edgecolor(edgecolor)
 
 
+# Legend kwargs whose values are render-time matplotlib objects
+# (artists, custom HandlerBase instances, ...) that are NOT YAML- or
+# pickle-serializable. Capturing them verbatim makes the recipe dump
+# raise, which previously left a 0-byte recipe on disk. We drop them
+# from the recorded recipe: they affect only how the legend is drawn,
+# not its semantic content (labels/handles metadata are captured
+# separately via ``_handle_specs``).
+_NON_SERIALIZABLE_LEGEND_KWARGS = frozenset(
+    {
+        "handler_map",  # {handle: HandlerBase} -> live artists + handlers
+        "handles",  # handled below via _handle_specs
+    }
+)
+
+
 def _record_legend_call(recorder, position, args, kwargs, call_id) -> None:
-    """Record the legend call into the recorder for later reproduction."""
+    """Record the legend call into the recorder for later reproduction.
+
+    Render-time matplotlib objects (a custom ``handler_map`` of
+    :class:`~matplotlib.legend_handler.HandlerBase` instances, live
+    artist handles, ...) are *not* recorded verbatim: they are not
+    YAML-serializable and would otherwise make the recipe dump raise.
+    The legend's semantic content (handle labels + colors) is captured
+    via ``_handle_specs`` instead, and a safe summary of any dropped
+    ``handler_map`` is kept for debugging.
+    """
     record_kwargs = dict(kwargs)
+
+    # Capture handle metadata before dropping the live artists.
     if "handles" in record_kwargs:
-        handles = record_kwargs.pop("handles")
-        handle_specs = []
-        for h in handles:
-            spec: dict[str, Any] = {"label": h.get_label()}
-            if hasattr(h, "get_facecolor"):
-                spec["facecolor"] = list(h.get_facecolor())
-            if hasattr(h, "get_edgecolor"):
-                spec["edgecolor"] = list(h.get_edgecolor())
-            handle_specs.append(spec)
+        handles = record_kwargs.get("handles")
+        handle_specs = [_handle_spec(h) for h in handles]
         record_kwargs["_handle_specs"] = handle_specs
+
+    # Record that a custom handler_map was used (safe repr) but drop the
+    # live, non-serializable objects so the recipe dump never breaks.
+    handler_map = record_kwargs.get("handler_map")
+    if handler_map:
+        try:
+            record_kwargs["_handler_map_summary"] = [
+                type(handler).__name__ for handler in handler_map.values()
+            ]
+        except Exception:
+            record_kwargs["_handler_map_summary"] = "custom"
+
+    # Drop all render-time-only legend objects from the recorded recipe.
+    for key in _NON_SERIALIZABLE_LEGEND_KWARGS:
+        record_kwargs.pop(key, None)
+
     recorder.record_call(
         ax_position=position,
         method_name="legend",
@@ -216,8 +317,14 @@ def build_legend_wrapper(recording_ax) -> Any:
         # Step 1: catch the `ax.legend('upper right')` anti-pattern.
         args = _route_positional_loc(args, kwargs)
 
-        # Step 2: resolve figrecipe-extended `loc=` strings.
-        _resolve_loc_kwargs(recording_ax._ax, kwargs)
+        # Step 2: resolve figrecipe-extended `loc=` strings. Pass the
+        # RecordingAxes' stable grid position so a 'separate' legend gets a
+        # deterministic filename (no random per-render id).
+        _pos = getattr(recording_ax, "_position", None)
+        _axis_id = (
+            "_".join(str(p) for p in _pos) if isinstance(_pos, (tuple, list)) else _pos
+        )
+        _resolve_loc_kwargs(recording_ax._ax, kwargs, axis_id=_axis_id)
 
         # Step 3: call matplotlib.
         legend = original_legend(*args, **kwargs)

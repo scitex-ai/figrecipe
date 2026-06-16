@@ -320,10 +320,6 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.record"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.record</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontsize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontsize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_theme_text_color()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.suptitle"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.suptitle()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.supxlabel"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.supxlabel()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.supylabel"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.supylabel()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.text"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.text()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.colorbar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.add_panel_labels"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.add_panel_labels()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_title_metadata"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_title_metadata()</span></code></a></li>
@@ -335,8 +331,6 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.generate_caption"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.generate_caption()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__getattr__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.savefig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.savefig()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_supxyt"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_supxyt()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_supxytc"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_supxytc()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.save_recipe"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.save_recipe()</span></code></a></li>
 </ul>
 </li>
@@ -411,6 +405,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">grid_id</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._figure_text</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureTextMixin</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">.._recorder</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureRecord</span><span class="p">,</span> <span class="n">Recorder</span>
@@ -418,7 +413,7 @@
 
 <div class="viewcode-block" id="RecordingFigure">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">RecordingFigure</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecordingFigure</span><span class="p">(</span><span class="n">FigureTextMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around matplotlib Figure that manages recording.</span>
 
 <span class="sd">    Parameters</span>
@@ -592,119 +587,9 @@
         <span class="k">return</span> <span class="n">default</span></div>
 
 
-<div class="viewcode-block" id="RecordingFigure.suptitle">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.suptitle">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">suptitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set super title for the figure and record it.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        t : str</span>
-<span class="sd">            The super title text.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Additional arguments passed to matplotlib&#39;s suptitle().</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Text</span>
-<span class="sd">            The matplotlib Text object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Auto-apply fontsize from style if not specified</span>
-        <span class="k">if</span> <span class="s2">&quot;fontsize&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fontsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_style_fontsize</span><span class="p">(</span><span class="s2">&quot;suptitle_pt&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-        <span class="c1"># Record the suptitle call</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">suptitle</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">}</span>
-        <span class="c1"># Call the underlying figure&#39;s suptitle</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="RecordingFigure.supxlabel">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.supxlabel">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">supxlabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set super x-label for the figure and record it.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        t : str</span>
-<span class="sd">            The super x-label text.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Additional arguments passed to matplotlib&#39;s supxlabel().</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Text</span>
-<span class="sd">            The matplotlib Text object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Auto-apply fontsize from style if not specified</span>
-        <span class="k">if</span> <span class="s2">&quot;fontsize&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fontsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_style_fontsize</span><span class="p">(</span><span class="s2">&quot;supxlabel_pt&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-        <span class="c1"># Record the supxlabel call</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">supxlabel</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">}</span>
-        <span class="c1"># Call the underlying figure&#39;s supxlabel</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">supxlabel</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="RecordingFigure.supylabel">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.supylabel">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">supylabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set super y-label for the figure and record it.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        t : str</span>
-<span class="sd">            The super y-label text.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Additional arguments passed to matplotlib&#39;s supylabel().</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Text</span>
-<span class="sd">            The matplotlib Text object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Auto-apply fontsize from style if not specified</span>
-        <span class="k">if</span> <span class="s2">&quot;fontsize&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fontsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_style_fontsize</span><span class="p">(</span><span class="s2">&quot;supylabel_pt&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-        <span class="c1"># Record the supylabel call</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">supylabel</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">}</span>
-        <span class="c1"># Call the underlying figure&#39;s supylabel</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">supylabel</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="RecordingFigure.text">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.text">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Place text on the figure and record it.</span>
-
-<span class="sd">        Proxy for ``matplotlib.figure.Figure.text`` that also captures the</span>
-<span class="sd">        call in the recipe so ``reproduce()`` can replay it. Without this,</span>
-<span class="sd">        ``fig.text`` annotations would be rendered in the original figure</span>
-<span class="sd">        but missing from the reproduction, leading to dimension mismatches</span>
-<span class="sd">        during reproducibility validation.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x, y : float</span>
-<span class="sd">            Position in figure coordinates.</span>
-<span class="sd">        s : str</span>
-<span class="sd">            The text string.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Additional arguments passed to matplotlib&#39;s fig.text().</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Text</span>
-<span class="sd">            The matplotlib Text object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">serializable_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
-        <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">figure_texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">serializable_kwargs</span><span class="p">}</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
+    <span class="c1"># suptitle / supxlabel / supylabel / text live in FigureTextMixin</span>
+    <span class="c1"># (._figure_text); the suptitle there inherits SCITEX_STYLE (size +</span>
+    <span class="c1"># non-bold weight).</span>
 
 <div class="viewcode-block" id="RecordingFigure.colorbar">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar">[docs]</a>
@@ -954,70 +839,7 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RecordingFigure.set_supxyt">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_supxyt">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_supxyt</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">xlabel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">ylabel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RecordingFigure&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set supxlabel, supylabel, and suptitle in one call.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        xlabel : str, optional</span>
-<span class="sd">        ylabel : str, optional</span>
-<span class="sd">        title : str, optional</span>
-<span class="sd">        **kwargs : dict</span>
-<span class="sd">            Passed to the underlying methods.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; fig.set_supxyt(&#39;Time (s)&#39;, &#39;Amplitude&#39;, &#39;All Channels&#39;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">xlabel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">supxlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">ylabel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">supylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
-
-<div class="viewcode-block" id="RecordingFigure.set_supxytc">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_supxytc">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_supxytc</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">xlabel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">ylabel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">caption</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RecordingFigure&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set supxlabel, supylabel, suptitle, and caption in one call.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        xlabel : str, optional</span>
-<span class="sd">        ylabel : str, optional</span>
-<span class="sd">        title : str, optional</span>
-<span class="sd">        caption : str, optional</span>
-<span class="sd">            Figure caption metadata (stored in recipe, not rendered).</span>
-<span class="sd">        **kwargs : dict</span>
-<span class="sd">            Passed to the underlying methods.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; fig.set_supxytc(&#39;Time&#39;, &#39;Voltage&#39;, &#39;Neural Data&#39;,</span>
-<span class="sd">        ...                 &#39;Figure 1. Overview of neural recordings.&#39;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">set_supxyt</span><span class="p">(</span><span class="n">xlabel</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">caption</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="n">caption</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
+    <span class="c1"># set_supxyt / set_supxytc live in FigureTextMixin (._figure_text).</span>
 
 <div class="viewcode-block" id="RecordingFigure.save_recipe">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.save_recipe">[docs]</a>

@@ -16,7 +16,13 @@ from ._shaded_lines import (
     stx_median_iqr,
     stx_shaded_line,
 )
-from ._simple import stx_fillv, stx_image, stx_rectangle, stx_violin
+from ._simple import (
+    stx_fillv,
+    stx_image,
+    stx_rectangle,
+    stx_scalebar,
+    stx_violin,
+)
 
 __all__ = [
     "stx_conf_mat",
@@ -30,6 +36,7 @@ __all__ = [
     "stx_median_iqr",
     "stx_raster",
     "stx_rectangle",
+    "stx_scalebar",
     "stx_scatter_hist",
     "stx_shaded_line",
     "stx_violin",

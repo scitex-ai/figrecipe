@@ -16,6 +16,23 @@ from .._utils._grid import parse_grid_id
 from ._colorbars import _replay_colorbars
 
 
+def _maybe_parse_datetime(value: Any) -> Any:
+    """Parse an ISO datetime string to a datetime (for datetime-axis limits).
+
+    Recipes record datetime axis limits as ISO strings; matplotlib cannot
+    convert a raw string to axis units on replay. Returns a ``datetime`` when
+    ``value`` parses as one, otherwise returns ``value`` unchanged.
+    """
+    if not isinstance(value, str):
+        return value
+    try:
+        from datetime import datetime
+
+        return datetime.fromisoformat(value)
+    except (ValueError, TypeError):
+        return value
+
+
 def reproduce(
     path: Union[str, Path],
     calls: Optional[List[str]] = None,
@@ -355,6 +372,14 @@ def _replay_call(
         from ._stem import replay_stem_call
 
         return replay_stem_call(ax, call)
+    if method_name.startswith("stx_"):
+        # figrecipe scitex-compat plot methods are functions taking a raw mpl
+        # axes; a plain getattr(ax, name) fails on raw axes (e.g. mm-compose
+        # add_axes panels), silently dropping the plot + its make_axes_locatable
+        # marginals. Dispatch to the compat function so it reconstructs fully.
+        from ._scitex import replay_stx_call
+
+        return replay_stx_call(ax, call, result_cache)
 
     method = getattr(ax, method_name, None)
 
@@ -373,6 +398,14 @@ def _replay_call(
     # Get kwargs and reconstruct arrays
     kwargs = reconstruct_kwargs(call.kwargs)
 
+    # Axis-limit methods on a datetime axis recorded their bounds as ISO
+    # datetime strings; matplotlib can't convert a raw string to axis units on
+    # replay (raises "Failed to convert value(s) to axis units"). Parse such
+    # strings back to datetime so the recorded limits are reapplied.
+    if method_name in ("set_xlim", "set_ylim", "axvline", "axhline"):
+        args = [_maybe_parse_datetime(a) for a in args]
+        kwargs = {k: _maybe_parse_datetime(v) for k, v in kwargs.items()}
+
     # Handle special transform markers
     if "transform" in kwargs:
         transform_val = kwargs["transform"]
@@ -382,6 +415,21 @@ def _replay_call(
             kwargs["transform"] = ax.transData
         elif transform_val == "figure":
             kwargs["transform"] = ax.figure.transFigure
+        elif isinstance(transform_val, str):
+            # A non-marker stringified transform (e.g. a Bbox/blended transform
+            # that the recorder could not serialize as a clean marker). Passing
+            # the raw string to matplotlib raises
+            # "'str' object has no attribute 'contains_branch_seperately'".
+            # Map an axes-bbox transform back to ax.transAxes (the common case,
+            # e.g. scalebars drawn in axes fraction); otherwise drop it so the
+            # element still draws in the default (data) transform.
+            low = transform_val.replace("\n", " ").replace(" ", "")
+            if "BboxTransformTo" in transform_val and (
+                "x1=1.0" in low or "Affine2D().scale" in transform_val
+            ):
+                kwargs["transform"] = ax.transAxes
+            else:
+                kwargs.pop("transform")
 
     # Fix fill_between: 'color' overrides 'edgecolor', use 'facecolor' instead
     if method_name in ("fill_between", "fill_betweenx"):

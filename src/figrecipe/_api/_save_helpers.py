@@ -5,7 +5,13 @@
 from pathlib import Path
 from typing import Optional
 
-from .._utils._grid import parse_grid_id
+from .._utils._grid import grid_id
+
+# stx_* plotters that build their own make_axes_locatable marginals at draw
+# time and re-build them on replay. Their recorded axes is the POST-divide
+# (shrunken) main axes, so for crop-aware compose we record its PRE-divide
+# extent (union with the marginals) -- see _capture_content_layout.
+_DIVIDER_PLOTTERS = {"stx_scatter_hist"}
 
 
 def _crop_to_axes_size(
@@ -127,53 +133,146 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
         Contains: left, upper, right, lower, original_width, original_height,
         new_width, new_height (all in pixels).
     """
-    for ax in fig.fig.get_axes():
-        # Get axes position in figure coordinates (0-1 range)
-        bbox = ax.get_position()
+
+    def _to_cropped(bbox) -> list:
+        """Convert an mpl axes position to (cropped) figure-fraction bbox."""
         bbox_list = [bbox.x0, bbox.y0, bbox.width, bbox.height]
+        if crop_offset is None:
+            return bbox_list
+        # Convert from figure coords to pixel coords, then to cropped coords
+        orig_w = crop_offset["original_width"]
+        orig_h = crop_offset["original_height"]
+        new_w = crop_offset["new_width"]
+        new_h = crop_offset["new_height"]
+        crop_left = crop_offset["left"]
+        crop_upper = crop_offset["upper"]
 
-        # Adjust for crop offset if provided
-        if crop_offset is not None:
-            # Convert from figure coords to pixel coords, then to cropped coords
-            orig_w = crop_offset["original_width"]
-            orig_h = crop_offset["original_height"]
-            new_w = crop_offset["new_width"]
-            new_h = crop_offset["new_height"]
-            crop_left = crop_offset["left"]
-            crop_upper = crop_offset["upper"]
+        # Original pixel positions (matplotlib y=0 is bottom, image y=0 is top)
+        x0_px = bbox.x0 * orig_w
+        y0_px = (1 - bbox.y0 - bbox.height) * orig_h  # Convert to image coords
+        w_px = bbox.width * orig_w
+        h_px = bbox.height * orig_h
 
-            # Original pixel positions (matplotlib y=0 is bottom, image y=0 is top)
-            x0_px = bbox.x0 * orig_w
-            y0_px = (1 - bbox.y0 - bbox.height) * orig_h  # Convert to image coords
-            w_px = bbox.width * orig_w
-            h_px = bbox.height * orig_h
+        # Adjust for crop (translate origin)
+        x0_cropped = x0_px - crop_left
+        y0_cropped = y0_px - crop_upper
 
-            # Adjust for crop (translate origin)
-            x0_cropped = x0_px - crop_left
-            y0_cropped = y0_px - crop_upper
+        # Convert back to figure coordinates (0-1 range in cropped image)
+        new_x0 = x0_cropped / new_w
+        new_y0 = 1 - (y0_cropped + h_px) / new_h  # Back to matplotlib coords
+        new_w_frac = w_px / new_w
+        new_h_frac = h_px / new_h
+        return [new_x0, new_y0, new_w_frac, new_h_frac]
 
-            # Convert back to figure coordinates (0-1 range in cropped image)
-            new_x0 = x0_cropped / new_w
-            new_y0 = 1 - (y0_cropped + h_px) / new_h  # Back to matplotlib coords
-            new_w_frac = w_px / new_w
-            new_h_frac = h_px / new_h
+    # Map each AxesRecord to ITS OWN mpl axes via the wrapped RecordingAxes
+    # (which carry both ``_position`` and the underlying ``_ax``). The previous
+    # implementation looped over fig.get_axes() and matched by position, but
+    # every mpl axes matched the first record whose key-derived position equalled
+    # its own — so for a multi-subplot figure all subplots overwrote r0c0's bbox,
+    # and r1c0/r2c0 ended up with no bbox at all. Marginal axes created via
+    # make_axes_locatable are not wrapped, so they are correctly skipped here.
+    matched_records = set()
+    for row in fig.axes:
+        for rec_ax in row:
+            mpl_ax = getattr(rec_ax, "_ax", rec_ax)
+            position = getattr(rec_ax, "_position", None)
+            if position is None:
+                continue
+            key = grid_id(position[0], position[1])
+            ax_record = fig.record.axes.get(key)
+            if ax_record is None:
+                continue
+            ax_record.bbox = _to_cropped(mpl_ax.get_position())
+            matched_records.add(key)
 
-            bbox_list = [new_x0, new_y0, new_w_frac, new_h_frac]
+    # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
+    # not represented in fig.axes positions. Match in order against any
+    # remaining mpl axes.
+    remaining = [k for k in fig.record.axes if k not in matched_records]
+    if remaining:
+        mpl_axes = list(fig.fig.get_axes())
+        for key, mpl_ax in zip(remaining, mpl_axes):
+            if key.startswith("ax_mm_"):
+                fig.record.axes[key].bbox = _to_cropped(mpl_ax.get_position())
 
-        # Find corresponding AxesRecord
-        # Try to match by checking if this ax corresponds to a known position
-        for key, ax_record in fig.record.axes.items():
-            # Parse key (accepts "r0c0" or legacy "ax_0_0"); "ax_mm_idx" -> None
-            parsed = parse_grid_id(key)
-            if parsed is not None:
-                # Standard grid format
-                if ax_record.position == parsed:
-                    ax_record.bbox = bbox_list
-                    break
-            elif key.startswith("ax_mm_"):
-                # Mm-based format: ax_mm_idx
-                ax_record.bbox = bbox_list
-                break
+
+def _capture_content_layout(fig) -> None:
+    """Record the tight content layout for crop-aware composition.
+
+    Captures, into ``fig.record``:
+      * ``content_bbox``  -- the figure's tight ink bbox [l, b, w, h] in the
+        *uncropped* figure fraction (from ``get_tightbbox``); includes axis
+        labels, ticks, titles, legends and make_axes_locatable marginals, and
+        may exceed [0, 1] when content overflows the canvas.
+      * ``content_size_mm`` -- that bbox's [w, h] in millimetres.
+      * per-axes ``bbox_uncropped`` -- each axes' ``get_position()`` in the
+        uncropped fraction.
+
+    All values are dpi-independent fractions/mm, so a composer can size and
+    place each panel by its true (cropped) extent and reproduce the clean
+    standalone render pixel-for-pixel. Best-effort: failures leave the fields
+    unset and the composer falls back to the legacy ``bbox`` path.
+    """
+    mpl_fig = fig.fig
+    try:
+        mpl_fig.canvas.draw()
+        renderer = mpl_fig.canvas.get_renderer()
+        tight = mpl_fig.get_tightbbox(renderer)
+    except Exception:
+        tight = None
+
+    # Everything below is best-effort: any failure leaves the fields unset and
+    # the composer falls back to the legacy bbox path -- never crash a save.
+    try:
+        fw_in, fh_in = (float(v) for v in mpl_fig.get_size_inches())
+        if tight is not None and fw_in > 0 and fh_in > 0:
+            cb = [
+                tight.x0 / fw_in,
+                tight.y0 / fh_in,
+                tight.width / fw_in,
+                tight.height / fh_in,
+            ]
+            fig.record.content_bbox = cb
+            fig.record.content_size_mm = [cb[2] * fw_in * 25.4, cb[3] * fh_in * 25.4]
+
+        recorded_ids = set()
+        divider_axes = []  # (ax_record, center_x, center_y) for re-splitting plots
+        for row in fig.axes:
+            for rec_ax in row:
+                mpl_ax = getattr(rec_ax, "_ax", rec_ax)
+                position = getattr(rec_ax, "_position", None)
+                if position is None:
+                    continue
+                ax_record = fig.record.axes.get(grid_id(position[0], position[1]))
+                if ax_record is None:
+                    continue
+                pos = mpl_ax.get_position()
+                ax_record.bbox_uncropped = [pos.x0, pos.y0, pos.width, pos.height]
+                recorded_ids.add(id(mpl_ax))
+                if any(c.function in _DIVIDER_PLOTTERS for c in ax_record.calls):
+                    divider_axes.append(
+                        (ax_record, pos.x0 + pos.width / 2, pos.y0 + pos.height / 2)
+                    )
+
+        # make_axes_locatable marginals are NOT recorded as RecordingAxes, so a
+        # divider plotter's axes is captured at its POST-divide (shrunken) size.
+        # The plotter re-splits on replay, so place it at the PRE-divide extent:
+        # union each divider axes with its nearest un-recorded marginal axes.
+        for m in mpl_fig.get_axes() if divider_axes else []:
+            if id(m) in recorded_ids:
+                continue
+            mp = m.get_position()
+            mcx, mcy = mp.x0 + mp.width / 2, mp.y0 + mp.height / 2
+            rec = min(
+                divider_axes, key=lambda d: (d[1] - mcx) ** 2 + (d[2] - mcy) ** 2
+            )[0]
+            bx0, by0, bw, bh = rec.bbox_uncropped
+            nx0, ny0 = min(bx0, mp.x0), min(by0, mp.y0)
+            nx1 = max(bx0 + bw, mp.x0 + mp.width)
+            ny1 = max(by0 + bh, mp.y0 + mp.height)
+            rec.bbox_uncropped = [nx0, ny0, nx1 - nx0, ny1 - ny0]
+    except Exception:
+        pass
 
 
 def save_hitmap(
