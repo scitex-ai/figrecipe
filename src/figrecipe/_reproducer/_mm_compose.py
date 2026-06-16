@@ -33,7 +33,6 @@ def reproduce_mm_composed(record):
 
     from .._recorder import Recorder
     from .._wrappers import RecordingAxes, RecordingFigure
-    from ..styles._style_applier import finalize_special_plots, finalize_ticks
     from ._core import _replay_call
 
     fig = plt.figure(figsize=record.figsize, dpi=record.dpi)
@@ -50,7 +49,17 @@ def reproduce_mm_composed(record):
 
     for ax_key in sorted(record.axes.keys(), key=_idx):
         ax_record = record.axes[ax_key]
-        bbox = getattr(ax_record, "bbox", None)
+        # Prefer ``compose_bbox``: the EXACT add_axes input plt.compose used to
+        # place this panel (uncropped fraction, PRE-replay). Rebuilding with
+        # add_axes(compose_bbox)+replay is the SAME construction compose ran, so
+        # divider plotters (stx_scatter_hist) re-split identically and every
+        # panel lands pixel-for-pixel. ``bbox`` is the POST-replay, cropped
+        # position -- for a divider panel it is the shrunken main axes, so it
+        # would shrink twice and shift inward. Fall back to ``bbox`` for recipes
+        # written before compose_bbox existed.
+        bbox = getattr(ax_record, "compose_bbox", None) or getattr(
+            ax_record, "bbox", None
+        )
         if not bbox or len(bbox) != 4:
             # Without a position we cannot place the panel; skip rather than
             # stack it at the default location and silently corrupt the layout.
@@ -63,6 +72,12 @@ def reproduce_mm_composed(record):
 
             apply_style_mm(ax, record.style)
 
+        # Replay exactly as live compose does (_replay_axes_record_mm): calls
+        # then decorations, NO extra tick/special finalization. Live compose does
+        # not finalize per-panel, so finalizing here shifted date-axis ticks and
+        # marginals in composed panels away from the live render -- the residual
+        # live-vs-reproduce divergence. Matching the live replay path converges
+        # them (panels round-trip pixel-for-pixel).
         for call in ax_record.calls:
             result = _replay_call(ax, call, result_cache)
             if result is not None:
@@ -74,9 +89,6 @@ def reproduce_mm_composed(record):
 
         if not getattr(ax_record, "visible", True):
             ax.set_visible(False)
-
-        finalize_ticks(ax)
-        finalize_special_plots(ax, record.style or {})
 
     # Figure-level annotations (suptitle / fig.text panel labels etc.)
     if record.suptitle is not None:

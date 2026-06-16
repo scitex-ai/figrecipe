@@ -78,6 +78,13 @@ class AxesRecord:
     # Same, but in the *uncropped* figure fraction (mpl ax.get_position()).
     # Paired with FigureRecord.content_bbox it lets compose tile crop-aware.
     bbox_uncropped: Optional[List[float]] = None
+    # The exact ``add_axes([l, b, w, h])`` input ``plt.compose`` used to place
+    # this panel (uncropped figure fraction, PRE-replay). Unlike ``bbox`` (the
+    # POST-replay, cropped position) this lets the reproducer rebuild the panel
+    # by the SAME construction compose used -- ``add_axes(compose_bbox)`` then
+    # replay -- so divider plotters (stx_scatter_hist) re-split identically and
+    # every panel lands pixel-for-pixel where the live compose put it.
+    compose_bbox: Optional[List[float]] = None
 
     def add_call(self, record: CallRecord) -> None:
         """Add a plotting call record."""
@@ -97,6 +104,8 @@ class AxesRecord:
             result["bbox"] = self.bbox
         if self.bbox_uncropped is not None:
             result["bbox_uncropped"] = self.bbox_uncropped
+        if self.compose_bbox is not None:
+            result["compose_bbox"] = self.compose_bbox
         if self.caption is not None:
             result["caption"] = self.caption
         if self.stats is not None:
@@ -287,6 +296,7 @@ class FigureRecord:
                 visible=ax_data.get("visible", True),
                 bbox=ax_data.get("bbox"),
                 bbox_uncropped=ax_data.get("bbox_uncropped"),
+                compose_bbox=ax_data.get("compose_bbox"),
             )
             for call_data in ax_data.get("calls", []):
                 ax_record.calls.append(CallRecord.from_dict(call_data, (row, col)))

@@ -17,6 +17,11 @@ from .._recorder import FigureRecord
 from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
 from ._crop_aware import _apply_source_style, panel_rel_bbox, replay_panel_suptitle
+from ._panel_labels import (
+    _add_panel_labels_grid,
+    _add_panel_labels_mm,
+    _get_axes_at,
+)
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
 from ._source_parser import parse_source_spec_with_key as _parse_source_spec_with_key
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
@@ -291,6 +296,17 @@ def _compose_mm_based(
             source_path
         )
 
+        # Carry the panels' publication style onto the composed record so
+        # reproduce() applies the SAME fonts/spines that live compose applies
+        # per-panel via _apply_source_style. Without it the composed recipe has
+        # no figure.style, so reproduce renders tick/axis-label text in
+        # matplotlib's default font -- shifting text metrics and ghosting every
+        # label against the live render. Panels share one style; first wins.
+        if recorder.figure_record.style is None:
+            _src_style = getattr(source_record, "style", None)
+            if _src_style:
+                recorder.figure_record.style = _src_style
+
         # Decide which axes of the source recipe to place into this panel.
         # An explicit (source, ax_key) tuple selects a single axes; a plain
         # recipe/path replays ALL of its axes (so multi-subplot panels such as
@@ -326,6 +342,12 @@ def _compose_mm_based(
             sub_height = bh * panel_height
 
             mpl_ax = mpl_fig.add_axes([sub_left, sub_bottom, sub_width, sub_height])
+            # Record the EXACT add_axes input so the reproducer rebuilds this
+            # panel by the same construction (add_axes(compose_bbox) then replay).
+            # ``bbox``/``bbox_uncropped`` are POST-replay (a divider plotter's
+            # main axes is already shrunken there), so only this PRE-replay input
+            # reproduces divider panels -- and every panel -- pixel-for-pixel.
+            ax_record.compose_bbox = [sub_left, sub_bottom, sub_width, sub_height]
             # Match the panel's publication font/style so replayed text metrics
             # equal the standalone render (else long tick labels clip).
             _apply_source_style(mpl_ax, source_record)
@@ -393,95 +415,6 @@ def _replay_axes_record_mm(
     ax_record_copy = ax_record
     ax_record_copy.mm_position = spec
     fig_record.axes[ax_key] = ax_record_copy
-
-
-def _panel_label_fontsize() -> float:
-    """Resolve the panel-label font size from the active SCITEX_STYLE.
-
-    Default: 10pt bold (Nature-style panel labels).  Reads ``fonts.panel_label_pt``
-    from SCITEX_STYLE if set; otherwise falls back to 10pt.  ``title_pt`` is
-    *not* used as a fallback because panel labels (A, B, C, ...) follow a
-    different convention than axis titles.
-    """
-    try:
-        from ..presets._scitex_style import SCITEX_STYLE
-
-        if isinstance(SCITEX_STYLE, dict):
-            fonts = SCITEX_STYLE.get("fonts") or {}
-            if "panel_label_pt" in fonts:
-                return float(fonts["panel_label_pt"])
-    except Exception:
-        pass
-    return 10.0
-
-
-def _add_panel_labels_grid(axes, nrows: int, ncols: int, style: str) -> None:
-    """Add panel labels to grid-based composition."""
-    labels = _get_panel_labels(nrows * ncols, style)
-    fs = _panel_label_fontsize()
-    idx = 0
-    for row in range(nrows):
-        for col in range(ncols):
-            ax = _get_axes_at(axes, row, col, nrows, ncols)
-            mpl_ax = ax._ax if hasattr(ax, "_ax") else ax
-            mpl_ax.text(
-                -0.1,
-                1.1,
-                labels[idx],
-                transform=mpl_ax.transAxes,
-                fontsize=fs,
-                fontweight="bold",
-                va="top",
-                ha="right",
-            )
-            idx += 1
-
-
-def _add_panel_labels_mm(fig, sources: Dict, canvas_size_mm: Tuple, style: str) -> None:
-    """Add panel labels to mm-based composition."""
-    labels = _get_panel_labels(len(sources), style)
-    fs = _panel_label_fontsize()
-    for idx, (_, spec) in enumerate(sources.items()):
-        xy_mm = spec["xy_mm"]
-        x_frac = xy_mm[0] / canvas_size_mm[0]
-        y_frac = 1.0 - xy_mm[1] / canvas_size_mm[1]
-        fig.text(
-            x_frac - 0.02,
-            y_frac + 0.02,
-            labels[idx],
-            fontsize=fs,
-            fontweight="bold",
-            va="bottom",
-            ha="right",
-        )
-
-
-def _get_panel_labels(n: int, style: str) -> List[str]:
-    """Generate panel labels based on style."""
-    if style == "uppercase":
-        return [chr(ord("A") + i) for i in range(n)]
-    elif style == "lowercase":
-        return [chr(ord("a") + i) for i in range(n)]
-    else:
-        return [str(i + 1) for i in range(n)]
-
-
-def _get_axes_at(
-    axes: Union[RecordingAxes, NDArray],
-    row: int,
-    col: int,
-    nrows: int,
-    ncols: int,
-) -> RecordingAxes:
-    """Get axes at position, handling different array shapes."""
-    if nrows == 1 and ncols == 1:
-        return axes
-    elif nrows == 1:
-        return axes[col]
-    elif ncols == 1:
-        return axes[row]
-    else:
-        return axes[row, col]
 
 
 def _replay_axes_record(
