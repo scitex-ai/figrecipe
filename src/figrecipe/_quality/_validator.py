@@ -71,6 +71,33 @@ class ValidationResult:
         return "\n".join(lines)
 
 
+def _pixel_divergence_message(mse: float, mse_threshold: float, diff: dict) -> str:
+    """Actionable message for a same-size reproduction that diverges in pixels.
+
+    States the MSE vs threshold, how much of the canvas changed, and where the
+    change is concentrated (bounding box as % of the figure) so the cause is
+    legible from the log instead of a bare "MSE exceeds threshold".
+    """
+    msg = (
+        f"same image size but pixels differ: MSE ({mse:.2f}) exceeds threshold "
+        f"({mse_threshold})"
+    )
+    frac = diff.get("diff_fraction")
+    bbox = diff.get("diff_bbox")
+    if frac is not None:
+        msg += f"; {frac:.1%} of pixels changed"
+    if bbox is not None:
+        r0, r1, c0, c1 = bbox
+        msg += (
+            f", concentrated in rows {r0:.0%}-{r1:.0%} x cols {c0:.0%}-{c1:.0%} "
+            f"(top-left origin)"
+        )
+    md = diff.get("max_diff")
+    if md is not None and not np.isnan(md):
+        msg += f"; max channel diff {md:.0f}/255"
+    return msg
+
+
 def validate_recipe(
     fig,
     recipe_path: Union[str, Path],
@@ -139,15 +166,21 @@ def validate_recipe(
         # Compare images
         diff = compare_images(original_path, reproduced_path)
 
-        # Determine validity
+        # Determine validity, with an ACTIONABLE message on failure: say whether
+        # it's a size mismatch or a same-size pixel divergence, and for the latter
+        # how much of the canvas changed + where (so the cause is obvious from the
+        # log, not a bare "FAILED").
         mse = diff["mse"]
         if np.isnan(mse):
-            # Different sizes - invalid
             valid = False
-            message = f"Image dimensions differ: {diff['size1']} vs {diff['size2']}"
+            message = (
+                f"image SIZE mismatch: original {diff['size1']} (HxW) vs "
+                f"reproduced {diff['size2']} -- the reproduced figure has "
+                f"different pixel dimensions (layout/figsize not reproduced)"
+            )
         elif mse > mse_threshold:
             valid = False
-            message = f"MSE ({mse:.2f}) exceeds threshold ({mse_threshold})"
+            message = _pixel_divergence_message(mse, mse_threshold, diff)
         else:
             valid = True
             message = "Reproduction matches original within threshold"
