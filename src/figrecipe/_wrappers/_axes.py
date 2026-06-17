@@ -110,6 +110,18 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
         # For other methods/attributes, return as-is
         return attr
 
+    def embed(self, source, bounds=None, *, ax_key=None, track=True, id=None):
+        """Embed a recipe or diagram as a managed sub-panel that round-trips.
+
+        ``source`` may be a recipe path, image, FigureRecord, diagram recipe,
+        composed multi-panel recipe, or ``(source, ax_key)``. ``bounds`` is an
+        axes-fraction ``[x, y, w, h]`` (defaults to the whole axes). Returns the
+        embedded inset RecordingAxes (or a list for a multi-panel source).
+        """
+        from ._axes_embed import embed_source
+
+        return embed_source(self, source, bounds, ax_key=ax_key, track=track, id=id)
+
     def __dir__(self):
         """Return list of attributes for tab completion.
 
