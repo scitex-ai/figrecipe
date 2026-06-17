@@ -85,6 +85,15 @@ class AxesRecord:
     # replay -- so divider plotters (stx_scatter_hist) re-split identically and
     # every panel lands pixel-for-pixel where the live compose put it.
     compose_bbox: Optional[List[float]] = None
+    # Managed inset sub-panels (ax.inset_axes). On a recipe LOADED from disk this
+    # holds the deserialized list of {bounds, transform, axes_record}; during LIVE
+    # recording it stays None and `subpanel_recorders` (below) is used instead.
+    subpanels: Optional[List[Dict[str, Any]]] = None
+    # Transient: live child Recorders for inset axes, populated while recording.
+    # NOT serialized directly — to_dict() converts them into `subpanels`.
+    subpanel_recorders: List[Any] = field(
+        default_factory=list, repr=False, compare=False
+    )
 
     def add_call(self, record: CallRecord) -> None:
         """Add a plotting call record."""
@@ -112,7 +121,70 @@ class AxesRecord:
             result["stats"] = self.stats
         if not self.visible:  # Only serialize if hidden (default is True)
             result["visible"] = False
+
+        # Serialize managed inset sub-panels. Live recording stores child
+        # Recorders in `subpanel_recorders`; a loaded recipe stores rebuilt
+        # AxesRecords in `subpanels` (re-save path). Each child has exactly one
+        # axes, fetched key-agnostically (its key is grid_id(0,0), not literal).
+        subpanels_out = []
+        for entry in self.subpanel_recorders:
+            child_axes = entry["recorder"].figure_record.axes
+            child_ax_rec = next(iter(child_axes.values()), None)
+            if child_ax_rec is not None:
+                subpanels_out.append(
+                    {
+                        "bounds": entry["bounds"],
+                        "transform": entry["transform"],
+                        "axes": child_ax_rec.to_dict(),
+                    }
+                )
+        if not subpanels_out and self.subpanels:
+            for sp in self.subpanels:
+                rec = sp.get("axes_record")
+                if rec is not None:
+                    subpanels_out.append(
+                        {
+                            "bounds": sp["bounds"],
+                            "transform": sp.get("transform", "axes"),
+                            "axes": rec.to_dict(),
+                        }
+                    )
+        if subpanels_out:
+            result["subpanels"] = subpanels_out
         return result
+
+
+def _axes_record_from_dict(
+    ax_data: Dict[str, Any], position: Tuple[int, int]
+) -> "AxesRecord":
+    """Rebuild an AxesRecord from a serialized dict (recursive for inset sub-panels)."""
+    ax_record = AxesRecord(
+        position=position,
+        caption=ax_data.get("caption"),
+        stats=ax_data.get("stats"),
+        visible=ax_data.get("visible", True),
+        bbox=ax_data.get("bbox"),
+        bbox_uncropped=ax_data.get("bbox_uncropped"),
+        compose_bbox=ax_data.get("compose_bbox"),
+    )
+    for call_data in ax_data.get("calls", []):
+        ax_record.calls.append(CallRecord.from_dict(call_data, position))
+    for dec_data in ax_data.get("decorations", []):
+        ax_record.decorations.append(CallRecord.from_dict(dec_data, position))
+    raw_subpanels = ax_data.get("subpanels")
+    if raw_subpanels:
+        loaded = []
+        for sp in raw_subpanels:
+            child = _axes_record_from_dict(sp.get("axes", {}), (0, 0))
+            loaded.append(
+                {
+                    "bounds": sp["bounds"],
+                    "transform": sp.get("transform", "axes"),
+                    "axes_record": child,
+                }
+            )
+        ax_record.subpanels = loaded
+    return ax_record
 
 
 @dataclass
@@ -289,19 +361,7 @@ class FigureRecord:
             parsed = parse_grid_id(ax_key)
             row, col = parsed if parsed else (0, 0)
 
-            ax_record = AxesRecord(
-                position=(row, col),
-                caption=ax_data.get("caption"),
-                stats=ax_data.get("stats"),
-                visible=ax_data.get("visible", True),
-                bbox=ax_data.get("bbox"),
-                bbox_uncropped=ax_data.get("bbox_uncropped"),
-                compose_bbox=ax_data.get("compose_bbox"),
-            )
-            for call_data in ax_data.get("calls", []):
-                ax_record.calls.append(CallRecord.from_dict(call_data, (row, col)))
-            for dec_data in ax_data.get("decorations", []):
-                ax_record.decorations.append(CallRecord.from_dict(dec_data, (row, col)))
+            ax_record = _axes_record_from_dict(ax_data, (row, col))
 
             # Re-key grid axes to the canonical "r{row}c{col}" id (so legacy
             # "ax_{row}_{col}" recipes normalize), BUT preserve non-grid keys

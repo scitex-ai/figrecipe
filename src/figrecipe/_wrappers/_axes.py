@@ -94,6 +94,13 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
 
             return build_add_patch_wrapper(self)
 
+        # Route inset_axes to a wrapper that records its content as a managed
+        # sub-panel (raw inset axes are otherwise unrecorded and vanish on replay)
+        if callable(attr) and name == "inset_axes":
+            from ._axes_insets import build_inset_axes_wrapper
+
+            return build_inset_axes_wrapper(self)
+
         # If it's a plotting or decoration method, wrap it
         if callable(attr) and name in (
             self._recorder.PLOTTING_METHODS | self._recorder.DECORATION_METHODS
