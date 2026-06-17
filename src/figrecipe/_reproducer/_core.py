@@ -13,24 +13,8 @@ from .._recorder import CallRecord, FigureRecord
 from .._serializer import load_recipe
 from .._utils._bundle import resolve_recipe_path
 from .._utils._grid import parse_grid_id
+from ._axis_coerce import coerce_axis_value
 from ._colorbars import _replay_colorbars
-
-
-def _maybe_parse_datetime(value: Any) -> Any:
-    """Parse an ISO datetime string to a datetime (for datetime-axis limits).
-
-    Recipes record datetime axis limits as ISO strings; matplotlib cannot
-    convert a raw string to axis units on replay. Returns a ``datetime`` when
-    ``value`` parses as one, otherwise returns ``value`` unchanged.
-    """
-    if not isinstance(value, str):
-        return value
-    try:
-        from datetime import datetime
-
-        return datetime.fromisoformat(value)
-    except (ValueError, TypeError):
-        return value
 
 
 def reproduce(
@@ -414,13 +398,14 @@ def _replay_call(
     # Get kwargs and reconstruct arrays
     kwargs = reconstruct_kwargs(call.kwargs)
 
-    # Axis-limit methods on a datetime axis recorded their bounds as ISO
-    # datetime strings; matplotlib can't convert a raw string to axis units on
-    # replay (raises "Failed to convert value(s) to axis units"). Parse such
-    # strings back to datetime so the recorded limits are reapplied.
+    # These methods are inherently numeric/datetime, but a recipe may store the
+    # value as a string -- an ISO datetime (datetime axes) or a stringified
+    # number like '0' from stale recipes. matplotlib can't convert a raw string
+    # to axis units on replay ("Failed to convert value(s) to axis units"), so
+    # coerce it back to datetime/float before reapplying the recorded value.
     if method_name in ("set_xlim", "set_ylim", "axvline", "axhline"):
-        args = [_maybe_parse_datetime(a) for a in args]
-        kwargs = {k: _maybe_parse_datetime(v) for k, v in kwargs.items()}
+        args = [coerce_axis_value(a) for a in args]
+        kwargs = {k: coerce_axis_value(v) for k, v in kwargs.items()}
 
     # Handle special transform markers
     if "transform" in kwargs:
