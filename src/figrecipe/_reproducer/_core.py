@@ -208,6 +208,18 @@ def reproduce_from_record(
             finalize_ticks(axes_2d[row, col])
             finalize_special_plots(axes_2d[row, col], record.style or {})
 
+    # Re-apply recorded set_xlim / set_ylim LAST so explicit limits win over any
+    # autoscale re-engaged by later decorations (e.g. set_xscale), insets,
+    # colorbars, or the tick finalizers (NeuroVista Ask 2). Skipped when the
+    # caller asked to skip decorations (the limits live in decorations).
+    if not skip_decorations:
+        from ._reapply_limits import reapply_recorded_limits
+
+        for ax_key, ax_record in record.axes.items():
+            parsed = parse_grid_id(ax_key)
+            row, col = parsed if parsed else (0, 0)
+            reapply_recorded_limits(axes_2d[row, col], ax_record, calls)
+
     # Line widths are NOT post-processed: apply_style_mm() set lines.linewidth
     # from linewidth_mm pre-replay; signal/explicit lw= replay as recorded.
     # (A prior apply_line_styles() forced trace width on all lines -> MSE ~363.)
@@ -406,6 +418,13 @@ def _replay_call(
     if method_name in ("set_xlim", "set_ylim", "axvline", "axhline"):
         args = [coerce_axis_value(a) for a in args]
         kwargs = {k: coerce_axis_value(v) for k, v in kwargs.items()}
+
+    # Axis scale (set_xscale / set_yscale) replays as a generic decoration; warn
+    # loudly on an unsupported scale name instead of degrading silently to linear.
+    if method_name in ("set_xscale", "set_yscale"):
+        from ._axis_scale import warn_if_unsupported_scale
+
+        warn_if_unsupported_scale(method_name, args)
 
     # Handle special transform markers
     if "transform" in kwargs:
