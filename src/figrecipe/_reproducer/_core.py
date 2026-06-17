@@ -289,7 +289,10 @@ def reproduce_from_record(
 
 
 def _replay_call(
-    ax: Axes, call: CallRecord, result_cache: Optional[Dict[str, Any]] = None
+    ax: Axes,
+    call: CallRecord,
+    result_cache: Optional[Dict[str, Any]] = None,
+    coerce_sequences: bool = False,
 ) -> Any:
     """Replay a single call on an axes.
 
@@ -301,6 +304,13 @@ def _replay_call(
         The call to replay.
     result_cache : dict, optional
         Cache mapping call_id -> result for resolving references.
+    coerce_sequences : bool
+        If True, promote reconstructed plain-sequence positional args (and
+        sequence kwargs) to numpy arrays via ``coerce_sequence_arg``. Used by
+        the inset/embed replay path, where sub-panel array args round-trip as
+        ruamel ``CommentedSeq`` lists (the data-file loader does not descend
+        into subpanels) and would otherwise reach array-arg plotters like
+        ``streamplot`` as raw lists, failing on ``.shape``.
 
     Returns
     -------
@@ -388,15 +398,23 @@ def _replay_call(
         return None
 
     # Reconstruct args
-    from ._reconstruct import reconstruct_kwargs, reconstruct_value
+    from ._reconstruct import (
+        coerce_sequence_arg,
+        reconstruct_kwargs,
+        reconstruct_value,
+    )
 
     args = []
     for arg_data in call.args:
         value = reconstruct_value(arg_data, result_cache)
+        if coerce_sequences:
+            value = coerce_sequence_arg(value)
         args.append(value)
 
     # Get kwargs and reconstruct arrays
     kwargs = reconstruct_kwargs(call.kwargs)
+    if coerce_sequences:
+        kwargs = {k: coerce_sequence_arg(v) for k, v in kwargs.items()}
 
     # These methods are inherently numeric/datetime, but a recipe may store the
     # value as a string -- an ISO datetime (datetime axes) or a stringified
