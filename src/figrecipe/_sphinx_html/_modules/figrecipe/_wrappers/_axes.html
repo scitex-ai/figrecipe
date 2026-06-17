@@ -339,6 +339,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.ax"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.ax</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.position"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.position</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__getattr__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.embed"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.embed()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__dir__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__dir__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_recording_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_recording_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_bar_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_bar_wrapper()</span></code></a></li>
@@ -512,6 +513,21 @@
 
         <span class="c1"># For other methods/attributes, return as-is</span>
         <span class="k">return</span> <span class="n">attr</span></div>
+
+
+<div class="viewcode-block" id="RecordingAxes.embed">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.embed">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">embed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ax_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">track</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Embed a recipe or diagram as a managed sub-panel that round-trips.</span>
+
+<span class="sd">        ``source`` may be a recipe path, image, FigureRecord, diagram recipe,</span>
+<span class="sd">        composed multi-panel recipe, or ``(source, ax_key)``. ``bounds`` is an</span>
+<span class="sd">        axes-fraction ``[x, y, w, h]`` (defaults to the whole axes). Returns the</span>
+<span class="sd">        embedded inset RecordingAxes (or a list for a multi-panel source).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">._axes_embed</span><span class="w"> </span><span class="kn">import</span> <span class="n">embed_source</span>
+
+        <span class="k">return</span> <span class="n">embed_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">ax_key</span><span class="o">=</span><span class="n">ax_key</span><span class="p">,</span> <span class="n">track</span><span class="o">=</span><span class="n">track</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecordingAxes.__dir__">
