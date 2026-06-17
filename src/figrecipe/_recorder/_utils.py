@@ -159,7 +159,19 @@ def _process_array_list(
 
 
 def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, Any]:
-    """Process scalar or other value."""
+    """Process scalar or other value.
+
+    NumPy scalar types are coerced to their Python equivalents first. This
+    matters because ``np.floating`` subclasses ``float`` (so it survives the
+    serializable check below) but ``np.integer`` does NOT subclass ``int`` --
+    without this an ``np.int64`` (e.g. an ``np.arange`` index passed to
+    ``ax.text``/``ax.bar``) would fall through to ``str(value)`` and serialize
+    as e.g. ``'0'``. On replay that string then hits a category-unit converter
+    and raises ``ConversionError: Failed to convert value(s) to axis units``.
+    ``.item()`` turns any numpy scalar into the matching native Python number.
+    """
+    if isinstance(value, np.generic):
+        value = value.item()
     try:
         return {
             "name": name,
