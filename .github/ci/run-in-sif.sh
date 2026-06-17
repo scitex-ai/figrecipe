@@ -67,6 +67,22 @@ uv pip install --python "$VENV/bin/python" --target="$TMPDIR/site" -e ".[all,dev
 
 export PYTHONPATH="$TMPDIR/site:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 
-exec python -m pytest tests/ \
+# Parallelise with pytest-xdist (baked in [dev]/[all,dev] as pytest-xdist>=3).
+# figrecipe's suite is ~2460 tests; single-process it overran the job's old
+# 30-min cap (2300 passed in ~28 min, cancelled at 96%). Each xdist worker is
+# a SEPARATE PROCESS, so matplotlib's global rcParams / pyplot state and the
+# figrecipe style-stack are naturally isolated per worker — the safe way to
+# parallelise a matplotlib-heavy suite.
+#
+# Worker count: cap at nproc//2 (strips hyperthread inflation; we co-tenant the
+# shared Spartan CPU lease node, so don't grab every logical CPU). Floor 4.
+# pyproject addopts carries `-v`; override to `-q` here — 2460 verbose lines ×
+# workers bloats the CI log and adds measurable overhead.
+NPROC="$(nproc 2>/dev/null || echo 4)"
+WORKERS=$((NPROC / 2))
+[ "$WORKERS" -lt 4 ] && WORKERS=4
+echo "xdist workers=$WORKERS (nproc=$NPROC)"
+
+exec python -m pytest tests/ -n "$WORKERS" --dist loadscope -q \
     --cov=src/figrecipe --cov-report=xml --cov-report=term \
     -p no:cacheprovider
