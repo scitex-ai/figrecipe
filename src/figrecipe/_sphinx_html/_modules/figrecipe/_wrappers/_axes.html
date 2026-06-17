@@ -490,6 +490,13 @@
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;stem&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_stem_wrapper</span><span class="p">()</span>
 
+        <span class="c1"># Route add_patch to a wrapper that records a serializable patch spec</span>
+        <span class="c1"># (raw patches are objects that otherwise vanish on replay)</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;add_patch&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">._axes_patches</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_add_patch_wrapper</span>
+
+            <span class="k">return</span> <span class="n">build_add_patch_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
         <span class="c1"># If it&#39;s a plotting or decoration method, wrap it</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">PLOTTING_METHODS</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">DECORATION_METHODS</span>
