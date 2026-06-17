@@ -159,6 +159,39 @@ def apply_pie_style(ax: Axes, style: Dict[str, Any]) -> None:
             spine.set_visible(False)
 
 
+def apply_imshow_axes_visibility(ax: Axes, show_axes: bool, show_labels: bool) -> None:
+    """Hide imshow ticks / spines / labels per the imshow style flags.
+
+    This is the SINGLE source of truth for imshow axis-chrome suppression.
+    It is called unconditionally for ``imshow`` (by function/call name) from
+    BOTH the live wrapper (``imshow_plot``) and the recipe replay handler so
+    the saved figure and its reproduction suppress ticks identically. It must
+    NOT carry the ``is_specgram`` (has-label) heuristic: the live wrapper
+    never had it, so adding it here would desync save vs. reproduce -- exactly
+    the bug where a labelled ``imshow`` reproduced with extra numeric ticks.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Target axes containing the imshow image.
+    show_axes : bool
+        If False, hide ticks, tick labels, and spines.
+    show_labels : bool
+        If False, clear the x/y axis labels.
+    """
+    if not show_axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+    if not show_labels:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+
+
 def apply_matrix_style(ax: Axes, style: Dict[str, Any]) -> None:
     """Apply imshow/matshow/spy styling (hide axes if configured).
 
@@ -185,20 +218,11 @@ def apply_matrix_style(ax: Axes, style: Dict[str, Any]) -> None:
     if is_specgram:
         return
 
-    show_axes = style.get("imshow_show_axes", True)
-    show_labels = style.get("imshow_show_labels", True)
-
-    if not show_axes:
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-
-    if not show_labels:
-        ax.set_xlabel("")
-        ax.set_ylabel("")
+    apply_imshow_axes_visibility(
+        ax,
+        style.get("imshow_show_axes", True),
+        style.get("imshow_show_labels", True),
+    )
 
 
 __all__ = [
@@ -208,6 +232,7 @@ __all__ = [
     "apply_histogram_style",
     "apply_pie_style",
     "apply_matrix_style",
+    "apply_imshow_axes_visibility",
 ]
 
 # EOF
