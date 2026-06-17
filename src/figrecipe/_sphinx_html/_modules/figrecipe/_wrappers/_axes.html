@@ -497,6 +497,13 @@
 
             <span class="k">return</span> <span class="n">build_add_patch_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
+        <span class="c1"># Route inset_axes to a wrapper that records its content as a managed</span>
+        <span class="c1"># sub-panel (raw inset axes are otherwise unrecorded and vanish on replay)</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;inset_axes&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">._axes_insets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_inset_axes_wrapper</span>
+
+            <span class="k">return</span> <span class="n">build_inset_axes_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
         <span class="c1"># If it&#39;s a plotting or decoration method, wrap it</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">PLOTTING_METHODS</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">DECORATION_METHODS</span>
