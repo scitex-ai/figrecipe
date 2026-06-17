@@ -14,6 +14,144 @@ from .._utils._grid import grid_id
 _DIVIDER_PLOTTERS = {"stx_scatter_hist"}
 
 
+def _is_standalone_diagram_figure(fig) -> bool:
+    """True for a single-axes figure whose content is a figrecipe Diagram.
+
+    Two code paths produce such a figure and BOTH must be recognised so the save
+    and the reproduce crop to the same recorded ``content_bbox`` (otherwise only
+    one side would, defeating the fix):
+
+    * Live render / the validator's re-save of the ORIGINAL: ``Diagram.render``
+      tags the owned figure with ``_figrecipe_diagram`` (set only when it owns
+      the figure -- composed multi-panel diagrams never set it).
+    * The validator's re-save of the REPRODUCED figure: replay goes through
+      ``replay_diagram_native_call`` (NOT ``ax.diagram``), so the live marker is
+      absent; instead detect a single-axes figure whose sole recorded axes
+      carries a ``function=="diagram"`` call.
+
+    The single-axes guard keeps composed figures (which embed diagrams in a grid)
+    on the normal content-aware crop path -- only the standalone case is
+    size-sensitive to the content-aware crop's per-render ink drift.
+    """
+    if getattr(fig.fig, "_figrecipe_diagram", None) is not None:
+        return True
+
+    if len(fig.fig.get_axes()) != 1:
+        return False
+
+    axes_records = getattr(fig.record, "axes", {})
+    if len(axes_records) != 1:
+        return False
+    only_axes = next(iter(axes_records.values()))
+    return any(c.function == "diagram" for c in only_axes.calls)
+
+
+def crop_to_content_bbox(
+    image_path: Path,
+    content_bbox,
+    margins_mm,
+    dpi: int,
+) -> Optional[dict]:
+    """Crop a saved raster to a RECORDED tight-ink bbox (dpi-independent).
+
+    Diagram figures render with a hair of different text ink between the
+    original save and the recipe-reproduced save, so a pixel-content-aware
+    crop (``_utils._crop.crop``) lands on slightly different boxes -> the two
+    cropped PNGs differ in height and reproducibility validation reports a SIZE
+    mismatch (NeuroVista Fig 02 panel b). Instead, crop both to the SAME bbox
+    captured once at save time (``FigureRecord.content_bbox``), so the original
+    save and every reproduce crop to identical pixel dimensions.
+
+    ``content_bbox`` is ``[l, b, w, h]`` in the *uncropped* figure fraction
+    (matplotlib coords, y=0 at the bottom). It is a FRACTION, so it is applied
+    to the actual saved-image pixel dimensions and therefore stays correct at
+    any dpi (the validator re-saves at dpi=150 while the user's real save may be
+    dpi=300). Margins (``crop_margin_{left,right,top,bottom}_mm``) are added in
+    pixels at ``dpi`` to match the normal crop path.
+
+    Returns the same ``crop_offset`` dict shape as ``_utils._crop.crop`` (so
+    ``_capture_axes_bboxes`` keeps working), or ``None`` on failure (the caller
+    then falls back to the content-aware crop with a warning).
+    """
+    from PIL import Image
+
+    from .._utils._crop import crop, mm_to_pixels
+
+    try:
+        l, b, w, h = (float(v) for v in content_bbox)
+    except (TypeError, ValueError):
+        return None
+
+    with Image.open(image_path) as img:
+        img_w, img_h = img.size
+
+    # content_bbox is matplotlib y-up; PIL crop box is y-down (origin top-left).
+    # top edge in mpl fraction = b + h ; bottom edge = b.
+    left_px = round(l * img_w) - mm_to_pixels(margins_mm["left"], dpi)
+    right_px = round((l + w) * img_w) + mm_to_pixels(margins_mm["right"], dpi)
+    upper_px = round((1.0 - (b + h)) * img_h) - mm_to_pixels(margins_mm["top"], dpi)
+    lower_px = round((1.0 - b) * img_h) + mm_to_pixels(margins_mm["bottom"], dpi)
+
+    if right_px - left_px <= 0 or lower_px - upper_px <= 0:
+        return None
+
+    # Reuse crop()'s explicit-box path: it preserves DPI/PNG-text metadata and
+    # extends the canvas with the detected background when the box exceeds the
+    # image edge (content can overflow the canvas, so this is expected).
+    _, crop_offset = crop(
+        image_path,
+        output_path=image_path,
+        crop_box=(left_px, upper_px, right_px, lower_px),
+        return_offset=True,
+    )
+    return crop_offset
+
+
+def _crop_diagram_to_content_bbox(
+    fig,
+    image_path: Path,
+    crop_margin_mm: Optional[float],
+    crop_margins_mm,
+    dpi: int,
+) -> Optional[dict]:
+    """Crop a standalone-diagram raster to its recorded ``content_bbox``.
+
+    Ensures ``fig.record.content_bbox`` exists BEFORE cropping: on the user's
+    first real save it is still None, so it is computed here from the (uncropped)
+    figure; on the validator's re-save of the original it is already set from the
+    first save, and on a recipe-reproduced figure it is loaded from disk. All
+    three therefore crop to the SAME dpi-independent fraction, so the saved file
+    and every reproduce land at identical pixel dimensions.
+
+    ``crop_margin_mm`` (explicit uniform override) wins over ``crop_margins_mm``
+    (the per-side mm_layout margins, ``(left, right, top, bottom)``).
+
+    Returns a ``crop_offset`` dict, or ``None`` (with a warning) when no
+    ``content_bbox`` is available -- the caller then falls back to the normal
+    content-aware crop so a missing bbox never silently skips cropping.
+    """
+    if getattr(fig.record, "content_bbox", None) is None:
+        _capture_content_layout(fig)
+
+    content_bbox = getattr(fig.record, "content_bbox", None)
+    if content_bbox is None:
+        import warnings
+
+        warnings.warn(
+            "Diagram figure has no content_bbox; falling back to content-aware "
+            "crop (the standalone diagram may reproduce at a different size).",
+            UserWarning,
+        )
+        return None
+
+    ml, mr, mt, mb = crop_margins_mm
+    if crop_margin_mm is not None:
+        ml = mr = mt = mb = crop_margin_mm
+    margins = {"left": ml, "right": mr, "top": mt, "bottom": mb}
+
+    return crop_to_content_bbox(image_path, content_bbox, margins, dpi)
+
+
 def _crop_to_axes_size(
     fig,
     image_path: Path,

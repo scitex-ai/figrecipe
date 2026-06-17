@@ -117,6 +117,15 @@ def diagram_plot(
     # Render to the provided axes
     fig, rendered_ax = info.render(ax=ax, auto_fix=auto_fix)
 
+    # For a standalone diagram (figure sized to the diagram), pin the axes to
+    # fill the figure. The default subplot margins differ between the save figure
+    # and the figure rebuilt by the reproducer, so with aspect="equal" the
+    # diagram letterboxed at a different vertical offset -> different cropped
+    # height (NeuroVista Fig 02 panel b). A fixed position makes save and
+    # reproduce identical; _reproducer/_replay_diagram applies the same pin.
+    if len(fig.get_axes()) == 1:
+        rendered_ax.set_position((0.0, 0.0, 1.0, 1.0))
+
     # Post-render validations (skipped inside render() when ax is provided)
     # Errors are stored on the figure so fr.save() can save _FAILED figures
     from .._diagram._diagram import _validate as _sv
@@ -128,13 +137,22 @@ def diagram_plot(
             fig._diagram_validation_errors = []
         fig._diagram_validation_errors.append(str(e))
 
-    # Record for reproducibility
+    # Record for reproducibility. Capture the figure's ACTUAL size now -- this is
+    # what savefig will use. render() can widen info.xlim to fit text content, but
+    # the figure was already sized from the pre-widen extent and is not resized
+    # again, so deriving the reproduce figsize from the recorded (post-widen) xlim
+    # produced a larger figure than the original save -> figure-SIZE mismatch at
+    # validate time (NeuroVista Fig 02 panel b). Recording the true figsize lets
+    # the reproducer restore the exact saved size.
     if track:
+        _fw, _fh = fig.get_size_inches()
+        figsize_in = (float(_fw), float(_fh))
         _record_diagram_call(
             recorder,
             position,
             call_id,
             info,
+            figsize_in,
         )
 
     return fig, rendered_ax
@@ -145,6 +163,7 @@ def _record_diagram_call(
     position: Tuple[int, int],
     call_id: Optional[str],
     info,
+    figsize_in: Optional[Tuple[float, float]] = None,
 ) -> None:
     """Record diagram call for reproducibility."""
     from .._recorder import CallRecord
@@ -154,11 +173,14 @@ def _record_diagram_call(
     # Serialize diagram data for recipe
     diagram_data = info.to_dict()
 
+    kwargs = {"diagram_data": diagram_data}
+    if figsize_in is not None:
+        kwargs["figsize_in"] = list(figsize_in)
     record = CallRecord(
         id=final_id,
         function="diagram",
         args=[],
-        kwargs={"diagram_data": diagram_data},
+        kwargs=kwargs,
         ax_position=position,
     )
     ax_record = recorder.figure_record.get_or_create_axes(*position)
