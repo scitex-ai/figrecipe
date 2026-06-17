@@ -202,22 +202,12 @@ def reproduce_from_record(
 
         ax = axes_2d[row, col]
 
-        # Replay plotting calls
-        for call in ax_record.calls:
-            if calls is not None and call.id not in calls:
-                continue
-            result = _replay_call(ax, call, result_cache)
-            if result is not None:
-                result_cache[call.id] = result
+        # Replay this axes' calls, decorations, and inset sub-panels.
+        from ._replay_axes import replay_axes_calls
 
-        # Replay decorations
-        if not skip_decorations:
-            for call in ax_record.decorations:
-                if calls is not None and call.id not in calls:
-                    continue
-                result = _replay_call(ax, call, result_cache)
-                if result is not None:
-                    result_cache[call.id] = result
+        replay_axes_calls(
+            ax, ax_record, calls, skip_decorations, result_cache, record.style
+        )
 
         # Apply panel visibility
         if not getattr(ax_record, "visible", True):
