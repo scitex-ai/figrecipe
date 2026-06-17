@@ -32,6 +32,11 @@ DECORATION_METHODS = {
     "rotate_labels",  # figrecipe tick-label rotation (recorded so reproduce replays it)
     # Statistical annotations
     "stat_annotation",  # Comparison brackets with stars/p-values
+    # Patches: ax.add_patch takes a live Patch artist (not serialisable); the
+    # RecordingAxes.add_patch wrapper captures its class+geometry+style instead,
+    # so schematic shapes (rectangles, circles, ...) reproduce. Routed here so it
+    # replays after the data calls (patch draws on top, as authored).
+    "add_patch",
 }
 
 # EOF

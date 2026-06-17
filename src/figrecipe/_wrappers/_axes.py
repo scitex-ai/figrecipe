@@ -270,6 +270,28 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
 
         return build_legend_wrapper(self)
 
+    def add_patch(self, patch, *, id: Optional[str] = None, track: bool = True):
+        """Add a matplotlib Patch artist, recording it for reproduction.
+
+        matplotlib's ``add_patch`` takes a live Patch (e.g. ``Rectangle``,
+        ``Circle``) that is not serialisable. We capture the patch's
+        class + geometry + style (see ``_axes_patch.serialize_patch``) so the
+        recipe reconstructs an equivalent patch on reproduce. Returns the live
+        patch so callers can keep styling it, exactly like raw matplotlib.
+        """
+        result = self._ax.add_patch(patch)
+        if self._track and track:
+            from ._axes_patch import serialize_patch
+
+            self._recorder.record_call(
+                ax_position=self._position,
+                method_name="add_patch",
+                args=(),
+                kwargs=serialize_patch(patch),
+                call_id=id,
+            )
+        return result
+
     def set_caption(self, caption: str) -> "RecordingAxes":
         """Set panel caption metadata (not rendered, stored in recipe)."""
         ax_record = self._recorder.figure_record.get_or_create_axes(*self._position)
