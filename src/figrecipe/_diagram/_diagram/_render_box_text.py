@@ -19,6 +19,13 @@ if TYPE_CHECKING:
 
     from ._core import BoxSpec, PositionSpec
 
+# Max pitch between consecutive text rows (mm); keeps tall boxes from spreading
+# their lines too far apart while still letting short boxes breathe.
+_MAX_ROW_GAP_MM = 6.0
+# Fraction of the per-row slot used as the row pitch, so rows do not butt right
+# up against the box padding.
+_ROW_FILL = 0.85
+
 
 def _build_text_items(
     box: "BoxSpec", title_color, colors: Dict
@@ -59,15 +66,30 @@ def render_box_text(
     title_color,
     colors: Dict,
 ) -> None:
-    """Draw a box's title / subtitle / content as vertically stacked rows."""
+    """Draw a box's title / subtitle / content as vertically stacked rows.
+
+    Each item is placed on its own row(s); items whose text contains embedded
+    ``\\n`` occupy as many rows as they have visual lines, so a multi-line
+    title (e.g. ``"Phase\\nfilterbank"``) no longer renders on top of the
+    subtitle or the first content line (NeuroVista Ask 4). Counting items
+    instead of visual lines was the bug: matplotlib stacks a multi-line string
+    as a block taller than a single row, so the next item's row landed inside
+    that block.
+    """
     is_code = box.shape == "codeblock"
     items = _build_text_items(box, title_color, colors)
 
-    # Text area = PositionSpec minus padding on all sides
+    # Number of *visual* rows: an item with N embedded newlines spans N rows.
+    line_counts = [text.count("\n") + 1 for text, _, _, _ in items]
+    n_rows = sum(line_counts)
+
+    # Text area = PositionSpec minus padding on all sides; the row pitch packs
+    # n_rows evenly into it. A single row has no pitch (centred in the box).
     inner_h = pos.height_mm - 2 * box.padding_mm
-    n = len(items)
-    gap = min(inner_h / max(n, 1) * 0.85, 6.0) if n > 1 else 0
-    block_h = gap * (n - 1)
+    row_gap = (
+        min(inner_h / max(n_rows, 1) * _ROW_FILL, _MAX_ROW_GAP_MM) if n_rows > 1 else 0
+    )
+    block_h = row_gap * (n_rows - 1)
     top_y = pos.y_mm + block_h / 2
 
     # Only use text background if box has no fill (transparent background)
@@ -79,21 +101,28 @@ def render_box_text(
     )
     ha = "left" if is_code else "center"
     x_text = (pos.x_mm - pos.width_mm / 2 + box.padding_mm) if is_code else pos.x_mm
-    for i, (text, fsize, fweight, fcolor) in enumerate(items):
+
+    # Walk items top-to-bottom. ``row_cursor`` is the top row index of the
+    # current item; a multi-line item is centred on the rows it occupies so its
+    # own lines stay tight while consecutive items stay separated.
+    row_cursor = 0
+    for (text, fsize, fweight, fcolor), n_lines in zip(items, line_counts):
+        center_row = row_cursor + (n_lines - 1) / 2
         ax.text(
             x_text,
-            top_y - i * gap,
+            top_y - center_row * row_gap,
             text,
             ha=ha,
             va="center",
             fontsize=fsize,
             fontweight=fweight,
             color=fcolor,
-            fontfamily="monospace" if is_code and i > 0 else "sans-serif",
+            fontfamily="monospace" if is_code and row_cursor > 0 else "sans-serif",
             fontstyle="normal",
             zorder=7,
             bbox=txt_bg,
         )
+        row_cursor += n_lines
 
 
 # EOF
