@@ -87,6 +87,13 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
         if callable(attr) and name == "stem":
             return self._create_stem_wrapper()
 
+        # Route add_patch to a wrapper that records a serializable patch spec
+        # (raw patches are objects that otherwise vanish on replay)
+        if callable(attr) and name == "add_patch":
+            from ._axes_patches import build_add_patch_wrapper
+
+            return build_add_patch_wrapper(self)
+
         # If it's a plotting or decoration method, wrap it
         if callable(attr) and name in (
             self._recorder.PLOTTING_METHODS | self._recorder.DECORATION_METHODS

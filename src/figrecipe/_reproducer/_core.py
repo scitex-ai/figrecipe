@@ -351,6 +351,10 @@ def _replay_call(
         from ._violin import replay_violinplot_call
 
         return replay_violinplot_call(ax, call)
+    if method_name == "add_patch":
+        from ._replay_patches import replay_add_patch_call
+
+        return replay_add_patch_call(ax, call)
     if method_name == "joyplot":
         from ._custom_plots import replay_joyplot_call
 
