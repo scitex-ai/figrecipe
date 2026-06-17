@@ -160,6 +160,15 @@ def _process_array_list(
 
 def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, Any]:
     """Process scalar or other value."""
+    # numpy scalars (np.int64, np.float64, np.bool_, …) are not natively
+    # serializable. np.float64 happens to subclass Python float so it slips
+    # through, but np.int64 does NOT subclass int -> it falls to the str(value)
+    # branch and serializes as e.g. '0'. A string coordinate turns the axis into
+    # a category axis and breaks reproduce/compose (ConversionError: Failed to
+    # convert value(s) to axis units: '0'). Coerce any numpy scalar to its native
+    # Python type so coordinates round-trip as numbers.
+    if isinstance(value, np.generic):
+        value = value.item()
     try:
         return {
             "name": name,
