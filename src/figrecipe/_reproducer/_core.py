@@ -228,15 +228,15 @@ def reproduce_from_record(
 
     # Finalize tick configuration and special plot types
     from ..styles._style_applier import finalize_special_plots, finalize_ticks
-    from ._line_styles import apply_line_styles
 
     for row in range(nrows):
         for col in range(ncols):
             finalize_ticks(axes_2d[row, col])
             finalize_special_plots(axes_2d[row, col], record.style or {})
 
-    # Apply trace linewidth to all Line2D objects created during replay
-    apply_line_styles(axes_2d, record.style or {})
+    # Line widths are NOT post-processed: apply_style_mm() set lines.linewidth
+    # from linewidth_mm pre-replay; signal/explicit lw= replay as recorded.
+    # (A prior apply_line_styles() forced trace width on all lines -> MSE ~363.)
 
     # Apply figure-level labels if recorded
     if record.suptitle is not None:
