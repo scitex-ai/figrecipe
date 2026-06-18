@@ -94,6 +94,13 @@ def reproduce_mm_composed(record):
             if result is not None:
                 result_cache[call.id] = result
 
+        # Mirror the live imshow wrapper's tick/spine suppression (keyed on the
+        # recorded call name) so an imshow panel reproduces without the numeric
+        # ticks the original hid -- same fix as the grid reproducer.
+        from ._replay_axes import finalize_imshow_axes
+
+        finalize_imshow_axes(ax, ax_record, record.style)
+
         if not getattr(ax_record, "visible", True):
             ax.set_visible(False)
 

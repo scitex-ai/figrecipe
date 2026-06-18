@@ -66,6 +66,40 @@ _ensure_subprocess_coverage_shim()
 matplotlib.use("Agg")
 
 
+def _warm_matplotlib_font_cache() -> None:
+    """Build matplotlib's FontManager once per (xdist worker) process at import.
+
+    The validate-recipe tests render a figure and compare it pixel-for-pixel
+    against a reference render (MSE threshold). The FIRST render in a fresh
+    process triggers a lazy, expensive FontManager build (font scan + cache
+    write). Under the SIF container's high xdist concurrency, multiple cold
+    workers race to build/write that cache simultaneously; a worker that picks
+    up a half-written cache (or falls back to a different font mid-build) ends
+    up rendering with slightly different metrics than the reference, blowing the
+    MSE up to ~715 and flaking ``test_validate_*`` non-deterministically.
+
+    Forcing one trivial headless render here -- at import, before any test
+    collects -- warms each worker's FontManager so every subsequent render in
+    that process is metric-stable. It runs with stock rcParams (a plain
+    ``plt.figure``), so it does not perturb the figrecipe/session style baseline
+    that the per-test rcParams snapshot below preserves.
+    """
+    import warnings
+
+    try:
+        import matplotlib.pyplot as _plt
+
+        _fig = _plt.figure()
+        _fig.text(0.5, 0.5, "warm 0.9 Hz")
+        _fig.canvas.draw()
+        _plt.close(_fig)
+    except Exception as exc:  # never let warm-up break collection
+        warnings.warn(f"matplotlib font-cache warm-up failed: {exc}")
+
+
+_warm_matplotlib_font_cache()
+
+
 @pytest.fixture(autouse=True)
 def _isolate_matplotlib_rcparams():
     """Snapshot ``matplotlib.rcParams`` before each test and restore them after.

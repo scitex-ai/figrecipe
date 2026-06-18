@@ -200,13 +200,14 @@ def reproduce_from_record(
     # Replay recorded colorbars (exact reproduction)
     _replay_colorbars(fig, axes_2d, record, result_cache)
 
-    # Finalize tick configuration and special plot types
-    from ..styles._style_applier import finalize_special_plots, finalize_ticks
+    # Per-axes post-replay finalization passes (tick/special-plot finalizers,
+    # imshow tick-suppression, recorded-limit reapply). Order is load-bearing;
+    # see ._finalize_axes for the rationale of each pass.
+    from ._finalize_axes import finalize_reproduced_axes
 
-    for row in range(nrows):
-        for col in range(ncols):
-            finalize_ticks(axes_2d[row, col])
-            finalize_special_plots(axes_2d[row, col], record.style or {})
+    finalize_reproduced_axes(
+        fig, axes_2d, record, nrows, ncols, calls, skip_decorations
+    )
 
     # Line widths are NOT post-processed: apply_style_mm() set lines.linewidth
     # from linewidth_mm pre-replay; signal/explicit lw= replay as recorded.
@@ -289,7 +290,10 @@ def reproduce_from_record(
 
 
 def _replay_call(
-    ax: Axes, call: CallRecord, result_cache: Optional[Dict[str, Any]] = None
+    ax: Axes,
+    call: CallRecord,
+    result_cache: Optional[Dict[str, Any]] = None,
+    coerce_sequences: bool = False,
 ) -> Any:
     """Replay a single call on an axes.
 
@@ -301,6 +305,13 @@ def _replay_call(
         The call to replay.
     result_cache : dict, optional
         Cache mapping call_id -> result for resolving references.
+    coerce_sequences : bool
+        If True, promote reconstructed plain-sequence positional args (and
+        sequence kwargs) to numpy arrays via ``coerce_sequence_arg``. Used by
+        the inset/embed replay path, where sub-panel array args round-trip as
+        ruamel ``CommentedSeq`` lists (the data-file loader does not descend
+        into subpanels) and would otherwise reach array-arg plotters like
+        ``streamplot`` as raw lists, failing on ``.shape``.
 
     Returns
     -------
@@ -388,15 +399,23 @@ def _replay_call(
         return None
 
     # Reconstruct args
-    from ._reconstruct import reconstruct_kwargs, reconstruct_value
+    from ._reconstruct import (
+        coerce_sequence_arg,
+        reconstruct_kwargs,
+        reconstruct_value,
+    )
 
     args = []
     for arg_data in call.args:
         value = reconstruct_value(arg_data, result_cache)
+        if coerce_sequences:
+            value = coerce_sequence_arg(value)
         args.append(value)
 
     # Get kwargs and reconstruct arrays
     kwargs = reconstruct_kwargs(call.kwargs)
+    if coerce_sequences:
+        kwargs = {k: coerce_sequence_arg(v) for k, v in kwargs.items()}
 
     # These methods are inherently numeric/datetime, but a recipe may store the
     # value as a string -- an ISO datetime (datetime axes) or a stringified
@@ -406,6 +425,13 @@ def _replay_call(
     if method_name in ("set_xlim", "set_ylim", "axvline", "axhline"):
         args = [coerce_axis_value(a) for a in args]
         kwargs = {k: coerce_axis_value(v) for k, v in kwargs.items()}
+
+    # Axis scale (set_xscale / set_yscale) replays as a generic decoration; warn
+    # loudly on an unsupported scale name instead of degrading silently to linear.
+    if method_name in ("set_xscale", "set_yscale"):
+        from ._axis_scale import warn_if_unsupported_scale
+
+        warn_if_unsupported_scale(method_name, args)
 
     # Handle special transform markers
     if "transform" in kwargs:
@@ -448,43 +474,7 @@ def _replay_call(
         return None
 
 
-def get_recipe_info(path: Union[str, Path]) -> Dict[str, Any]:
-    """Get recipe metadata (id, figsize, dpi, n_axes, calls) without reproducing."""
-    record = load_recipe(path)
-
-    all_calls = []
-    for ax_record in record.axes.values():
-        for call in ax_record.calls:
-            all_calls.append(
-                {
-                    "id": call.id,
-                    "function": call.function,
-                    "n_args": len(call.args),
-                    "kwargs": list(call.kwargs.keys()),
-                }
-            )
-        for call in ax_record.decorations:
-            all_calls.append(
-                {
-                    "id": call.id,
-                    "function": call.function,
-                    "type": "decoration",
-                }
-            )
-
-    return {
-        "id": record.id,
-        "created": record.created,
-        "matplotlib_version": record.matplotlib_version,
-        "figsize": record.figsize,
-        "dpi": record.dpi,
-        "n_axes": len(record.axes),
-        "calls": all_calls,
-    }
-
-
 __all__ = [
     "reproduce",
     "reproduce_from_record",
-    "get_recipe_info",
 ]

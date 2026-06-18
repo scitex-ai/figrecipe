@@ -27,18 +27,15 @@ robust against freetype/font-version pixel flakiness, same level as
 ``test_reproducibility_matrix.py``.
 
 XFAILED plotters (nesting):
-  - ``streamplot`` (single embed): the inset/embed replay path does not coerce
-    the YAML-deserialized streamplot coordinate arrays (loaded as ruamel
-    ``CommentedSeq``) back to numpy before ``Axes.streamplot`` accesses
-    ``.shape``. The embedded sub-panel therefore fails to redraw on reproduce
+  - (none) ``streamplot`` single embed was previously xfailed: the inset/embed
+    replay path did not coerce the YAML-deserialized streamplot coordinate arrays
+    (loaded as ruamel ``CommentedSeq``) back to numpy before ``Axes.streamplot``
+    accessed ``.shape``, so the embedded sub-panel failed to redraw on reproduce
     (``UserWarning: Failed to replay streamplot: 'CommentedSeq' object has no
-    attribute 'shape'``) and validation fails (MSE ~1639 >> threshold 100, the
-    diff concentrated exactly in the embedded sub-panel's region). NOTE: the SAME
-    streamplot round-trips fine standalone (pixel-perfect suite) AND through
-    ``fr.compose`` AND through embed-OF-a-composed-recipe — the gap is specific
-    to embedding a single streamplot recipe directly. Marked ``strict=False`` so
-    a future source-side fix (coerce list args in the inset replay path) flips it
-    green without editing this test.
+    attribute 'shape'``) and validation failed (MSE ~1639). FIXED: the inset/embed
+    replay path now coerces reconstructed sequence args to numpy via
+    ``coerce_sequence_arg`` (``_reproducer/_reconstruct.py``), so any array-arg
+    plotter round-trips through a single embed; ``streamplot`` now passes here.
 """
 
 import tempfile
@@ -60,17 +57,9 @@ from figrecipe.styles._finalize import finalize_special_plots, finalize_ticks
 _MM_PER_INCH = 25.4
 
 # Plotters expected to FAIL the SINGLE-embed round-trip, each with a reason.
-SINGLE_EMBED_XFAIL = {
-    "streamplot": (
-        "embed/inset replay does not coerce YAML-loaded streamplot arrays "
-        "(ruamel CommentedSeq) to numpy before Axes.streamplot needs .shape; "
-        "embedded sub-panel fails to redraw on reproduce "
-        "(UserWarning: Failed to replay streamplot: 'CommentedSeq' object has "
-        "no attribute 'shape') -> validation MSE ~1639 >> 100. Standalone, "
-        "compose, and embed-of-composed all round-trip; only direct single "
-        "embed of a streamplot recipe regresses."
-    ),
-}
+# Empty: ``streamplot`` was fixed (inset/embed replay now coerces reconstructed
+# sequence args to numpy via ``coerce_sequence_arg``); see the module docstring.
+SINGLE_EMBED_XFAIL: dict = {}
 
 
 def _embed_params():

@@ -12,6 +12,8 @@ DECORATION_METHODS = {
     "set_title",
     "set_xlim",
     "set_ylim",
+    "set_xscale",  # log/symlog/logit axis scale (replays as a generic decoration)
+    "set_yscale",  # log/symlog/logit axis scale (replays as a generic decoration)
     "set_aspect",
     "legend",
     "grid",

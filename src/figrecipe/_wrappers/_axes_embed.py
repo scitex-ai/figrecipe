@@ -68,12 +68,15 @@ def _draw_and_record_source(parent_rax, inset_rax, src_ax_rec) -> None:
 
     mpl_ax = inset_rax._ax
     cache: dict = {}
+    # coerce_sequences mirrors the inset replay path (_replay_insets): sub-panel
+    # array args that round-trip as plain lists are promoted to numpy so array-arg
+    # plotters (streamplot/contour/imshow) draw the same live and on reproduce.
     for call in list(src_ax_rec.calls):
-        result = _replay_call(mpl_ax, call, cache)
+        result = _replay_call(mpl_ax, call, cache, coerce_sequences=True)
         if result is not None:
             cache[call.id] = result
     for call in list(src_ax_rec.decorations):
-        result = _replay_call(mpl_ax, call, cache)
+        result = _replay_call(mpl_ax, call, cache, coerce_sequences=True)
         if result is not None:
             cache[call.id] = result
 

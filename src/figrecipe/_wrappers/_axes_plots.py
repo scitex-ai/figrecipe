@@ -79,21 +79,14 @@ def imshow_plot(
     # Get style settings
     style = get_style()
     if style:
+        from ..styles._plot_styles import apply_imshow_axes_visibility
+
         imshow_style = style.get("imshow", {})
-        show_axes = imshow_style.get("show_axes", True)
-        show_labels = imshow_style.get("show_labels", True)
-
-        if not show_axes:
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_xticklabels([])
-            ax.set_yticklabels([])
-            for spine in ax.spines.values():
-                spine.set_visible(False)
-
-        if not show_labels:
-            ax.set_xlabel("")
-            ax.set_ylabel("")
+        apply_imshow_axes_visibility(
+            ax,
+            imshow_style.get("show_axes", True),
+            imshow_style.get("show_labels", True),
+        )
 
     # Record the call if tracking is enabled
     if track:
