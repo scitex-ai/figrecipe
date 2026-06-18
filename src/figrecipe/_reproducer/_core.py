@@ -118,8 +118,7 @@ def reproduce_from_record(
     axes : RecordingAxes or ndarray of RecordingAxes
         Reproduced axes (wrapped, numpy array for multi-axes).
     """
-    from .._recorder import Recorder
-    from .._wrappers import RecordingAxes, RecordingFigure
+    import matplotlib as mpl
 
     # mm-based composed figures (plt.compose) key their panels "ax_mm_*" and
     # position each via add_axes(bbox); the grid model below can't represent that
@@ -129,6 +128,26 @@ def reproduce_from_record(
 
     if is_mm_composed(record):
         return reproduce_mm_composed(record)
+
+    # Restore the recipe's captured rcParams (a loaded theme like SCITEX_STYLE,
+    # or ANY globally-set rcParam) for the entire grid build, so every artist
+    # renders under the identical environment as the original. rc_context scopes
+    # it -- reproduce never leaks rcParams to the caller.
+    from ..styles._rcparams import apply_recorded_rcparams
+
+    with mpl.rc_context():
+        apply_recorded_rcparams(record.rcparams or {})
+        return _reproduce_grid(record, calls, skip_decorations)
+
+
+def _reproduce_grid(
+    record: FigureRecord,
+    calls: Optional[List[str]] = None,
+    skip_decorations: bool = False,
+):
+    """Build the grid figure (runs inside the caller's rc_context)."""
+    from .._recorder import Recorder
+    from .._wrappers import RecordingAxes, RecordingFigure
 
     # Determine grid size from axes positions
     max_row = 0

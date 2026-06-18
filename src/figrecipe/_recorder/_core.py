@@ -208,6 +208,12 @@ class FigureRecord:
     layout: Optional[Dict[str, float]] = None
     # Style parameters
     style: Optional[Dict[str, Any]] = None
+    # Full active rcParams captured as primitives -- the delta from
+    # matplotlib.rcParamsDefault at figure-build time. Restored via rc_context
+    # on replay so a recipe reproduces pixel-identically even when the render
+    # depended on a loaded theme (SCITEX_STYLE) or a globally-set rcParam that
+    # is NOT in figrecipe's curated ``style`` block. ``None`` on legacy recipes.
+    rcparams: Optional[Dict[str, Any]] = None
     # Constrained layout flag
     constrained_layout: bool = False
     # Figure-level decorations (suptitle, supxlabel, supylabel)
@@ -276,6 +282,9 @@ class FigureRecord:
         # Add style if set
         if self.style is not None:
             result["figure"]["style"] = self.style
+        # Add the full captured rcParams delta (primitives) if set
+        if self.rcparams:
+            result["figure"]["rcparams"] = self.rcparams
         # Add constrained_layout if True
         if self.constrained_layout:
             result["figure"]["constrained_layout"] = True
@@ -338,6 +347,7 @@ class FigureRecord:
             ncols=fig_data.get("ncols"),
             layout=fig_data.get("layout"),
             style=fig_data.get("style"),
+            rcparams=fig_data.get("rcparams"),
             constrained_layout=fig_data.get("constrained_layout", False),
             suptitle=fig_data.get("suptitle"),
             supxlabel=fig_data.get("supxlabel"),
