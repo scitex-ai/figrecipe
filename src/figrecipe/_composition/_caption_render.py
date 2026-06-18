@@ -67,15 +67,30 @@ def render_compose_captions(
             pos = raw.get_position()
             x_center = pos.x0 + pos.width / 2.0
             y_top = pos.y1
+            text = f"({label}) {cap_text}"
+            text_kwargs = {"fontsize": 8, "ha": "center", "va": "bottom"}
             mpl_fig.text(
                 x_center,
                 y_top + 0.02,
-                f"({label}) {cap_text}",
+                text,
                 transform=mpl_fig.transFigure,
-                fontsize=8,
-                ha="center",
-                va="bottom",
+                **text_kwargs,
             )
+            # Record each per-panel caption as a figure-level text so it REPLAYS
+            # on reproduce. figure_texts are re-rendered via fig.text(), whose
+            # default transform is transFigure -- matching the absolute x/y
+            # captured here. Without this the panel captions rendered live but
+            # were dropped on reproduce (only the figure-level caption, which
+            # routes through add_figure_caption, round-tripped).
+            if hasattr(fig, "record"):
+                fig.record.figure_texts.append(
+                    {
+                        "x": x_center,
+                        "y": y_top + 0.02,
+                        "s": text,
+                        "kwargs": dict(text_kwargs),
+                    }
+                )
 
     # --- Figure-level caption ---
     if caption:
