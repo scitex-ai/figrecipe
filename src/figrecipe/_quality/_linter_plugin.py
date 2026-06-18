@@ -7,6 +7,10 @@ Rule families:
 - FIG001       — scientific-figure hygiene (axis-range alignment across subplots).
 - P001-P009    — bare matplotlib calls; suggest scitex/figrecipe tracked variants
                  and flag style-override kwargs.
+- P010         — axis-label / title string LITERALS that start with a
+                 lowercase letter (set_xlabel/set_ylabel/set_title/suptitle
+                 and set_xyt/set_xytc x/y/title positional args); recommend
+                 capitalizing. f-strings / variables are skipped.
 
 Registered via entry point 'scitex_dev.linter.plugins' so scitex-linter
 discovers these rules automatically when figrecipe is installed.
@@ -17,6 +21,7 @@ file stays focused on the rule-object definitions + plugin wiring.
 
 from ._linter_checkers import (  # noqa: F401
     _make_figure_method_checker,
+    _make_label_caps_checker,
     _make_style_kwarg_checker,
 )
 
@@ -299,6 +304,29 @@ def get_plugin():
         requires="figrecipe",
     )
 
+    # P010 — axis labels / titles read better capitalized in publication
+    # figures (a recurring neurovista figure-prep note). This is the one
+    # *statically* checkable slice of that convention: a string LITERAL
+    # passed as a label/title that begins with a lowercase letter. We only
+    # inspect literals — f-strings, variables, and `.format(...)` results
+    # are skipped because their runtime value is unknowable. Warning, not
+    # error: lowercase can be intentional (gene names, units like "mV").
+    P010 = Rule(
+        id="STX-P010",
+        severity="warning",
+        category="plot",
+        message=(
+            "axis label / title string literal starts with a lowercase letter "
+            "— publication figures read better with a capitalized first word"
+        ),
+        suggestion=(
+            "Capitalize the first word of the label, e.g. "
+            '`set_xlabel("density")` → `set_xlabel("Density")`. If the '
+            "lowercase form is intentional (a gene name, unit, or symbol), "
+            "annotate the line with `# stx-allow: STX-P010`."
+        ),
+    )
+
     # ------------------------------------------------------------------
     # Checkers: AST visitors. Imports deferred so figrecipe can be
     # installed without scitex-linter.
@@ -319,6 +347,11 @@ def get_plugin():
     figure_method_checker = _make_figure_method_checker(FM010, FM011)
     if figure_method_checker is not None:
         checkers.append(figure_method_checker)
+
+    # P010 label-capitalization checker. Same deferred-import discipline.
+    label_caps_checker = _make_label_caps_checker(P010)
+    if label_caps_checker is not None:
+        checkers.append(label_caps_checker)
 
     # FIG001 axis-range-alignment checker. We subclass the base checker
     # here so it ships the FIG001 rule object without the plugin loader
@@ -357,6 +390,7 @@ def get_plugin():
             P007,
             P008,
             P009,
+            P010,
         ],
         "call_rules": {
             # FM rules via call patterns
