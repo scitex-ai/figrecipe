@@ -75,6 +75,16 @@ class AxesRecord:
     # Axes bbox [left, bottom, width, height] in the *cropped* image fraction
     # (see _capture_axes_bboxes) -- used for alignment/snap.
     bbox: Optional[List[float]] = None
+    # The FINAL rendered view limits (ax.get_xlim()/get_ylim()) captured from
+    # the live figure at SAVE time (see _capture_axes_bboxes), AFTER every call,
+    # decoration and tick finalizer has run. The reproducer re-applies THESE as
+    # the authoritative last word so the recorded view wins over autoscale
+    # (NeuroVista Ask 2) WITHOUT clobbering a legitimate later change -- e.g.
+    # rotate_labels re-runs the locator and snaps set_ylim(0, 24) out to
+    # (0, 25); the set_ylim *args* alone would wrongly revert that on replay.
+    # ``None`` on legacy recipes -> reproducer falls back to the set_*lim args.
+    final_xlim: Optional[Tuple[float, float]] = None
+    final_ylim: Optional[Tuple[float, float]] = None
     # Same, but in the *uncropped* figure fraction (mpl ax.get_position()).
     # Paired with FigureRecord.content_bbox it lets compose tile crop-aware.
     bbox_uncropped: Optional[List[float]] = None
@@ -111,6 +121,10 @@ class AxesRecord:
         }
         if self.bbox is not None:
             result["bbox"] = self.bbox
+        if self.final_xlim is not None:
+            result["final_xlim"] = list(self.final_xlim)
+        if self.final_ylim is not None:
+            result["final_ylim"] = list(self.final_ylim)
         if self.bbox_uncropped is not None:
             result["bbox_uncropped"] = self.bbox_uncropped
         if self.compose_bbox is not None:
@@ -158,12 +172,16 @@ def _axes_record_from_dict(
     ax_data: Dict[str, Any], position: Tuple[int, int]
 ) -> "AxesRecord":
     """Rebuild an AxesRecord from a serialized dict (recursive for inset sub-panels)."""
+    final_xlim = ax_data.get("final_xlim")
+    final_ylim = ax_data.get("final_ylim")
     ax_record = AxesRecord(
         position=position,
         caption=ax_data.get("caption"),
         stats=ax_data.get("stats"),
         visible=ax_data.get("visible", True),
         bbox=ax_data.get("bbox"),
+        final_xlim=tuple(final_xlim) if final_xlim is not None else None,
+        final_ylim=tuple(final_ylim) if final_ylim is not None else None,
         bbox_uncropped=ax_data.get("bbox_uncropped"),
         compose_bbox=ax_data.get("compose_bbox"),
     )

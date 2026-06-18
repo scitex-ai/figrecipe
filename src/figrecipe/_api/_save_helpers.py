@@ -321,6 +321,19 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
             if ax_record is None:
                 continue
             ax_record.bbox = _to_cropped(mpl_ax.get_position())
+            # Capture the FINAL rendered view limits (post-render, after every
+            # call/decoration/tick-finalizer has run on the live axes) so the
+            # reproducer can re-apply the TRUE final view rather than the
+            # set_xlim/set_ylim args -- those args miss a legitimate later
+            # widening such as rotate_labels snapping the view to the outermost
+            # tick (NeuroVista Fig 01c). float() strips np.float64 for clean YAML.
+            try:
+                xlo, xhi = mpl_ax.get_xlim()
+                ylo, yhi = mpl_ax.get_ylim()
+                ax_record.final_xlim = (float(xlo), float(xhi))
+                ax_record.final_ylim = (float(ylo), float(yhi))
+            except Exception:
+                pass  # best-effort; reproducer falls back to set_*lim args
             matched_records.add(key)
 
     # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
