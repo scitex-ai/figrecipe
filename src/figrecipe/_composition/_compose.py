@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from numpy.typing import NDArray
 
-from .._recorder import FigureRecord
 from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
 from ._crop_aware import _apply_source_style, panel_rel_bbox, replay_panel_suptitle
@@ -24,6 +23,7 @@ from ._panel_labels import (
     _add_panel_labels_mm,
     _get_axes_at,
 )
+from ._replay_record import _replay_axes_record, _replay_axes_record_mm
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
 from ._source_parser import parse_source_spec_with_key as _parse_source_spec_with_key
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
@@ -451,61 +451,6 @@ def _compose_mm_based(
     render_compose_captions(fig, axes_list, caption, panel_captions)
 
     return fig, axes_list
-
-
-def _replay_axes_record_mm(
-    mpl_ax,
-    ax_record,
-    fig_record: FigureRecord,
-    idx: int,
-    spec: Dict[str, Any],
-) -> None:
-    """Replay axes record for mm-based composition."""
-    from .._reproducer._core import _replay_call
-
-    result_cache: Dict[str, Any] = {}
-
-    for call in ax_record.calls:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    for call in ax_record.decorations:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    ax_key = f"ax_mm_{idx}"
-    ax_record_copy = ax_record
-    ax_record_copy.mm_position = spec
-    fig_record.axes[ax_key] = ax_record_copy
-
-
-def _replay_axes_record(
-    target_ax: RecordingAxes,
-    ax_record,
-    fig_record: FigureRecord,
-    row: int,
-    col: int,
-) -> None:
-    """Replay all calls from ax_record onto target axes."""
-    from .._reproducer._core import _replay_call
-
-    mpl_ax = target_ax._ax if hasattr(target_ax, "_ax") else target_ax
-    result_cache: Dict[str, Any] = {}
-
-    for call in ax_record.calls:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    for call in ax_record.decorations:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    ax_key = grid_id(row, col)
-    fig_record.axes[ax_key] = ax_record
 
 
 __all__ = ["compose"]
