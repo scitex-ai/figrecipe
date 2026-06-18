@@ -399,9 +399,11 @@
 <span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Main composition logic for combining multiple figures.</span>
 
-<span class="sd">Supports two composition modes:</span>
+<span class="sd">Supports three composition modes:</span>
 <span class="sd">1. Grid-based: layout=(nrows, ncols) with sources={(row, col): path}</span>
 <span class="sd">2. Mm-based: canvas_size_mm=(w, h) with sources={path: {&quot;xy_mm&quot;: ..., &quot;size_mm&quot;: ...}}</span>
+<span class="sd">3. Tiled: layout=[[&quot;A&quot;,&quot;B&quot;],[&quot;C&quot;]] with sources={&quot;A&quot;: path, ...} (row-justified,</span>
+<span class="sd">   aspect-preserving, whitespace-free) -- see ``_tile.py``.</span>
 
 <span class="sd">All layouts maintain matplotlib editability - no PIL image pasting.</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -422,6 +424,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._source_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_image_file</span> <span class="k">as</span> <span class="n">_is_image_file</span>  <span class="c1"># noqa: F401</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._source_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_source_spec_with_key</span> <span class="k">as</span> <span class="n">_parse_source_spec_with_key</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._source_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_source_spec_with_path</span> <span class="k">as</span> <span class="n">_parse_source_spec_with_path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._tile</span><span class="w"> </span><span class="kn">import</span> <span class="n">_is_tiled_layout</span><span class="p">,</span> <span class="n">build_tiled_sources</span>
 
 <span class="c1"># Default DPI for mm-based composition</span>
 <span class="n">DEFAULT_DPI</span> <span class="o">=</span> <span class="mi">300</span>
@@ -447,8 +450,9 @@
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.compose">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compose</span><span class="p">(</span>
     <span class="n">sources</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
-    <span class="n">layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">canvas_size_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">width_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gap_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
     <span class="n">dpi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_DPI</span><span class="p">,</span>
     <span class="n">panel_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -459,7 +463,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">RecordingFigure</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compose a new figure from multiple sources (recipes or raw images).</span>
 
-<span class="sd">    Supports two modes automatically detected from sources format:</span>
+<span class="sd">    Supports three modes automatically detected from sources/layout format:</span>
 
 <span class="sd">    1. Grid-based: sources={(row, col): path}</span>
 <span class="sd">       Uses layout=(nrows, ncols) for subplot grid.</span>
@@ -467,18 +471,34 @@
 <span class="sd">    2. Mm-based: sources={path: {&quot;xy_mm&quot;: (x, y), &quot;size_mm&quot;: (w, h)}}</span>
 <span class="sd">       Uses canvas_size_mm for precise positioning.</span>
 
+<span class="sd">    3. Tiled (row-justified, whitespace-free): layout=[[&quot;A&quot;,&quot;B&quot;,&quot;C&quot;],[&quot;D&quot;]]</span>
+<span class="sd">       (or the multiline string &quot;A B C\\nD&quot;) with sources={&quot;A&quot;: path, ...}.</span>
+<span class="sd">       Each panel keeps its true aspect ratio; within a row all panels share</span>
+<span class="sd">       one common height and sit edge-to-edge (only ``gap_mm`` between) so</span>
+<span class="sd">       there is no whitespace, and every row spans the same width so the</span>
+<span class="sd">       right edge is never ragged. The first layout row is rendered on top.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    sources : dict</span>
-<span class="sd">        Either:</span>
+<span class="sd">        One of:</span>
 <span class="sd">        - Grid-based: {(row, col): source_path} mapping positions to sources</span>
 <span class="sd">        - Mm-based: {source_path: {&quot;xy_mm&quot;: (x, y), &quot;size_mm&quot;: (w, h)}}</span>
-<span class="sd">    layout : tuple, optional</span>
-<span class="sd">        (nrows, ncols) for grid-based composition. Auto-detected if not provided.</span>
+<span class="sd">        - Tiled: {label: source} keyed by the string labels used in ``layout``</span>
+<span class="sd">    layout : tuple, str, or list of list of str, optional</span>
+<span class="sd">        - (nrows, ncols) for grid-based composition (auto-detected if omitted).</span>
+<span class="sd">        - list of rows of labels (``[[&quot;A&quot;,&quot;B&quot;],[&quot;C&quot;]]``) or a multiline string</span>
+<span class="sd">          (``&quot;A B\\nC&quot;``) for tiled composition.</span>
 <span class="sd">    canvas_size_mm : tuple, optional</span>
 <span class="sd">        (width_mm, height_mm) for mm-based composition. Required for mm-based mode.</span>
+<span class="sd">    width_mm : float, optional</span>
+<span class="sd">        Overall content width (mm) for TILED composition. When omitted the</span>
+<span class="sd">        default width is the widest row at its true content size, i.e.</span>
+<span class="sd">        ``max over rows of (sum of true panel widths + (k-1)*gap_mm)``.</span>
+<span class="sd">        Ignored by grid/mm modes.</span>
 <span class="sd">    gap_mm : float</span>
-<span class="sd">        Gap between panels in mm (for auto-layout modes like &#39;horizontal&#39;).</span>
+<span class="sd">        Gap between panels in mm (gutter; tiled mode uses it as the edge-to-edge</span>
+<span class="sd">        spacing, and ``gap_mm=0`` makes panels share edges exactly).</span>
 <span class="sd">    dpi : int</span>
 <span class="sd">        DPI for the output figure.</span>
 <span class="sd">    panel_labels : bool</span>
@@ -534,8 +554,35 @@
 <span class="sd">    ...         &quot;panel_c.yaml&quot;: {&quot;xy_mm&quot;: (0, 60), &quot;size_mm&quot;: (175, 55)},</span>
 <span class="sd">    ...     }</span>
 <span class="sd">    ... )</span>
+
+<span class="sd">    Tiled (row-justified, whitespace-free) composition:</span>
+
+<span class="sd">    &gt;&gt;&gt; fig, axes = fr.compose(</span>
+<span class="sd">    ...     layout=[[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;], [&quot;D&quot;]],</span>
+<span class="sd">    ...     sources={&quot;A&quot;: &quot;a.yaml&quot;, &quot;B&quot;: &quot;b.yaml&quot;,</span>
+<span class="sd">    ...              &quot;C&quot;: &quot;c.yaml&quot;, &quot;D&quot;: &quot;d.yaml&quot;},</span>
+<span class="sd">    ...     width_mm=180, gap_mm=1.0,</span>
+<span class="sd">    ... )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">_is_mm_based_sources</span><span class="p">(</span><span class="n">sources</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">_is_tiled_layout</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">sources</span><span class="p">):</span>
+        <span class="n">sources_mm</span><span class="p">,</span> <span class="n">computed_canvas</span> <span class="o">=</span> <span class="n">_tiled_to_mm_sources</span><span class="p">(</span>
+            <span class="n">layout</span><span class="p">,</span>
+            <span class="n">sources</span><span class="p">,</span>
+            <span class="n">width_mm</span><span class="o">=</span><span class="n">width_mm</span><span class="p">,</span>
+            <span class="n">canvas_size_mm</span><span class="o">=</span><span class="n">canvas_size_mm</span><span class="p">,</span>
+            <span class="n">gap_mm</span><span class="o">=</span><span class="n">gap_mm</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_compose_mm_based</span><span class="p">(</span>
+            <span class="n">sources_mm</span><span class="p">,</span>
+            <span class="n">computed_canvas</span><span class="p">,</span>
+            <span class="n">dpi</span><span class="p">,</span>
+            <span class="n">panel_labels</span><span class="p">,</span>
+            <span class="n">label_style</span><span class="p">,</span>
+            <span class="n">caption</span><span class="o">=</span><span class="n">caption</span><span class="p">,</span>
+            <span class="n">panel_captions</span><span class="o">=</span><span class="n">panel_captions</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">_is_mm_based_sources</span><span class="p">(</span><span class="n">sources</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_compose_mm_based</span><span class="p">(</span>
             <span class="n">sources</span><span class="p">,</span>
             <span class="n">canvas_size_mm</span><span class="p">,</span>
@@ -557,6 +604,23 @@
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_tiled_to_mm_sources</span><span class="p">(</span>
+    <span class="n">layout</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
+    <span class="n">sources</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">width_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">canvas_size_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+    <span class="n">gap_mm</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adapter over ``_tile.build_tiled_sources`` (the whitespace-free,</span>
+<span class="sd">    aspect-preserving algorithm). ``canvas_size_mm[0]`` supplies the width when</span>
+<span class="sd">    ``width_mm`` is omitted; the dispatcher then delegates to ``_compose_mm_based``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">effective_width</span> <span class="o">=</span> <span class="n">width_mm</span>
+    <span class="k">if</span> <span class="n">effective_width</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">canvas_size_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">effective_width</span> <span class="o">=</span> <span class="n">canvas_size_mm</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">build_tiled_sources</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">width_mm</span><span class="o">=</span><span class="n">effective_width</span><span class="p">,</span> <span class="n">gap_mm</span><span class="o">=</span><span class="n">gap_mm</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compose_grid_based</span><span class="p">(</span>
