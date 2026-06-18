@@ -21,29 +21,12 @@ import pytest  # noqa: E402
 
 from figrecipe._wrappers._axes_style_mixin import AxesStyleMixin  # noqa: E402
 
-
-@pytest.fixture(autouse=True)
-def _pristine_rcparams():
-    """Test against matplotlib's stock spine defaults, not leaked global state.
-
-    These tests assert spine visibility on a *plain* ``plt.subplots()`` axes
-    and assume the matplotlib default (all four spines visible). But importing
-    / configuring figrecipe pushes ``axes.spines.top`` / ``axes.spines.right``
-    = False onto the GLOBAL ``matplotlib.rcParams`` (see
-    ``figrecipe._configure_mpl``), so whether a fresh axes starts with top/right
-    visible depends on whether a style/config test ran earlier in the same
-    process. Under pytest-xdist (each worker runs many modules in arbitrary
-    order) that made ``test_*_list_*`` / ``test_toggle_*`` flaky. Reset rcParams
-    to stock defaults before each test (and restore after) so the mixin is
-    exercised in isolation and the suite is order-independent.
-    """
-    saved = matplotlib.rcParams.copy()
-    matplotlib.rcdefaults()
-    matplotlib.use("Agg")  # rcdefaults resets the backend too; keep headless
-    try:
-        yield
-    finally:
-        matplotlib.rcParams.update(saved)
+# NOTE: rcParams isolation is provided process-wide by the autouse
+# ``_isolate_matplotlib_rcparams`` fixture in ``tests/conftest.py`` (it
+# snapshots ``matplotlib.rcParams`` before each test and restores them after),
+# so these tests see a fresh axes with matplotlib's stock spine defaults
+# regardless of test order / xdist worker. A module-local rcParams reset is no
+# longer needed.
 
 
 class _StubAxesWrapper(AxesStyleMixin):
