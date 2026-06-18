@@ -7,7 +7,7 @@ Rule families:
 - FIG001       — scientific-figure hygiene (axis-range alignment across subplots).
 - P001-P009    — bare matplotlib calls; suggest scitex/figrecipe tracked variants
                  and flag style-override kwargs.
-- P010         — axis-label / title string LITERALS that start with a
+- P011         — axis-label / title string LITERALS that start with a
                  lowercase letter (set_xlabel/set_ylabel/set_title/suptitle
                  and set_xyt/set_xytc x/y/title positional args); recommend
                  capitalizing. f-strings / variables are skipped.
@@ -304,15 +304,20 @@ def get_plugin():
         requires="figrecipe",
     )
 
-    # P010 — axis labels / titles read better capitalized in publication
+    # P011 — axis labels / titles read better capitalized in publication
     # figures (a recurring neurovista figure-prep note). This is the one
     # *statically* checkable slice of that convention: a string LITERAL
     # passed as a label/title that begins with a lowercase letter. We only
     # inspect literals — f-strings, variables, and `.format(...)` results
     # are skipped because their runtime value is unknowable. Warning, not
     # error: lowercase can be intentional (gene names, units like "mV").
-    P010 = Rule(
-        id="STX-P010",
+    #
+    # NOTE: the preceding engine P-code (figrecipe-as-`fr` inside
+    # @stx.session) belongs to scitex-dev's *engine*; this figrecipe-plugin
+    # rule is the next free P-code, STX-P011, to avoid colliding across the
+    # shared STX-P namespace.
+    P011 = Rule(
+        id="STX-P011",
         severity="warning",
         category="plot",
         message=(
@@ -323,7 +328,7 @@ def get_plugin():
             "Capitalize the first word of the label, e.g. "
             '`set_xlabel("density")` → `set_xlabel("Density")`. If the '
             "lowercase form is intentional (a gene name, unit, or symbol), "
-            "annotate the line with `# stx-allow: STX-P010`."
+            "annotate the line with `# stx-allow: STX-P011`."
         ),
     )
 
@@ -348,8 +353,8 @@ def get_plugin():
     if figure_method_checker is not None:
         checkers.append(figure_method_checker)
 
-    # P010 label-capitalization checker. Same deferred-import discipline.
-    label_caps_checker = _make_label_caps_checker(P010)
+    # P011 label-capitalization checker. Same deferred-import discipline.
+    label_caps_checker = _make_label_caps_checker(P011)
     if label_caps_checker is not None:
         checkers.append(label_caps_checker)
 
@@ -390,7 +395,7 @@ def get_plugin():
             P007,
             P008,
             P009,
-            P010,
+            P011,
         ],
         "call_rules": {
             # FM rules via call patterns

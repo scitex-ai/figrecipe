@@ -12,7 +12,7 @@ Three factories live here:
 - ``_make_figure_method_checker(FM010, FM011)`` — flags
   ``set_xlabel`` / ``set_ylabel`` / ``set_title`` (recommend ``set_xyt``)
   and ``ax.spines[...].set_visible(False)`` (recommend ``hide_spines``).
-- ``_make_label_caps_checker(P010)`` — flags axis-label / title string
+- ``_make_label_caps_checker(P011)`` — flags axis-label / title string
   *literals* that begin with a lowercase letter (``set_xlabel("density")``,
   ``set_xyt("time", ...)``, ``suptitle("overview")``) and recommends
   capitalizing the first word. Only clear string literals are inspected;
@@ -183,7 +183,7 @@ def _make_figure_method_checker(FM010, FM011):
 
 
 # ---------------------------------------------------------------------------
-# Label-capitalization checker (STX-P010)
+# Label-capitalization checker (STX-P011)
 # ---------------------------------------------------------------------------
 
 # Axis-label / title setters whose FIRST positional argument is the label
@@ -264,10 +264,10 @@ def _starts_lowercase(text):
     return False
 
 
-def _make_label_caps_checker(P010):
+def _make_label_caps_checker(P011):
     """Build an AST NodeVisitor class that flags lowercase axis-label literals.
 
-    Fires STX-P010 when a string *literal* passed as an axis label / title
+    Fires STX-P011 when a string *literal* passed as an axis label / title
     begins with a lowercase letter:
 
     - ``ax.set_xlabel("density")`` / ``set_ylabel`` / ``set_title`` (1st arg)
@@ -327,7 +327,7 @@ def _make_label_caps_checker(P010):
             if _starts_lowercase(text):
                 # Anchor the issue at the offending string literal so the
                 # reported line/col point at the label, not the call head.
-                self._emit(P010, arg_node)
+                self._emit(P011, arg_node)
 
         def visit_Call(self, node):
             func = node.func
