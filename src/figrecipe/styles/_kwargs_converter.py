@@ -144,6 +144,9 @@ def to_subplots_kwargs(style: Optional["DotDict"] = None) -> Dict[str, Any]:
             result["behavior_auto_scale_axes"] = behavior.auto_scale_axes
         if hasattr(behavior, "constrained_layout"):
             result["behavior_constrained_layout"] = behavior.constrained_layout
+        # Save-time overlap/layout-conflict check (default on). Set
+        # behavior.check_overlap = false in a style/preset to opt out.
+        result["behavior_check_overlap"] = behavior.get("check_overlap", True)
 
     # Add colorbar settings (colorbar.* in YAML)
     if "colorbar" in style:

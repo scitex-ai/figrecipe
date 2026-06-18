@@ -157,6 +157,15 @@ def save_figure(
             validate_error_level=validate_axis_range_alignment_error_level,
         )
 
+    # Save-time layout-conflict (overlap) check. Enumerates every visual
+    # component, then consults one policy table to decide which overlaps are
+    # forbidden, emitting a single warning (never raises). Opt out via the
+    # style behavior flag ``behavior.check_overlap = false``.
+    if style_dict.get("behavior_check_overlap", True):
+        from .._quality._overlap import run_overlap_check
+
+        run_overlap_check(fig, style=style_dict)
+
     # Check for .fig.zip (multi-panel Figz bundle) or .plt.zip (single-plot Pltz bundle)
     suffixes = [s.lower() for s in path.suffixes]
     if suffixes[-2:] == [".fig", ".zip"]:
