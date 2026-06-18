@@ -8,11 +8,17 @@ later ``set_xscale`` decoration that autoscales, inset sub-panels, colorbars, or
 the tick/locator finalizers -- can re-engage matplotlib autoscaling and widen the
 view away from the explicitly recorded limits.
 
-To make the recorded limits authoritative, this module re-applies the LAST
-recorded ``set_xlim`` / ``set_ylim`` for each axes once everything else is done.
+To make the recorded limits authoritative, this module re-applies, once everything
+else is done, the axes' FINAL rendered view limits captured at save time
+(``AxesRecord.final_xlim`` / ``final_ylim``) when present. Those are the true
+last-rendered state, so they win over autoscale AND faithfully reproduce a
+legitimate later change -- e.g. ``rotate_labels`` re-runs the tick locator and
+snaps ``set_ylim(0, 24)`` out to ``(0, 25)``; replaying only the ``set_ylim``
+*args* would wrongly revert that. Legacy recipes (saved before final limits were
+captured) fall back to the LAST recorded ``set_xlim`` / ``set_ylim`` args, which
 "last wins" mirrors matplotlib's own behaviour when a user calls the setter more
-than once. Only axes that actually recorded an explicit limit are touched, so
-auto-scaled axes keep their auto behaviour.
+than once. Only axes that recorded a final limit (or an explicit setter) are
+touched, so auto-scaled axes keep their auto behaviour.
 """
 
 from typing import Any, List, Optional
@@ -44,25 +50,48 @@ def _last_limit_args(
 
 
 def reapply_recorded_limits(ax, ax_record, calls: Optional[List[str]] = None) -> None:
-    """Re-apply this axes' recorded set_xlim / set_ylim so they override autoscale.
+    """Re-apply this axes' recorded final view limits so they override autoscale.
+
+    Prefers the FINAL rendered limits captured at save time
+    (``final_xlim`` / ``final_ylim``) -- the true last-rendered state, which both
+    beats autoscale and reproduces a legitimate later change (e.g. rotate_labels
+    snapping the view to the outermost tick). Falls back to the LAST recorded
+    ``set_xlim`` / ``set_ylim`` args for legacy recipes that lack final limits.
 
     Parameters
     ----------
     ax :
         Target matplotlib axes (already fully replayed + finalized).
     ax_record : AxesRecord
-        The recorded axes whose limit decorations should win.
+        The recorded axes whose final limits / limit decorations should win.
     calls : list of str, optional
         If given, only re-apply limit decorations whose id is in this list
         (mirrors the same filter ``replay_axes_calls`` applies during replay).
+        Captured final limits reflect the FULL render, so they are used only when
+        no ``calls`` filter is active; a filtered replay uses the decoration args.
     """
-    xlim_args = _last_limit_args(ax_record, "set_xlim", calls)
-    if xlim_args:
-        _safe_set_lim(ax.set_xlim, xlim_args)
+    # The captured final limits describe the whole-figure render, so honor them
+    # only for an unfiltered reproduce; a partial (calls-filtered) replay must
+    # defer to the per-decoration args, which respect the same id filter.
+    use_final = calls is None
+    final_xlim = getattr(ax_record, "final_xlim", None) if use_final else None
+    final_ylim = getattr(ax_record, "final_ylim", None) if use_final else None
 
-    ylim_args = _last_limit_args(ax_record, "set_ylim", calls)
-    if ylim_args:
-        _safe_set_lim(ax.set_ylim, ylim_args)
+    xlim = (
+        list(final_xlim)
+        if final_xlim is not None
+        else _last_limit_args(ax_record, "set_xlim", calls)
+    )
+    if xlim:
+        _safe_set_lim(ax.set_xlim, xlim)
+
+    ylim = (
+        list(final_ylim)
+        if final_ylim is not None
+        else _last_limit_args(ax_record, "set_ylim", calls)
+    )
+    if ylim:
+        _safe_set_lim(ax.set_ylim, ylim)
 
 
 def _safe_set_lim(setter, args: list) -> Any:

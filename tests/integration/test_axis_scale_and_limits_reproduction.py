@@ -81,3 +81,24 @@ def test_explicit_ylim_reproduces_exactly(explicit_limits_recipe):
     plt.close("all")
     # Assert
     assert ylim == (3.0, 7.0)
+
+
+def test_later_legitimate_limit_change_survives_reproduction(tmp_path):
+    """A change replayed AFTER set_ylim (rotate_labels snapping the view to the
+    outermost tick) must reproduce -- the recorded FINAL view limit wins, not the
+    earlier set_ylim args (NeuroVista Fig 01c jointplot)."""
+    # Arrange: set_ylim(0, 24) then rotate_labels re-runs the locator and snaps
+    # the y view out to (0, 25); capture that live final ylim as the truth.
+    fig, ax = fr.subplots(style={"constrained_layout": True})
+    ax.plot(np.linspace(0, 24, 50), np.linspace(0, 24, 50))
+    ax.set_ylim(0, 24)
+    ax.rotate_labels(x=30)
+    live_ylim = ax.ax.get_ylim()
+    fr.save(fig, str(tmp_path / "rot.png"), validate=False)
+    plt.close("all")
+    # Act
+    _, rax = fr.reproduce(str(tmp_path / "rot.yaml"))
+    repro_ylim = getattr(rax, "ax", rax).get_ylim()
+    plt.close("all")
+    # Assert
+    assert repro_ylim == pytest.approx(live_ylim, abs=1e-6)
