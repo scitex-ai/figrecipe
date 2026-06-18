@@ -72,6 +72,17 @@ def save_recipe(
     # Create data directory for large arrays (only for separate format)
     data_dir = path.parent / f"{path.stem}_data"
 
+    # Capture the active rcParams (delta from matplotlib default, as primitives)
+    # so the recipe reproduces under the identical style environment -- a loaded
+    # theme (SCITEX_STYLE) or ANY globally-set rcParam that is not in figrecipe's
+    # curated ``style`` block. Guard on ``is None`` so a reproduced figure being
+    # re-saved keeps its recipe's recorded rcParams (never re-derives them from a
+    # possibly-different live context).
+    if getattr(record, "rcparams", None) is None:
+        from ..styles._rcparams import capture_rcparams_delta
+
+        record.rcparams = capture_rcparams_delta()
+
     # Convert record to dict
     data = record.to_dict()
 

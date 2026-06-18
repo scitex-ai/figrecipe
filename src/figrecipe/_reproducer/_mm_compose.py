@@ -29,6 +29,21 @@ def reproduce_mm_composed(record):
 
     Returns ``(wrapped_fig, axes_list)`` mirroring ``reproduce_from_record``.
     """
+    import matplotlib as mpl
+
+    # Restore the recipe's captured rcParams (a loaded theme like SCITEX_STYLE,
+    # or ANY globally-set rcParam) for the whole composed build, so every panel
+    # renders under the identical environment. rc_context scopes it -- reproduce
+    # never leaks rcParams to the caller.
+    from ..styles._rcparams import apply_recorded_rcparams
+
+    with mpl.rc_context():
+        apply_recorded_rcparams(getattr(record, "rcparams", None) or {})
+        return _build_mm_composed(record)
+
+
+def _build_mm_composed(record):
+    """Build the composed figure (runs inside the caller's rc_context)."""
     from matplotlib.backends.backend_agg import FigureCanvasAgg
     from matplotlib.figure import Figure
 
