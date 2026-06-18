@@ -281,6 +281,17 @@ def build_tiled_sources(
         width_of[label] = _source_content_width_mm(spec, a)
 
     # 1. Choose overall content width W.
+    # TODO(title-clip): W accounts only for panel INK width, so the widest
+    # panel's right edge sits flush at x=W (and the leftmost at x=0). A panel
+    # TITLE is drawn point-sized and centered over its axes; when it is wider
+    # than its panel it overhangs the panel edge, and on the outermost panels
+    # that overhang crosses the canvas boundary and clips (the save-time crop
+    # uses only a fixed 1mm margin, which does not scale with title length).
+    # A clean fix must NOT perturb the geometry contract the tiled tests assert
+    # (every row spans exactly W; adjacent panels share edges to 1e-6) -- e.g.
+    # measure each row's title text overhang and expand the crop margin (not W)
+    # to cover it, or expose a symmetric title_inset_mm. Left as a cosmetic
+    # follow-up so it does not block the consolidation.
     if width_mm is not None:
         W = float(width_mm)
     else:
