@@ -9,28 +9,19 @@ tags: [figrecipe-figure-prep-playbook, figrecipe]
 # Figure Prep Playbook
 
 Canonical figrecipe leaf for the figure-preparation checklist used
-across the SciTeX ecosystem. Loaded by any agent or human prepping a
-publication-bound figure. Pairs with `05_styles.md` (visual presets),
-`17_composition.md` (multi-panel layout), and the scitex-dev
-scientific leaves `01_figures_01_standards.md` (universal rules) and
-`01_figures_03_no-synthetic-data-policy.md` (ecosystem policy).
+across the SciTeX ecosystem. Pairs with `05_styles.md` (presets),
+`17_composition.md` (multi-panel layout), and the scitex-dev scientific
+leaves `01_figures_01_standards.md` and
+`01_figures_03_no-synthetic-data-policy.md`.
 
 ## When to use this leaf
 
-Load this skill when you are about to:
+Load when rendering a figure bound for a paper / poster / talk / grant,
+building a representative example for a manuscript, writing a publication-
+quality `examples/<NN>_*.py`, or reviewing such a script before merge.
 
-- Render a figure that will end up in a paper / poster / talk / grant.
-- Build a representative example for a manuscript figure.
-- Write `examples/<NN>_*.py` that figrecipe (or any ecosystem package)
-  ships as a publication-quality demonstration.
-- Review an existing figure script before merging it into a publication
-  pipeline.
-
-Do **not** load this skill for:
-
-- Quick exploratory plots during analysis (where the figure is
-  throwaway — just `ax.plot` and move on).
-- Unit-test fixtures that exercise the figrecipe API surface.
+Skip for throwaway exploratory plots (`ax.plot` and move on) and unit-test
+fixtures that merely exercise the figrecipe API surface.
 
 ## The seven rules
 
@@ -183,42 +174,12 @@ silently rescale the data and forget to update the bar label.
 See `24_l-shaped-scale-bar.md` for the worked-example leaf with the
 matplotlib pattern and a longer DO/DON'T list.
 
-## Pre-render checklist
+## Pre-render checklist & anti-patterns
 
-Before a figure script is allowed into a publication pipeline:
-
-- [ ] Backed by real data; FileNotFoundError raises on missing input.
-- [ ] NaN sentinel conversion happens at load, not plot.
-- [ ] Compared panels share `vmin`/`vmax`, axes, and colorbar.
-- [ ] Representative example is config-driven and documented.
-- [ ] No `np.random.*` / `random.*` import in the script.
-- [ ] All tunable params come from `CONFIG.*`, not literals.
-- [ ] Style preset applied via `fr.load_style(...)` or
-      `figrecipe.subplots(style=...)` — no manual `rcParams` overrides
-      that bypass figrecipe.
-- [ ] Output saved via `fr.save(fig, ...)` (not `fig.savefig`).
-- [ ] Caption / docstring explicitly names the data source and the
-      NaN-handling choice.
-- [ ] Signal-trace panels use an L-shaped scale bar (axes hidden,
-      magnitudes from `CONFIG.SCALE_BAR.*`) — see
-      `24_l-shaped-scale-bar.md`.
-
-## Anti-patterns
-
-- A `make_representative_figure()` helper that silently picks
-  `subject_ids[0]` "for the example" — encodes cherry-pick into the
-  pipeline.
-- A heatmap comparison where one panel uses `vmax=data1.max()` and
-  the other `vmax=data2.max()` — defeats the comparison even if
-  every other rule is followed.
-- A figure script that imports `matplotlib.pyplot` directly and calls
-  `plt.savefig`, even inside a project that has figrecipe installed.
-- "I'll fix the NaN sentinel handling in the figure" — no, you fix it
-  in the loader. The figure layer assumes clean `np.nan`.
-- A representative signal-trace panel with full ticked axes *and* an
-  L-shaped scale bar — redundant and visually noisy. Pick one (use
-  the L-bar for representative traces; see rule 7 and
-  `24_l-shaped-scale-bar.md`).
+The merge-gate checklist (one line per rule above) and the catalogue of
+anti-patterns that violate these rules live in the companion leaf
+`25_figure-prep-checklist.md`. Load it alongside this playbook when
+authoring or reviewing a publication-bound figure script.
 
 ## Cross-references
 
@@ -228,11 +189,10 @@ Before a figure script is allowed into a publication pipeline:
   for the no-synthetic-data policy.
 - `24_l-shaped-scale-bar.md` — L-shaped scale-bar convention for
   signal-trace panels (rule 7 worked example).
+- `25_figure-prep-checklist.md` — pre-render merge-gate checklist and
+  anti-patterns companion to this playbook.
 - `05_styles.md` — `SCITEX` and dark-variant presets.
 - `17_composition.md` — multi-panel mm-precision composition.
-- `scitex-dev/_skills/scientific/01_figures_01_standards.md` —
-  universal scientific-figure standards (color, layout, typography).
-- `scitex-dev/_skills/scientific/01_figures_03_no-synthetic-data-policy.md`
-  — canonical ecosystem-policy home for the real-data-only rule.
-- `scitex-dev/_skills/scientific/02_research-project_07_config-and-parameters.md`
-  — config-as-SSoT mechanics (`@stx.session`, `CONFIG.*`).
+- `scitex-dev/_skills/scientific/01_figures_01_standards.md` — universal scientific-figure standards (color, layout, typography).
+- `scitex-dev/_skills/scientific/01_figures_03_no-synthetic-data-policy.md` — canonical ecosystem-policy home for the real-data-only rule.
+- `scitex-dev/_skills/scientific/02_research-project_07_config-and-parameters.md` — config-as-SSoT mechanics (`@stx.session`, `CONFIG.*`).

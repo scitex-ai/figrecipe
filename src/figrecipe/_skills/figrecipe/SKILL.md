@@ -60,6 +60,7 @@ This package does not ship as a submodule of the `scitex` umbrella.
 * [22_nan-sentinel-on-read](22_nan-sentinel-on-read.md) — Convert storage-layer sentinels (e.g. `-32768`) to `np.nan` at the figure layer; example: neurovista ECoG gap sentinel
 * [23_no-synthetic-data-policy](23_no-synthetic-data-policy.md) — figrecipe rendering-side guard for the ecosystem no-synthetic-data policy (canonical home in scitex-dev scientific)
 * [24_l-shaped-scale-bar](24_l-shaped-scale-bar.md) — L-shaped scale-bar convention for representative signal-trace panels (hide axes; lower-left time + amplitude bars sharing a corner); worked-example leaf for playbook rule 7
+* [25_figure-prep-checklist](25_figure-prep-checklist.md) — pre-render merge-gate checklist + anti-patterns companion to the playbook (21)
 
 ## At a glance
 
