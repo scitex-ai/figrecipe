@@ -110,15 +110,19 @@ def replay_subpanels(parent_mpl_ax, axes_record, depth: int = 0, style=None) -> 
 
         inset_ax = parent_mpl_ax.inset_axes(bounds, **inset_kwargs)
 
-        # Replay the inset's own plotting calls.
+        # Replay the inset's own plotting calls. Coerce sequence args to numpy:
+        # sub-panel array args are inlined into the host YAML (the data-file
+        # loader does not descend into subpanels) and reload as ruamel
+        # CommentedSeq lists; without coercion an array-arg plotter such as
+        # streamplot fails on ``.shape``.
         for call in child_ax_rec.calls:
-            result = _replay_call(inset_ax, call, result_cache)
+            result = _replay_call(inset_ax, call, result_cache, coerce_sequences=True)
             if result is not None:
                 result_cache[call.id] = result
 
         # Replay the inset's decorations (set_xlabel, etc.).
         for call in child_ax_rec.decorations:
-            result = _replay_call(inset_ax, call, result_cache)
+            result = _replay_call(inset_ax, call, result_cache, coerce_sequences=True)
             if result is not None:
                 result_cache[call.id] = result
 
