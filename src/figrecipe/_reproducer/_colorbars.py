@@ -69,7 +69,15 @@ def _pin_source_axes(record, axes_2d, ax_keys):
     constrained_layout, with no colorbar stealing space, would otherwise place
     them at their FULL (no-colorbar) positions. Re-applying the recorded bbox
     restores the original tile rectangles so the pinned cax lines up and the
-    tight-cropped image matches the original pixel size.
+    cropped image matches the original pixel size.
+
+    Pins to ``bbox_uncropped`` (the panel's position in the UNCROPPED figure
+    fraction) when available: the figure is saved full-canvas and only then
+    cropped to ``content_bbox``, so the reproduce must place panels at their
+    full-canvas positions (``set_position`` is figure-fraction). The cropped
+    ``bbox`` is in the post-crop frame and would shift every panel. Legacy
+    recipes saved with ``bbox_inches="tight"`` have no crop offset, so their
+    ``bbox`` already equals ``bbox_uncropped`` and the fallback is exact.
     """
     for key in ax_keys:
         parsed = parse_grid_id(key)
@@ -81,7 +89,9 @@ def _pin_source_axes(record, axes_2d, ax_keys):
         except (IndexError, KeyError):
             continue
         ax_record = record.axes.get(key)
-        bbox = getattr(ax_record, "bbox", None) if ax_record else None
+        bbox = getattr(ax_record, "bbox_uncropped", None) if ax_record else None
+        if bbox is None or len(bbox) != 4:
+            bbox = getattr(ax_record, "bbox", None) if ax_record else None
         if bbox is not None and len(bbox) == 4:
             ax.set_position(bbox)
 

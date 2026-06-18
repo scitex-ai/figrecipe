@@ -107,19 +107,27 @@ def crop_to_content_bbox(
     return crop_offset
 
 
-def _crop_diagram_to_content_bbox(
+def _crop_to_recorded_content_bbox(
     fig,
     image_path: Path,
     crop_margin_mm: Optional[float],
     crop_margins_mm,
     dpi: int,
 ) -> Optional[dict]:
-    """Crop a standalone-diagram raster to its recorded ``content_bbox``.
+    """Crop a raster to its recorded ``content_bbox`` (deterministic size).
+
+    Generalises the standalone-diagram crop (#215) to ANY croppable raster whose
+    saved SIZE is otherwise re-measured at save time -- constrained_layout figures
+    (which would crop via ``bbox_inches="tight"``) and composed/mm-layout figures
+    (which would crop content-aware). Both re-measures jitter sub-pixel between the
+    original (drawn many times) and a fresh ``reproduce()`` (drawn few), so at a
+    pixel-rounding boundary the saved width can flip by ~1px and the validator's
+    ``size_tolerance`` flips to a SIZE mismatch (colorbar/pie/CL/composed).
 
     Ensures ``fig.record.content_bbox`` exists BEFORE cropping: on the user's
     first real save it is still None, so it is computed here from the (uncropped)
     figure; on the validator's re-save of the original it is already set from the
-    first save, and on a recipe-reproduced figure it is loaded from disk. All
+    first save; and on a recipe-reproduced figure it is loaded from disk. All
     three therefore crop to the SAME dpi-independent fraction, so the saved file
     and every reproduce land at identical pixel dimensions.
 
@@ -128,7 +136,8 @@ def _crop_diagram_to_content_bbox(
 
     Returns a ``crop_offset`` dict, or ``None`` (with a warning) when no
     ``content_bbox`` is available -- the caller then falls back to the normal
-    content-aware crop so a missing bbox never silently skips cropping.
+    ``bbox_inches="tight"`` / content-aware crop so a missing bbox never silently
+    skips cropping (project rule: no silent fallback).
     """
     if getattr(fig.record, "content_bbox", None) is None:
         _capture_content_layout(fig)
@@ -138,8 +147,9 @@ def _crop_diagram_to_content_bbox(
         import warnings
 
         warnings.warn(
-            "Diagram figure has no content_bbox; falling back to content-aware "
-            "crop (the standalone diagram may reproduce at a different size).",
+            "Figure has no content_bbox; falling back to the legacy "
+            "tight/content-aware crop (this figure may reproduce at a "
+            "different pixel size under draw-count jitter).",
             UserWarning,
         )
         return None
