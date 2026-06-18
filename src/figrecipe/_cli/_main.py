@@ -7,7 +7,7 @@ from rich.console import Console
 
 from .. import __version__
 from ._apis import list_python_apis
-from ._completion import completion
+from ._completion import attach_shell_completion
 from ._compose import compose
 from ._convert import convert
 from ._crop import crop
@@ -38,7 +38,14 @@ COMMAND_CATEGORIES = [
     ("Diagram", ["diagram"]),
     ("Style & Appearance", ["style", "list-fonts"]),
     ("Integration", ["mcp", "list-python-apis"]),
-    ("Utility", ["completion", "version"]),
+    (
+        "Utility",
+        [
+            "show-version",
+            "install-shell-completion",
+            "print-shell-completion",
+        ],
+    ),
 ]
 
 
@@ -149,7 +156,6 @@ def _show_recursive_help(ctx: click.Context) -> None:
 
 # Register commands
 
-main.add_command(completion)
 main.add_command(compose)
 main.add_command(convert)
 main.add_command(crop)
@@ -185,12 +191,11 @@ except ImportError:
 
 # audit-cli §1a — wire install-shell-completion + print-shell-completion
 # so `figrecipe <TAB>` works without the user copy-pasting boilerplate.
-try:
-    from scitex_dev._cli._completion import attach_shell_completion
-
-    attach_shell_completion(main, prog_name="figrecipe")
-except ImportError:
-    pass
+# figrecipe's own helper generates the script IN-PROCESS (click.shell_
+# completion) so it works even when no `figrecipe` console-script is on
+# $PATH — e.g. the PYTHONPATH/--target SIF install used by self-hosted CI,
+# where shelling out to the bare binary previously died with FileNotFound.
+attach_shell_completion(main, prog_name="figrecipe")
 
 
 if __name__ == "__main__":
