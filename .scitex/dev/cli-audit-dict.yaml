@@ -7,3 +7,19 @@ nouns:
   - bash
   - zsh
   - fish
+
+intransitive_verbs:
+  # audit-cli §1 escape hatch (same mechanism `next` uses): Moby's
+  # corpus classifies each of these as BOTH a noun and a verb, so the
+  # leaf-noun check flags them as multi-class homonyms. In figrecipe's
+  # CLI grammar they are unambiguously verbs — the imperative the user
+  # types to act on a recipe / figure / image:
+  #   figrecipe plot <spec>        — render a figure from a plot spec
+  #   figrecipe crop <image>       — crop whitespace from an image
+  #   figrecipe extract <recipe>   — extract the plotted data to CSV
+  #   figrecipe info <recipe>      — print recipe metadata
+  # Declaring them intransitive verbs records that intent and clears §1.
+  - plot
+  - crop
+  - extract
+  - info
