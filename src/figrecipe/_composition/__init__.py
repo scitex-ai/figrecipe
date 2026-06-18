@@ -8,9 +8,11 @@ This module provides functionality to:
 - Hide/show panels for visual composition
 - Align and distribute panels
 
-Supports two composition modes (automatically detected):
+Supports three composition modes (automatically detected):
 1. Grid-based: sources={(row, col): path} with layout=(nrows, ncols)
 2. Mm-based: sources={path: {"xy_mm": ..., "size_mm": ...}} with canvas_size_mm
+3. Tiled: sources={"A": path, ...} with layout=[["A","B"],["C"]] -- row-justified,
+   aspect-preserving, whitespace-free (see _tile.py)
 
 All composition is matplotlib-native for reproducibility - no PIL image pasting.
 

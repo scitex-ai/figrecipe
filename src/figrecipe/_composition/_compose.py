@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 """Main composition logic for combining multiple figures.
 
-Supports two composition modes:
+Supports three composition modes:
 1. Grid-based: layout=(nrows, ncols) with sources={(row, col): path}
 2. Mm-based: canvas_size_mm=(w, h) with sources={path: {"xy_mm": ..., "size_mm": ...}}
+3. Tiled: layout=[["A","B"],["C"]] with sources={"A": path, ...} (row-justified,
+   aspect-preserving, whitespace-free) -- see ``_tile.py``.
 
 All layouts maintain matplotlib editability - no PIL image pasting.
 """
@@ -25,6 +27,7 @@ from ._panel_labels import (
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
 from ._source_parser import parse_source_spec_with_key as _parse_source_spec_with_key
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
+from ._tile import _is_tiled_layout, build_tiled_sources
 
 # Default DPI for mm-based composition
 DEFAULT_DPI = 300
@@ -48,8 +51,9 @@ def _mm_to_inch(mm: float) -> float:
 
 def compose(
     sources: Dict[Any, Any],
-    layout: Optional[Tuple[int, int]] = None,
+    layout: Optional[Union[Tuple[int, int], str, List[List[str]]]] = None,
     canvas_size_mm: Optional[Tuple[float, float]] = None,
+    width_mm: Optional[float] = None,
     gap_mm: float = 2.0,
     dpi: int = DEFAULT_DPI,
     panel_labels: bool = False,
@@ -60,7 +64,7 @@ def compose(
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray, List[RecordingAxes]]]:
     """Compose a new figure from multiple sources (recipes or raw images).
 
-    Supports two modes automatically detected from sources format:
+    Supports three modes automatically detected from sources/layout format:
 
     1. Grid-based: sources={(row, col): path}
        Uses layout=(nrows, ncols) for subplot grid.
@@ -68,18 +72,34 @@ def compose(
     2. Mm-based: sources={path: {"xy_mm": (x, y), "size_mm": (w, h)}}
        Uses canvas_size_mm for precise positioning.
 
+    3. Tiled (row-justified, whitespace-free): layout=[["A","B","C"],["D"]]
+       (or the multiline string "A B C\\nD") with sources={"A": path, ...}.
+       Each panel keeps its true aspect ratio; within a row all panels share
+       one common height and sit edge-to-edge (only ``gap_mm`` between) so
+       there is no whitespace, and every row spans the same width so the
+       right edge is never ragged. The first layout row is rendered on top.
+
     Parameters
     ----------
     sources : dict
-        Either:
+        One of:
         - Grid-based: {(row, col): source_path} mapping positions to sources
         - Mm-based: {source_path: {"xy_mm": (x, y), "size_mm": (w, h)}}
-    layout : tuple, optional
-        (nrows, ncols) for grid-based composition. Auto-detected if not provided.
+        - Tiled: {label: source} keyed by the string labels used in ``layout``
+    layout : tuple, str, or list of list of str, optional
+        - (nrows, ncols) for grid-based composition (auto-detected if omitted).
+        - list of rows of labels (``[["A","B"],["C"]]``) or a multiline string
+          (``"A B\\nC"``) for tiled composition.
     canvas_size_mm : tuple, optional
         (width_mm, height_mm) for mm-based composition. Required for mm-based mode.
+    width_mm : float, optional
+        Overall content width (mm) for TILED composition. When omitted the
+        default width is the widest row at its true content size, i.e.
+        ``max over rows of (sum of true panel widths + (k-1)*gap_mm)``.
+        Ignored by grid/mm modes.
     gap_mm : float
-        Gap between panels in mm (for auto-layout modes like 'horizontal').
+        Gap between panels in mm (gutter; tiled mode uses it as the edge-to-edge
+        spacing, and ``gap_mm=0`` makes panels share edges exactly).
     dpi : int
         DPI for the output figure.
     panel_labels : bool
@@ -135,8 +155,35 @@ def compose(
     ...         "panel_c.yaml": {"xy_mm": (0, 60), "size_mm": (175, 55)},
     ...     }
     ... )
+
+    Tiled (row-justified, whitespace-free) composition:
+
+    >>> fig, axes = fr.compose(
+    ...     layout=[["A", "B", "C"], ["D"]],
+    ...     sources={"A": "a.yaml", "B": "b.yaml",
+    ...              "C": "c.yaml", "D": "d.yaml"},
+    ...     width_mm=180, gap_mm=1.0,
+    ... )
     """
-    if _is_mm_based_sources(sources):
+    if _is_tiled_layout(layout, sources):
+        sources_mm, computed_canvas = _tiled_to_mm_sources(
+            layout,
+            sources,
+            width_mm=width_mm,
+            canvas_size_mm=canvas_size_mm,
+            gap_mm=gap_mm,
+        )
+        return _compose_mm_based(
+            sources_mm,
+            computed_canvas,
+            dpi,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
+        )
+    elif _is_mm_based_sources(sources):
         return _compose_mm_based(
             sources,
             canvas_size_mm,
@@ -157,6 +204,23 @@ def compose(
             panel_captions=panel_captions,
             **kwargs,
         )
+
+
+def _tiled_to_mm_sources(
+    layout: Union[str, List[List[str]]],
+    sources: Dict[str, Any],
+    width_mm: Optional[float],
+    canvas_size_mm: Optional[Tuple[float, float]],
+    gap_mm: float,
+) -> Tuple[Dict[str, Dict[str, Any]], Tuple[float, float]]:
+    """Adapter over ``_tile.build_tiled_sources`` (the whitespace-free,
+    aspect-preserving algorithm). ``canvas_size_mm[0]`` supplies the width when
+    ``width_mm`` is omitted; the dispatcher then delegates to ``_compose_mm_based``.
+    """
+    effective_width = width_mm
+    if effective_width is None and canvas_size_mm is not None:
+        effective_width = canvas_size_mm[0]
+    return build_tiled_sources(layout, sources, width_mm=effective_width, gap_mm=gap_mm)
 
 
 def _compose_grid_based(
