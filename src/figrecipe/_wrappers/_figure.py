@@ -179,23 +179,78 @@ class RecordingFigure(FigureTextMixin):
     # non-bold weight).
 
     def colorbar(self, mappable, ax=None, **kwargs) -> Any:
-        """Add a colorbar and record it for reproduction."""
-        ax_key = None
-        mpl_ax = getattr(ax, "_ax", ax)  # RecordingAxes._ax or raw Axes
-        for row in self._axes:
-            for rec_ax in row:
-                if rec_ax._ax is mpl_ax:
-                    ax_key = grid_id(rec_ax._position[0], rec_ax._position[1])
-                    break
+        """Add a colorbar and record it for reproduction.
+
+        ``ax`` may be a single axes OR a list/array of axes (a shared colorbar
+        that steals space from several panels, e.g.
+        ``fig.colorbar(im, ax=axes.ravel().tolist())``). Every source axes is
+        recorded in ``ax_keys`` so replay knows the full steal set; the colorbar's
+        resolved geometry is captured later at SAVE time (see
+        ``_capture_colorbar_geometry``) so reproduction can pin it exactly.
+        """
+        # Normalize ``ax`` to a flat list of raw matplotlib axes, unwrapping any
+        # RecordingAxes. Build the matching grid keys in the same order.
+        if isinstance(ax, (list, tuple)):
+            ax_seq = list(ax)
+        elif hasattr(ax, "ravel") and not hasattr(ax, "_ax"):
+            # numpy array of axes
+            ax_seq = list(ax.ravel())
+        elif ax is None:
+            ax_seq = []
+        else:
+            ax_seq = [ax]
+
+        mpl_axes = [getattr(a, "_ax", a) for a in ax_seq]
+
+        ax_keys: List[str] = []
+        for mpl_ax in mpl_axes:
+            for row in self._axes:
+                for rec_ax in row:
+                    if rec_ax._ax is mpl_ax:
+                        ax_keys.append(
+                            grid_id(rec_ax._position[0], rec_ax._position[1])
+                        )
+                        break
+
+        # Identify the axes that OWNS the mappable (``mappable.axes``). With a
+        # shared colorbar over a list of panels, the mappable belongs to ONE
+        # specific panel (e.g. the last ``imshow``); its clim drives the
+        # colorbar ticks. Recording this key lets replay pick the SAME mappable
+        # (hence the same clim/ticks) rather than guessing the first panel.
+        mappable_ax_key = None
+        owner_ax = getattr(mappable, "axes", None)
+        if owner_ax is not None:
+            for row in self._axes:
+                for rec_ax in row:
+                    if rec_ax._ax is owner_ax:
+                        mappable_ax_key = grid_id(
+                            rec_ax._position[0], rec_ax._position[1]
+                        )
+                        break
+
+        # First matched key locates the mappable on replay (back-compat field).
+        ax_key = mappable_ax_key or (ax_keys[0] if ax_keys else None)
+
         ser_kw = {
             k: v
             for k, v in kwargs.items()
             if isinstance(v, (str, int, float, bool, list, type(None)))
         }
-        self._recorder.figure_record.colorbars.append(
-            {"ax_key": ax_key, "kwargs": ser_kw}
-        )
-        return self._fig.colorbar(mappable, ax=mpl_ax, **kwargs)
+        record = {"ax_key": ax_key, "kwargs": ser_kw}
+        if ax_keys:
+            record["ax_keys"] = ax_keys
+        if mappable_ax_key is not None:
+            record["mappable_ax_key"] = mappable_ax_key
+        self._recorder.figure_record.colorbars.append(record)
+
+        # ``fig.colorbar`` accepts a single axes or a sequence; pass the
+        # unwrapped form so matplotlib never sees a RecordingAxes wrapper.
+        cbar_ax = mpl_axes if len(mpl_axes) > 1 else (mpl_axes[0] if mpl_axes else None)
+        cbar = self._fig.colorbar(mappable, ax=cbar_ax, **kwargs)
+        # Stash the live colorbar so the save path can read its resolved cax
+        # position (index-aligned with ``colorbars``).
+        self._recorder.figure_record.live_colorbars.append(cbar)
+        return cbar
 
     def add_panel_labels(
         self,

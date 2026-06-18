@@ -260,8 +260,18 @@ class FigureRecord:
     # Source data directories for composition (enables symlinks instead of copying)
     # Maps ax_key -> source data directory path
     source_data_dirs: Optional[Dict[str, Path]] = None
-    # Colorbar calls: list of {mappable_id, ax_key, kwargs}
+    # Colorbar calls: list of {ax_key, ax_keys, kwargs, cax_bbox}. ``ax_key`` is
+    # the first source axes (used to locate the mappable on replay); ``ax_keys``
+    # lists ALL axes the colorbar stole space from (``fig.colorbar(im, ax=[...])``);
+    # ``cax_bbox`` is the colorbar Axes' resolved [l, b, w, h] figure-fraction
+    # position, captured at SAVE time after the layout settled so replay can pin
+    # the colorbar geometry exactly instead of re-stealing space (the re-steal is
+    # NOT reproducible under constrained_layout -- draw-history-dependent).
     colorbars: List[Dict[str, Any]] = field(default_factory=list)
+    # Transient: live matplotlib ``Colorbar`` objects, index-aligned with
+    # ``colorbars``, populated while recording. NOT serialized; the save path
+    # reads each colorbar's resolved cax position into ``cax_bbox``.
+    live_colorbars: List[Any] = field(default_factory=list, repr=False, compare=False)
     # Per-panel caption texts (set via fr.compose(panel_captions=...))
     figure_panel_captions: Optional[List[str]] = None
 

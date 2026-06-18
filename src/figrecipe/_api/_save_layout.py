@@ -28,7 +28,39 @@ from typing import Optional
 
 import numpy as np
 
-__all__ = ["settle_constrained_layout"]
+__all__ = ["settle_constrained_layout", "freeze_layout_positions"]
+
+
+def freeze_layout_positions(fig, extra_draws: int = 2) -> None:
+    """Pin every axes at its CURRENT position so later draws can't re-flow it.
+
+    ``constrained_layout`` re-solves the axes rectangles on every draw -- and
+    ``savefig(bbox_inches="tight")`` triggers an extra solve at save time that
+    nudges the geometry to a slightly different, history-dependent point. For a
+    figure with a shared colorbar the steal width never lands on a single fixed
+    point, so the original save, the validator's re-render, and a fresh
+    ``reproduce()`` each crop to marginally different pixels (SIZE mismatch).
+
+    Call this AFTER ``settle_constrained_layout`` to freeze the converged
+    geometry: a couple of extra draws nudge the layout the last sub-pixel to its
+    true fixed point, then ``set_in_layout(False)`` removes each axes (tiles AND
+    the colorbar cax) from the layout solver while LEAVING ``constrained_layout``
+    enabled -- so the deterministic ``bbox_inches="tight"`` save path still runs
+    but no longer perturbs the rectangles. The reproducer pins the SAME recorded
+    rectangles and freezes identically, so original and reproduction tight-crop
+    to the same pixels. Best-effort: a missing ``set_in_layout`` (very old mpl)
+    or a failed draw is ignored.
+    """
+    for _ in range(max(0, extra_draws)):
+        try:
+            fig.canvas.draw()
+        except Exception:
+            break
+    for ax in fig.get_axes():
+        try:
+            ax.set_in_layout(False)
+        except Exception:
+            pass
 
 
 def settle_constrained_layout(
