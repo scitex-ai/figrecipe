@@ -48,8 +48,8 @@ export MPLBACKEND=Agg
 
 # Dedicated, stable matplotlib config/cache dir for this matrix leg. Without
 # pinning it, MPLCONFIGDIR defaults to $XDG_CACHE_HOME/matplotlib which is COLD
-# every CI run; the ~30 xdist workers (nproc//2 on the 64-core lease node) then
-# each cold-start matplotlib and RACE to build fontList.json in that shared dir.
+# every CI run; the xdist workers (one per core, see below) then each cold-start
+# matplotlib and RACE to build fontList.json in that shared dir.
 # A partial/contended cache makes some renders fall back to a different font, so
 # figrecipe's reproducibility tests (validate_recipe renders the SAME recipe
 # twice and compares) see render1 != render2 → spurious MSE-over-threshold
@@ -86,12 +86,15 @@ export PYTHONPATH="$TMPDIR/site:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 # figrecipe style-stack are naturally isolated per worker — the safe way to
 # parallelise a matplotlib-heavy suite.
 #
-# Worker count: cap at nproc//2 (strips hyperthread inflation; we co-tenant the
-# shared Spartan CPU lease node, so don't grab every logical CPU). Floor 4.
-# pyproject addopts carries `-v`; override to `-q` here — 2460 verbose lines ×
-# workers bloats the CI log and adds measurable overhead.
+# Worker count: use ALL cores. Each matrix leg now runs on its own dedicated
+# self-hosted node (one runner per node: figrecipe-01/02/03), so there is no
+# co-tenant to yield half the box to — the old nproc//2 cap left 2x the cores
+# idle. nice/ionice (below) handles the "yield to higher-priority work if the
+# node is ever shared" concern instead of statically reserving half the CPUs.
+# Floor 4. pyproject addopts carries `-v`; override to `-q` here — 2460 verbose
+# lines x workers bloats the CI log and adds measurable overhead.
 NPROC="$(nproc 2>/dev/null || echo 4)"
-WORKERS=$((NPROC / 2))
+WORKERS=$NPROC
 [ "$WORKERS" -lt 4 ] && WORKERS=4
 echo "xdist workers=$WORKERS (nproc=$NPROC)"
 
@@ -102,6 +105,23 @@ echo "xdist workers=$WORKERS (nproc=$NPROC)"
 # Fail-loud: if matplotlib can't even build its font cache, CI must surface it.
 python -c "import matplotlib; matplotlib.use('Agg'); from matplotlib import font_manager; font_manager.fontManager; import matplotlib.pyplot as plt; f=plt.figure(); f.canvas.draw(); print('mpl font cache warmed at', matplotlib.get_cachedir())"
 
-exec python -m pytest tests/ -n "$WORKERS" --dist loadscope -q \
+# Distribution: `--dist load` (per-TEST round-robin), NOT `--dist loadscope`.
+# loadscope pins an entire MODULE's tests to ONE worker — and figrecipe's heavy
+# suites are big SINGLE modules (e.g. tests/integration/test_all_plotters_*.py
+# parametrize one test over all 47 plotters, ~28 s each). loadscope therefore
+# ran all ~50+ cases of such a module SERIALLY on one worker (~25 min) while the
+# rest idled. There are NO module/session/class-scoped fixtures in those heavy
+# modules and the root conftest's autouse `_close_figures` resets pyplot state
+# after EVERY test, so loadscope's "same worker per module" buys nothing here —
+# it only serialized. `load` spreads the parametrized cases across ALL workers.
+#
+# nice -n 19 ionice -c 3: run at the lowest CPU + idle I/O priority so that if
+# this node is ever shared with interactive/dev work, CI grabs otherwise-idle
+# cores but YIELDS the CPU and disk to any higher-priority process — "all
+# available CPUs, with priority handling". exec replaces the shell with nice,
+# which execs ionice, which execs python (still PID-traceable, signals/exit
+# code propagate to the runner step).
+exec nice -n 19 ionice -c 3 \
+    python -m pytest tests/ -n "$WORKERS" --dist load -q \
     --cov=src/figrecipe --cov-report=xml --cov-report=term \
     -p no:cacheprovider
