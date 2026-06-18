@@ -344,6 +344,20 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                 ax_record.final_ylim = (float(ylo), float(yhi))
             except Exception:
                 pass  # best-effort; reproducer falls back to set_*lim args
+            # Capture the FINAL rendered spine visibility (post-render) so the
+            # reproducer reproduces whatever the user did to the spines -- raw
+            # ax.spines[s].set_visible(...), ax.hide_spines(), or a style. The
+            # style pass on replay only hides top+right, so a script that hides
+            # ALL spines (NeuroVista Fig03b) otherwise keeps a spurious
+            # left+bottom L-spine on replay (MSE 117). bool() strips numpy types.
+            try:
+                ax_record.final_spines = {
+                    side: bool(mpl_ax.spines[side].get_visible())
+                    for side in ("top", "right", "left", "bottom")
+                    if side in mpl_ax.spines
+                }
+            except Exception:
+                pass  # best-effort; reproducer leaves the style default alone
             matched_records.add(key)
 
     # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are

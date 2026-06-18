@@ -85,6 +85,16 @@ class AxesRecord:
     # ``None`` on legacy recipes -> reproducer falls back to the set_*lim args.
     final_xlim: Optional[Tuple[float, float]] = None
     final_ylim: Optional[Tuple[float, float]] = None
+    # The FINAL rendered spine visibility per side ({"top","right","left",
+    # "bottom"} -> bool), captured from the live axes at SAVE time (see
+    # _capture_axes_bboxes) AFTER every call/decoration/style pass has run.
+    # The reproducer re-applies it LAST so whatever the user did to the spines
+    # -- raw ``ax.spines[s].set_visible(...)``, ``ax.hide_spines()`` or a style
+    # behaviour -- is reproduced faithfully. Without it, a script that hides ALL
+    # spines (NeuroVista Fig03b grid) loses left+bottom on replay because the
+    # style only hides top+right, leaving a spurious L-shaped spine (MSE 117).
+    # ``None`` on legacy recipes -> reproducer leaves the style default alone.
+    final_spines: Optional[Dict[str, bool]] = None
     # Same, but in the *uncropped* figure fraction (mpl ax.get_position()).
     # Paired with FigureRecord.content_bbox it lets compose tile crop-aware.
     bbox_uncropped: Optional[List[float]] = None
@@ -125,6 +135,8 @@ class AxesRecord:
             result["final_xlim"] = list(self.final_xlim)
         if self.final_ylim is not None:
             result["final_ylim"] = list(self.final_ylim)
+        if self.final_spines is not None:
+            result["final_spines"] = dict(self.final_spines)
         if self.bbox_uncropped is not None:
             result["bbox_uncropped"] = self.bbox_uncropped
         if self.compose_bbox is not None:
@@ -182,6 +194,7 @@ def _axes_record_from_dict(
         bbox=ax_data.get("bbox"),
         final_xlim=tuple(final_xlim) if final_xlim is not None else None,
         final_ylim=tuple(final_ylim) if final_ylim is not None else None,
+        final_spines=ax_data.get("final_spines"),
         bbox_uncropped=ax_data.get("bbox_uncropped"),
         compose_bbox=ax_data.get("compose_bbox"),
     )

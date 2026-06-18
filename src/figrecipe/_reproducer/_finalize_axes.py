@@ -75,5 +75,23 @@ def finalize_reproduced_axes(
             row, col = parsed if parsed else (0, 0)
             reapply_recorded_limits(axes_2d[row, col], ax_record, calls)
 
+    # Re-apply the recorded FINAL spine visibility LAST. apply_style_mm (run
+    # pre-replay) only hides top+right per the style behaviour, so a script that
+    # hid ALL spines would otherwise keep a spurious left+bottom L-spine on
+    # replay (NeuroVista Fig03b, MSE 117). final_spines is captured post-render
+    # from the live axes, so this faithfully reproduces whatever the user did --
+    # raw set_visible, ax.hide_spines(), or the style. ``None`` (legacy recipes)
+    # -> leave the style default untouched.
+    for ax_key, ax_record in record.axes.items():
+        spines = getattr(ax_record, "final_spines", None)
+        if not spines:
+            continue
+        parsed = parse_grid_id(ax_key)
+        row, col = parsed if parsed else (0, 0)
+        ax = axes_2d[row, col]
+        for side, visible in spines.items():
+            if side in ax.spines:
+                ax.spines[side].set_visible(visible)
+
 
 __all__ = ["finalize_reproduced_axes"]
