@@ -67,6 +67,31 @@ matplotlib.use("Agg")
 
 
 @pytest.fixture(autouse=True)
+def _isolate_matplotlib_rcparams():
+    """Snapshot ``matplotlib.rcParams`` before each test and restore them after.
+
+    ``rcParams`` is global, mutable process state. Tests that apply a house
+    style (e.g. ``figrecipe.apply_brand_style("scitex.plt")`` /
+    ``configure_mpl``) push ``axes.spines.top``/``axes.spines.right = False``
+    (and other keys) onto it and do not undo the change, so the mutation leaks
+    into whatever test runs next in the same process. Under pytest-xdist each
+    worker runs many modules in arbitrary order, so a leaked spine rcParam made
+    the spine-mixin tests (which build a plain ``plt.subplots()`` axes and
+    assume matplotlib's stock all-spines-visible default) flaky — they pass in
+    isolation but fail when a style test lands first on the same worker.
+
+    Snapshotting the *current* values (not ``rcdefaults()``) preserves the
+    figrecipe/session baseline while undoing only per-test mutations, making the
+    whole suite order- and xdist-independent.
+    """
+    snapshot = matplotlib.rcParams.copy()
+    try:
+        yield
+    finally:
+        matplotlib.rcParams.update(snapshot)
+
+
+@pytest.fixture(autouse=True)
 def _close_figures():
     """Close all matplotlib figures after each test to prevent memory leaks."""
     yield
