@@ -46,6 +46,18 @@ export PIP_CACHE_DIR="$TMPDIR/pip-cache"
 # pyplot imports + figure rendering in the test suite never try to open a GUI.
 export MPLBACKEND=Agg
 
+# Dedicated, stable matplotlib config/cache dir for this matrix leg. Without
+# pinning it, MPLCONFIGDIR defaults to $XDG_CACHE_HOME/matplotlib which is COLD
+# every CI run; the ~30 xdist workers (nproc//2 on the 64-core lease node) then
+# each cold-start matplotlib and RACE to build fontList.json in that shared dir.
+# A partial/contended cache makes some renders fall back to a different font, so
+# figrecipe's reproducibility tests (validate_recipe renders the SAME recipe
+# twice and compares) see render1 != render2 → spurious MSE-over-threshold
+# failures (e.g. TestValidateRecipe, max channel diff 255). One stable dir +
+# a single warm-up below (build the cache ONCE, pre-fork) removes the race.
+export MPLCONFIGDIR="$TMPDIR/mpl"
+mkdir -p "$MPLCONFIGDIR"
+
 # A VIRTUAL_ENV leaked from the runner profile (~/.env-3.11) is a broken symlink
 # in here; unset it so no tool (uv, pip) tries to follow it.
 unset VIRTUAL_ENV || true
@@ -82,6 +94,13 @@ NPROC="$(nproc 2>/dev/null || echo 4)"
 WORKERS=$((NPROC / 2))
 [ "$WORKERS" -lt 4 ] && WORKERS=4
 echo "xdist workers=$WORKERS (nproc=$NPROC)"
+
+# Warm the matplotlib font cache ONCE, single-process, before xdist forks the
+# workers. This builds $MPLCONFIGDIR/fontlist-*.json a single time so every
+# worker reads a complete, consistent cache instead of racing to build it
+# concurrently (the source of the render1!=render2 reproducibility flakes).
+# Fail-loud: if matplotlib can't even build its font cache, CI must surface it.
+python -c "import matplotlib; matplotlib.use('Agg'); from matplotlib import font_manager; font_manager.fontManager; import matplotlib.pyplot as plt; f=plt.figure(); f.canvas.draw(); print('mpl font cache warmed at', matplotlib.get_cachedir())"
 
 exec python -m pytest tests/ -n "$WORKERS" --dist loadscope -q \
     --cov=src/figrecipe --cov-report=xml --cov-report=term \
