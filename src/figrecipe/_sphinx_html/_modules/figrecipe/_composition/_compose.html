@@ -412,7 +412,6 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._recorder</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureRecord</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">grid_id</span><span class="p">,</span> <span class="n">parse_grid_id</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">RecordingFigure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._crop_aware</span><span class="w"> </span><span class="kn">import</span> <span class="n">_apply_source_style</span><span class="p">,</span> <span class="n">panel_rel_bbox</span><span class="p">,</span> <span class="n">replay_panel_suptitle</span>
@@ -421,6 +420,7 @@
     <span class="n">_add_panel_labels_mm</span><span class="p">,</span>
     <span class="n">_get_axes_at</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._replay_record</span><span class="w"> </span><span class="kn">import</span> <span class="n">_replay_axes_record</span><span class="p">,</span> <span class="n">_replay_axes_record_mm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._source_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_image_file</span> <span class="k">as</span> <span class="n">_is_image_file</span>  <span class="c1"># noqa: F401</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._source_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_source_spec_with_key</span> <span class="k">as</span> <span class="n">_parse_source_spec_with_key</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._source_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_source_spec_with_path</span> <span class="k">as</span> <span class="n">_parse_source_spec_with_path</span>
@@ -851,61 +851,6 @@
     <span class="n">render_compose_captions</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">axes_list</span><span class="p">,</span> <span class="n">caption</span><span class="p">,</span> <span class="n">panel_captions</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axes_list</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_replay_axes_record_mm</span><span class="p">(</span>
-    <span class="n">mpl_ax</span><span class="p">,</span>
-    <span class="n">ax_record</span><span class="p">,</span>
-    <span class="n">fig_record</span><span class="p">:</span> <span class="n">FigureRecord</span><span class="p">,</span>
-    <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">spec</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replay axes record for mm-based composition.&quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">.._reproducer._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_replay_call</span>
-
-    <span class="n">result_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">ax_record</span><span class="o">.</span><span class="n">calls</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">_replay_call</span><span class="p">(</span><span class="n">mpl_ax</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">result_cache</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result_cache</span><span class="p">[</span><span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-
-    <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">ax_record</span><span class="o">.</span><span class="n">decorations</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">_replay_call</span><span class="p">(</span><span class="n">mpl_ax</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">result_cache</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result_cache</span><span class="p">[</span><span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-
-    <span class="n">ax_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ax_mm_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">ax_record_copy</span> <span class="o">=</span> <span class="n">ax_record</span>
-    <span class="n">ax_record_copy</span><span class="o">.</span><span class="n">mm_position</span> <span class="o">=</span> <span class="n">spec</span>
-    <span class="n">fig_record</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="n">ax_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax_record_copy</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_replay_axes_record</span><span class="p">(</span>
-    <span class="n">target_ax</span><span class="p">:</span> <span class="n">RecordingAxes</span><span class="p">,</span>
-    <span class="n">ax_record</span><span class="p">,</span>
-    <span class="n">fig_record</span><span class="p">:</span> <span class="n">FigureRecord</span><span class="p">,</span>
-    <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">col</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replay all calls from ax_record onto target axes.&quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">.._reproducer._core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_replay_call</span>
-
-    <span class="n">mpl_ax</span> <span class="o">=</span> <span class="n">target_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_ax</span><span class="p">,</span> <span class="s2">&quot;_ax&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">target_ax</span>
-    <span class="n">result_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">ax_record</span><span class="o">.</span><span class="n">calls</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">_replay_call</span><span class="p">(</span><span class="n">mpl_ax</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">result_cache</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result_cache</span><span class="p">[</span><span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-
-    <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">ax_record</span><span class="o">.</span><span class="n">decorations</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">_replay_call</span><span class="p">(</span><span class="n">mpl_ax</span><span class="p">,</span> <span class="n">call</span><span class="p">,</span> <span class="n">result_cache</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result_cache</span><span class="p">[</span><span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-
-    <span class="n">ax_key</span> <span class="o">=</span> <span class="n">grid_id</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
-    <span class="n">fig_record</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="n">ax_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax_record</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;compose&quot;</span><span class="p">]</span>
