@@ -13,6 +13,9 @@ from typing import Optional
 # print() when scitex-logging is absent.
 from .._logging import get_logger
 
+# Import helpers from separate module
+from ._save_capture import _capture_colorbar_geometry
+
 # Save settings / path / transparency helpers live in _save_config; re-exported
 # here so existing ``from .._api._save import get_save_dpi`` (etc.) keep working.
 from ._save_config import (  # noqa: F401
@@ -26,8 +29,6 @@ from ._save_config import (  # noqa: F401
     get_save_transparency,
     resolve_save_paths,
 )
-
-# Import helpers from separate module
 from ._save_helpers import (
     _capture_axes_bboxes,
     _capture_content_layout,
@@ -259,9 +260,21 @@ def save_figure(
             # original and reproduced land at identical pixels. The first draw
             # still surfaces the "collapsed to zero" warning used by the quiver
             # fallback below (degenerate paths make tight save loop endlessly).
-            from ._save_layout import settle_constrained_layout
+            from ._save_layout import (
+                freeze_layout_positions,
+                settle_constrained_layout,
+            )
 
             _collapse_detected = settle_constrained_layout(fig.fig)
+
+            # A shared colorbar's space-steal has no single constrained_layout
+            # fixed point (it drifts with draw history), so freeze the converged
+            # geometry before the tight save -- otherwise the original, the
+            # validator's re-render and a fresh reproduce() each crop to slightly
+            # different pixels. Only when a colorbar is present (the no-colorbar
+            # path is already deterministic and must stay byte-identical).
+            if not _collapse_detected and getattr(fig.record, "colorbars", None):
+                freeze_layout_positions(fig.fig)
 
             try:
                 if _collapse_detected:
@@ -366,6 +379,7 @@ def save_figure(
 
     # Capture axes bounding boxes (adjusted for crop if cropping occurred)
     _capture_axes_bboxes(fig, crop_offset)
+    _capture_colorbar_geometry(fig)  # pin shared-colorbar geometry for replay
     _capture_content_layout(fig)  # tight-content layout for crop-aware compose
 
     # Store crop info in record for future reference
