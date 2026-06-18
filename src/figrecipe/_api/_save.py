@@ -248,20 +248,20 @@ def save_figure(
             ) / 4
             pad_inches = avg_margin_mm / 25.4  # mm to inches
 
-            # Pre-flight: draw figure to detect constrained_layout collapse
-            # before attempting bbox_inches="tight" save (which hangs for e.g. quiver
-            # when axes collapse to zero and draw_path loops endlessly on degenerate paths).
-            import warnings as _warnings
+            # Pre-flight: settle constrained_layout to its CONVERGED fixed point
+            # before the bbox_inches="tight" save. constrained_layout solves the
+            # axes rectangle iteratively, so a single draw leaves it part-way and
+            # the tight crop SIZE then depends on how many times the figure was
+            # drawn before saving -- making a recipe unreproducible (the original
+            # fig is drawn far more than a fresh reproduce()-d one, so their tight
+            # crops differ by a few px -> validator SIZE mismatch). Drawing to
+            # convergence makes the saved size a pure function of the content, so
+            # original and reproduced land at identical pixels. The first draw
+            # still surfaces the "collapsed to zero" warning used by the quiver
+            # fallback below (degenerate paths make tight save loop endlessly).
+            from ._save_layout import settle_constrained_layout
 
-            _collapse_detected = False
-            with _warnings.catch_warnings(record=True) as _w:
-                _warnings.simplefilter("always")
-                try:
-                    fig.fig.canvas.draw()
-                except Exception:
-                    pass
-                if any("collapsed to zero" in str(w.message) for w in _w):
-                    _collapse_detected = True
+            _collapse_detected = settle_constrained_layout(fig.fig)
 
             try:
                 if _collapse_detected:
