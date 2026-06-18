@@ -29,11 +29,10 @@ from ._save_config import (  # noqa: F401
     get_save_transparency,
     resolve_save_paths,
 )
+from ._save_crop import dispatch_crop, wants_content_crop
 from ._save_helpers import (
     _capture_axes_bboxes,
     _capture_content_layout,
-    _crop_diagram_to_content_bbox,
-    _is_standalone_diagram_figure,
 )
 from ._save_helpers import (
     save_hitmap as _save_hitmap,
@@ -208,17 +207,6 @@ def save_figure(
     is_croppable = image_path.suffix.lower() in croppable_formats
     is_svg = image_path.suffix.lower() == ".svg"
 
-    # Standalone RASTER diagrams enable constrained_layout but must NOT be saved
-    # with bbox_inches="tight": that re-measures the ink at SAVE time, and the
-    # recipe-reproduced render carries a hair more vertical ink than the original,
-    # so the tight box differs -> figure-SIZE mismatch at validate (NeuroVista
-    # Fig 02 panel b). They are instead saved full-canvas below and cropped to the
-    # RECORDED, dpi-independent content_bbox (same box for save and every
-    # reproduce). Composed diagrams, and vector diagram exports (PDF/SVG), keep
-    # the normal tight path.
-    is_diagram = _is_standalone_diagram_figure(fig)
-    use_tight = use_constrained and not (is_diagram and is_croppable)
-
     # Get crop margins from mm_layout
     mm_layout = getattr(fig, "_mm_layout", None)
     crop_margin_left_mm = 1
@@ -231,6 +219,17 @@ def save_figure(
         crop_margin_top_mm = mm_layout.get("crop_margin_top_mm", 1)
         crop_margin_bottom_mm = mm_layout.get("crop_margin_bottom_mm", 1)
 
+    # Crop strategy. ``content_bbox`` crop (saved full-canvas, then cropped to the
+    # ONE recorded, dpi-independent box) is deterministic across draw counts, so
+    # the original and every reproduce land at identical pixels -- it replaces
+    # BOTH the size-jittering ``bbox_inches="tight"`` (constrained_layout) and the
+    # content-aware ``crop()`` (composed/mm-layout). ``use_tight`` is therefore
+    # only the LEGACY constrained path used when content_bbox is unavailable; for
+    # the quiver collapse case the settle below clears both flags and we fall back
+    # to the content-aware crop. (#215 generalised from standalone diagrams.)
+    use_content_crop = wants_content_crop(is_croppable, use_constrained, mm_layout)
+    use_tight = use_constrained and not use_content_crop
+
     # Handle facecolor override - make patches opaque if needed
     restore_patches = None
     if _is_opaque_facecolor(facecolor):
@@ -239,27 +238,16 @@ def save_figure(
     pad_inches = 0.0  # updated below if use_tight
 
     try:
-        if use_tight:
-            # For constrained_layout, use bbox_inches='tight' to crop at save time
-            avg_margin_mm = (
-                crop_margin_left_mm
-                + crop_margin_right_mm
-                + crop_margin_top_mm
-                + crop_margin_bottom_mm
-            ) / 4
-            pad_inches = avg_margin_mm / 25.4  # mm to inches
-
-            # Pre-flight: settle constrained_layout to its CONVERGED fixed point
-            # before the bbox_inches="tight" save. constrained_layout solves the
-            # axes rectangle iteratively, so a single draw leaves it part-way and
-            # the tight crop SIZE then depends on how many times the figure was
-            # drawn before saving -- making a recipe unreproducible (the original
-            # fig is drawn far more than a fresh reproduce()-d one, so their tight
-            # crops differ by a few px -> validator SIZE mismatch). Drawing to
-            # convergence makes the saved size a pure function of the content, so
-            # original and reproduced land at identical pixels. The first draw
-            # still surfaces the "collapsed to zero" warning used by the quiver
-            # fallback below (degenerate paths make tight save loop endlessly).
+        if use_constrained:
+            # Settle constrained_layout to its CONVERGED fixed point before saving.
+            # constrained_layout solves the axes rectangle iteratively, so a single
+            # draw leaves it part-way and any save-time ink re-measure then depends
+            # on how many times the figure was drawn -- making a recipe
+            # unreproducible (the original fig is drawn far more than a fresh
+            # reproduce()-d one). Settling makes the geometry a pure function of the
+            # content, so original and reproduced share the SAME content_bbox. The
+            # first draw still surfaces the "collapsed to zero" warning used by the
+            # quiver fallback (degenerate paths make a tight save loop endlessly).
             from ._save_layout import (
                 freeze_layout_positions,
                 settle_constrained_layout,
@@ -267,41 +255,65 @@ def save_figure(
 
             _collapse_detected = settle_constrained_layout(fig.fig)
 
-            # A shared colorbar's space-steal has no single constrained_layout
-            # fixed point (it drifts with draw history), so freeze the converged
-            # geometry before the tight save -- otherwise the original, the
-            # validator's re-render and a fresh reproduce() each crop to slightly
-            # different pixels. Only when a colorbar is present (the no-colorbar
-            # path is already deterministic and must stay byte-identical).
+            # A shared colorbar's space-steal has no single constrained_layout fixed
+            # point (it drifts with draw history), so freeze the converged geometry
+            # -- otherwise the original, the validator's re-render and a fresh
+            # reproduce() each settle to slightly different rectangles. Only when a
+            # colorbar is present (the no-colorbar path is already deterministic).
             if not _collapse_detected and getattr(fig.record, "colorbars", None):
                 freeze_layout_positions(fig.fig)
 
-            try:
-                if _collapse_detected:
-                    raise ValueError("constrained_layout collapsed axes to zero")
-                fig.fig.savefig(
-                    image_path,
-                    dpi=dpi,
-                    transparent=transparent,
-                    bbox_inches="tight",
-                    pad_inches=pad_inches,
-                    facecolor=facecolor,
-                )
-            except (MemoryError, ValueError):
-                # constrained_layout may fail for some plot types (e.g., quiver)
-                # ValueError: image size too large on older matplotlib
-                # Fall back to standard save without bbox_inches
-                import warnings
-
-                warnings.warn(
-                    "constrained_layout save failed, falling back to standard save"
-                )
+            if _collapse_detected:
+                # Degenerate layout: never content-crop a collapsed figure; save
+                # full-canvas and fall back to the content-aware crop downstream.
+                use_content_crop = False
+                use_tight = False
                 fig.fig.savefig(
                     image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
                 )
-                # Mark for cropping since we couldn't use bbox_inches="tight"
-                use_constrained = False
-                use_tight = False
+            elif use_content_crop:
+                # Save FULL-CANVAS; cropped to the recorded content_bbox below so the
+                # saved SIZE is a deterministic function of content (no tight re-
+                # measure). Replaces bbox_inches="tight" for constrained_layout.
+                fig.fig.savefig(
+                    image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
+                )
+            else:
+                # LEGACY constrained path (content_bbox unavailable): crop at save
+                # time via bbox_inches="tight" (size-jittering, kept for back-compat).
+                avg_margin_mm = (
+                    crop_margin_left_mm
+                    + crop_margin_right_mm
+                    + crop_margin_top_mm
+                    + crop_margin_bottom_mm
+                ) / 4
+                pad_inches = avg_margin_mm / 25.4  # mm to inches
+                try:
+                    fig.fig.savefig(
+                        image_path,
+                        dpi=dpi,
+                        transparent=transparent,
+                        bbox_inches="tight",
+                        pad_inches=pad_inches,
+                        facecolor=facecolor,
+                    )
+                except (MemoryError, ValueError):
+                    # constrained_layout may fail for some plot types (e.g. quiver);
+                    # ValueError: image size too large on older matplotlib. Fall
+                    # back to a standard save + downstream content-aware crop.
+                    import warnings
+
+                    warnings.warn(
+                        "constrained_layout save failed, falling back to standard save"
+                    )
+                    fig.fig.savefig(
+                        image_path,
+                        dpi=dpi,
+                        transparent=transparent,
+                        facecolor=facecolor,
+                    )
+                    use_constrained = False
+                    use_tight = False
         else:
             # Standard save without bbox_inches to preserve mm layout
             fig.fig.savefig(
@@ -312,70 +324,30 @@ def save_figure(
         if restore_patches is not None:
             restore_patches()
 
-    # Auto-crop using stored crop margins from mm_layout (or explicit parameter)
-    # Raster formats: pixel-based content-aware crop (post-processing)
-    # SVG: viewBox adjustment via tightbbox query (post-processing, no bbox_inches)
-    # Skip when bbox_inches="tight" already cropped at save time (use_tight).
-    #
-    # Standalone diagrams (saved full-canvas above) crop to the RECORDED,
-    # dpi-independent content_bbox so the save and every reproduce land at
-    # identical pixel dimensions; on failure this returns None and we fall
-    # through to the normal content-aware crop (with a warning).
-    diagram_cropped = False
-    crop_offset = None
-    if is_diagram and is_croppable:
-        crop_offset = _crop_diagram_to_content_bbox(
-            fig,
-            image_path,
-            crop_margin_mm,
-            (
-                crop_margin_left_mm,
-                crop_margin_right_mm,
-                crop_margin_top_mm,
-                crop_margin_bottom_mm,
-            ),
-            dpi,
-        )
-        diagram_cropped = crop_offset is not None
-
-    if is_croppable and not use_tight and not diagram_cropped:
-        if crop_margin_mm is not None:
-            # Explicit uniform crop margin
-            from .._utils._crop import crop
-
-            _, crop_offset = crop(
-                image_path,
-                margin_mm=crop_margin_mm,
-                output_path=image_path,
-                return_offset=True,
-            )
-        elif mm_layout is not None and "crop_margin_left_mm" in mm_layout:
-            # Standard content-based cropping for mm_layout figures
-            from .._utils._crop import crop
-
-            _, crop_offset = crop(
-                image_path,
-                margin_left_mm=crop_margin_left_mm,
-                margin_right_mm=crop_margin_right_mm,
-                margin_top_mm=crop_margin_top_mm,
-                margin_bottom_mm=crop_margin_bottom_mm,
-                output_path=image_path,
-                return_offset=True,
-            )
-
-    elif is_svg and not use_tight:
-        # SVG: adjust viewBox post-save using tightbbox query (not bbox_inches='tight')
-        from .._utils._crop import crop_svg
-
-        avg_margin_mm = (
-            crop_margin_left_mm
-            + crop_margin_right_mm
-            + crop_margin_top_mm
-            + crop_margin_bottom_mm
-        ) / 4
-        if crop_margin_mm is not None:
-            avg_margin_mm = crop_margin_mm
-        crop_svg(image_path, fig.fig, margin_mm=avg_margin_mm)
+    # Post-save crop dispatch (see _save_crop):
+    #   * content_bbox crop -- saved full-canvas above, cropped to the ONE recorded
+    #     dpi-independent box so the original and every reproduce land at identical
+    #     pixels (constrained_layout + composed/mm-layout). Falls back, WITH a
+    #     UserWarning, to the legacy crop when content_bbox is underivable.
+    #   * legacy content-aware crop() for raster, or crop_svg() for SVG.
+    #   * skipped when bbox_inches="tight" already cropped at save time (use_tight).
+    crop_offset = dispatch_crop(
+        fig,
+        image_path,
+        is_croppable=is_croppable,
+        is_svg=is_svg,
+        use_tight=use_tight,
+        use_content_crop=use_content_crop,
+        crop_margin_mm=crop_margin_mm,
+        crop_margins_mm=(
+            crop_margin_left_mm,
+            crop_margin_right_mm,
+            crop_margin_top_mm,
+            crop_margin_bottom_mm,
+        ),
+        mm_layout=mm_layout,
+        dpi=dpi,
+    )
 
     # Capture axes bounding boxes (adjusted for crop if cropping occurred)
     _capture_axes_bboxes(fig, crop_offset)
@@ -390,15 +362,44 @@ def save_figure(
     if hasattr(fig, "_mm_layout") and fig._mm_layout is not None:
         fig.record.mm_layout = fig._mm_layout
 
-    # Save hitmap if requested (for GUI editor element selection)
-    # Pass bbox_inches="tight" only when the image was actually saved that way
-    # (use_tight) so the hitmap crop matches the saved image exactly (critical
-    # for pie/imshow). Standalone diagrams were saved full-canvas, so they must
-    # NOT use "tight" here (their hitmap is rendered separately regardless).
+    # Save hitmap if requested (for GUI editor element selection).
+    # The hitmap must be cropped IDENTICALLY to the saved image so pixel->element
+    # lookups line up:
+    #   * use_tight  -> render the hitmap with the same bbox_inches="tight"+pad.
+    #   * content-crop -> render full-canvas, then crop to the SAME content_bbox.
+    #   * otherwise (content-aware/no crop) -> full-canvas (matches the image).
+    # Standalone diagrams render their hitmap separately regardless.
     if save_hitmap:
         _hitmap_bbox = "tight" if use_tight else None
         _hitmap_pad = pad_inches if use_tight else 0.0
-        _save_hitmap(fig, image_path, dpi, verbose, _hitmap_bbox, _hitmap_pad)
+        _hitmap_path = _save_hitmap(
+            fig, image_path, dpi, verbose, _hitmap_bbox, _hitmap_pad
+        )
+        if (
+            use_content_crop
+            and _hitmap_path is not None
+            and getattr(fig.record, "content_bbox", None) is not None
+        ):
+            from ._save_helpers import crop_to_content_bbox
+
+            _hm_margins = (
+                {
+                    "left": crop_margin_mm,
+                    "right": crop_margin_mm,
+                    "top": crop_margin_mm,
+                    "bottom": crop_margin_mm,
+                }
+                if crop_margin_mm is not None
+                else {
+                    "left": crop_margin_left_mm,
+                    "right": crop_margin_right_mm,
+                    "top": crop_margin_top_mm,
+                    "bottom": crop_margin_bottom_mm,
+                }
+            )
+            crop_to_content_bbox(
+                _hitmap_path, fig.record.content_bbox, _hm_margins, min(dpi, 150)
+            )
     from ._separate_legend import save_separate_legends as _sl
 
     _sl(fig, image_path, dpi=dpi, save_recipe=save_recipe)
