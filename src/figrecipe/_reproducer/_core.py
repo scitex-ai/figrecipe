@@ -200,37 +200,14 @@ def reproduce_from_record(
     # Replay recorded colorbars (exact reproduction)
     _replay_colorbars(fig, axes_2d, record, result_cache)
 
-    # Finalize tick configuration and special plot types
-    from ..styles._style_applier import finalize_special_plots, finalize_ticks
+    # Per-axes post-replay finalization passes (tick/special-plot finalizers,
+    # imshow tick-suppression, recorded-limit reapply). Order is load-bearing;
+    # see ._finalize_axes for the rationale of each pass.
+    from ._finalize_axes import finalize_reproduced_axes
 
-    for row in range(nrows):
-        for col in range(ncols):
-            finalize_ticks(axes_2d[row, col])
-            finalize_special_plots(axes_2d[row, col], record.style or {})
-
-    # Reapply imshow tick/spine suppression after finalize_ticks: it can
-    # re-add numeric ticks on an imshow axes, and finalize_special_plots skips
-    # a labelled imshow (is_specgram heuristic). Keyed on the recorded call
-    # name -- the same discriminator the live imshow wrapper uses -- so save
-    # and reproduce hide ticks identically (never touches a real specgram).
-    from ._replay_axes import finalize_imshow_axes
-
-    for ax_key, ax_record in record.axes.items():
-        parsed = parse_grid_id(ax_key)
-        row, col = parsed if parsed else (0, 0)
-        finalize_imshow_axes(axes_2d[row, col], ax_record, record.style)
-
-    # Re-apply recorded set_xlim / set_ylim LAST so explicit limits win over any
-    # autoscale re-engaged by later decorations (e.g. set_xscale), insets,
-    # colorbars, or the tick finalizers (NeuroVista Ask 2). Skipped when the
-    # caller asked to skip decorations (the limits live in decorations).
-    if not skip_decorations:
-        from ._reapply_limits import reapply_recorded_limits
-
-        for ax_key, ax_record in record.axes.items():
-            parsed = parse_grid_id(ax_key)
-            row, col = parsed if parsed else (0, 0)
-            reapply_recorded_limits(axes_2d[row, col], ax_record, calls)
+    finalize_reproduced_axes(
+        fig, axes_2d, record, nrows, ncols, calls, skip_decorations
+    )
 
     # Line widths are NOT post-processed: apply_style_mm() set lines.linewidth
     # from linewidth_mm pre-replay; signal/explicit lw= replay as recorded.
@@ -497,43 +474,7 @@ def _replay_call(
         return None
 
 
-def get_recipe_info(path: Union[str, Path]) -> Dict[str, Any]:
-    """Get recipe metadata (id, figsize, dpi, n_axes, calls) without reproducing."""
-    record = load_recipe(path)
-
-    all_calls = []
-    for ax_record in record.axes.values():
-        for call in ax_record.calls:
-            all_calls.append(
-                {
-                    "id": call.id,
-                    "function": call.function,
-                    "n_args": len(call.args),
-                    "kwargs": list(call.kwargs.keys()),
-                }
-            )
-        for call in ax_record.decorations:
-            all_calls.append(
-                {
-                    "id": call.id,
-                    "function": call.function,
-                    "type": "decoration",
-                }
-            )
-
-    return {
-        "id": record.id,
-        "created": record.created,
-        "matplotlib_version": record.matplotlib_version,
-        "figsize": record.figsize,
-        "dpi": record.dpi,
-        "n_axes": len(record.axes),
-        "calls": all_calls,
-    }
-
-
 __all__ = [
     "reproduce",
     "reproduce_from_record",
-    "get_recipe_info",
 ]
