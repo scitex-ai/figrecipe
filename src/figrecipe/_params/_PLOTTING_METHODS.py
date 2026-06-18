@@ -38,6 +38,14 @@ PLOTTING_METHODS = {
     "tricontourf",
     "eventplot",
     "stairs",
+    # vlines/hlines draw data-coordinate line collections from arrays (a
+    # plotting primitive, unlike the single full-span axvline/axhline
+    # reference lines, which are decorations). Recorded so reproduce()
+    # replays them -- omitting them dropped every ax.vlines tick on replay
+    # (NeuroVista Fig05a schematic: panels rendered empty, large same-size
+    # MSE because the whole tick field vanished).
+    "vlines",
+    "hlines",
     "ecdf",
     "matshow",
     "spy",
