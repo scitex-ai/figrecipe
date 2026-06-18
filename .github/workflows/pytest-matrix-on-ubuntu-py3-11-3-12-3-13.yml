@@ -40,7 +40,11 @@ jobs:
     # Job name kept verbatim — these are the required status checks on develop.
     name: pytest-matrix-on-ubuntu-py${{ matrix.python-version }}
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
-    timeout-minutes: 30
+    # figrecipe's ~2460-test suite runs ~25-30 min even under xdist on the
+    # Spartan CPU node (coverage with concurrency=multiprocessing,thread limits
+    # the xdist speedup). 60 min leaves comfortable headroom on a busy node so
+    # the suite is never cancelled mid-run (the old 30-min cap killed it at 96%).
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
