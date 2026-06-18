@@ -595,23 +595,78 @@
 <div class="viewcode-block" id="RecordingFigure.colorbar">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a colorbar and record it for reproduction.&quot;&quot;&quot;</span>
-        <span class="n">ax_key</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">mpl_ax</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;_ax&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="p">)</span>  <span class="c1"># RecordingAxes._ax or raw Axes</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">rec_ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="ow">is</span> <span class="n">mpl_ax</span><span class="p">:</span>
-                    <span class="n">ax_key</span> <span class="o">=</span> <span class="n">grid_id</span><span class="p">(</span><span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                    <span class="k">break</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a colorbar and record it for reproduction.</span>
+
+<span class="sd">        ``ax`` may be a single axes OR a list/array of axes (a shared colorbar</span>
+<span class="sd">        that steals space from several panels, e.g.</span>
+<span class="sd">        ``fig.colorbar(im, ax=axes.ravel().tolist())``). Every source axes is</span>
+<span class="sd">        recorded in ``ax_keys`` so replay knows the full steal set; the colorbar&#39;s</span>
+<span class="sd">        resolved geometry is captured later at SAVE time (see</span>
+<span class="sd">        ``_capture_colorbar_geometry``) so reproduction can pin it exactly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Normalize ``ax`` to a flat list of raw matplotlib axes, unwrapping any</span>
+        <span class="c1"># RecordingAxes. Build the matching grid keys in the same order.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">ax_seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;ravel&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;_ax&quot;</span><span class="p">):</span>
+            <span class="c1"># numpy array of axes</span>
+            <span class="n">ax_seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax_seq</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax_seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax</span><span class="p">]</span>
+
+        <span class="n">mpl_axes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s2">&quot;_ax&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ax_seq</span><span class="p">]</span>
+
+        <span class="n">ax_keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">mpl_ax</span> <span class="ow">in</span> <span class="n">mpl_axes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">rec_ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="ow">is</span> <span class="n">mpl_ax</span><span class="p">:</span>
+                        <span class="n">ax_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="n">grid_id</span><span class="p">(</span><span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="p">)</span>
+                        <span class="k">break</span>
+
+        <span class="c1"># Identify the axes that OWNS the mappable (``mappable.axes``). With a</span>
+        <span class="c1"># shared colorbar over a list of panels, the mappable belongs to ONE</span>
+        <span class="c1"># specific panel (e.g. the last ``imshow``); its clim drives the</span>
+        <span class="c1"># colorbar ticks. Recording this key lets replay pick the SAME mappable</span>
+        <span class="c1"># (hence the same clim/ticks) rather than guessing the first panel.</span>
+        <span class="n">mappable_ax_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">owner_ax</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="s2">&quot;axes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">owner_ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">rec_ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="ow">is</span> <span class="n">owner_ax</span><span class="p">:</span>
+                        <span class="n">mappable_ax_key</span> <span class="o">=</span> <span class="n">grid_id</span><span class="p">(</span>
+                            <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="p">)</span>
+                        <span class="k">break</span>
+
+        <span class="c1"># First matched key locates the mappable on replay (back-compat field).</span>
+        <span class="n">ax_key</span> <span class="o">=</span> <span class="n">mappable_ax_key</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ax_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">ax_keys</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
         <span class="n">ser_kw</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
         <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">colorbars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="p">{</span><span class="s2">&quot;ax_key&quot;</span><span class="p">:</span> <span class="n">ax_key</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">ser_kw</span><span class="p">}</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">mpl_ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ax_key&quot;</span><span class="p">:</span> <span class="n">ax_key</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">ser_kw</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">ax_keys</span><span class="p">:</span>
+            <span class="n">record</span><span class="p">[</span><span class="s2">&quot;ax_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax_keys</span>
+        <span class="k">if</span> <span class="n">mappable_ax_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">record</span><span class="p">[</span><span class="s2">&quot;mappable_ax_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mappable_ax_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">colorbars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+
+        <span class="c1"># ``fig.colorbar`` accepts a single axes or a sequence; pass the</span>
+        <span class="c1"># unwrapped form so matplotlib never sees a RecordingAxes wrapper.</span>
+        <span class="n">cbar_ax</span> <span class="o">=</span> <span class="n">mpl_axes</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mpl_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="n">mpl_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">mpl_axes</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">cbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">cbar_ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># Stash the live colorbar so the save path can read its resolved cax</span>
+        <span class="c1"># position (index-aligned with ``colorbars``).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">live_colorbars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cbar</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cbar</span></div>
 
 
 <div class="viewcode-block" id="RecordingFigure.add_panel_labels">

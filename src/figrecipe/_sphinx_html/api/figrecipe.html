@@ -2128,6 +2128,12 @@ can do getattr(type(obj), ‘draw’) during _get_renderer.</p>
 <dt class="sig sig-object py" id="figrecipe._wrappers.RecordingFigure.colorbar">
 <span class="sig-name descname"><span class="pre">colorbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mappable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/figrecipe/_wrappers/_figure.html#RecordingFigure.colorbar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#figrecipe._wrappers.RecordingFigure.colorbar" title="Link to this definition"></a></dt>
 <dd><p>Add a colorbar and record it for reproduction.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ax</span></code> may be a single axes OR a list/array of axes (a shared colorbar
+that steals space from several panels, e.g.
+<code class="docutils literal notranslate"><span class="pre">fig.colorbar(im,</span> <span class="pre">ax=axes.ravel().tolist())</span></code>). Every source axes is
+recorded in <code class="docutils literal notranslate"><span class="pre">ax_keys</span></code> so replay knows the full steal set; the colorbar’s
+resolved geometry is captured later at SAVE time (see
+<code class="docutils literal notranslate"><span class="pre">_capture_colorbar_geometry</span></code>) so reproduction can pin it exactly.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span></p>
