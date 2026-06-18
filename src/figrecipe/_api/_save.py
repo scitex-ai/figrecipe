@@ -13,6 +13,9 @@ from typing import Optional
 # print() when scitex-logging is absent.
 from .._logging import get_logger
 
+# Import helpers from separate module
+from ._save_capture import _capture_colorbar_geometry
+
 # Save settings / path / transparency helpers live in _save_config; re-exported
 # here so existing ``from .._api._save import get_save_dpi`` (etc.) keep working.
 from ._save_config import (  # noqa: F401
@@ -26,11 +29,8 @@ from ._save_config import (  # noqa: F401
     get_save_transparency,
     resolve_save_paths,
 )
-
-# Import helpers from separate module
 from ._save_helpers import (
     _capture_axes_bboxes,
-    _capture_colorbar_geometry,
     _capture_content_layout,
     _crop_diagram_to_content_bbox,
     _is_standalone_diagram_figure,
