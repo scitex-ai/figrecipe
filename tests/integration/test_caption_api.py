@@ -183,3 +183,26 @@ def test_figure_record_deserializes_panel_captions_from_dict():
     record = FigureRecord.from_dict(d)
     # Assert
     assert record.figure_panel_captions == ["capt1", "capt2"]
+
+
+def test_compose_panel_captions_reproduce(tmp_path):
+    # Per-panel compose captions were rendered live via raw mpl_fig.text and
+    # dropped on reproduce (only the figure-level caption round-tripped). They
+    # are now recorded as figure_texts; this guards that a reproduced composed
+    # figure shows its per-panel caption text.
+    # Arrange
+    src_path = _save_minimal_source(str(tmp_path))
+    fig, _axes = fr.compose(
+        layout=(1, 2),
+        sources={(0, 0): src_path, (0, 1): src_path},
+        panel_captions=["Alpha caption", "Beta caption"],
+    )
+    composed = os.path.join(str(tmp_path), "composed.yaml")
+    fr.save(fig, composed, validate=False, verbose=False)
+    _plt.close(fig)
+    # Act
+    rfig, _ = fr.reproduce(composed)
+    mpl_fig = rfig.fig if hasattr(rfig, "fig") else rfig
+    repro_texts = [t.get_text() for t in mpl_fig.texts]
+    # Assert
+    assert any("Alpha caption" in t for t in repro_texts)
