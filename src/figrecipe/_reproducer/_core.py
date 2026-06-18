@@ -208,6 +208,18 @@ def reproduce_from_record(
             finalize_ticks(axes_2d[row, col])
             finalize_special_plots(axes_2d[row, col], record.style or {})
 
+    # Reapply imshow tick/spine suppression after finalize_ticks: it can
+    # re-add numeric ticks on an imshow axes, and finalize_special_plots skips
+    # a labelled imshow (is_specgram heuristic). Keyed on the recorded call
+    # name -- the same discriminator the live imshow wrapper uses -- so save
+    # and reproduce hide ticks identically (never touches a real specgram).
+    from ._replay_axes import finalize_imshow_axes
+
+    for ax_key, ax_record in record.axes.items():
+        parsed = parse_grid_id(ax_key)
+        row, col = parsed if parsed else (0, 0)
+        finalize_imshow_axes(axes_2d[row, col], ax_record, record.style)
+
     # Re-apply recorded set_xlim / set_ylim LAST so explicit limits win over any
     # autoscale re-engaged by later decorations (e.g. set_xscale), insets,
     # colorbars, or the tick finalizers (NeuroVista Ask 2). Skipped when the
