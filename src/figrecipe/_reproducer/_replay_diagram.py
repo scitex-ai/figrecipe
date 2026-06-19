@@ -52,13 +52,14 @@ def replay_diagram_call(ax: Axes, call: CallRecord) -> Any:
     ax.set_aspect("equal")
     ax.axis("off")
 
-    # Add title if specified
+    # Add title if specified. Resolve the size from the active style (same as
+    # the save-time renderer in _native_render.render) so save == reproduce.
     if renderer.spec.title:
-        from .._diagram._shared._styles_native import FONT_CONFIG
+        from .._diagram._shared._styles_native import resolve_font_config
 
         ax.set_title(
             renderer.spec.title,
-            fontsize=FONT_CONFIG["title_size"],
+            fontsize=resolve_font_config()["title_size"],
             fontweight="bold",
         )
 

@@ -12,7 +12,11 @@ from matplotlib.patches import (
 
 from ..._utils._units import mm_to_pt
 from .._shared._styles_native import COLORS as _COLORS
-from .._shared._styles_native import get_edge_style, get_emphasis_style
+from .._shared._styles_native import (
+    get_edge_style,
+    get_emphasis_style,
+    resolve_font_config,
+)
 
 if TYPE_CHECKING:
     from ._core import ArrowSpec, BoxSpec, Diagram
@@ -248,7 +252,7 @@ def render_container(diagram: "Diagram", ax: Axes, cid: str, container: Dict) ->
             container["title"],
             ha=ha,
             va=va,
-            fontsize=11,
+            fontsize=resolve_font_config()["title_size"],
             fontweight="bold",
             color=colors["text"],
             zorder=7,
@@ -409,7 +413,7 @@ def render_arrow(diagram: "Diagram", ax: Axes, arrow: "ArrowSpec") -> None:
             arrow.label,
             ha="center",
             va="center",
-            fontsize=8,
+            fontsize=resolve_font_config()["edge_label_size"],
             color=color,
             fontstyle="italic",
             zorder=6,
@@ -456,6 +460,6 @@ def draw_all_elements(diagram, ax):
             diagram.title,
             ha="center",
             va="top",
-            fontsize=12,
+            fontsize=resolve_font_config()["title_size"],
             fontweight="bold",
         )
