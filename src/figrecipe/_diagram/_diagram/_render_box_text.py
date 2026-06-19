@@ -34,11 +34,24 @@ def _build_text_items(
 
     Title first, optional subtitle, then each content line (dict or str) with
     the bullet prefix applied.
+
+    Font sizes come from the active figrecipe style (the same source regular
+    figures read). A box title IS the node's label, so it uses ``node_size``
+    (axis_label_pt); the subtitle and content lines are secondary detail and
+    use the smaller ``edge_label_size`` (legend_pt), preserving the original
+    intra-box hierarchy (title > subtitle ~= content). Codeblock content keeps
+    its dedicated 7pt monospace size (verbatim code, not a label) and explicit
+    per-line ``fontsize`` dict overrides are honoured.
     """
+    from .._shared._styles_native import resolve_font_config
+
+    font = resolve_font_config()
     is_code = box.shape == "codeblock"
-    items: List[Tuple[str, float, str, object]] = [(box.title, 11, "bold", title_color)]
+    items: List[Tuple[str, float, str, object]] = [
+        (box.title, font["node_size"], "bold", title_color)
+    ]
     if box.subtitle:
-        items.append((box.subtitle, 9, "normal", colors["text"]))
+        items.append((box.subtitle, font["edge_label_size"], "normal", colors["text"]))
     bullet_prefixes = {"circle": "· ", "dash": "– ", "arrow": "→ "}
     for line in box.content:
         pfx = bullet_prefixes.get(box.bullet, "")
@@ -46,14 +59,19 @@ def _build_text_items(
             items.append(
                 (
                     pfx + line.get("text", ""),
-                    line.get("fontsize", 8),
+                    line.get("fontsize", font["edge_label_size"]),
                     line.get("fontweight", "normal"),
                     line.get("color", colors["text"]),
                 )
             )
         else:
             items.append(
-                (pfx + str(line), 8 if not is_code else 7, "normal", colors["text"])
+                (
+                    pfx + str(line),
+                    font["edge_label_size"] if not is_code else 7,
+                    "normal",
+                    colors["text"],
+                )
             )
     return items
 

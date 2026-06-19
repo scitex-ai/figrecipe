@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 
 from matplotlib.patches import FancyArrowPatch
 
-from ._styles_native import FONT_CONFIG, get_edge_style
+from ._styles_native import get_edge_style, resolve_font_config
 
 
 def create_edge_arrow(
@@ -80,14 +80,15 @@ def create_edge_arrow(
         # Offset label slightly above the line
         offset_y = 0.015
 
+        font = resolve_font_config()
         label_kwargs = {
             "x": mid_x,
             "y": mid_y + offset_y,
             "s": label,
             "ha": "center",
             "va": "bottom",
-            "fontsize": FONT_CONFIG["edge_label_size"],
-            "fontfamily": FONT_CONFIG["family"],
+            "fontsize": font["edge_label_size"],
+            "fontfamily": font["family"],
             "color": edge_style["color"],
             "zorder": 4,
         }

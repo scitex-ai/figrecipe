@@ -87,7 +87,14 @@ EDGE_STYLES = {
     "dotted": {"linestyle": ":", "color": _lighten(_SCITEX_RGB["gray"], 0.25)},
 }
 
-# Font configuration
+# Font configuration.
+#
+# These values are the FALLBACK used only when no figrecipe style is active
+# (e.g. ``fr.load_style(None)``) or when the style cannot be read. When a style
+# IS active, ``resolve_font_config()`` overrides the *_size keys from the active
+# style's font points so diagrams match regular figures (single source of
+# truth: ``styles/presets/*.yaml`` via ``to_subplots_kwargs``). See that
+# function for the role -> point-size mapping.
 FONT_CONFIG = {
     "family": "sans-serif",
     "node_size": 9,
@@ -95,6 +102,74 @@ FONT_CONFIG = {
     "title_size": 11,
     "weight": "normal",
 }
+
+# Emit the "no active style, using fallback fonts" warning at most once so a
+# render loop does not spam the log (no-silent-fallback: still surfaced once).
+_FALLBACK_WARNED = False
+
+
+def resolve_font_config() -> Dict[str, object]:
+    """Resolve diagram font sizes from the *active* figrecipe style.
+
+    Diagrams share ONE source of truth with regular figures: the active style's
+    font points, read via ``styles.to_subplots_kwargs()`` (the same converter
+    ``ps.subplots`` consumes). Resolving here -- at render time -- means a
+    diagram built under SCITEX inherits SCITEX font sizes, and changing
+    ``SCITEX.yaml`` (or loading another preset) moves both diagrams and figures.
+
+    Role -> style point-size mapping (SCITEX defaults in parentheses):
+
+    - ``title_size``      <- ``fonts_title_pt``       (8) diagram + box titles
+    - ``node_size``       <- ``fonts_axis_label_pt``  (7) box/node label text
+    - ``edge_label_size`` <- ``fonts_legend_pt``      (6) arrow/edge labels
+
+    ``edge_label_size`` uses ``legend_pt`` (not ``tick_label_pt``) so edge
+    labels stay one step smaller than node text, preserving the original visual
+    hierarchy (edge < node) now that node text shrank from 9 to 7.
+
+    ``family`` and ``weight`` are not style-driven and keep their FONT_CONFIG
+    values (the style's ``fonts.family`` governs rcParams already; diagram text
+    inherits it through matplotlib unless explicitly set).
+
+    Returns
+    -------
+    dict
+        A copy of FONT_CONFIG with the ``*_size`` keys overridden from the
+        active style. When no style is active (or it cannot be read) the
+        FONT_CONFIG fallback values are returned unchanged (warned once).
+    """
+    global _FALLBACK_WARNED
+
+    config = dict(FONT_CONFIG)
+
+    try:
+        from ...styles._kwargs_converter import to_subplots_kwargs
+        from ...styles._style_loader import _STYLE_CACHE
+    except Exception:  # pragma: no cover - styles package always importable
+        return config
+
+    # No style loaded -> intentional fallback to FONT_CONFIG constants. Surface
+    # it once instead of silently shrinking/keeping the wrong size.
+    if _STYLE_CACHE is None:
+        if not _FALLBACK_WARNED:
+            import warnings
+
+            warnings.warn(
+                "No figrecipe style active; diagram fonts use FONT_CONFIG "
+                "fallback sizes. Call fr.load_style('SCITEX') so diagram fonts "
+                "match figures.",
+                UserWarning,
+                stacklevel=2,
+            )
+            _FALLBACK_WARNED = True
+        return config
+
+    kwargs = to_subplots_kwargs(_STYLE_CACHE)
+    config["title_size"] = kwargs["fonts_title_pt"]
+    config["node_size"] = kwargs["fonts_axis_label_pt"]
+    config["edge_label_size"] = kwargs["fonts_legend_pt"]
+    return config
+
 
 # Named colors (hex) for direct access
 COLORS = {name: _rgb_to_hex(rgb) for name, rgb in _SCITEX_RGB.items()}
@@ -186,6 +261,7 @@ __all__ = [
     "EMPHASIS_COLORS",
     "EDGE_STYLES",
     "FONT_CONFIG",
+    "resolve_font_config",
     "get_emphasis_style",
     "get_edge_style",
     "hex_to_rgb",

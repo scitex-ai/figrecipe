@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from ._arrows import compute_connection_points, create_edge_arrow
 from ._layout import compute_layout
 from ._shapes import create_node_patch, estimate_node_bounds
-from ._styles_native import FONT_CONFIG
+from ._styles_native import resolve_font_config
 
 if TYPE_CHECKING:
     from ._schema import DiagramSpec
@@ -132,7 +132,7 @@ class DiagramRenderer:
         if self.spec.title:
             ax.set_title(
                 self.spec.title,
-                fontsize=FONT_CONFIG["title_size"],
+                fontsize=resolve_font_config()["title_size"],
                 fontweight="bold",
             )
 
