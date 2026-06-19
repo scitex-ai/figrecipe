@@ -264,19 +264,32 @@ def save_figure(
 
             _collapse_detected = settle_constrained_layout(fig.fig)
 
-            # A shared colorbar's space-steal has no single constrained_layout fixed
-            # point (it drifts with draw history), so freeze the converged geometry
-            # -- otherwise the original, the validator's re-render and a fresh
-            # reproduce() each settle to slightly different rectangles. Only when a
-            # colorbar is present (the no-colorbar path is already deterministic).
-            if not _collapse_detected and getattr(fig.record, "colorbars", None):
+            # Freeze the converged geometry before saving. ``savefig`` runs its OWN
+            # draw, which advances constrained_layout ONE more iteration past the
+            # settled point -- so the SAVED pixels use a slightly different axes
+            # rectangle than the geometry ``_capture_*`` records afterwards (the
+            # post-capture draw nudges it back). On NeuroVista fig05a that ~0.001-
+            # fraction (~1 px) gap is exactly what the reproducer's recorded-bbox
+            # pin then mis-targets: it pins to the RECORDED position, which the
+            # un-frozen original never actually rendered at. ``set_in_layout(False)``
+            # (after a couple of settling draws) takes every axes out of the solver
+            # so ``savefig`` can no longer move them -- making the saved pixels, the
+            # recorded ``bbox_uncropped`` and the reproducer's pinned position all
+            # the SAME settled rectangle. (Originally colorbar-only; generalised
+            # because the no-colorbar path is NOT draw-count-stable either.) Skipped
+            # on a collapsed layout (the quiver fallback needs the live re-solve).
+            if not _collapse_detected:
                 freeze_layout_positions(fig.fig)
 
             if _collapse_detected:
                 # Degenerate layout: never content-crop a collapsed figure; save
                 # full-canvas and fall back to the content-aware crop downstream.
+                # Record the collapse so the reproducer skips its constrained_layout
+                # panel pin (pinning the degenerate recorded rect would desync the
+                # re-measured ink between original and reproduction).
                 use_content_crop = False
                 use_tight = False
+                fig.record.layout_collapsed = True
                 fig.fig.savefig(
                     image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
                 )
