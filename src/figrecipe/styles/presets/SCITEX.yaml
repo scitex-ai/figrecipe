@@ -24,7 +24,7 @@ spacing:
   supylabel_mm: 3     # Space reserved for figure super y-label
 
 fonts:
-  family: "DejaVu Sans"  # Always available; Arial preferred but not guaranteed in Docker
+  family: "Arial"  # Publication default; loud DejaVu Sans fallback if Arial absent (see styles/_fonts.py::ensure_font_family)
   axis_label_pt: 7
   tick_label_pt: 7
   title_pt: 8
