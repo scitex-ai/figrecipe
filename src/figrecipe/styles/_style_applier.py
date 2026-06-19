@@ -20,7 +20,7 @@ from matplotlib.axes import Axes
 
 from .._utils._units import mm_to_pt
 from ._finalize import finalize_special_plots, finalize_ticks
-from ._fonts import check_font, list_available_fonts
+from ._fonts import check_font, ensure_font_family, list_available_fonts
 from ._plot_styles import (
     apply_barplot_style,
     apply_boxplot_style,
@@ -244,6 +244,10 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     legend_fs = style.get("legend_font_size_pt", 7)
     label_pad_pt = style.get("label_pad_pt", 2.0)
     requested_font = style.get("font_family", "Arial")
+    # Pin the requested font globally (font.family/font.sans-serif) so plain
+    # mpl text inherits it, and emit the single loud figrecipe warning if the
+    # requested font is missing (no silent fallback). Deduped to once/session.
+    ensure_font_family(requested_font)
     font_family = check_font(requested_font)
 
     ax.xaxis.label.set_fontsize(axis_fs)

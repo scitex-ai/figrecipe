@@ -53,8 +53,8 @@ def compile_to_graphviz(
     lines.append(f"    ranksep={ranksep};")
     lines.append(f"    nodesep={nodesep};")
     lines.append("    splines=ortho;")  # Orthogonal edges for cleaner look
-    lines.append('    node [fontname="Helvetica", fontsize=10];')
-    lines.append('    edge [fontname="Helvetica", fontsize=9];')
+    lines.append('    node [fontname="Arial", fontsize=10];')
+    lines.append('    edge [fontname="Arial", fontsize=9];')
     lines.append("")
 
     # Node map
