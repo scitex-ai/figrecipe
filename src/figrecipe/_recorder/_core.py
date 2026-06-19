@@ -247,6 +247,14 @@ class FigureRecord:
     rcparams: Optional[Dict[str, Any]] = None
     # Constrained layout flag
     constrained_layout: bool = False
+    # True when constrained_layout COLLAPSED at save time (axes shrank to zero,
+    # e.g. a tiny mm figure with large decorations). The save then abandons the
+    # deterministic content-bbox crop for the content-aware re-measure fallback
+    # (``_collapse_detected`` in ``save_figure``), so the reproducer must NOT pin
+    # the panels to their degenerate recorded geometry -- it must re-measure the
+    # same un-pinned ink. Captured at SAVE; ``False`` on legacy recipes (which
+    # then take the pin path, matching their pre-flag behaviour).
+    layout_collapsed: bool = False
     # Figure-level decorations (suptitle, supxlabel, supylabel)
     suptitle: Optional[Dict[str, Any]] = None
     supxlabel: Optional[Dict[str, Any]] = None
@@ -329,6 +337,10 @@ class FigureRecord:
         # Add constrained_layout if True
         if self.constrained_layout:
             result["figure"]["constrained_layout"] = True
+        # Persist the collapse flag only when True (keeps recipes lean); the
+        # reproducer skips the constrained_layout panel pin for a collapsed save.
+        if self.layout_collapsed:
+            result["figure"]["layout_collapsed"] = True
         # Add suptitle if set
         if self.suptitle is not None:
             result["figure"]["suptitle"] = self.suptitle
@@ -390,6 +402,7 @@ class FigureRecord:
             style=fig_data.get("style"),
             rcparams=fig_data.get("rcparams"),
             constrained_layout=fig_data.get("constrained_layout", False),
+            layout_collapsed=fig_data.get("layout_collapsed", False),
             suptitle=fig_data.get("suptitle"),
             supxlabel=fig_data.get("supxlabel"),
             supylabel=fig_data.get("supylabel"),

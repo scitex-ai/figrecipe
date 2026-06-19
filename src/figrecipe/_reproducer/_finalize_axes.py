@@ -93,5 +93,99 @@ def finalize_reproduced_axes(
             if side in ax.spines:
                 ax.spines[side].set_visible(visible)
 
+    # Pin constrained_layout panels to their recorded geometry (LAST). See the
+    # function docstring -- this freezes the axes rectangles so the save-time
+    # constrained_layout re-solve cannot land them at a different fixed point
+    # than the original recorded (NeuroVista fig05a, same-size MSE ~907).
+    pin_constrained_layout_axes(axes_2d, record)
 
-__all__ = ["finalize_reproduced_axes"]
+
+def pin_constrained_layout_axes(axes_2d: np.ndarray, record: FigureRecord) -> None:
+    """Pin reproduced constrained_layout panels to their recorded geometry.
+
+    ``constrained_layout`` solves the panel rectangles ITERATIVELY to a fixed
+    point that depends on the construction path, not just the content. The
+    original figure is built via the mm ``plt.subplots`` helper (which seeds a
+    ``subplots_adjust`` before constrained_layout takes over) and drawn many
+    times; a fresh ``reproduce()`` builds a plain ``plt.subplots(
+    constrained_layout=True)`` with no such seed. The two therefore converge to
+    slightly different fixed points -- on NeuroVista fig05a the reproduced panels
+    land ~0.007-0.015 figure-fraction lower with a ~0.007 taller height than the
+    recorded position, shifting every spine/tick/vline ~1 px and failing the
+    same-size reproducibility check (MSE ~907).
+
+    The original records each panel's SETTLED ``get_position()`` at save time
+    (``AxesRecord.bbox_uncropped``, captured AFTER ``settle_constrained_layout``).
+    Re-applying it here and removing the axes from the layout solver
+    (``set_in_layout(False)``) freezes the geometry so the save-time re-solve
+    (``settle_constrained_layout`` in ``_api/_save.py``) cannot move it. This
+    generalises the per-colorbar source-panel pin (#230 ``_pin_source_axes``) to
+    EVERY panel of a constrained_layout figure. Crucially it is compatible with
+    the #233 deterministic content-bbox crop: that crop is keyed on the recorded
+    ``content_bbox`` and is decoupled from axes geometry, so pinning no longer
+    fights the save SIZE (the reason a naive pin was rejected pre-#233).
+
+    Scope (minimal regression): runs ONLY when ``record.constrained_layout`` is
+    True AND the original layout did NOT collapse (``record.layout_collapsed``).
+    A COLLAPSED layout (tiny axes, e.g. bar+log+minor-ticks in 60x40 mm) is saved
+    by ``save_figure`` via the content-AWARE re-measure fallback (NOT the content-
+    bbox crop), so both the original and the reproduction must re-measure the SAME
+    un-pinned ink -- pinning the reproduction to the degenerate recorded rect would
+    change its ink extent and break the size match. The collapse is read from the
+    recipe flag captured at SAVE time (no probe draw here: a draw in the reproduce
+    path perturbs already-pinned colorbar geometry). Non-constrained figures keep
+    their deterministic ``subplots_adjust`` / mm-layout path untouched. Pins to
+    ``bbox_uncropped`` (the panel's position in the UNCROPPED figure fraction --
+    ``set_position`` is figure-fraction and the save is full-canvas), falling back
+    to the cropped ``bbox`` for legacy recipes saved with ``bbox_inches="tight"``
+    (whose ``bbox`` already equals the uncropped position). A constrained_layout
+    panel with NEITHER recorded box is a legacy recipe predating geometry capture:
+    it is left on the re-solve path with a one-time ``UserWarning`` (no silent
+    fallback) -- such a recipe must be re-saved to capture the geometry.
+    """
+    if not getattr(record, "constrained_layout", False):
+        return
+
+    # A collapsed layout is saved via the content-aware re-measure fallback on
+    # BOTH sides; pinning the reproduction would desync the ink extent. Skip it
+    # (leave the axes in the solver) so the save reproduces the original fallback.
+    # Read the recorded flag rather than re-probing with a draw -- a draw here
+    # perturbs colorbar geometry the colorbar replay just pinned (#230).
+    if getattr(record, "layout_collapsed", False):
+        return
+
+    missing_geometry = False
+    for ax_key, ax_record in record.axes.items():
+        parsed = parse_grid_id(ax_key)
+        if parsed is None:
+            continue  # mm-composed panels reproduce via their own path
+        row, col = parsed
+        try:
+            ax = axes_2d[row, col]
+        except (IndexError, KeyError):
+            continue
+        bbox = getattr(ax_record, "bbox_uncropped", None)
+        if bbox is None or len(bbox) != 4:
+            bbox = getattr(ax_record, "bbox", None)
+        if bbox is None or len(bbox) != 4:
+            missing_geometry = True
+            continue
+        ax.set_position(bbox)
+        try:
+            ax.set_in_layout(False)
+        except Exception:
+            pass  # very old matplotlib: position is still pinned above
+
+    if missing_geometry:
+        import warnings
+
+        warnings.warn(
+            "constrained_layout figure has panel(s) without recorded geometry "
+            "(bbox_uncropped/bbox); leaving them on the layout re-solve path. "
+            "Re-save the figure to capture panel geometry for exact "
+            "constrained_layout reproduction.",
+            UserWarning,
+        )
+
+
+__all__ = ["finalize_reproduced_axes", "pin_constrained_layout_axes"]
