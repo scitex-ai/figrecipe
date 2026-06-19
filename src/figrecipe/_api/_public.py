@@ -108,6 +108,7 @@ def save(
     image_format: Optional[str] = None,
     facecolor: Optional[str] = None,
     save_hitmap: bool = False,
+    overlap_policy: Optional[str] = None,
 ):
     """Save a figure as image and recipe. Unified API with fig.savefig().
 
@@ -165,6 +166,7 @@ def save(
         image_format=image_format,
         facecolor=facecolor,
         save_hitmap=save_hitmap,
+        overlap_policy=overlap_policy,
     )
 
 

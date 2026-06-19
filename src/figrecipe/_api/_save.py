@@ -14,6 +14,7 @@ from ._save_helpers import (
 from ._save_helpers import (
     save_hitmap as _save_hitmap,
 )
+from ._save_overlap import run_overlap_audit_for_save as _run_overlap_audit_for_save
 
 # Image extensions supported for saving
 IMAGE_EXTENSIONS = {
@@ -162,6 +163,7 @@ def save_figure(
     crop_margin_mm: Optional[float] = None,
     facecolor: Optional[str] = None,
     save_hitmap: bool = False,
+    overlap_policy: Optional[str] = None,
 ):
     """Core save implementation.
 
@@ -239,6 +241,11 @@ def save_figure(
     for ax in fig.fig.get_axes():
         finalize_ticks(ax)
         finalize_special_plots(ax, style_dict)
+
+    # Overlap audit (shape + color + legend). Runs after finalize so legends
+    # and ticks are in their final positions. Honours per-figure / per-axes /
+    # per-artist policy attributes; ``overlap_policy=`` overrides them all.
+    _run_overlap_audit_for_save(fig, overlap_policy)
 
     # Check for .fig.zip (multi-panel Figz bundle) or .plt.zip (single-plot Pltz bundle)
     suffixes = [s.lower() for s in path.suffixes]

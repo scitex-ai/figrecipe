@@ -135,6 +135,10 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "get_graph_preset": ("._graph._presets", "get_preset"),
     "list_graph_presets": ("._graph._presets", "list_presets"),
     "register_graph_preset": ("._graph._presets", "register_preset"),
+    # ._overlap
+    "OverlapError": ("._overlap", "OverlapError"),
+    "detect_overlaps": ("._overlap", "detect_overlaps"),
+    "audit_overlap": ("._overlap._core", "run_overlap_audit"),
 }
 
 
@@ -214,6 +218,10 @@ __all__ = [
     "add_figure_caption",
     "add_panel_captions",
     "panel_label",
+    # Overlap detection
+    "OverlapError",
+    "detect_overlaps",
+    "audit_overlap",
     # Seaborn integration
     "sns",
     # Version

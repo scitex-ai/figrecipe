@@ -87,6 +87,7 @@ class RecordingFigure:
                 finalize_special_plots,
                 finalize_ticks,
             )
+
             for ax in self._fig.get_axes():
                 try:
                     finalize_ticks(ax)
@@ -461,6 +462,7 @@ class RecordingFigure:
         image_format: Optional[str] = None,
         facecolor: Optional[str] = None,
         save_hitmap: bool = False,
+        overlap_policy: Optional[str] = None,
         **kwargs,
     ):
         """Save figure — equivalent to fr.save(). Same DPI, crop, recipe.
@@ -495,6 +497,7 @@ class RecordingFigure:
             image_format=image_format,
             facecolor=facecolor,
             save_hitmap=save_hitmap,
+            overlap_policy=overlap_policy,
         )
 
     def set_supxyt(

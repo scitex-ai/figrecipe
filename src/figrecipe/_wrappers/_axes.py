@@ -12,6 +12,40 @@ from ._axes_methods import RecordingAxesMethods
 from ._axes_scitex import SciTexMixin
 from ._axes_style_mixin import AxesStyleMixin
 
+
+def _stamp_allow_overlap(result, policy: str) -> None:
+    """Tag every matplotlib artist in ``result`` with ``_figrecipe_allow_overlap``.
+
+    ``result`` may be a single Artist, a list/tuple of Artists, or a
+    container (e.g. ``Line2D``, ``Rectangle``, ``BarContainer``). We walk
+    the most common shapes; unknown shapes are left untouched.
+    """
+    if result is None:
+        return
+    targets = []
+    if hasattr(result, "set_label") and hasattr(result, "get_label"):
+        targets.append(result)
+    if isinstance(result, (list, tuple)):
+        for item in result:
+            _stamp_allow_overlap(item, policy)
+        return
+    # BarContainer / ErrorbarContainer / similar
+    for attr in ("patches", "lines", "bars", "stemlines", "markerline"):
+        sub = getattr(result, attr, None)
+        if sub is None:
+            continue
+        if isinstance(sub, (list, tuple)):
+            for item in sub:
+                _stamp_allow_overlap(item, policy)
+        else:
+            _stamp_allow_overlap(sub, policy)
+    for t in targets:
+        try:
+            t._figrecipe_allow_overlap = policy
+        except (AttributeError, TypeError):
+            pass
+
+
 if TYPE_CHECKING:
     from .._recorder import Recorder
 
@@ -126,6 +160,7 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             id: Optional[str] = None,
             track: bool = True,
             stats: Optional[Dict[str, Any]] = None,
+            allow_overlap: Optional[str] = None,
             **kwargs,
         ):
             from ..styles._internal import resolve_colors_in_kwargs
@@ -135,6 +170,14 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             kwargs = inject_method_defaults(kwargs, method_name)
 
             result = method(*args, **kwargs)
+            # Stamp per-artist overlap-policy override (used by the
+            # shape-overlap detector to demote a KDE / density overlay
+            # from error → warn). See figrecipe._overlap._policy.
+            if allow_overlap is not None:
+                from .._overlap._policy import _coerce as _coerce_pol  # noqa: PLC0415
+
+                pol = _coerce_pol(allow_overlap, fallback="warn")
+                _stamp_allow_overlap(result, pol)
             if self._track and track:
                 record_kwargs = kwargs.copy()
                 if stats is not None:

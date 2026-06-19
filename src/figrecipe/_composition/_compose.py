@@ -47,6 +47,7 @@ def compose(
     panel_labels: bool = False,
     label_style: str = "uppercase",
     caption: Optional[str] = None,
+    overlap_policy: Optional[str] = None,
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray, List[RecordingAxes]]]:
     """Compose a new figure from multiple sources (recipes or raw images).
@@ -126,10 +127,19 @@ def compose(
     # the serialized recipe (metadata.caption) and survives save/reproduce.
     if caption is not None:
         try:
-            record = fig.record if hasattr(fig, "record") else fig._recorder.figure_record
+            record = (
+                fig.record if hasattr(fig, "record") else fig._recorder.figure_record
+            )
             record.caption = caption
         except Exception:
             pass
+
+    # Persist the overlap-policy override on the composed figure so subsequent
+    # ``fr.save(fig, ...)`` calls honour the caller's strict/warn/off choice.
+    if overlap_policy is not None:
+        from .._overlap._policy import set_figure_policy
+
+        set_figure_policy(fig, overlap_policy)
 
     return fig, axes
 
