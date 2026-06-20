@@ -112,6 +112,12 @@ class ScientificCaption:
                 mpl_fig, formatted_caption, position, width_ratio, font_size
             )
 
+        # Persist caption on the figrecipe FigureRecord so it survives
+        # save -> reproduce roundtrips. Only RecordingFigure exposes
+        # ``.record``; a bare matplotlib Figure simply skips persistence.
+        if hasattr(fig, "record"):
+            fig.record.caption = caption
+
         # Register caption
         self.caption_registry[figure_label] = {
             "text": caption,

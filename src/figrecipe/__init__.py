@@ -19,13 +19,13 @@ except Exception:
 
 from ._branding import BRAND_NAME as _BRAND_NAME
 from ._branding import rebrand_text as _rebrand_text
-from ._qr import add_qr_to_figure
 
 # Register sys.modules aliases for modules moved by #141 (figrecipe._quality
 # topical refactor) so legacy `from figrecipe._validator import X` style
 # imports keep working with a single-fire DeprecationWarning pointing at the
 # new path. See figrecipe._compat for details.
 from ._compat import install_module_aliases as _install_module_aliases
+from ._qr import add_qr_to_figure
 
 _install_module_aliases()
 del _install_module_aliases
