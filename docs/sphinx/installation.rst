@@ -55,7 +55,7 @@ For development:
 Requirements
 ------------
 
-- Python 3.9+
+- Python 3.10+
 - matplotlib >= 3.5
 - numpy
 - PyYAML

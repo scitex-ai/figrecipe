@@ -24,11 +24,11 @@ spacing:
   supylabel_mm: 3     # Space reserved for figure super y-label
 
 fonts:
-  family: "DejaVu Sans"  # Always available; Arial preferred but not guaranteed in Docker
+  family: "Arial"  # Publication default; loud DejaVu Sans fallback if Arial absent (see styles/_fonts.py::ensure_font_family)
   axis_label_pt: 7
   tick_label_pt: 7
   title_pt: 8
-  suptitle_pt: 9      # Figure suptitle (slightly larger than subplot titles)
+  suptitle_pt: 7      # Figure suptitle (inherits style; small + non-bold)
   supxlabel_pt: 7     # Figure-level x-label (same as axis labels)
   supylabel_pt: 7     # Figure-level y-label (same as axis labels)
   panel_label_pt: 10  # Panel labels (A, B, C, ...) - bold, prominent
@@ -41,7 +41,16 @@ padding:
   title_pt: 4.0
 
 lines:
-  trace_mm: 0.12
+  # Two semantic line widths:
+  #   - signal_linewidth_mm: very thin, for DENSE signal traces (EEG/iEEG,
+  #     spectra) where many overlapping lines must stay legible. Opt in via
+  #     lw="signal" / linewidth="signal" on wrapped plotting methods.
+  #   - linewidth_mm: the GENERAL/default width used by ordinary lines
+  #     (KDE curves, single plots, etc.). Pushed onto matplotlib's
+  #     rcParam lines.linewidth so plt.plot()/ax.plot() inherit it.
+  signal_linewidth_mm: 0.12   # Dense signal traces (opt-in token "signal")
+  linewidth_mm: 0.8           # General/default ordinary line width
+  trace_mm: 0.12              # Back-compat alias of signal_linewidth_mm
   errorbar_mm: 0.12
   errorbar_cap_mm: 0.8
   grid_mm: 0.12

@@ -175,6 +175,12 @@ def compare_images(
 
         Image.fromarray(diff_img).save(diff_path)
 
+    # Localize WHERE the images differ (helps diagnose a failed reproduction:
+    # which fraction of the canvas changed, and the bounding box of the change as
+    # fractions of H x W). Computed on the comparable (same-size or tolerance-
+    # cropped) pixels; ``None`` when sizes are too different to overlap.
+    diff_fraction, diff_bbox = _diff_region(img1, img2)
+
     return {
         "identical": mse == 0,
         "mse": float(mse),
@@ -185,7 +191,40 @@ def compare_images(
         "same_size": img1.shape == img2.shape,
         "file_size1": file_size1,
         "file_size2": file_size2,
+        "diff_fraction": diff_fraction,
+        "diff_bbox": diff_bbox,
     }
+
+
+def _diff_region(img1: np.ndarray, img2: np.ndarray, thresh: float = 10.0):
+    """Fraction of differing pixels + their bounding box (H/W fractions).
+
+    Returns ``(fraction, bbox)`` where ``bbox`` is
+    ``(row_min, row_max, col_min, col_max)`` as fractions of height/width, or
+    ``(None, None)`` if the images don't overlap. A pixel "differs" when its
+    mean abs channel difference exceeds ``thresh`` (0-255), which ignores
+    anti-aliasing jitter and isolates real changes.
+    """
+    min_h = min(img1.shape[0], img2.shape[0])
+    min_w = min(img1.shape[1], img2.shape[1])
+    if min_h == 0 or min_w == 0:
+        return None, None
+    a = img1[:min_h, :min_w].astype(float)
+    b = img2[:min_h, :min_w].astype(float)
+    dmap = np.abs(a - b).mean(axis=2) if a.ndim == 3 else np.abs(a - b)
+    mask = dmap > thresh
+    fraction = float(mask.mean())
+    if not mask.any():
+        return fraction, None
+    ys, xs = np.where(mask)
+    h, w = dmap.shape
+    bbox = (
+        round(float(ys.min()) / h, 3),
+        round(float(ys.max()) / h, 3),
+        round(float(xs.min()) / w, 3),
+        round(float(xs.max()) / w, 3),
+    )
+    return fraction, bbox
 
 
 def create_comparison_figure(

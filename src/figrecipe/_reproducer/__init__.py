@@ -9,7 +9,8 @@ The public API exposes three main functions:
 - get_recipe_info: Get information about a recipe without reproducing it
 """
 
-from ._core import get_recipe_info, reproduce, reproduce_from_record
+from ._core import reproduce, reproduce_from_record
+from ._recipe_info import get_recipe_info
 
 __all__ = [
     "reproduce",

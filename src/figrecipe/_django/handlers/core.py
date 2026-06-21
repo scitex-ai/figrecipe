@@ -7,6 +7,22 @@ import json
 from django.http import JsonResponse
 
 
+def _dpi_from_request(request):
+    """Parse the canvas display DPI from the request, clamped to a sane range.
+
+    The editor passes its display DPI (``devicePixelRatio * 96``) so the preview
+    renders at the canvas's mm scale. Returns None when absent/invalid so the
+    renderer falls back to the figure's remembered dpi (then 150).
+    """
+    raw = request.GET.get("dpi")
+    if raw is None:
+        return None
+    try:
+        return max(36, min(600, int(float(raw))))
+    except (TypeError, ValueError):
+        return None
+
+
 def _regen_hitmap(editor, img_size):
     """Regenerate hitmap after any render that changes figure content."""
     from figrecipe._editor._hitmap import generate_hitmap, hitmap_to_base64
@@ -26,8 +42,13 @@ def handle_preview(request, editor):
     if dark is not None:
         editor.dark_mode = dark == "true"
 
+    # Render at the canvas display DPI (if supplied) so the figure's pixel size
+    # matches the editor's mm ruler; remembered on the fig for later re-renders.
     img, bboxes, size = render_with_overrides(
-        editor.fig, editor.get_effective_style(), editor.dark_mode
+        editor.fig,
+        editor.get_effective_style(),
+        editor.dark_mode,
+        dpi=_dpi_from_request(request),
     )
     return JsonResponse(
         {

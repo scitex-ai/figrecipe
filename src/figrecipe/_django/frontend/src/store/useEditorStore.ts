@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { api } from "../api/client";
+import { DPI } from "../hooks/useSnap";
 import type { SnapGuide } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
 import type {
@@ -149,6 +150,7 @@ interface EditorState {
     bracket: Omit<StatBracket, "bracket_id"> & { bracket_id?: string },
   ) => Promise<string | null>;
   removeStatBracket: (axIndex: number, bracketId: string) => Promise<boolean>;
+  moveLegend: (axIndex: number, x: number, y: number) => Promise<boolean>;
 
   setDarkMode: (dark: boolean) => void;
   toggleHitmap: () => void;
@@ -278,7 +280,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ loading: true });
     try {
       const dark = get().darkMode;
-      const data = await api.get<PreviewResponse>(`preview?dark_mode=${dark}`);
+      const data = await api.get<PreviewResponse>(
+        `preview?dark_mode=${dark}&dpi=${DPI}`,
+      );
       if (data.dark_mode !== undefined) set({ darkMode: data.dark_mode });
       const { placedFigures, selectedFigureId, currentFile } = get();
       if (placedFigures.length === 0) {
@@ -475,7 +479,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }),
   showToast: (message, type = "info") => {
     set({ toast: { message, type } });
-    setTimeout(() => set({ toast: null }), 3000);
+    // Errors persist until dismissed (shown in the AlertBanner -- fail-loud);
+    // info/success auto-clear as transient toasts.
+    if (type !== "error") {
+      setTimeout(() => set({ toast: null }), 3000);
+    }
   },
   clearToast: () => set({ toast: null }),
 }));

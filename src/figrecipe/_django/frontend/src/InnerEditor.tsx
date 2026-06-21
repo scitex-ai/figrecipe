@@ -18,6 +18,7 @@ import { Toast } from "./components/common/Toast";
 import { useEmbeddedMessages } from "./hooks/useEmbeddedMessages";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { usePanelResize } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/usePanelResize";
+import { AlertBanner } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
@@ -36,6 +37,8 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     loadFiles,
     loadThemes,
     loadDatatable,
+    toast,
+    clearToast,
   } = useEditorStore();
 
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
@@ -272,6 +275,12 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
 
       {loading && <Spinner />}
       <Toast />
+      <AlertBanner
+        open={toast?.type === "error"}
+        type="error"
+        message={toast?.type === "error" ? toast.message : ""}
+        onDismiss={clearToast}
+      />
     </div>
   );
 }

@@ -18,7 +18,7 @@ from .._reproducer import get_recipe_info
 from .._reproducer import reproduce as _reproduce_core
 from .._serializer import load_recipe
 from .._utils._numpy_io import CsvFormat, DataFormat
-from .._validator import ValidationResult
+from .._quality._validator import ValidationResult
 from .._wrappers import RecordingAxes, RecordingFigure
 
 
@@ -103,11 +103,14 @@ def save(
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
     validate_error_level: str = "error",
+    validate_axis_range_alignment: bool = True,
+    validate_axis_range_alignment_error_level: str = "warning",
     verbose: bool = True,
     dpi: Optional[int] = None,
     image_format: Optional[str] = None,
     facecolor: Optional[str] = None,
     save_hitmap: bool = False,
+    save_editable: bool = False,
 ):
     """Save a figure as image and recipe. Unified API with fig.savefig().
 
@@ -131,6 +134,13 @@ def save(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle failures: 'error', 'warning', or 'debug'.
+    validate_axis_range_alignment : bool
+        If True (default), run the runtime ``axis_range_alignment``
+        check on the rendered figure. Catches the autoscale-with-
+        different-data case that the static STX-FIG001 lint misses.
+    validate_axis_range_alignment_error_level : str
+        Dispatch level for the axis-range-alignment check:
+        'warning' (default), 'error', or 'debug' (silent).
     verbose : bool
         If True (default), print save status.
     dpi : int, optional
@@ -141,6 +151,10 @@ def save(
         Background color. When opaque, patches are made visible.
     save_hitmap : bool
         If True (default), save hitmap image for GUI editor element selection.
+    save_editable : bool
+        If True, write the editable-figure JSON (schema
+        ``scitex.plt.figure.editable``) to ``<stem>.json`` next to the image.
+        Default False — opt in for the GUI / web editor.
 
     Returns
     -------
@@ -150,7 +164,7 @@ def save(
     """
     from ._save import save_figure
 
-    return save_figure(
+    result = save_figure(
         fig=fig,
         path=path,
         save_recipe=save_recipe,
@@ -160,12 +174,26 @@ def save(
         validate=validate,
         validate_mse_threshold=validate_mse_threshold,
         validate_error_level=validate_error_level,
+        validate_axis_range_alignment=validate_axis_range_alignment,
+        validate_axis_range_alignment_error_level=(
+            validate_axis_range_alignment_error_level
+        ),
         verbose=verbose,
         dpi=dpi,
         image_format=image_format,
         facecolor=facecolor,
         save_hitmap=save_hitmap,
     )
+
+    # Editable-figure JSON sidecar (schema scitex.plt.figure.editable).
+    # Written next to the saved image; opt-in (default False).
+    if save_editable:
+        from .._editable import save_editable as _save_editable
+
+        image_path = result[0] if isinstance(result, tuple) else result
+        _save_editable(fig, image_path, verbose=verbose)
+
+    return result
 
 
 def reproduce(

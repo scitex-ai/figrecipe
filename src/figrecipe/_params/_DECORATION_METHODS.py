@@ -12,6 +12,8 @@ DECORATION_METHODS = {
     "set_title",
     "set_xlim",
     "set_ylim",
+    "set_xscale",  # log/symlog/logit axis scale (replays as a generic decoration)
+    "set_yscale",  # log/symlog/logit axis scale (replays as a generic decoration)
     "set_aspect",
     "legend",
     "grid",
@@ -29,6 +31,7 @@ DECORATION_METHODS = {
     "set_yticklabels",
     "tick_params",
     "margins",  # For ax.margins(x=0.02) padding
+    "rotate_labels",  # figrecipe tick-label rotation (recorded so reproduce replays it)
     # Statistical annotations
     "stat_annotation",  # Comparison brackets with stars/p-values
 }

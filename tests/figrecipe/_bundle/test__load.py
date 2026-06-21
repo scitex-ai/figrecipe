@@ -72,7 +72,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
             if not (spec_path is not None):
-                raise AssertionError(f'spec.json not found in {zf.namelist()}')
+                raise AssertionError(f"spec.json not found in {zf.namelist()}")
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "version" in spec
@@ -88,7 +88,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
             if not (spec_path is not None):
-                raise AssertionError(f'spec.json not found in {zf.namelist()}')
+                raise AssertionError(f"spec.json not found in {zf.namelist()}")
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "figure" in spec
@@ -104,7 +104,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
             if not (spec_path is not None):
-                raise AssertionError(f'spec.json not found in {zf.namelist()}')
+                raise AssertionError(f"spec.json not found in {zf.namelist()}")
             with zf.open(spec_path) as f:
                 spec = json.load(f)
         assert "axes" in spec
@@ -120,10 +120,10 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
             if not (spec_path is not None):
-                raise AssertionError(f'spec.json not found in {zf.namelist()}')
+                raise AssertionError(f"spec.json not found in {zf.namelist()}")
             with zf.open(spec_path) as f:
                 spec = json.load(f)
-        assert "ax_0_0" in spec["axes"]
+        assert "r0c0" in spec["axes"]
 
     def test_save_creates_spec_json_part_5(self, tmp_path):
         """Test that spec.json is created with correct structure."""
@@ -136,10 +136,10 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
             if not (spec_path is not None):
-                raise AssertionError(f'spec.json not found in {zf.namelist()}')
+                raise AssertionError(f"spec.json not found in {zf.namelist()}")
             with zf.open(spec_path) as f:
                 spec = json.load(f)
-        assert len(spec["axes"]["ax_0_0"]["traces"]) == 1
+        assert len(spec["axes"]["r0c0"]["traces"]) == 1
 
     def test_save_creates_spec_json_part_6(self, tmp_path):
         """Test that spec.json is created with correct structure."""
@@ -152,10 +152,10 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             spec_path = _find_bundle_file(zf, "spec.json")
             if not (spec_path is not None):
-                raise AssertionError(f'spec.json not found in {zf.namelist()}')
+                raise AssertionError(f"spec.json not found in {zf.namelist()}")
             with zf.open(spec_path) as f:
                 spec = json.load(f)
-        assert spec["axes"]["ax_0_0"]["traces"][0]["id"] == "myplot"
+        assert spec["axes"]["r0c0"]["traces"][0]["id"] == "myplot"
 
     def test_save_creates_style_json_part_1(self, tmp_path):
         """Test that style.json is created."""
@@ -168,7 +168,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             style_path = _find_bundle_file(zf, "style.json")
             if not (style_path is not None):
-                raise AssertionError(f'style.json not found in {zf.namelist()}')
+                raise AssertionError(f"style.json not found in {zf.namelist()}")
             with zf.open(style_path) as f:
                 style = json.load(f)
         assert "version" in style
@@ -184,7 +184,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             style_path = _find_bundle_file(zf, "style.json")
             if not (style_path is not None):
-                raise AssertionError(f'style.json not found in {zf.namelist()}')
+                raise AssertionError(f"style.json not found in {zf.namelist()}")
             with zf.open(style_path) as f:
                 style = json.load(f)
         assert "axes" in style
@@ -202,7 +202,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             data_path = _find_bundle_file(zf, "data.csv")
             if not (data_path is not None):
-                raise AssertionError(f'data.csv not found in {zf.namelist()}')
+                raise AssertionError(f"data.csv not found in {zf.namelist()}")
             with zf.open(data_path) as f:
                 df = pd.read_csv(f)
         assert "mydata_x" in df.columns
@@ -220,7 +220,7 @@ class TestSaveBundle:
         with zipfile.ZipFile(bundle_path, "r") as zf:
             data_path = _find_bundle_file(zf, "data.csv")
             if not (data_path is not None):
-                raise AssertionError(f'data.csv not found in {zf.namelist()}')
+                raise AssertionError(f"data.csv not found in {zf.namelist()}")
             with zf.open(data_path) as f:
                 df = pd.read_csv(f)
         assert "mydata_y" in df.columns
@@ -274,53 +274,39 @@ class TestSaveBundle:
             has_recipe = any("recipe.yaml" in n for n in names)
             assert has_recipe, f"recipe.yaml not found in {names}"
 
-    def test_save_zip_via_fr_save_creates_recipe_alongside_part_1(self, tmp_path):
-        """Test that fr.save(fig, 'x.zip') creates recipe.yaml alongside ZIP."""
+    def test_save_pltz_via_fr_save_returns_bundle_path_part_1(self, tmp_path):
+        """fr.save(fig, 'x.plt.zip') routes through Pltz and returns the bundle path."""
         # Arrange
         # Act
         # Assert
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [1, 4, 9], id="test")
-        result = fr.save(fig, tmp_path / "test.zip", verbose=False)
+        result = fr.save(fig, tmp_path / "test.plt.zip", verbose=False)
         bundle_path = result[0]
-        yaml_path = result[1]
         assert bundle_path.exists()
 
-    def test_save_zip_via_fr_save_creates_recipe_alongside_part_2(self, tmp_path):
-        """Test that fr.save(fig, 'x.zip') creates recipe.yaml alongside ZIP."""
+    def test_save_pltz_via_fr_save_returns_bundle_path_part_2(self, tmp_path):
+        """fr.save(fig, 'x.plt.zip') returns no sidecar yaml (recipe lives inside)."""
         # Arrange
         # Act
         # Assert
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [1, 4, 9], id="test")
-        result = fr.save(fig, tmp_path / "test.zip", verbose=False)
-        bundle_path = result[0]
+        result = fr.save(fig, tmp_path / "test.plt.zip", verbose=False)
         yaml_path = result[1]
-        assert yaml_path is not None
+        assert yaml_path is None
 
-    def test_save_zip_via_fr_save_creates_recipe_alongside_part_3(self, tmp_path):
-        """Test that fr.save(fig, 'x.zip') creates recipe.yaml alongside ZIP."""
+    def test_save_pltz_via_fr_save_embeds_recipe_inside_zip(self, tmp_path):
+        """fr.save(fig, 'x.plt.zip') embeds recipe.yaml inside the bundle."""
         # Arrange
         # Act
         # Assert
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [1, 4, 9], id="test")
-        result = fr.save(fig, tmp_path / "test.zip", verbose=False)
+        result = fr.save(fig, tmp_path / "test.plt.zip", verbose=False)
         bundle_path = result[0]
-        yaml_path = result[1]
-        assert yaml_path.exists()
-
-    def test_save_zip_via_fr_save_creates_recipe_alongside_part_4(self, tmp_path):
-        """Test that fr.save(fig, 'x.zip') creates recipe.yaml alongside ZIP."""
-        # Arrange
-        # Act
-        # Assert
-        fig, ax = fr.subplots()
-        ax.plot([1, 2, 3], [1, 4, 9], id="test")
-        result = fr.save(fig, tmp_path / "test.zip", verbose=False)
-        bundle_path = result[0]
-        yaml_path = result[1]
-        assert yaml_path.suffix == ".yaml"
+        with zipfile.ZipFile(bundle_path, "r") as zf:
+            assert any("recipe.yaml" in n for n in zf.namelist())
 
 
 class TestLoadBundle:
@@ -451,26 +437,26 @@ class TestReproduceBundle:
 
 
 class TestUnifiedSave:
-    """Test fr.save() with .zip extension uses layered bundle."""
+    """fr.save() routes .plt.zip through the layered Pltz bundle."""
 
-    def test_save_zip_uses_layered_format_part_1(self, tmp_path):
-        """Test that fr.save() with .zip creates layered bundle."""
+    def test_save_pltz_uses_layered_format_part_1(self, tmp_path):
+        """fr.save(fig, '*.plt.zip') yields a .zip-suffixed path."""
         # Arrange
         # Act
         # Assert
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [1, 4, 9], id="test")
-        result = fr.save(fig, tmp_path / "figure.zip", verbose=False)
+        result = fr.save(fig, tmp_path / "figure.plt.zip", verbose=False)
         assert result[0].suffix == ".zip"
 
-    def test_save_zip_uses_layered_format_part_2(self, tmp_path):
-        """Test that fr.save() with .zip creates layered bundle."""
+    def test_save_pltz_uses_layered_format_part_2(self, tmp_path):
+        """fr.save(fig, '*.plt.zip') writes the bundle to disk."""
         # Arrange
         # Act
         # Assert
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [1, 4, 9], id="test")
-        result = fr.save(fig, tmp_path / "figure.zip", verbose=False)
+        result = fr.save(fig, tmp_path / "figure.plt.zip", verbose=False)
         assert result[0].exists()
 
 
@@ -505,6 +491,7 @@ class TestBundlePaths:
         # Act
         # Assert
         from figrecipe._bundle import bundle_exists
+
         fig, ax = fr.subplots()
         ax.plot([1, 2], [1, 2], id="test")
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)
@@ -516,6 +503,7 @@ class TestBundlePaths:
         # Act
         # Assert
         from figrecipe._bundle import bundle_exists
+
         fig, ax = fr.subplots()
         ax.plot([1, 2], [1, 2], id="test")
         bundle_path = fr.save_bundle(fig, tmp_path / "test", verbose=False)

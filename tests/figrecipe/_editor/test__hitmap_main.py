@@ -1221,10 +1221,10 @@ class TestNaturalSortingFix:
         def natural_sort_key(s):
             return [int(c) if c.isdigit() else c for c in re.split(r"(\d+)", s)]
 
-        keys = ["ax_0_0", "ax_0_1", "ax_1_0", "ax_10_0", "ax_2_0", "ax_9_0"]
+        keys = ["r0c0", "r0c1", "r1c0", "r10c0", "r2c0", "r9c0"]
         sorted_keys = sorted(keys, key=natural_sort_key)
 
-        expected = ["ax_0_0", "ax_0_1", "ax_1_0", "ax_2_0", "ax_9_0", "ax_10_0"]
+        expected = ["r0c0", "r0c1", "r1c0", "r2c0", "r9c0", "r10c0"]
         assert sorted_keys == expected, f"Got {sorted_keys}, expected {expected}"
 
     def test_detect_plot_types_uses_natural_sort(self):

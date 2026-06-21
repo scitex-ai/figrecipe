@@ -50,6 +50,7 @@ from ._axis_helpers import show_spines as show_spines
 from ._axis_helpers import toggle_spines as toggle_spines
 from ._fonts import check_font as check_font
 from ._fonts import list_available_fonts as list_available_fonts
+from ._fonts import register_arial_fonts as register_arial_fonts
 from ._style_loader import STYLE as STYLE
 from ._style_loader import list_presets as list_presets
 from ._style_loader import load_style as load_style
@@ -67,6 +68,7 @@ __all__ = [
     # Font utilities
     "check_font",
     "list_available_fonts",
+    "register_arial_fonts",
     # Axis helper utilities (user-facing)
     "hide_spines",
     "show_spines",

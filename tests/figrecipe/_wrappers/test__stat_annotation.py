@@ -189,7 +189,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003)
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         assert len(decorations) == 1
 
     def test_add_stat_annotation_records_part_2(self):
@@ -200,7 +200,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003)
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         assert decorations[0].function == "stat_annotation"
 
     def test_add_stat_annotation_kwargs_recorded_part_1(self):
@@ -211,7 +211,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003, style="both", color="red")
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         kwargs = decorations[0].kwargs
         assert kwargs["x1"] == 0
 
@@ -223,7 +223,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003, style="both", color="red")
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         kwargs = decorations[0].kwargs
         assert kwargs["x2"] == 1
 
@@ -235,7 +235,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003, style="both", color="red")
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         kwargs = decorations[0].kwargs
         assert kwargs["p_value"] == 0.003
 
@@ -247,7 +247,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003, style="both", color="red")
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         kwargs = decorations[0].kwargs
         assert kwargs["style"] == "both"
 
@@ -259,7 +259,7 @@ class TestAddStatAnnotation:
         fig, ax = fr.subplots()
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.003, style="both", color="red")
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         kwargs = decorations[0].kwargs
         assert kwargs["color"] == "red"
 
@@ -272,7 +272,7 @@ class TestAddStatAnnotation:
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, text="p<0.001")
 
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         assert decorations[0].kwargs["text"] == "p<0.001"
 
     def test_add_stat_annotation_with_id(self):
@@ -284,7 +284,7 @@ class TestAddStatAnnotation:
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.01, id="comparison_a_b")
 
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         assert decorations[0].id == "comparison_a_b"
 
     def test_add_stat_annotation_track_false(self):
@@ -296,7 +296,7 @@ class TestAddStatAnnotation:
         ax.bar([0, 1], [3, 5])
         ax.add_stat_annotation(0, 1, p_value=0.01, track=False)
 
-        decorations = fig.record.axes["ax_0_0"].decorations
+        decorations = fig.record.axes["r0c0"].decorations
         assert len(decorations) == 0
 
 
@@ -318,7 +318,7 @@ class TestStatAnnotationRoundtrip:
 
             fig2, ax2 = fr.reproduce(png_path)
 
-            decorations = fig2.record.axes["ax_0_0"].decorations
+            decorations = fig2.record.axes["r0c0"].decorations
             if not (len(decorations) == 1):
                 raise AssertionError
             if not (decorations[0].function == 'stat_annotation'):
@@ -344,7 +344,7 @@ class TestStatAnnotationRoundtrip:
 
             fig2, ax2 = fr.reproduce(png_path)
 
-            decorations = fig2.record.axes["ax_0_0"].decorations
+            decorations = fig2.record.axes["r0c0"].decorations
             assert len(decorations) == 3
 
     def test_annotation_with_custom_styling_roundtrip(self):
@@ -364,7 +364,7 @@ class TestStatAnnotationRoundtrip:
 
             fig2, ax2 = fr.reproduce(png_path)
 
-            dec = fig2.record.axes["ax_0_0"].decorations[0]
+            dec = fig2.record.axes["r0c0"].decorations[0]
             if not (dec.kwargs['color'] == 'red'):
                 raise AssertionError
             if not (dec.kwargs['linewidth'] == 2):

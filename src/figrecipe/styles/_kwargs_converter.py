@@ -57,6 +57,13 @@ def to_subplots_kwargs(style: Optional["DotDict"] = None) -> Dict[str, Any]:
         "ticks_n_ticks_max": style.ticks.get("n_ticks_max", 4),
         # Lines (lines.* in YAML)
         "lines_trace_mm": style.lines.trace_mm,
+        # General/default ordinary line width (KDE curves, single plots, …).
+        # Falls back to the signal/trace width on legacy presets without it.
+        "lines_linewidth_mm": style.lines.get("linewidth_mm", style.lines.trace_mm),
+        # Thin width for dense signal traces (opt-in token lw="signal").
+        "lines_signal_linewidth_mm": style.lines.get(
+            "signal_linewidth_mm", style.lines.trace_mm
+        ),
         "lines_errorbar_mm": style.lines.get("errorbar_mm", 0.12),
         "lines_errorbar_cap_mm": style.lines.get("errorbar_cap_mm", 0.8),
         "lines_grid_mm": style.lines.get("grid_mm"),
@@ -137,6 +144,9 @@ def to_subplots_kwargs(style: Optional["DotDict"] = None) -> Dict[str, Any]:
             result["behavior_auto_scale_axes"] = behavior.auto_scale_axes
         if hasattr(behavior, "constrained_layout"):
             result["behavior_constrained_layout"] = behavior.constrained_layout
+        # Save-time overlap/layout-conflict check (default on). Set
+        # behavior.check_overlap = false in a style/preset to opt out.
+        result["behavior_check_overlap"] = behavior.get("check_overlap", True)
 
     # Add colorbar settings (colorbar.* in YAML)
     if "colorbar" in style:

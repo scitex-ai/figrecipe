@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 """Main composition logic for combining multiple figures.
 
-Supports two composition modes:
+Supports three composition modes:
 1. Grid-based: layout=(nrows, ncols) with sources={(row, col): path}
 2. Mm-based: canvas_size_mm=(w, h) with sources={path: {"xy_mm": ..., "size_mm": ...}}
+3. Tiled: layout=[["A","B"],["C"]] with sources={"A": path, ...} (row-justified,
+   aspect-preserving, whitespace-free) -- see ``_tile.py``.
 
 All layouts maintain matplotlib editability - no PIL image pasting.
 """
@@ -13,10 +15,19 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from numpy.typing import NDArray
 
-from .._recorder import FigureRecord
+from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
+from ._crop_aware import _apply_source_style, panel_rel_bbox, replay_panel_suptitle
+from ._panel_labels import (
+    _add_panel_labels_grid,
+    _add_panel_labels_mm,
+    _get_axes_at,
+)
+from ._replay_record import _replay_axes_record, _replay_axes_record_mm
 from ._source_parser import is_image_file as _is_image_file  # noqa: F401
+from ._source_parser import parse_source_spec_with_key as _parse_source_spec_with_key
 from ._source_parser import parse_source_spec_with_path as _parse_source_spec_with_path
+from ._tile import _is_tiled_layout, build_tiled_sources
 
 # Default DPI for mm-based composition
 DEFAULT_DPI = 300
@@ -40,18 +51,20 @@ def _mm_to_inch(mm: float) -> float:
 
 def compose(
     sources: Dict[Any, Any],
-    layout: Optional[Tuple[int, int]] = None,
+    layout: Optional[Union[Tuple[int, int], str, List[List[str]]]] = None,
     canvas_size_mm: Optional[Tuple[float, float]] = None,
-    gap_mm: float = 5.0,
+    width_mm: Optional[float] = None,
+    gap_mm: float = 2.0,
     dpi: int = DEFAULT_DPI,
     panel_labels: bool = False,
     label_style: str = "uppercase",
     caption: Optional[str] = None,
+    panel_captions: Optional[List[str]] = None,
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray, List[RecordingAxes]]]:
     """Compose a new figure from multiple sources (recipes or raw images).
 
-    Supports two modes automatically detected from sources format:
+    Supports three modes automatically detected from sources/layout format:
 
     1. Grid-based: sources={(row, col): path}
        Uses layout=(nrows, ncols) for subplot grid.
@@ -59,18 +72,34 @@ def compose(
     2. Mm-based: sources={path: {"xy_mm": (x, y), "size_mm": (w, h)}}
        Uses canvas_size_mm for precise positioning.
 
+    3. Tiled (row-justified, whitespace-free): layout=[["A","B","C"],["D"]]
+       (or the multiline string "A B C\\nD") with sources={"A": path, ...}.
+       Each panel keeps its true aspect ratio; within a row all panels share
+       one common height and sit edge-to-edge (only ``gap_mm`` between) so
+       there is no whitespace, and every row spans the same width so the
+       right edge is never ragged. The first layout row is rendered on top.
+
     Parameters
     ----------
     sources : dict
-        Either:
+        One of:
         - Grid-based: {(row, col): source_path} mapping positions to sources
         - Mm-based: {source_path: {"xy_mm": (x, y), "size_mm": (w, h)}}
-    layout : tuple, optional
-        (nrows, ncols) for grid-based composition. Auto-detected if not provided.
+        - Tiled: {label: source} keyed by the string labels used in ``layout``
+    layout : tuple, str, or list of list of str, optional
+        - (nrows, ncols) for grid-based composition (auto-detected if omitted).
+        - list of rows of labels (``[["A","B"],["C"]]``) or a multiline string
+          (``"A B\\nC"``) for tiled composition.
     canvas_size_mm : tuple, optional
         (width_mm, height_mm) for mm-based composition. Required for mm-based mode.
+    width_mm : float, optional
+        Overall content width (mm) for TILED composition. When omitted the
+        default width is the widest row at its true content size, i.e.
+        ``max over rows of (sum of true panel widths + (k-1)*gap_mm)``.
+        Ignored by grid/mm modes.
     gap_mm : float
-        Gap between panels in mm (for auto-layout modes like 'horizontal').
+        Gap between panels in mm (gutter; tiled mode uses it as the edge-to-edge
+        spacing, and ``gap_mm=0`` makes panels share edges exactly).
     dpi : int
         DPI for the output figure.
     panel_labels : bool
@@ -78,8 +107,11 @@ def compose(
     label_style : str
         'uppercase', 'lowercase', or 'numeric'.
     caption : str, optional
-        Caption text to attach to the composed figure. Stored on the
-        FigureRecord (metadata.caption) so it survives save/reproduce.
+        Figure-level caption text.  Rendered on the figure and persisted
+        in the recipe so it survives save→reproduce.
+    panel_captions : list of str, optional
+        Per-panel caption texts.  When provided, panel labels (A, B, C...)
+        are placed with the corresponding caption text on each panel.
     **kwargs
         Additional arguments passed to figure creation.
 
@@ -102,6 +134,17 @@ def compose(
     ...     }
     ... )
 
+    Composition with figure-level caption:
+
+    >>> fig, axes = fr.compose(
+    ...     layout=(2, 2),
+    ...     sources={
+    ...         (0, 0): "a.yaml", (0, 1): "b.yaml",
+    ...         (1, 0): "c.yaml", (1, 1): "d.yaml",
+    ...     },
+    ...     caption="Figure 1. Four-condition comparison (n=3).",
+    ... )
+
     Mm-based free-form composition:
 
     >>> fig, axes = fr.compose(
@@ -112,26 +155,72 @@ def compose(
     ...         "panel_c.yaml": {"xy_mm": (0, 60), "size_mm": (175, 55)},
     ...     }
     ... )
+
+    Tiled (row-justified, whitespace-free) composition:
+
+    >>> fig, axes = fr.compose(
+    ...     layout=[["A", "B", "C"], ["D"]],
+    ...     sources={"A": "a.yaml", "B": "b.yaml",
+    ...              "C": "c.yaml", "D": "d.yaml"},
+    ...     width_mm=180, gap_mm=1.0,
+    ... )
     """
-    if _is_mm_based_sources(sources):
-        fig, axes = _compose_mm_based(
-            sources, canvas_size_mm, dpi, panel_labels, label_style, **kwargs
+    if _is_tiled_layout(layout, sources):
+        sources_mm, computed_canvas = _tiled_to_mm_sources(
+            layout,
+            sources,
+            width_mm=width_mm,
+            canvas_size_mm=canvas_size_mm,
+            gap_mm=gap_mm,
+        )
+        return _compose_mm_based(
+            sources_mm,
+            computed_canvas,
+            dpi,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
+        )
+    elif _is_mm_based_sources(sources):
+        return _compose_mm_based(
+            sources,
+            canvas_size_mm,
+            dpi,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
         )
     else:
-        fig, axes = _compose_grid_based(
-            sources, layout, panel_labels, label_style, **kwargs
+        return _compose_grid_based(
+            sources,
+            layout,
+            panel_labels,
+            label_style,
+            caption=caption,
+            panel_captions=panel_captions,
+            **kwargs,
         )
 
-    # Persist the caption on the composed figure's FigureRecord so it lands in
-    # the serialized recipe (metadata.caption) and survives save/reproduce.
-    if caption is not None:
-        try:
-            record = fig.record if hasattr(fig, "record") else fig._recorder.figure_record
-            record.caption = caption
-        except Exception:
-            pass
 
-    return fig, axes
+def _tiled_to_mm_sources(
+    layout: Union[str, List[List[str]]],
+    sources: Dict[str, Any],
+    width_mm: Optional[float],
+    canvas_size_mm: Optional[Tuple[float, float]],
+    gap_mm: float,
+) -> Tuple[Dict[str, Dict[str, Any]], Tuple[float, float]]:
+    """Adapter over ``_tile.build_tiled_sources`` (the whitespace-free,
+    aspect-preserving algorithm). ``canvas_size_mm[0]`` supplies the width when
+    ``width_mm`` is omitted; the dispatcher then delegates to ``_compose_mm_based``.
+    """
+    effective_width = width_mm
+    if effective_width is None and canvas_size_mm is not None:
+        effective_width = canvas_size_mm[0]
+    return build_tiled_sources(layout, sources, width_mm=effective_width, gap_mm=gap_mm)
 
 
 def _compose_grid_based(
@@ -139,10 +228,13 @@ def _compose_grid_based(
     layout: Optional[Tuple[int, int]],
     panel_labels: bool,
     label_style: str,
+    caption: Optional[str],
+    panel_captions: Optional[List[str]],
     **kwargs,
 ) -> Tuple[RecordingFigure, Union[RecordingAxes, NDArray]]:
     """Grid-based composition using subplots."""
     from .. import subplots
+    from ._caption_render import render_compose_captions
 
     # Auto-detect layout from source positions
     if layout is None:
@@ -160,7 +252,20 @@ def _compose_grid_based(
 
     for (row, col), source_spec in sources.items():
         source_record, ax_key, source_path = _parse_source_spec_with_path(source_spec)
+        # Accept either "rRcC" or legacy "ax_R_C" regardless of which form the
+        # source record uses for its keys.
         ax_record = source_record.axes.get(ax_key)
+        if ax_record is None:
+            parsed_key = parse_grid_id(ax_key)
+            if parsed_key is not None:
+                for cand in (
+                    grid_id(*parsed_key),
+                    f"ax_{parsed_key[0]}_{parsed_key[1]}",
+                ):
+                    ax_record = source_record.axes.get(cand)
+                    if ax_record is not None:
+                        ax_key = cand
+                        break
 
         if ax_record is None:
             available = list(source_record.axes.keys())
@@ -174,7 +279,7 @@ def _compose_grid_based(
         if source_path is not None:
             data_dir = source_path.parent / f"{source_path.stem}_data"
             if data_dir.exists():
-                target_ax_key = f"ax_{row}_{col}"
+                target_ax_key = grid_id(row, col)
                 source_data_dirs[target_ax_key] = data_dir
 
     if source_data_dirs:
@@ -192,6 +297,9 @@ def _compose_grid_based(
     if panel_labels:
         _add_panel_labels_grid(axes, nrows, ncols, label_style)
 
+    # Render caption and panel captions
+    render_compose_captions(fig, axes, caption, panel_captions)
+
     return fig, axes
 
 
@@ -201,6 +309,8 @@ def _compose_mm_based(
     dpi: int,
     panel_labels: bool,
     label_style: str,
+    caption: Optional[str],
+    panel_captions: Optional[List[str]],
     **kwargs,
 ) -> Tuple[RecordingFigure, List[RecordingAxes]]:
     """Mm-based composition using fig.add_axes() for precise positioning."""
@@ -210,6 +320,7 @@ def _compose_mm_based(
     from .._recorder import Recorder
     from .._wrappers import RecordingAxes as RA
     from .._wrappers import RecordingFigure as RF
+    from ._caption_render import render_compose_captions
 
     if canvas_size_mm is None:
         max_x = 0
@@ -234,35 +345,91 @@ def _compose_mm_based(
     axes_list = []
     source_data_dirs = {}
 
-    for idx, (source_path, spec) in enumerate(sources.items()):
+    sub_idx = 0  # global counter for ax_mm_* keys across all panels + subplots
+    for source_path, spec in sources.items():
         xy_mm = spec["xy_mm"]
         size_mm = spec["size_mm"]
 
-        left = xy_mm[0] / canvas_size_mm[0]
-        bottom = 1.0 - (xy_mm[1] + size_mm[1]) / canvas_size_mm[1]
-        width = size_mm[0] / canvas_size_mm[0]
-        height = size_mm[1] / canvas_size_mm[1]
+        # Panel rectangle in figure-fraction coords.
+        panel_left = xy_mm[0] / canvas_size_mm[0]
+        panel_bottom = 1.0 - (xy_mm[1] + size_mm[1]) / canvas_size_mm[1]
+        panel_width = size_mm[0] / canvas_size_mm[0]
+        panel_height = size_mm[1] / canvas_size_mm[1]
 
-        mpl_ax = mpl_fig.add_axes([left, bottom, width, height])
+        source_record, ax_key, path, explicit_key = _parse_source_spec_with_key(
+            source_path
+        )
 
-        source_record, ax_key, path = _parse_source_spec_with_path(source_path)
-        ax_record = source_record.axes.get(ax_key)
+        # Carry the panels' publication style onto the composed record so
+        # reproduce() applies the SAME fonts/spines that live compose applies
+        # per-panel via _apply_source_style. Without it the composed recipe has
+        # no figure.style, so reproduce renders tick/axis-label text in
+        # matplotlib's default font -- shifting text metrics and ghosting every
+        # label against the live render. Panels share one style; first wins.
+        if recorder.figure_record.style is None:
+            _src_style = getattr(source_record, "style", None)
+            if _src_style:
+                recorder.figure_record.style = _src_style
 
-        if ax_record is None:
-            available = list(source_record.axes.keys())
-            raise ValueError(
-                f"Axes '{ax_key}' not found in source. Available: {available}"
+        # Decide which axes of the source recipe to place into this panel.
+        # An explicit (source, ax_key) tuple selects a single axes; a plain
+        # recipe/path replays ALL of its axes (so multi-subplot panels such as
+        # the stacked raw-iEEG traces keep every subplot, not just the first).
+        if explicit_key:
+            selected = {ax_key: source_record.axes.get(ax_key)}
+            if selected[ax_key] is None:
+                available = list(source_record.axes.keys())
+                raise ValueError(
+                    f"Axes '{ax_key}' not found in source. Available: {available}"
+                )
+        else:
+            selected = dict(source_record.axes)
+            if not selected:
+                raise ValueError(f"Source '{source_path}' has no axes to compose.")
+
+        data_dir = None
+        if path is not None:
+            candidate = path.parent / f"{path.stem}_data"
+            if candidate.exists():
+                data_dir = candidate
+
+        for src_key, ax_record in selected.items():
+            # Place this source-axes inside the panel rectangle relative to the
+            # source's tight content box (crop-aware), so the composed panel
+            # matches the clean cropped standalone render. Falls back to the
+            # legacy cropped-fraction bbox for older recipes.
+            bx0, by0, bw, bh = panel_rel_bbox(source_record, ax_record)
+
+            sub_left = panel_left + bx0 * panel_width
+            sub_bottom = panel_bottom + by0 * panel_height
+            sub_width = bw * panel_width
+            sub_height = bh * panel_height
+
+            mpl_ax = mpl_fig.add_axes([sub_left, sub_bottom, sub_width, sub_height])
+            # Record the EXACT add_axes input so the reproducer rebuilds this
+            # panel by the same construction (add_axes(compose_bbox) then replay).
+            # ``bbox``/``bbox_uncropped`` are POST-replay (a divider plotter's
+            # main axes is already shrunken there), so only this PRE-replay input
+            # reproduces divider panels -- and every panel -- pixel-for-pixel.
+            ax_record.compose_bbox = [sub_left, sub_bottom, sub_width, sub_height]
+            # Match the panel's publication font/style so replayed text metrics
+            # equal the standalone render (else long tick labels clip).
+            _apply_source_style(mpl_ax, source_record)
+
+            target_ax = RA(mpl_ax, recorder, position=(0, sub_idx))
+            axes_list.append(target_ax)
+
+            _replay_axes_record_mm(
+                mpl_ax, ax_record, recorder.figure_record, sub_idx, spec
             )
 
-        target_ax = RA(mpl_ax, recorder, position=(0, idx))
-        axes_list.append(target_ax)
+            if data_dir is not None:
+                source_data_dirs[f"ax_mm_{sub_idx}"] = data_dir
 
-        _replay_axes_record_mm(mpl_ax, ax_record, recorder.figure_record, idx, spec)
-
-        if path is not None:
-            data_dir = path.parent / f"{path.stem}_data"
-            if data_dir.exists():
-                source_data_dirs[f"ax_mm_{idx}"] = data_dir
+            sub_idx += 1
+        replay_panel_suptitle(
+            mpl_fig, source_record, panel_left, panel_bottom, panel_width, panel_height
+        )
 
     fig = RF(mpl_fig, recorder, axes_list)
 
@@ -280,129 +447,10 @@ def _compose_mm_based(
     if panel_labels:
         _add_panel_labels_mm(mpl_fig, sources, canvas_size_mm, label_style)
 
+    # Render caption and panel captions for mm-based
+    render_compose_captions(fig, axes_list, caption, panel_captions)
+
     return fig, axes_list
-
-
-def _replay_axes_record_mm(
-    mpl_ax,
-    ax_record,
-    fig_record: FigureRecord,
-    idx: int,
-    spec: Dict[str, Any],
-) -> None:
-    """Replay axes record for mm-based composition."""
-    from .._reproducer._core import _replay_call
-
-    result_cache: Dict[str, Any] = {}
-
-    for call in ax_record.calls:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    for call in ax_record.decorations:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    ax_key = f"ax_mm_{idx}"
-    ax_record_copy = ax_record
-    ax_record_copy.mm_position = spec
-    fig_record.axes[ax_key] = ax_record_copy
-
-
-def _add_panel_labels_grid(axes, nrows: int, ncols: int, style: str) -> None:
-    """Add panel labels to grid-based composition."""
-    labels = _get_panel_labels(nrows * ncols, style)
-    idx = 0
-    for row in range(nrows):
-        for col in range(ncols):
-            ax = _get_axes_at(axes, row, col, nrows, ncols)
-            mpl_ax = ax._ax if hasattr(ax, "_ax") else ax
-            mpl_ax.text(
-                -0.1,
-                1.1,
-                labels[idx],
-                transform=mpl_ax.transAxes,
-                fontsize=10,
-                fontweight="bold",
-                va="top",
-                ha="right",
-            )
-            idx += 1
-
-
-def _add_panel_labels_mm(fig, sources: Dict, canvas_size_mm: Tuple, style: str) -> None:
-    """Add panel labels to mm-based composition."""
-    labels = _get_panel_labels(len(sources), style)
-    for idx, (_, spec) in enumerate(sources.items()):
-        xy_mm = spec["xy_mm"]
-        x_frac = xy_mm[0] / canvas_size_mm[0]
-        y_frac = 1.0 - xy_mm[1] / canvas_size_mm[1]
-        fig.text(
-            x_frac - 0.02,
-            y_frac + 0.02,
-            labels[idx],
-            fontsize=10,
-            fontweight="bold",
-            va="bottom",
-            ha="right",
-        )
-
-
-def _get_panel_labels(n: int, style: str) -> List[str]:
-    """Generate panel labels based on style."""
-    if style == "uppercase":
-        return [chr(ord("A") + i) for i in range(n)]
-    elif style == "lowercase":
-        return [chr(ord("a") + i) for i in range(n)]
-    else:
-        return [str(i + 1) for i in range(n)]
-
-
-def _get_axes_at(
-    axes: Union[RecordingAxes, NDArray],
-    row: int,
-    col: int,
-    nrows: int,
-    ncols: int,
-) -> RecordingAxes:
-    """Get axes at position, handling different array shapes."""
-    if nrows == 1 and ncols == 1:
-        return axes
-    elif nrows == 1:
-        return axes[col]
-    elif ncols == 1:
-        return axes[row]
-    else:
-        return axes[row, col]
-
-
-def _replay_axes_record(
-    target_ax: RecordingAxes,
-    ax_record,
-    fig_record: FigureRecord,
-    row: int,
-    col: int,
-) -> None:
-    """Replay all calls from ax_record onto target axes."""
-    from .._reproducer._core import _replay_call
-
-    mpl_ax = target_ax._ax if hasattr(target_ax, "_ax") else target_ax
-    result_cache: Dict[str, Any] = {}
-
-    for call in ax_record.calls:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    for call in ax_record.decorations:
-        result = _replay_call(mpl_ax, call, result_cache)
-        if result is not None:
-            result_cache[call.id] = result
-
-    ax_key = f"ax_{row}_{col}"
-    fig_record.axes[ax_key] = ax_record
 
 
 __all__ = ["compose"]

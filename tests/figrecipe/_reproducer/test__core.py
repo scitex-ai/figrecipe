@@ -237,6 +237,13 @@ class TestPixelPerfect:
         success, msg = run_pixel_perfect_test("hist2d")
         assert success, f"hist2d: {msg}"
 
+    def test_hlines_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
+        success, msg = run_pixel_perfect_test("hlines")
+        assert success, f"hlines: {msg}"
+
     def test_imshow_pixel_perfect(self):
         # Arrange
         # Act
@@ -418,6 +425,13 @@ class TestPixelPerfect:
         # Assert
         success, msg = run_pixel_perfect_test("violinplot")
         assert success, f"violinplot: {msg}"
+
+    def test_vlines_pixel_perfect(self):
+        # Arrange
+        # Act
+        # Assert
+        success, msg = run_pixel_perfect_test("vlines")
+        assert success, f"vlines: {msg}"
 
     def test_xcorr_pixel_perfect(self):
         # Arrange

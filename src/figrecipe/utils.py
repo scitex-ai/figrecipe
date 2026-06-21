@@ -46,7 +46,7 @@ from ._utils._units import (
     normalize_color,
     pt_to_mm,
 )
-from ._validator import ValidationResult
+from ._quality._validator import ValidationResult
 from ._wrappers import RecordingAxes, RecordingFigure
 from .styles._style_applier import check_font, list_available_fonts
 

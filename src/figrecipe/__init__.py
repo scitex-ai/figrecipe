@@ -17,7 +17,30 @@ try:
 except Exception:
     pass
 
+from ._branding import BRAND_NAME as _BRAND_NAME
 from ._branding import rebrand_text as _rebrand_text
+from ._qr import add_qr_to_figure
+
+# Register sys.modules aliases for modules moved by #141 (figrecipe._quality
+# topical refactor) so legacy `from figrecipe._validator import X` style
+# imports keep working with a single-fire DeprecationWarning pointing at the
+# new path. See figrecipe._compat for details.
+from ._compat import install_module_aliases as _install_module_aliases
+
+_install_module_aliases()
+del _install_module_aliases
+
+# Brand-triggered house style: when a parent package (e.g. scitex.plt) sets
+# FIGRECIPE_BRAND, auto-apply that brand's global plotting style on import so
+# the parent needs zero in-tree auto-config. No-op for the default brand, so
+# plain `import figrecipe` pays no matplotlib import cost here.
+if _BRAND_NAME != "figrecipe":
+    try:
+        from ._brand_style import apply_brand_style as _apply_brand_style
+
+        _apply_brand_style(_BRAND_NAME)
+    except Exception:
+        pass
 
 # Define module docstring with branding applied
 _RAW_DOC = """
@@ -115,11 +138,9 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "save_bundle": ("._bundle", "save_bundle"),
     "load_bundle": ("._bundle", "load_bundle"),
     "reproduce_bundle": ("._bundle", "reproduce_bundle"),
-    # ._captions
-    "add_figure_caption": ("._captions", "add_figure_caption"),
-    "add_panel_captions": ("._captions", "add_panel_captions"),
-    # ._api._panel
-    "panel_label": ("._api._panel", "panel_label"),
+    # ._captions (public caption API)
+    "add_figure_caption": ("._captions._public", "add_figure_caption"),
+    "add_panel_captions": ("._captions._public", "add_panel_captions"),
     # ._composition
     "align_panels": ("._composition", "align_panels"),
     "align_smart": ("._composition", "align_smart"),
@@ -135,6 +156,51 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "get_graph_preset": ("._graph._presets", "get_preset"),
     "list_graph_presets": ("._graph._presets", "list_presets"),
     "register_graph_preset": ("._graph._presets", "register_preset"),
+    # ._graph (draw)
+    "draw_graph": ("._graph", "draw_graph"),
+    # ._spec_builders
+    "build_spec": ("._spec_builders", "build_spec"),
+    "build_spec_from_csv": ("._spec_builders", "build_spec_from_csv"),
+    "XY_KINDS": ("._spec_builders", "XY_KINDS"),
+    "DATA_KINDS": ("._spec_builders", "DATA_KINDS"),
+    "LABEL_KINDS": ("._spec_builders", "LABEL_KINDS"),
+    "MATRIX_KINDS": ("._spec_builders", "MATRIX_KINDS"),
+    "ALL_KINDS": ("._spec_builders", "ALL_KINDS"),
+    "KIND_ALIASES": ("._spec_builders", "KIND_ALIASES"),
+    # ._render
+    "render_spec_to_bytes": ("._render", "render_spec_to_bytes"),
+    # ._utils._nice_lim  (issue #140)
+    "nice_lim": ("._utils._nice_lim", "nice_lim"),
+    # ._utils._termplot
+    "termplot": ("._utils._termplot", "termplot"),
+    # ._api._style_manager (style helpers)
+    "STYLE": ("._api._style_manager", "STYLE"),
+    "apply_style": ("._api._style_manager", "apply_style"),
+    # .presets (flat SCITEX_STYLE preset — subplots() kwargs)
+    "SCITEX_STYLE": (".presets._scitex_style", "SCITEX_STYLE"),
+    # ._api._notebook
+    "enable_svg": ("._api._notebook", "enable_svg"),
+    # ._api._public (editor alias)
+    "edit": ("._api._public", "gui"),
+    # ._editable
+    "export_editable": ("._editable", "export_editable"),
+    # ._wrappers
+    "panel_label": ("._wrappers._panel_labels", "panel_label"),
+    # ._composition (alias)
+    "smart_align": ("._composition", "align_smart"),
+}
+
+
+# Module-level so PA-102's PEP-562 detector sees these names as bound
+# (it pulls keys from any module-level dict subscripted with `name` inside
+# __getattr__). Maps public submodule names → relative import paths.
+_MODULE_ALIASES: dict[str, str] = {
+    "colors": ".colors",
+    "color": ".colors",
+    "styles": ".styles",
+    "presets": ".presets",
+    "utils": ".utils",
+    "gallery": "._dev.demo_plotters",
 }
 
 
@@ -150,18 +216,22 @@ def __getattr__(name: str):
         value = getattr(module, attr)
         globals()[name] = value  # cache subsequent accesses
         return value
-    if name == "colors":
+    if name in _MODULE_ALIASES:
         import importlib
 
-        value = importlib.import_module(".colors", __name__)
-        globals()["colors"] = value
+        value = importlib.import_module(_MODULE_ALIASES[name], __name__)
+        globals()[name] = value
         return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def __dir__() -> list[str]:
     """Expose lazy names for tab completion in REPLs."""
-    return sorted(set(__all__) | set(_LAZY_ATTRS.keys()) | {"colors"})
+    return sorted(
+        set(__all__)
+        | set(_LAZY_ATTRS.keys())
+        | {"colors", "color", "styles", "presets", "utils", "gallery"}
+    )
 
 
 # Lazy seaborn access (avoids import error if seaborn not installed)
@@ -193,6 +263,11 @@ __all__ = [
     "info",
     "validate",
     "extract_data",
+    "add_qr_to_figure",
+    # Caption API
+    "add_figure_caption",
+    "add_panel_captions",
+    "panel_label",
     # Bundle format
     "Figz",
     "Pltz",
@@ -207,13 +282,35 @@ __all__ = [
     "Diagram",
     # Color utilities
     "colors",
+    "color",
+    # Submodules surfaced as figrecipe attributes
+    "styles",
+    "presets",
+    "utils",
+    "gallery",
+    # Spec builders / kind registries
+    "build_spec",
+    "build_spec_from_csv",
+    "XY_KINDS",
+    "DATA_KINDS",
+    "LABEL_KINDS",
+    "MATRIX_KINDS",
+    "ALL_KINDS",
+    "KIND_ALIASES",
+    "render_spec_to_bytes",
+    "termplot",
+    # Graph / style / editor helpers
+    "draw_graph",
+    "smart_align",
+    "edit",
+    "export_editable",
+    "enable_svg",
+    "STYLE",
+    "SCITEX_STYLE",
+    "apply_style",
     # Signature
     "signature",
     "caption_with_signature",
-    # Captions
-    "add_figure_caption",
-    "add_panel_captions",
-    "panel_label",
     # Seaborn integration
     "sns",
     # Version

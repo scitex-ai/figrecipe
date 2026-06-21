@@ -12,7 +12,11 @@ from matplotlib.patches import (
 
 from ..._utils._units import mm_to_pt
 from .._shared._styles_native import COLORS as _COLORS
-from .._shared._styles_native import get_edge_style, get_emphasis_style
+from .._shared._styles_native import (
+    get_edge_style,
+    get_emphasis_style,
+    resolve_font_config,
+)
 
 if TYPE_CHECKING:
     from ._core import ArrowSpec, BoxSpec, Diagram
@@ -248,7 +252,7 @@ def render_container(diagram: "Diagram", ax: Axes, cid: str, container: Dict) ->
             container["title"],
             ha=ha,
             va=va,
-            fontsize=11,
+            fontsize=resolve_font_config()["title_size"],
             fontweight="bold",
             color=colors["text"],
             zorder=7,
@@ -314,63 +318,12 @@ def render_box(diagram: "Diagram", ax: Axes, bid: str, box: "BoxSpec") -> None:
         diagram._render_info[bid] = {"pos": pos}
         return
 
-    # Build text items: list of (text, fontsize, fontweight, color)
-    is_code = box.shape == "codeblock"
-    items = [(box.title, 11, "bold", title_color)]
-    if box.subtitle:
-        items.append((box.subtitle, 9, "normal", colors["text"]))
-    for line in box.content:
-        if isinstance(line, dict):
-            pfx = {"circle": "\u00b7 ", "dash": "\u2013 ", "arrow": "\u2192 "}.get(
-                box.bullet, ""
-            )
-            items.append(
-                (
-                    pfx + line.get("text", ""),
-                    line.get("fontsize", 8),
-                    line.get("fontweight", "normal"),
-                    line.get("color", colors["text"]),
-                )
-            )
-        else:
-            pfx = {"circle": "\u00b7 ", "dash": "\u2013 ", "arrow": "\u2192 "}.get(
-                box.bullet, ""
-            )
-            items.append(
-                (pfx + str(line), 8 if not is_code else 7, "normal", colors["text"])
-            )
+    # Title / subtitle / content text layout lives in _render_box_text so this
+    # file stays under the 512-line limit (see that module for the per-line
+    # vertical stacking rules).
+    from ._render_box_text import render_box_text
 
-    # Text area = PositionSpec minus padding on all sides
-    inner_h = pos.height_mm - 2 * box.padding_mm
-    n = len(items)
-    gap = min(inner_h / max(n, 1) * 0.85, 6.0) if n > 1 else 0
-    block_h = gap * (n - 1)
-    top_y = pos.y_mm + block_h / 2
-
-    # Only use text background if box has no fill (transparent background)
-    # Otherwise text would be double-highlighted with box fill + text bbox fill
-    _txt_bg = (
-        None
-        if fill and fill != "none"
-        else dict(facecolor="white", edgecolor="none", pad=0.5, alpha=0.85)
-    )
-    ha = "left" if is_code else "center"
-    x_text = (pos.x_mm - pos.width_mm / 2 + box.padding_mm) if is_code else pos.x_mm
-    for i, (text, fsize, fweight, fcolor) in enumerate(items):
-        ax.text(
-            x_text,
-            top_y - i * gap,
-            text,
-            ha=ha,
-            va="center",
-            fontsize=fsize,
-            fontweight=fweight,
-            color=fcolor,
-            fontfamily="monospace" if is_code and i > 0 else "sans-serif",
-            fontstyle="normal",
-            zorder=7,
-            bbox=_txt_bg,
-        )
+    render_box_text(ax, pos, box, fill, title_color, colors)
 
     diagram._render_info[bid] = {"pos": pos}
 
@@ -460,7 +413,7 @@ def render_arrow(diagram: "Diagram", ax: Axes, arrow: "ArrowSpec") -> None:
             arrow.label,
             ha="center",
             va="center",
-            fontsize=8,
+            fontsize=resolve_font_config()["edge_label_size"],
             color=color,
             fontstyle="italic",
             zorder=6,
@@ -507,6 +460,6 @@ def draw_all_elements(diagram, ax):
             diagram.title,
             ha="center",
             va="top",
-            fontsize=12,
+            fontsize=resolve_font_config()["title_size"],
             fontweight="bold",
         )

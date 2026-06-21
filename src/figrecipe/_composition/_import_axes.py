@@ -7,6 +7,7 @@ from typing import Tuple, Union
 
 from .._recorder import FigureRecord
 from .._serializer import load_recipe
+from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
 from ._compose import _replay_axes_record
 
@@ -15,7 +16,7 @@ def import_axes(
     fig: RecordingFigure,
     target_position: Tuple[int, int],
     source: Union[str, Path, FigureRecord],
-    source_axes: str = "ax_0_0",
+    source_axes: str = grid_id(0, 0),
 ) -> RecordingAxes:
     """Import axes from another recipe into an existing figure.
 
@@ -32,7 +33,8 @@ def import_axes(
     source : str, Path, or FigureRecord
         Source recipe file path or FigureRecord object.
     source_axes : str, optional
-        Key of axes to import from source (default: "ax_0_0").
+        Key of axes to import from source (default: "r0c0"). Legacy
+        "ax_0_0" keys are also accepted.
 
     Returns
     -------
@@ -61,8 +63,15 @@ def import_axes(
     else:
         raise TypeError(f"Invalid source type: {type(source)}")
 
-    # Get source axes record
+    # Get source axes record (accept "rRcC" or legacy "ax_R_C" key forms)
     ax_record = source_record.axes.get(source_axes)
+    if ax_record is None:
+        parsed = parse_grid_id(source_axes)
+        if parsed is not None:
+            for cand in (grid_id(*parsed), f"ax_{parsed[0]}_{parsed[1]}"):
+                ax_record = source_record.axes.get(cand)
+                if ax_record is not None:
+                    break
     if ax_record is None:
         available = list(source_record.axes.keys())
         raise ValueError(

@@ -1,0 +1,941 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>figrecipe._graph._core &mdash; FigRecipe v0.28.12</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=29f6473e"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            FigRecipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../installation.html#basic-installation">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../installation.html#full-installation">Full Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../installation.html#individual-extras">Individual Extras</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../installation.html#development-installation">Development Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../installation.html#requirements">Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#creating-your-first-reproducible-figure">Creating Your First Reproducible Figure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#bundle-format-recommended-for-sharing">Bundle Format (Recommended for Sharing)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#saving-figures">Saving Figures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#output-files">Output Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#reproducing-a-figure">Reproducing a Figure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#cli-commands">CLI Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#mcp-server-for-ai-agents">MCP Server for AI Agents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#statistical-annotations">Statistical Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#multi-panel-composition">Multi-Panel Composition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quickstart.html#box-and-arrow-diagrams">Box-and-Arrow Diagrams</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../quickstart.html#auto-fix-save-options">Auto-Fix &amp; Save Options</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quickstart.html#shapes-anchors">Shapes &amp; Anchors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quickstart.html#diagram-validation-rules">Diagram Validation Rules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../terminology.html">Terminology</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../terminology.html#core-hierarchy">Core Hierarchy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#figure">Figure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#axes">Axes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#axis">Axis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#plot">Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#panel">Panel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#canvas">Canvas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#style">Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../terminology.html#recipe">Recipe</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../terminology.html#editor-specific-terms">Editor-Specific Terms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../terminology.html#common-confusions">Common Confusions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gallery.html">Plot Gallery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery.html#basic-plots">Basic Plots</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#line-plot">Line Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#scatter-plot">Scatter Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#bar-plot">Bar Plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery.html#statistical-plots">Statistical Plots</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#histogram">Histogram</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#box-plot">Box Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#violin-plot">Violin Plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery.html#d-plots">2D Plots</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#heatmap-imshow">Heatmap / Imshow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../gallery.html#contour-plot">Contour Plot</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery.html#supported-plot-types-47">Supported Plot Types (47)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery.html#csv-column-workflow">CSV Column Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gallery.html#statistical-annotations">Statistical Annotations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../style_reference.html">Style Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../style_reference.html#style-anatomy">Style Anatomy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../style_reference.html#style-parameters">Style Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#figure-settings">Figure Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#axes-settings">Axes Settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#labels-and-title">Labels and Title</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#ticks">Ticks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#lines-and-markers">Lines and Markers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#legend">Legend</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#spines">Spines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#grid">Grid</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../style_reference.html#loading-styles">Loading Styles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#python-api">Python API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#available-presets">Available Presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../style_reference.html#custom-styles">Custom Styles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli_reference.html">CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#figure-creation">Figure Creation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#plot">plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#reproduce">reproduce</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#compose">compose</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#gui">gui</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#image-processing">Image Processing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#convert">convert</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#crop">crop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#diff">diff</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#hitmap">hitmap</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#data-validation">Data &amp; Validation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#extract">extract</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#validate">validate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#info">info</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#diagram">Diagram</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#id1">diagram</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#style-appearance">Style &amp; Appearance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#style">style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#fonts">fonts</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#integration">Integration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#mcp">mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#list-python-apis">list-python-apis</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#utility">Utility</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#completion">completion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../cli_reference.html#version">version</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../mcp_spec.html">MCP Specification Format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#starting-the-mcp-server">Starting the MCP Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#basic-specification-structure">Basic Specification Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#plot-types">Plot Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#line-plot">Line Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#scatter-plot">Scatter Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#bar-plot">Bar Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#histogram">Histogram</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#box-plot">Box Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#violin-plot">Violin Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#image-heatmap">Image/Heatmap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#contour-plot">Contour Plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#fill-between">Fill Between</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#error-bar">Error Bar</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#csv-data-input">CSV Data Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#statistical-annotations">Statistical Annotations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#multi-panel-figures">Multi-Panel Figures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#using-axes-array">Using Axes Array</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#mcp-tool-reference">MCP Tool Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-plot">plt_plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-reproduce">plt_reproduce</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-compose">plt_compose</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-info">plt_info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-validate">plt_validate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-crop">plt_crop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-extract-data">plt_extract_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-list-styles">plt_list_styles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#plt-get-plot-types">plt_get_plot_types</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#diagram-tools">Diagram Tools</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#diagram-create">diagram_create</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#diagram-render">diagram_render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#diagram-compile-mermaid">diagram_compile_mermaid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#diagram-compile-graphviz">diagram_compile_graphviz</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#diagram-list-presets">diagram_list_presets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../mcp_spec.html#diagram-get-backends">diagram_get_backends</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../mcp_spec.html#all-mcp-tools-summary">All MCP Tools Summary</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/figrecipe.html">FigRecipe API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.subplots"><code class="docutils literal notranslate"><span class="pre">subplots()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.save"><code class="docutils literal notranslate"><span class="pre">save()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.reproduce"><code class="docutils literal notranslate"><span class="pre">reproduce()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.compose"><code class="docutils literal notranslate"><span class="pre">compose()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.align_panels"><code class="docutils literal notranslate"><span class="pre">align_panels()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.distribute_panels"><code class="docutils literal notranslate"><span class="pre">distribute_panels()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.align_smart"><code class="docutils literal notranslate"><span class="pre">align_smart()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.gui"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.crop"><code class="docutils literal notranslate"><span class="pre">crop()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.validate"><code class="docutils literal notranslate"><span class="pre">validate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.extract_data"><code class="docutils literal notranslate"><span class="pre">extract_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_qr_to_figure"><code class="docutils literal notranslate"><span class="pre">add_qr_to_figure()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_figure_caption"><code class="docutils literal notranslate"><span class="pre">add_figure_caption()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_panel_captions"><code class="docutils literal notranslate"><span class="pre">add_panel_captions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.panel_label"><code class="docutils literal notranslate"><span class="pre">panel_label()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz"><code class="docutils literal notranslate"><span class="pre">Figz</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.__init__"><code class="docutils literal notranslate"><span class="pre">Figz.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.create"><code class="docutils literal notranslate"><span class="pre">Figz.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.save"><code class="docutils literal notranslate"><span class="pre">Figz.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.add_panel"><code class="docutils literal notranslate"><span class="pre">Figz.add_panel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.add_panel_from_png"><code class="docutils literal notranslate"><span class="pre">Figz.add_panel_from_png()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.remove_panel"><code class="docutils literal notranslate"><span class="pre">Figz.remove_panel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.get_panel"><code class="docutils literal notranslate"><span class="pre">Figz.get_panel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.get_panel_pltz"><code class="docutils literal notranslate"><span class="pre">Figz.get_panel_pltz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.list_panel_ids"><code class="docutils literal notranslate"><span class="pre">Figz.list_panel_ids()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.get_panel_data"><code class="docutils literal notranslate"><span class="pre">Figz.get_panel_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.render_preview"><code class="docutils literal notranslate"><span class="pre">Figz.render_preview()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz"><code class="docutils literal notranslate"><span class="pre">Pltz</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.__init__"><code class="docutils literal notranslate"><span class="pre">Pltz.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.from_png"><code class="docutils literal notranslate"><span class="pre">Pltz.from_png()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.create"><code class="docutils literal notranslate"><span class="pre">Pltz.create()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.get_preview"><code class="docutils literal notranslate"><span class="pre">Pltz.get_preview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.render_preview"><code class="docutils literal notranslate"><span class="pre">Pltz.render_preview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.save"><code class="docutils literal notranslate"><span class="pre">Pltz.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.update_preview"><code class="docutils literal notranslate"><span class="pre">Pltz.update_preview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Pltz.reproduce"><code class="docutils literal notranslate"><span class="pre">Pltz.reproduce()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.save_bundle"><code class="docutils literal notranslate"><span class="pre">save_bundle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.load_bundle"><code class="docutils literal notranslate"><span class="pre">load_bundle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.reproduce_bundle"><code class="docutils literal notranslate"><span class="pre">reproduce_bundle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.load_style"><code class="docutils literal notranslate"><span class="pre">load_style()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.unload_style"><code class="docutils literal notranslate"><span class="pre">unload_style()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.list_presets"><code class="docutils literal notranslate"><span class="pre">list_presets()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram"><code class="docutils literal notranslate"><span class="pre">Diagram</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.__init__"><code class="docutils literal notranslate"><span class="pre">Diagram.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.add_box"><code class="docutils literal notranslate"><span class="pre">Diagram.add_box()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.add_container"><code class="docutils literal notranslate"><span class="pre">Diagram.add_container()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.add_arrow"><code class="docutils literal notranslate"><span class="pre">Diagram.add_arrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.add_icon"><code class="docutils literal notranslate"><span class="pre">Diagram.add_icon()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.validate_containers"><code class="docutils literal notranslate"><span class="pre">Diagram.validate_containers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.validate_no_overlap"><code class="docutils literal notranslate"><span class="pre">Diagram.validate_no_overlap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.auto_layout"><code class="docutils literal notranslate"><span class="pre">Diagram.auto_layout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram._auto_box_height"><code class="docutils literal notranslate"><span class="pre">Diagram._auto_box_height()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram._finalize_canvas_size"><code class="docutils literal notranslate"><span class="pre">Diagram._finalize_canvas_size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram._get_anchor"><code class="docutils literal notranslate"><span class="pre">Diagram._get_anchor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram._auto_anchor"><code class="docutils literal notranslate"><span class="pre">Diagram._auto_anchor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.render"><code class="docutils literal notranslate"><span class="pre">Diagram.render()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.save"><code class="docutils literal notranslate"><span class="pre">Diagram.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.render_to_file"><code class="docutils literal notranslate"><span class="pre">Diagram.render_to_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.to_dict"><code class="docutils literal notranslate"><span class="pre">Diagram.to_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.from_dict"><code class="docutils literal notranslate"><span class="pre">Diagram.from_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.build_spec"><code class="docutils literal notranslate"><span class="pre">build_spec()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.build_spec_from_csv"><code class="docutils literal notranslate"><span class="pre">build_spec_from_csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.render_spec_to_bytes"><code class="docutils literal notranslate"><span class="pre">render_spec_to_bytes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.termplot"><code class="docutils literal notranslate"><span class="pre">termplot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.draw_graph"><code class="docutils literal notranslate"><span class="pre">draw_graph()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.smart_align"><code class="docutils literal notranslate"><span class="pre">smart_align()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.edit"><code class="docutils literal notranslate"><span class="pre">edit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.export_editable"><code class="docutils literal notranslate"><span class="pre">export_editable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.enable_svg"><code class="docutils literal notranslate"><span class="pre">enable_svg()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.apply_style"><code class="docutils literal notranslate"><span class="pre">apply_style()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.signature"><code class="docutils literal notranslate"><span class="pre">signature()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.caption_with_signature"><code class="docutils literal notranslate"><span class="pre">caption_with_signature()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#recording-wrappers-internal">Recording Wrappers (internal)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure"><code class="docutils literal notranslate"><span class="pre">RecordingFigure</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__init__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._on_draw_finalize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._on_draw_finalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.fig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.fig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.axes"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.axes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.dpi"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.dpi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.draw"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.draw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.flat"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.flat</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.record"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.record</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontsize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontsize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_theme_text_color()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.colorbar()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.add_panel_labels"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.add_panel_labels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_title_metadata"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_title_metadata()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_caption"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_caption()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.title_metadata"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.title_metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.caption"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.caption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_stats"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_stats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.stats"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.stats</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.generate_caption"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.generate_caption()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__getattr__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.savefig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.savefig()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.save_recipe"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.save_recipe()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes"><code class="docutils literal notranslate"><span class="pre">RecordingAxes</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__init__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.ax"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.ax</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.position"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__getattr__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.embed"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.embed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__dir__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__dir__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_recording_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_recording_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_bar_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_bar_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_boxplot_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_boxplot_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_stem_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_stem_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_legend_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_legend_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.set_caption"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.set_caption()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.panel_caption"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.panel_caption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.set_stats"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.set_stats()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.stats"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.stats</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._no_record"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._no_record()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._record_seaborn_call"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._record_seaborn_call()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.figure"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.figure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.xaxis"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.xaxis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.yaxis"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.yaxis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.get_xlim"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.get_xlim()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.get_ylim"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.get_ylim()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.get_xlabel"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.get_xlabel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.get_ylabel"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.get_ylabel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.get_title"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.get_title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.caption"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.caption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.generate_panel_caption"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.generate_panel_caption()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">FigRecipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">figrecipe._graph._core</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for figrecipe._graph._core</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1"># Timestamp: &quot;2026-01-10 (ywatanabe)&quot;</span>
+<span class="sd">&quot;&quot;&quot;Core graph visualization module for FigRecipe.</span>
+
+<span class="sd">Provides publication-quality graph/network visualizations compatible with</span>
+<span class="sd">scitex styling (40mm width, 6pt fonts) and interactive HTML export.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes</span>
+
+<span class="n">LAYOUTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;spring&quot;</span><span class="p">:</span> <span class="s2">&quot;spring_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;circular&quot;</span><span class="p">:</span> <span class="s2">&quot;circular_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kamada_kawai&quot;</span><span class="p">:</span> <span class="s2">&quot;kamada_kawai_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="s2">&quot;shell_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;spectral&quot;</span><span class="p">:</span> <span class="s2">&quot;spectral_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;random&quot;</span><span class="p">:</span> <span class="s2">&quot;random_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;planar&quot;</span><span class="p">:</span> <span class="s2">&quot;planar_layout&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;spiral&quot;</span><span class="p">:</span> <span class="s2">&quot;spiral_layout&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_layout</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span> <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span> <span class="o">**</span><span class="n">layout_kwargs</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute node positions using specified layout algorithm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : networkx.Graph</span>
+<span class="sd">        The graph to layout.</span>
+<span class="sd">    layout : str</span>
+<span class="sd">        Layout algorithm name: &#39;spring&#39;, &#39;circular&#39;, &#39;kamada_kawai&#39;, &#39;shell&#39;,</span>
+<span class="sd">        &#39;spectral&#39;, &#39;random&#39;, &#39;planar&#39;, &#39;spiral&#39;, or &#39;hierarchical&#39;.</span>
+<span class="sd">    pos : dict, optional</span>
+<span class="sd">        Pre-computed positions {node: (x, y)}. If provided, returned as-is.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Random seed for reproducibility.</span>
+<span class="sd">    **layout_kwargs</span>
+<span class="sd">        Additional kwargs passed to the layout function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Node positions {node: (x, y)}.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+    <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="k">if</span> <span class="n">layout</span> <span class="o">==</span> <span class="s2">&quot;hierarchical&quot;</span><span class="p">:</span>
+        <span class="c1"># For DAGs, use multipartite layout based on topological order</span>
+        <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">is_directed_acyclic_graph</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">layer</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="n">G</span><span class="p">)):</span>
+                    <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="s2">&quot;subset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">layer</span>
+                <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">multipartite_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">nx</span><span class="o">.</span><span class="n">NetworkXError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="c1"># Fallback to spring for non-DAGs</span>
+        <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">)</span>
+
+    <span class="n">layout_func_name</span> <span class="o">=</span> <span class="n">LAYOUTS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="s2">&quot;spring_layout&quot;</span><span class="p">)</span>
+    <span class="n">layout_func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">layout_func_name</span><span class="p">)</span>
+
+    <span class="c1"># Handle layouts that support seed parameter</span>
+    <span class="k">if</span> <span class="n">layout</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;spring&quot;</span><span class="p">,</span> <span class="s2">&quot;random&quot;</span><span class="p">):</span>
+        <span class="n">layout_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">layout_func</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="c1"># Fallback to spring layout</span>
+        <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_node_attr</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve node attribute values from name, callable, or scalar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : networkx.Graph</span>
+<span class="sd">        The graph.</span>
+<span class="sd">    attr : str, callable, or scalar</span>
+<span class="sd">        - str: Node attribute name to look up</span>
+<span class="sd">        - callable: Function (node, data) -&gt; value</span>
+<span class="sd">        - scalar: Single value for all nodes</span>
+<span class="sd">    default : any</span>
+<span class="sd">        Default value if attribute not found.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        List of values for each node in G.nodes() order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">attr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">default</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">attr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()]</span>
+
+    <span class="c1"># List/array pass-through (used for replay with pre-computed values)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+    <span class="c1"># Scalar value</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_edge_attr</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve edge attribute values from name, callable, or scalar.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : networkx.Graph</span>
+<span class="sd">        The graph.</span>
+<span class="sd">    attr : str, callable, or scalar</span>
+<span class="sd">        - str: Edge attribute name to look up</span>
+<span class="sd">        - callable: Function (u, v, data) -&gt; value</span>
+<span class="sd">        - scalar: Single value for all edges</span>
+<span class="sd">    default : any</span>
+<span class="sd">        Default value if attribute not found.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    list</span>
+<span class="sd">        List of values for each edge in G.edges() order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">attr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">default</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">attr</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">])</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">()]</span>
+
+    <span class="c1"># List/array pass-through (used for replay with pre-computed values)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+
+    <span class="c1"># Scalar value</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_graph</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate graph type and node IDs for serialization compatibility.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If the graph type is not supported or node IDs are not serializable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+    <span class="c1"># Check for MultiGraph/MultiDiGraph</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">MultiGraph</span><span class="p">,</span> <span class="n">nx</span><span class="o">.</span><span class="n">MultiDiGraph</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;MultiGraph and MultiDiGraph are not currently supported. &quot;</span>
+            <span class="s2">&quot;Use Graph or DiGraph instead, or convert with: &quot;</span>
+            <span class="s2">&quot;nx.Graph(G) or nx.DiGraph(G)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Check node ID types for serialization</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Node ID </span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s2"> (type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">) is not serializable. &quot;</span>
+                <span class="s2">&quot;Node IDs must be str, int, or float for recipe serialization. &quot;</span>
+                <span class="s2">&quot;Consider converting node IDs to strings.&quot;</span>
+            <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_sizes</span><span class="p">(</span><span class="n">sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="n">max_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">300</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize sizes to a reasonable range.&quot;&quot;&quot;</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="c1"># Handle NaN/None</span>
+    <span class="n">valid_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">min_size</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
+
+    <span class="n">sizes_valid</span> <span class="o">=</span> <span class="n">sizes</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">sizes_valid</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">==</span> <span class="n">sizes_valid</span><span class="o">.</span><span class="n">max</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">min_size</span> <span class="o">+</span> <span class="p">(</span><span class="n">max_size</span> <span class="o">-</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
+
+    <span class="c1"># Normalize to [min_size, max_size]</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">min_size</span> <span class="o">+</span> <span class="p">(</span><span class="n">sizes</span> <span class="o">-</span> <span class="n">sizes_valid</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="n">sizes_valid</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">sizes_valid</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_size</span> <span class="o">-</span> <span class="n">min_size</span><span class="p">)</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">normalized</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="n">min_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">normalized</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="draw_graph">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.draw_graph">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draw_graph</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">layout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;spring&quot;</span><span class="p">,</span>
+    <span class="n">pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
+    <span class="c1"># Node styling</span>
+    <span class="n">node_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;#3498db&quot;</span><span class="p">,</span>
+    <span class="n">node_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">node_shape</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span>
+    <span class="n">node_edgecolors</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+    <span class="n">node_linewidths</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.34</span><span class="p">,</span>  <span class="c1"># 0.12mm</span>
+    <span class="c1"># Edge styling (0.34pt = 0.12mm for SCITEX compatibility)</span>
+    <span class="n">edge_width</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.34</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+    <span class="n">edge_alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">edge_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;solid&quot;</span><span class="p">,</span>
+    <span class="n">arrows</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">arrowsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">arrowstyle</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;-|&gt;&quot;</span><span class="p">,</span>
+    <span class="n">connectionstyle</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;arc3,rad=0.0&quot;</span><span class="p">,</span>
+    <span class="c1"># Labels</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">font_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+    <span class="n">font_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+    <span class="n">font_weight</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span><span class="p">,</span>
+    <span class="n">font_family</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sans-serif&quot;</span><span class="p">,</span>
+    <span class="c1"># Colormap for node_color when numeric</span>
+    <span class="n">colormap</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+    <span class="n">vmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vmax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="c1"># Layout kwargs</span>
+    <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw a NetworkX graph on matplotlib axes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ax : matplotlib.axes.Axes</span>
+<span class="sd">        The axes to draw on.</span>
+<span class="sd">    G : networkx.Graph</span>
+<span class="sd">        The graph to draw.</span>
+<span class="sd">    layout : str</span>
+<span class="sd">        Layout algorithm: &#39;spring&#39;, &#39;circular&#39;, &#39;kamada_kawai&#39;, &#39;shell&#39;,</span>
+<span class="sd">        &#39;spectral&#39;, &#39;random&#39;, &#39;planar&#39;, &#39;spiral&#39;, &#39;hierarchical&#39;.</span>
+<span class="sd">    pos : dict, optional</span>
+<span class="sd">        Pre-computed node positions {node: (x, y)}.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Random seed for layout reproducibility.</span>
+<span class="sd">    node_size : str, callable, or float</span>
+<span class="sd">        Node sizes. Can be attribute name, callable (node, data) -&gt; size, or scalar.</span>
+<span class="sd">    node_color : str, callable, or any</span>
+<span class="sd">        Node colors. Can be attribute name, callable, color name, or array.</span>
+<span class="sd">    node_alpha : float</span>
+<span class="sd">        Node transparency.</span>
+<span class="sd">    node_shape : str</span>
+<span class="sd">        Node marker shape.</span>
+<span class="sd">    edge_width : str, callable, or float</span>
+<span class="sd">        Edge widths. Can be attribute name, callable (u, v, data) -&gt; width, or scalar.</span>
+<span class="sd">    edge_color : str, callable, or any</span>
+<span class="sd">        Edge colors.</span>
+<span class="sd">    edge_alpha : float</span>
+<span class="sd">        Edge transparency.</span>
+<span class="sd">    arrows : bool, optional</span>
+<span class="sd">        Draw arrows for directed graphs. Auto-detected if None.</span>
+<span class="sd">    arrowsize : float</span>
+<span class="sd">        Arrow head size for directed edges.</span>
+<span class="sd">    labels : bool, dict, or str</span>
+<span class="sd">        Node labels. True for node IDs, dict for custom labels, str for attribute name.</span>
+<span class="sd">    font_size : float</span>
+<span class="sd">        Label font size (default 6pt for scitex).</span>
+<span class="sd">    colormap : str</span>
+<span class="sd">        Matplotlib colormap for numeric node colors.</span>
+<span class="sd">    **layout_kwargs</span>
+<span class="sd">        Additional kwargs passed to layout algorithm.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary with &#39;pos&#39;, &#39;node_collection&#39;, &#39;edge_collection&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+    <span class="c1"># Validate graph type</span>
+    <span class="n">_validate_graph</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+    <span class="c1"># Auto-detect arrows for directed graphs</span>
+    <span class="k">if</span> <span class="n">arrows</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">arrows</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">is_directed</span><span class="p">()</span>
+
+    <span class="c1"># Compute layout</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">_get_layout</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Resolve node sizes</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">_resolve_node_attr</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">node_size</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_size</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">callable</span><span class="p">(</span><span class="n">node_size</span><span class="p">):</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="n">_normalize_sizes</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
+
+    <span class="c1"># Resolve node colors</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="n">_resolve_node_attr</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">node_color</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;#3498db&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check if colors are numeric (need colormap)</span>
+    <span class="n">color_array</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">color_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">color_array</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="c1"># Numeric colors - will use colormap</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">color_array</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="n">color_array</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Resolve edge widths</span>
+    <span class="n">widths</span> <span class="o">=</span> <span class="n">_resolve_edge_attr</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">edge_width</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_width</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">callable</span><span class="p">(</span><span class="n">edge_width</span><span class="p">):</span>
+        <span class="n">widths</span> <span class="o">=</span> <span class="n">_normalize_sizes</span><span class="p">(</span><span class="n">widths</span><span class="p">,</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+
+    <span class="c1"># Resolve edge colors</span>
+    <span class="n">edge_colors</span> <span class="o">=</span> <span class="n">_resolve_edge_attr</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">edge_color</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Draw edges first (so nodes appear on top)</span>
+    <span class="n">edge_collection</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">G</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">edge_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">widths</span><span class="p">,</span>
+            <span class="s2">&quot;edge_color&quot;</span><span class="p">:</span> <span class="n">edge_colors</span><span class="p">,</span>
+            <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">edge_alpha</span><span class="p">,</span>
+            <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="n">edge_style</span><span class="p">,</span>
+            <span class="s2">&quot;arrows&quot;</span><span class="p">:</span> <span class="n">arrows</span><span class="p">,</span>
+            <span class="s2">&quot;ax&quot;</span><span class="p">:</span> <span class="n">ax</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="c1"># Only add arrow-specific kwargs when arrows are enabled</span>
+        <span class="c1"># (avoids UserWarning when using LineCollection for undirected graphs)</span>
+        <span class="k">if</span> <span class="n">arrows</span><span class="p">:</span>
+            <span class="n">edge_kwargs</span><span class="p">[</span><span class="s2">&quot;arrowsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arrowsize</span>
+            <span class="n">edge_kwargs</span><span class="p">[</span><span class="s2">&quot;arrowstyle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arrowstyle</span>
+            <span class="n">edge_kwargs</span><span class="p">[</span><span class="s2">&quot;connectionstyle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">connectionstyle</span>
+
+        <span class="n">edge_collection</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="o">**</span><span class="n">edge_kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Draw nodes</span>
+    <span class="k">if</span> <span class="n">color_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node_collection</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_nodes</span><span class="p">(</span>
+            <span class="n">G</span><span class="p">,</span>
+            <span class="n">positions</span><span class="p">,</span>
+            <span class="n">node_size</span><span class="o">=</span><span class="n">sizes</span><span class="p">,</span>
+            <span class="n">node_color</span><span class="o">=</span><span class="n">color_array</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">node_alpha</span><span class="p">,</span>
+            <span class="n">node_shape</span><span class="o">=</span><span class="n">node_shape</span><span class="p">,</span>
+            <span class="n">edgecolors</span><span class="o">=</span><span class="n">node_edgecolors</span><span class="p">,</span>
+            <span class="n">linewidths</span><span class="o">=</span><span class="n">node_linewidths</span><span class="p">,</span>
+            <span class="n">cmap</span><span class="o">=</span><span class="n">colormap</span><span class="p">,</span>
+            <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span>
+            <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">node_collection</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_nodes</span><span class="p">(</span>
+            <span class="n">G</span><span class="p">,</span>
+            <span class="n">positions</span><span class="p">,</span>
+            <span class="n">node_size</span><span class="o">=</span><span class="n">sizes</span><span class="p">,</span>
+            <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="n">node_alpha</span><span class="p">,</span>
+            <span class="n">node_shape</span><span class="o">=</span><span class="n">node_shape</span><span class="p">,</span>
+            <span class="n">edgecolors</span><span class="o">=</span><span class="n">node_edgecolors</span><span class="p">,</span>
+            <span class="n">linewidths</span><span class="o">=</span><span class="n">node_linewidths</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Draw labels</span>
+    <span class="n">label_collection</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">labels</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Use node IDs as labels</span>
+            <span class="n">label_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="c1"># Use node attribute as labels</span>
+            <span class="n">label_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">label_dict</span> <span class="o">=</span> <span class="n">labels</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">label_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
+
+        <span class="n">label_collection</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_labels</span><span class="p">(</span>
+            <span class="n">G</span><span class="p">,</span>
+            <span class="n">positions</span><span class="p">,</span>
+            <span class="n">labels</span><span class="o">=</span><span class="n">label_dict</span><span class="p">,</span>
+            <span class="n">font_size</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span>
+            <span class="n">font_color</span><span class="o">=</span><span class="n">font_color</span><span class="p">,</span>
+            <span class="n">font_weight</span><span class="o">=</span><span class="n">font_weight</span><span class="p">,</span>
+            <span class="n">font_family</span><span class="o">=</span><span class="n">font_family</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Remove axes frame for cleaner look</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;pos&quot;</span><span class="p">:</span> <span class="n">positions</span><span class="p">,</span>
+        <span class="s2">&quot;node_collection&quot;</span><span class="p">:</span> <span class="n">node_collection</span><span class="p">,</span>
+        <span class="s2">&quot;edge_collection&quot;</span><span class="p">:</span> <span class="n">edge_collection</span><span class="p">,</span>
+        <span class="s2">&quot;label_collection&quot;</span><span class="p">:</span> <span class="n">label_collection</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">graph_to_record</span><span class="p">(</span>
+    <span class="n">G</span><span class="p">,</span>
+    <span class="n">pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a NetworkX graph to a serializable record.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    G : networkx.Graph</span>
+<span class="sd">        The graph to serialize.</span>
+<span class="sd">    pos : dict, optional</span>
+<span class="sd">        Node positions to store.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Drawing parameters to store.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Serializable record containing graph data and styling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Validate graph type</span>
+    <span class="n">_validate_graph</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+        <span class="n">node_data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">and</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
+            <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_data</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_data</span><span class="p">)</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">edge_data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">])</span>
+        <span class="n">edge_data</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span>
+        <span class="n">edge_data</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge_data</span><span class="p">)</span>
+
+    <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;graph&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;directed&quot;</span><span class="p">:</span> <span class="n">G</span><span class="o">.</span><span class="n">is_directed</span><span class="p">(),</span>
+        <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">nodes</span><span class="p">,</span>
+        <span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="n">edges</span><span class="p">,</span>
+        <span class="s2">&quot;style&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">record</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">record_to_graph</span><span class="p">(</span><span class="n">record</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reconstruct a NetworkX graph from a serialized record.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    record : dict</span>
+<span class="sd">        Record created by graph_to_record().</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple</span>
+<span class="sd">        (G, pos, style_kwargs) where G is the graph, pos is positions dict,</span>
+<span class="sd">        and style_kwargs are the drawing parameters.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This function does not modify the input record.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+    <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;directed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+
+    <span class="n">pos</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">node_data</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="c1"># Copy to avoid mutating input</span>
+        <span class="n">node_data</span> <span class="o">=</span> <span class="n">node_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">node_id</span> <span class="o">=</span> <span class="n">node_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">node_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">node_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node_id</span><span class="p">,</span> <span class="o">**</span><span class="n">node_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pos</span><span class="p">[</span><span class="n">node_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">edge_data</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;edges&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="c1"># Copy to avoid mutating input</span>
+        <span class="n">edge_data</span> <span class="o">=</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">edge_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="o">**</span><span class="n">edge_data</span><span class="p">)</span>
+
+    <span class="n">style</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">G</span><span class="p">,</span> <span class="n">pos</span> <span class="k">if</span> <span class="n">pos</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span> <span class="n">style</span>
+
+
+<span class="c1"># EOF</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Yusuke Watanabe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

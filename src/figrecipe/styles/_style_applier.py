@@ -20,7 +20,7 @@ from matplotlib.axes import Axes
 
 from .._utils._units import mm_to_pt
 from ._finalize import finalize_special_plots, finalize_ticks
-from ._fonts import check_font, list_available_fonts
+from ._fonts import check_font, ensure_font_family, list_available_fonts
 from ._plot_styles import (
     apply_barplot_style,
     apply_boxplot_style,
@@ -178,9 +178,18 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     if style.get("hide_right_spine", True):
         ax.spines["right"].set_visible(False)
 
-    # Convert trace thickness from mm to points and set as default line width
+    # Set matplotlib's default line width from the GENERAL/default line width
+    # (lines.linewidth_mm; ~0.8mm). Ordinary lines (KDE curves, single plots)
+    # that pass no lw= inherit this. The thin signal/trace width is opt-in via
+    # lw="signal". Fall back to trace_thickness_mm on legacy presets.
+    general_lw_mm = style.get(
+        "lines_linewidth_mm", style.get("trace_thickness_mm", 0.3)
+    )
+    general_lw_pt = mm_to_pt(general_lw_mm)
+    mpl.rcParams["lines.linewidth"] = general_lw_pt
+    # Preserve the trace/signal line width for the documented return value
+    # (callers use it as ax.plot(..., lw=trace_lw) for dense signal traces).
     trace_lw_pt = mm_to_pt(style.get("trace_thickness_mm", 0.3))
-    mpl.rcParams["lines.linewidth"] = trace_lw_pt
 
     # Grid line width — update both rcParams (for future gridlines) and
     # existing gridline objects (created at axes init with default linewidth)
@@ -235,6 +244,10 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     legend_fs = style.get("legend_font_size_pt", 7)
     label_pad_pt = style.get("label_pad_pt", 2.0)
     requested_font = style.get("font_family", "Arial")
+    # Pin the requested font globally (font.family/font.sans-serif) so plain
+    # mpl text inherits it, and emit the single loud figrecipe warning if the
+    # requested font is missing (no silent fallback). Deduped to once/session.
+    ensure_font_family(requested_font)
     font_family = check_font(requested_font)
 
     ax.xaxis.label.set_fontsize(axis_fs)

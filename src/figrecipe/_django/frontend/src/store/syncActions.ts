@@ -153,5 +153,47 @@ export function createSyncActions(set: Set, get: Get) {
         return false;
       }
     },
+
+    // ── Move a legend to a custom position (drag-to-place) ──
+    // x, y are the legend's anchor in axes-fraction coords (0..1, y bottom-up);
+    // the backend sets bbox_to_anchor=(x,y) with loc='upper left'.
+    moveLegend: async (
+      axIndex: number,
+      x: number,
+      y: number,
+    ): Promise<boolean> => {
+      try {
+        const data = await api.post<{
+          success: boolean;
+          image: string;
+          bboxes: Record<string, BBox>;
+          img_size: { width: number; height: number };
+        }>("update_legend_position", {
+          ax_index: axIndex,
+          loc: "custom",
+          x,
+          y,
+        });
+        const { selectedFigureId } = get();
+        if (selectedFigureId && data.image) {
+          set((s: any) => ({
+            placedFigures: s.placedFigures.map((f: any) =>
+              f.id === selectedFigureId
+                ? {
+                    ...f,
+                    previewImage: data.image,
+                    bboxes: data.bboxes,
+                    imgSize: data.img_size,
+                  }
+                : f,
+            ),
+          }));
+        }
+        return true;
+      } catch (e) {
+        get().showToast(`Move legend failed: ${e}`, "error");
+        return false;
+      }
+    },
   };
 }

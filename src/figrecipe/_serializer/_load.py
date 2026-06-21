@@ -14,6 +14,7 @@ from .._utils._numpy_io import (
     load_array,
     load_single_csv,
 )
+from ._clew import record_input
 
 
 def _convert_diagram_to_figure_recipe(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -98,6 +99,12 @@ def load_recipe(path: Union[str, Path]) -> FigureRecord:
     """
     path = Path(path)
 
+    # Record the recipe as a clew input of the active session (no-op without
+    # clew). When compose loads its source panel recipes, clew auto-links the
+    # panel sessions that produced them -> the provenance chain stays connected
+    # through composition.
+    record_input(path)
+
     yaml = YAML()
     with open(path) as f:
         data = yaml.load(f)
@@ -177,12 +184,35 @@ def _resolve_data_references(
 
                                 arg["data"] = [a.tolist() for a in arrays]
                                 arg["_loaded_array"] = arrays
+                            elif np.issubdtype(arr.dtype, np.datetime64):
+                                # datetime64.tolist() yields raw nanosecond ints,
+                                # which on re-save would be written INLINE and then
+                                # reload as plain numbers (plotting at ~1.3e18
+                                # instead of as dates) -- a non-idempotent
+                                # save->reproduce->save round-trip. Keep the array
+                                # under _array so re-save re-files it as a CSV (ISO
+                                # strings, dtype preserved), exactly like the first
+                                # save. _loaded_array drives the in-memory replay.
+                                arg["_array"] = arr
+                                arg["_loaded_array"] = arr
                             else:
                                 arg["data"] = arr.tolist()
                                 arg["_loaded_array"] = arr
 
                             # Store source file path for symlink support
                             arg["_source_file"] = str(file_path.resolve())
+                            record_input(file_path)  # clew: data file as input
+                        else:
+                            # Fail loud: a referenced data file that does not
+                            # exist (e.g. a broken/stale compose symlink) must
+                            # NOT silently fall through and leave the path string
+                            # as the arg -- that surfaces later as a cryptic
+                            # "not a valid format string" deep in matplotlib.
+                            raise FileNotFoundError(
+                                f"recipe data file not found: {file_path} "
+                                f"(referenced as '{data_ref}'). Fix the source "
+                                f"data; do not reproduce from a broken recipe."
+                            )
 
     return data
 

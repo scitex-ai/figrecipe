@@ -3,147 +3,42 @@
 """Save function helpers for the public API."""
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
+
+# figrecipe routes its save / reproducibility-validation status through
+# scitex-logging when available, so those lines carry the same INFO:/SUCC:/WARN:
+# prefixes + colours as scitex.io and @stx.session scripts (no more bare,
+# uncoloured print() output next to scitex-logging lines). Loosely coupled --
+# the same try-import policy as the scitex-clew integration; falls back to
+# print() when scitex-logging is absent.
+from .._logging import get_logger
 
 # Import helpers from separate module
+from ._save_capture import _capture_colorbar_geometry
+
+# Save settings / path / transparency helpers live in _save_config; re-exported
+# here so existing ``from .._api._save import get_save_dpi`` (etc.) keep working.
+from ._save_config import (  # noqa: F401
+    IMAGE_EXTENSIONS,
+    YAML_EXTENSIONS,
+    _get_default_image_format,
+    _is_opaque_facecolor,
+    _make_patches_opaque,
+    format_saved_target,
+    get_save_dpi,
+    get_save_transparency,
+    resolve_save_paths,
+)
+from ._save_crop import dispatch_crop, wants_content_crop
 from ._save_helpers import (
     _capture_axes_bboxes,
-    _is_bundle_path,
-    _save_as_bundle,
+    _capture_content_layout,
 )
 from ._save_helpers import (
     save_hitmap as _save_hitmap,
 )
 
-# Image extensions supported for saving
-IMAGE_EXTENSIONS = {
-    ".png",
-    ".pdf",
-    ".svg",
-    ".jpg",
-    ".jpeg",
-    ".eps",
-    ".tiff",
-    ".tif",
-}
-YAML_EXTENSIONS = {".yaml", ".yml"}
-
-
-def resolve_save_paths(
-    path: Path,
-    image_format: Optional[str] = None,
-) -> Tuple[Path, Path, str]:
-    """Resolve image and YAML paths from the provided path.
-
-    Parameters
-    ----------
-    path : Path
-        User-provided output path.
-    image_format : str, optional
-        Explicit image format when path is YAML.
-
-    Returns
-    -------
-    tuple
-        (image_path, yaml_path, img_format)
-    """
-    suffix_lower = path.suffix.lower()
-
-    if suffix_lower in IMAGE_EXTENSIONS:
-        # User provided image path
-        image_path = path
-        yaml_path = path.with_suffix(".yaml")
-        img_format = suffix_lower[1:]  # Remove leading dot
-    elif suffix_lower in YAML_EXTENSIONS:
-        # User provided YAML path
-        yaml_path = path
-        img_format = _get_default_image_format(image_format)
-        image_path = path.with_suffix(f".{img_format}")
-    else:
-        # Unknown extension - treat as base name, add both extensions
-        yaml_path = path.with_suffix(".yaml")
-        img_format = _get_default_image_format(image_format)
-        image_path = path.with_suffix(f".{img_format}")
-
-    return image_path, yaml_path, img_format
-
-
-def _get_default_image_format(explicit_format: Optional[str] = None) -> str:
-    """Get default image format from style or fallback to png."""
-    if explicit_format is not None:
-        return explicit_format.lower().lstrip(".")
-
-    # Check global style for preferred format
-    from ..styles._style_loader import _STYLE_CACHE
-
-    if _STYLE_CACHE is not None:
-        try:
-            return _STYLE_CACHE.output.format.lower()
-        except (KeyError, AttributeError):
-            pass
-    return "png"
-
-
-def get_save_dpi(explicit_dpi: Optional[int] = None) -> int:
-    """Get DPI for saving, using style default if not specified."""
-    if explicit_dpi is not None:
-        return explicit_dpi
-
-    from ..styles._style_loader import _STYLE_CACHE
-
-    if _STYLE_CACHE is not None:
-        try:
-            return _STYLE_CACHE.output.dpi
-        except (KeyError, AttributeError):
-            pass
-    return 300
-
-
-def get_save_transparency() -> bool:
-    """Get transparency setting from style."""
-    from ..styles._style_loader import _STYLE_CACHE
-
-    if _STYLE_CACHE is not None:
-        try:
-            return _STYLE_CACHE.output.transparent
-        except (KeyError, AttributeError):
-            pass
-    return False
-
-
-def _is_opaque_facecolor(facecolor) -> bool:
-    """Check if facecolor is an opaque color (not transparent/none)."""
-    if facecolor is None:
-        return False
-    if isinstance(facecolor, str):
-        if facecolor.lower() in ("none", "transparent"):
-            return False
-    return True
-
-
-def _make_patches_opaque(fig):
-    """Temporarily make figure and axes patches opaque. Returns restore function."""
-    original_alphas = []
-
-    # Store and set figure patch alpha
-    fig_patch = fig.fig.patch
-    original_alphas.append(("fig", fig_patch.get_alpha()))
-    fig_patch.set_alpha(1.0)
-
-    # Store and set axes patch alphas
-    for ax in fig.fig.get_axes():
-        ax_patch = ax.patch
-        original_alphas.append(("ax", ax, ax_patch.get_alpha()))
-        ax_patch.set_alpha(1.0)
-
-    def restore():
-        for item in original_alphas:
-            if item[0] == "fig":
-                fig_patch.set_alpha(item[1])
-            else:
-                item[1].patch.set_alpha(item[2])
-
-    return restore
+_log = get_logger("figrecipe")
 
 
 def save_figure(
@@ -156,6 +51,8 @@ def save_figure(
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
     validate_error_level: str = "error",
+    validate_axis_range_alignment: bool = True,
+    validate_axis_range_alignment_error_level: str = "warning",
     verbose: bool = True,
     dpi: Optional[int] = None,
     image_format: Optional[str] = None,
@@ -194,6 +91,15 @@ def save_figure(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle validation failures: 'error', 'warning', or 'debug'.
+    validate_axis_range_alignment : bool
+        If True (default), run the runtime ``axis_range_alignment``
+        check on the rendered figure before saving. Complements the
+        static ``STX-FIG001`` lint rule by catching the autoscale-
+        with-different-data case.
+    validate_axis_range_alignment_error_level : str
+        Dispatch level for the axis-range-alignment check:
+        'warning' (default — never kills the script), 'error', or
+        'debug' (silent).
     verbose : bool
         If True (default), print save status.
     dpi : int, optional
@@ -240,6 +146,26 @@ def save_figure(
         finalize_ticks(ax)
         finalize_special_plots(ax, style_dict)
 
+    # Runtime axis-range-alignment check (complements static STX-FIG001).
+    # Default warning-level — per operator preference (figrecipe #134), never
+    # kill the script after the PNG has been written.
+    if validate_axis_range_alignment:
+        from .._quality._axis_range_alignment import run_axis_range_alignment
+
+        run_axis_range_alignment(
+            fig.fig,
+            validate_error_level=validate_axis_range_alignment_error_level,
+        )
+
+    # Save-time layout-conflict (overlap) check. Enumerates every visual
+    # component, then consults one policy table to decide which overlaps are
+    # forbidden, emitting a single warning (never raises). Opt out via the
+    # style behavior flag ``behavior.check_overlap = false``.
+    if style_dict.get("behavior_check_overlap", True):
+        from .._quality._overlap import run_overlap_check
+
+        run_overlap_check(fig, style=style_dict)
+
     # Check for .fig.zip (multi-panel Figz bundle) or .plt.zip (single-plot Pltz bundle)
     suffixes = [s.lower() for s in path.suffixes]
     if suffixes[-2:] == [".fig", ".zip"]:
@@ -259,7 +185,7 @@ def save_figure(
             if tmp_pltz.exists():
                 tmp_pltz.unlink()
         if verbose:
-            print(f"Saved: {path} (Figz bundle)")
+            _log.success(f"Saved: {path} (Figz bundle)")
         return path, None, None
 
     if suffixes[-2:] == [".plt", ".zip"]:
@@ -267,48 +193,12 @@ def save_figure(
 
         Pltz.create(path, fig)
         if verbose:
-            print(f"Saved: {path} (Pltz bundle)")
+            _log.success(f"Saved: {path} (Pltz bundle)")
         return path, None, None
 
-    # Check if saving as ZIP bundle (layered format: spec.json + style.json + data.csv)
-    if path.suffix.lower() == ".zip":
-        from .._bundle import save_bundle
-
-        bundle_path = save_bundle(
-            fig,
-            path,
-            dpi=dpi,
-            save_hitmap=save_hitmap,
-            verbose=verbose,
-        )
-        # Also save recipe alongside ZIP for easy fr.reproduce() access
-        yaml_path = None
-        if save_recipe:
-            yaml_path = path.with_suffix(".yaml")
-            fig.save_recipe(
-                yaml_path,
-                include_data=include_data,
-                data_format=data_format,
-                csv_format=csv_format,
-            )
-            if verbose:
-                print(f"Saved recipe: {yaml_path}")
-        return bundle_path, yaml_path, None
-
-    # Check if saving as directory bundle (legacy recipe.yaml format)
-    if save_recipe and _is_bundle_path(path):
-        bundle_path, yaml_path = _save_as_bundle(
-            fig,
-            path,
-            include_data,
-            data_format,
-            csv_format,
-            dpi,
-            transparent,
-            image_format or _get_default_image_format(),
-            verbose,
-        )
-        return bundle_path, yaml_path, None
+    # Bare .zip (no .plt./.fig. infix) and directory-bundle dispatch are
+    # intentionally NOT supported. figrecipe owns I/O via .plt.zip / .fig.zip;
+    # anything else routes to standard image+recipe save below.
 
     # Resolve paths for standard save
     image_path, yaml_path, _ = resolve_save_paths(path, image_format)
@@ -320,6 +210,11 @@ def save_figure(
 
     # Check if using constrained_layout - need different save strategy
     use_constrained = fig.fig.get_constrained_layout()
+
+    # Output-format flags (used both to pick the save strategy and to crop).
+    croppable_formats = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp"}
+    is_croppable = image_path.suffix.lower() in croppable_formats
+    is_svg = image_path.suffix.lower() == ".svg"
 
     # Get crop margins from mm_layout
     mm_layout = getattr(fig, "_mm_layout", None)
@@ -333,64 +228,114 @@ def save_figure(
         crop_margin_top_mm = mm_layout.get("crop_margin_top_mm", 1)
         crop_margin_bottom_mm = mm_layout.get("crop_margin_bottom_mm", 1)
 
+    # Crop strategy. ``content_bbox`` crop (saved full-canvas, then cropped to the
+    # ONE recorded, dpi-independent box) is deterministic across draw counts, so
+    # the original and every reproduce land at identical pixels -- it replaces
+    # BOTH the size-jittering ``bbox_inches="tight"`` (constrained_layout) and the
+    # content-aware ``crop()`` (composed/mm-layout). ``use_tight`` is therefore
+    # only the LEGACY constrained path used when content_bbox is unavailable; for
+    # the quiver collapse case the settle below clears both flags and we fall back
+    # to the content-aware crop. (#215 generalised from standalone diagrams.)
+    use_content_crop = wants_content_crop(is_croppable, use_constrained, mm_layout)
+    use_tight = use_constrained and not use_content_crop
+
     # Handle facecolor override - make patches opaque if needed
     restore_patches = None
     if _is_opaque_facecolor(facecolor):
         restore_patches = _make_patches_opaque(fig)
 
-    pad_inches = 0.0  # updated below if use_constrained
+    pad_inches = 0.0  # updated below if use_tight
 
     try:
         if use_constrained:
-            # For constrained_layout, use bbox_inches='tight' to crop at save time
-            avg_margin_mm = (
-                crop_margin_left_mm
-                + crop_margin_right_mm
-                + crop_margin_top_mm
-                + crop_margin_bottom_mm
-            ) / 4
-            pad_inches = avg_margin_mm / 25.4  # mm to inches
+            # Settle constrained_layout to its CONVERGED fixed point before saving.
+            # constrained_layout solves the axes rectangle iteratively, so a single
+            # draw leaves it part-way and any save-time ink re-measure then depends
+            # on how many times the figure was drawn -- making a recipe
+            # unreproducible (the original fig is drawn far more than a fresh
+            # reproduce()-d one). Settling makes the geometry a pure function of the
+            # content, so original and reproduced share the SAME content_bbox. The
+            # first draw still surfaces the "collapsed to zero" warning used by the
+            # quiver fallback (degenerate paths make a tight save loop endlessly).
+            from ._save_layout import (
+                freeze_layout_positions,
+                settle_constrained_layout,
+            )
 
-            # Pre-flight: draw figure to detect constrained_layout collapse
-            # before attempting bbox_inches="tight" save (which hangs for e.g. quiver
-            # when axes collapse to zero and draw_path loops endlessly on degenerate paths).
-            import warnings as _warnings
+            _collapse_detected = settle_constrained_layout(fig.fig)
 
-            _collapse_detected = False
-            with _warnings.catch_warnings(record=True) as _w:
-                _warnings.simplefilter("always")
-                try:
-                    fig.fig.canvas.draw()
-                except Exception:
-                    pass
-                if any("collapsed to zero" in str(w.message) for w in _w):
-                    _collapse_detected = True
+            # Freeze the converged geometry before saving. ``savefig`` runs its OWN
+            # draw, which advances constrained_layout ONE more iteration past the
+            # settled point -- so the SAVED pixels use a slightly different axes
+            # rectangle than the geometry ``_capture_*`` records afterwards (the
+            # post-capture draw nudges it back). On NeuroVista fig05a that ~0.001-
+            # fraction (~1 px) gap is exactly what the reproducer's recorded-bbox
+            # pin then mis-targets: it pins to the RECORDED position, which the
+            # un-frozen original never actually rendered at. ``set_in_layout(False)``
+            # (after a couple of settling draws) takes every axes out of the solver
+            # so ``savefig`` can no longer move them -- making the saved pixels, the
+            # recorded ``bbox_uncropped`` and the reproducer's pinned position all
+            # the SAME settled rectangle. (Originally colorbar-only; generalised
+            # because the no-colorbar path is NOT draw-count-stable either.) Skipped
+            # on a collapsed layout (the quiver fallback needs the live re-solve).
+            if not _collapse_detected:
+                freeze_layout_positions(fig.fig)
 
-            try:
-                if _collapse_detected:
-                    raise ValueError("constrained_layout collapsed axes to zero")
-                fig.fig.savefig(
-                    image_path,
-                    dpi=dpi,
-                    transparent=transparent,
-                    bbox_inches="tight",
-                    pad_inches=pad_inches,
-                    facecolor=facecolor,
-                )
-            except (MemoryError, ValueError):
-                # constrained_layout may fail for some plot types (e.g., quiver)
-                # ValueError: image size too large on older matplotlib
-                # Fall back to standard save without bbox_inches
-                import warnings
-
-                warnings.warn(
-                    "constrained_layout save failed, falling back to standard save"
-                )
+            if _collapse_detected:
+                # Degenerate layout: never content-crop a collapsed figure; save
+                # full-canvas and fall back to the content-aware crop downstream.
+                # Record the collapse so the reproducer skips its constrained_layout
+                # panel pin (pinning the degenerate recorded rect would desync the
+                # re-measured ink between original and reproduction).
+                use_content_crop = False
+                use_tight = False
+                fig.record.layout_collapsed = True
                 fig.fig.savefig(
                     image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
                 )
-                # Mark for cropping since we couldn't use bbox_inches="tight"
-                use_constrained = False
+            elif use_content_crop:
+                # Save FULL-CANVAS; cropped to the recorded content_bbox below so the
+                # saved SIZE is a deterministic function of content (no tight re-
+                # measure). Replaces bbox_inches="tight" for constrained_layout.
+                fig.fig.savefig(
+                    image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
+                )
+            else:
+                # LEGACY constrained path (content_bbox unavailable): crop at save
+                # time via bbox_inches="tight" (size-jittering, kept for back-compat).
+                avg_margin_mm = (
+                    crop_margin_left_mm
+                    + crop_margin_right_mm
+                    + crop_margin_top_mm
+                    + crop_margin_bottom_mm
+                ) / 4
+                pad_inches = avg_margin_mm / 25.4  # mm to inches
+                try:
+                    fig.fig.savefig(
+                        image_path,
+                        dpi=dpi,
+                        transparent=transparent,
+                        bbox_inches="tight",
+                        pad_inches=pad_inches,
+                        facecolor=facecolor,
+                    )
+                except (MemoryError, ValueError):
+                    # constrained_layout may fail for some plot types (e.g. quiver);
+                    # ValueError: image size too large on older matplotlib. Fall
+                    # back to a standard save + downstream content-aware crop.
+                    import warnings
+
+                    warnings.warn(
+                        "constrained_layout save failed, falling back to standard save"
+                    )
+                    fig.fig.savefig(
+                        image_path,
+                        dpi=dpi,
+                        transparent=transparent,
+                        facecolor=facecolor,
+                    )
+                    use_constrained = False
+                    use_tight = False
         else:
             # Standard save without bbox_inches to preserve mm layout
             fig.fig.savefig(
@@ -401,56 +346,35 @@ def save_figure(
         if restore_patches is not None:
             restore_patches()
 
-    # Auto-crop using stored crop margins from mm_layout (or explicit parameter)
-    # Raster formats: pixel-based content-aware crop (post-processing)
-    # SVG: viewBox adjustment via tightbbox query (post-processing, no bbox_inches)
-    # Skip for constrained_layout (already cropped at save time)
-    croppable_formats = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp"}
-    is_croppable = image_path.suffix.lower() in croppable_formats
-    is_svg = image_path.suffix.lower() == ".svg"
-
-    crop_offset = None
-    if is_croppable and not use_constrained:
-        if crop_margin_mm is not None:
-            # Explicit uniform crop margin
-            from .._utils._crop import crop
-
-            _, crop_offset = crop(
-                image_path,
-                margin_mm=crop_margin_mm,
-                output_path=image_path,
-                return_offset=True,
-            )
-        elif mm_layout is not None and "crop_margin_left_mm" in mm_layout:
-            # Standard content-based cropping for mm_layout figures
-            from .._utils._crop import crop
-
-            _, crop_offset = crop(
-                image_path,
-                margin_left_mm=crop_margin_left_mm,
-                margin_right_mm=crop_margin_right_mm,
-                margin_top_mm=crop_margin_top_mm,
-                margin_bottom_mm=crop_margin_bottom_mm,
-                output_path=image_path,
-                return_offset=True,
-            )
-
-    elif is_svg and not use_constrained:
-        # SVG: adjust viewBox post-save using tightbbox query (not bbox_inches='tight')
-        from .._utils._crop import crop_svg
-
-        avg_margin_mm = (
-            crop_margin_left_mm
-            + crop_margin_right_mm
-            + crop_margin_top_mm
-            + crop_margin_bottom_mm
-        ) / 4
-        if crop_margin_mm is not None:
-            avg_margin_mm = crop_margin_mm
-        crop_svg(image_path, fig.fig, margin_mm=avg_margin_mm)
+    # Post-save crop dispatch (see _save_crop):
+    #   * content_bbox crop -- saved full-canvas above, cropped to the ONE recorded
+    #     dpi-independent box so the original and every reproduce land at identical
+    #     pixels (constrained_layout + composed/mm-layout). Falls back, WITH a
+    #     UserWarning, to the legacy crop when content_bbox is underivable.
+    #   * legacy content-aware crop() for raster, or crop_svg() for SVG.
+    #   * skipped when bbox_inches="tight" already cropped at save time (use_tight).
+    crop_offset = dispatch_crop(
+        fig,
+        image_path,
+        is_croppable=is_croppable,
+        is_svg=is_svg,
+        use_tight=use_tight,
+        use_content_crop=use_content_crop,
+        crop_margin_mm=crop_margin_mm,
+        crop_margins_mm=(
+            crop_margin_left_mm,
+            crop_margin_right_mm,
+            crop_margin_top_mm,
+            crop_margin_bottom_mm,
+        ),
+        mm_layout=mm_layout,
+        dpi=dpi,
+    )
 
     # Capture axes bounding boxes (adjusted for crop if cropping occurred)
     _capture_axes_bboxes(fig, crop_offset)
+    _capture_colorbar_geometry(fig)  # pin shared-colorbar geometry for replay
+    _capture_content_layout(fig)  # tight-content layout for crop-aware compose
 
     # Store crop info in record for future reference
     if crop_offset is not None:
@@ -460,18 +384,52 @@ def save_figure(
     if hasattr(fig, "_mm_layout") and fig._mm_layout is not None:
         fig.record.mm_layout = fig._mm_layout
 
-    # Save hitmap if requested (for GUI editor element selection)
-    # Pass bbox_inches="tight" when the image was saved that way (constrained_layout)
-    # so the hitmap crop matches the saved image exactly (critical for pie/imshow).
+    # Save hitmap if requested (for GUI editor element selection).
+    # The hitmap must be cropped IDENTICALLY to the saved image so pixel->element
+    # lookups line up:
+    #   * use_tight  -> render the hitmap with the same bbox_inches="tight"+pad.
+    #   * content-crop -> render full-canvas, then crop to the SAME content_bbox.
+    #   * otherwise (content-aware/no crop) -> full-canvas (matches the image).
+    # Standalone diagrams render their hitmap separately regardless.
     if save_hitmap:
-        _hitmap_bbox = "tight" if use_constrained else None
-        _hitmap_pad = pad_inches if use_constrained else 0.0
-        _save_hitmap(fig, image_path, dpi, verbose, _hitmap_bbox, _hitmap_pad)
+        _hitmap_bbox = "tight" if use_tight else None
+        _hitmap_pad = pad_inches if use_tight else 0.0
+        _hitmap_path = _save_hitmap(
+            fig, image_path, dpi, verbose, _hitmap_bbox, _hitmap_pad
+        )
+        if (
+            use_content_crop
+            and _hitmap_path is not None
+            and getattr(fig.record, "content_bbox", None) is not None
+        ):
+            from ._save_helpers import crop_to_content_bbox
+
+            _hm_margins = (
+                {
+                    "left": crop_margin_mm,
+                    "right": crop_margin_mm,
+                    "top": crop_margin_mm,
+                    "bottom": crop_margin_mm,
+                }
+                if crop_margin_mm is not None
+                else {
+                    "left": crop_margin_left_mm,
+                    "right": crop_margin_right_mm,
+                    "top": crop_margin_top_mm,
+                    "bottom": crop_margin_bottom_mm,
+                }
+            )
+            crop_to_content_bbox(
+                _hitmap_path, fig.record.content_bbox, _hm_margins, min(dpi, 150)
+            )
+    from ._separate_legend import save_separate_legends as _sl
+
+    _sl(fig, image_path, dpi=dpi, save_recipe=save_recipe)
 
     # If not saving recipe, return early
     if not save_recipe:
         if verbose:
-            print(f"Saved: {image_path}")
+            _log.success(f"Saved: {image_path}")
         if _diagram_errors:
             raise ValueError("\n  ".join(_diagram_errors))
         return image_path, None, None
@@ -479,7 +437,7 @@ def save_figure(
     # Raise diagram validation errors after saving image (before recipe)
     if _diagram_errors:
         if verbose:
-            print(f"Saved (with errors): {image_path}")
+            _log.warning(f"Saved (with errors): {image_path}")
         raise ValueError("\n  ".join(_diagram_errors))
 
     # Save the recipe
@@ -492,14 +450,34 @@ def save_figure(
 
     # Validate if requested
     if validate:
-        from .._validator import validate_on_save
+        from .._quality._validator import validate_on_save
 
-        result = validate_on_save(fig, saved_yaml, mse_threshold=validate_mse_threshold)
-        status = "PASSED" if result.valid else "FAILED"
+        result = validate_on_save(
+            fig,
+            saved_yaml,
+            mse_threshold=validate_mse_threshold,
+            image_path=image_path,
+        )
         if verbose:
-            print(
-                f"Saved: {image_path} + {yaml_path} (Reproducible Validation: {status})"
-            )
+            # image + recipe collapse to fig.{png,yaml}. Through scitex-logging:
+            # green SUCC when reproducible, red ERROR *with the reason* otherwise
+            # (not a bare "FAILED"). "Reproducibility Validation" = we validated
+            # that the recipe reproduces the figure.
+            target = format_saved_target(image_path, yaml_path)
+            if result.valid:
+                _log.success(f"Saved: {target} (Reproducibility Validation: PASSED)")
+            else:
+                # Point at the persisted reproduced figure so the divergence is
+                # inspectable (saved beside the figure as <stem>-not-reproduced.<ext>).
+                hint = ""
+                if getattr(result, "not_reproduced_path", None):
+                    from pathlib import Path as _P
+
+                    hint = f"; see {_P(result.not_reproduced_path).name}"
+                _log.error(
+                    f"Saved: {target} "
+                    f"(Reproducibility Validation: FAILED - {result.message}{hint})"
+                )
         if not result.valid:
             msg = f"Reproducibility validation failed (MSE={result.mse:.1f}): {result.message}"
             if validate_error_level == "error":
@@ -512,7 +490,7 @@ def save_figure(
         return image_path, yaml_path, result
 
     if verbose:
-        print(f"Saved: {image_path} + {yaml_path}")
+        _log.success(f"Saved: {format_saved_target(image_path, yaml_path)}")
     return image_path, yaml_path, None
 
 

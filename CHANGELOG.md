@@ -5,6 +5,155 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.20] - 2026-06-04
+
+### Fixed
+- **`tests/integration/test_entry_points.py` PA-307 TQ006 + TQ007.**
+  v0.28.19 shipped the entry-point regression-guard test with a
+  parametrized body containing a top-level `if`/`else` for the
+  `<module>:<attr>` splitting (TQ006) and multiple assertions disguised
+  by the same `if` branches (TQ007). v0.28.19 release CI's audit-all
+  gate caught it (no broken wheel reached PyPI). Refactor: extract the
+  value-splitting into a `_resolve(value)` helper so the test body has
+  no `if` and exactly one `assert`. Behaviour unchanged.
+
+## [0.28.19] - 2026-06-04
+
+### Added
+- **Module-rename back-compat via `figrecipe._compat` (operator direct via
+  Telegram).** The #141 topical refactor moved four private modules into
+  `figrecipe._quality.*`. Per the YAGNI grep the ecosystem had zero
+  runtime consumers of the old paths, but the operator asked for uniform
+  scitex-compat-style deprecation messaging when *any* code touches a
+  moved path. New `figrecipe._compat._module_aliases` registers
+  transparent `sys.modules` aliases at the old paths so legacy imports
+  still resolve AND emit a single-fire `DeprecationWarning` pointing at
+  the new path. No flat shim files at the package root (PS-108b
+  threshold unaffected).
+
+  Aliases installed (eagerly, from `figrecipe.__init__`):
+  - `figrecipe._validator`              → `figrecipe._quality._validator`
+  - `figrecipe._linter_plugin`          → `figrecipe._quality._linter_plugin`
+  - `figrecipe._axis_alignment_checker` → `figrecipe._quality._axis_alignment_checker`
+  - `figrecipe._axis_range_alignment`   → `figrecipe._quality._axis_range_alignment`
+
+- **Entry-point regression guard (lead msg b4e3dc7e).** New parametrized
+  smoke test (`tests/figrecipe/test__entry_points.py`) parses every
+  `[project.entry-points.*]` group in `pyproject.toml` and asserts each
+  `<module>:<attr>` value resolves to a real importable attribute.
+  Catches the "moved module + stale entry-point string + aggregator
+  silent-skip" failure class generically — new entry points + future
+  moves are covered with zero extra test maintenance.
+
+## [0.28.18] - 2026-06-03
+
+### Fixed
+- **`Diagram.render(ax)` recipe-recording silently no-op'd because the
+  relative import was one dot too shallow (#144 regression).** The hook
+  added in #144 to record a `function="diagram"` `CallRecord` on the
+  recording axes used `from .._wrappers._axes_diagram import
+  _record_diagram_call`. From `src/figrecipe/_diagram/_diagram/_core.py`,
+  `..` resolves to `figrecipe._diagram`, NOT `figrecipe`, so the import
+  raised `ImportError` (`figrecipe._diagram._wrappers` doesn't exist).
+  The defensive `except Exception` then swallowed it silently, so
+  `Diagram.render(ax)` "succeeded" but produced **zero** recipe entries
+  — exactly the original #139 symptom this PR was supposed to fix.
+  v0.28.15/16/17 all shipped this regression; v0.28.15 was caught by the
+  release CI on a *different* import bug, v0.28.16 on a fictional test
+  kwarg, and **v0.28.17 was caught by the release CI on THIS bug**
+  (`assert 0 == 1` in the recording-hook smoke test). No broken wheel
+  ever reached PyPI in any of the three attempts.
+  Fix: `from ..._wrappers._axes_diagram` (three dots, hitting
+  `figrecipe._wrappers`). Promoted the `ImportError` branch to
+  `logger.error` so any future "did this hook actually run" silent
+  regression is LOUD — the catch-all `Exception` branch stays so the
+  recording never breaks the render itself.
+
+## [0.28.17] - 2026-06-03
+
+### Fixed
+- **`tests/figrecipe/_diagram/_diagram/test__core_render_records.py` used
+  a fictional `figsize_mm` kwarg on `fr.subplots`.** The #144 / #145 test
+  scaffolding copied the API shape from the issue #139 reproduction body
+  literally, but `fr.subplots` takes per-axes sizing as
+  `axes_width_mm` / `axes_height_mm` — there is no `figsize_mm`
+  parameter. v0.28.16's release CI test-matrix surfaced this
+  (`AttributeError: Figure.set() got an unexpected keyword argument
+  'figsize_mm'`), correctly skipped build/publish/release, so **no
+  broken wheel reached PyPI**. Fixed the test helper; behaviour
+  unchanged everywhere else.
+
+## [0.28.16] - 2026-06-03
+
+### Fixed
+- **`_quality/_validator.py` sibling-relative imports broken by the #141
+  topical move.** When `_validator.py` moved from `figrecipe/` into
+  `figrecipe/_quality/`, two of its internal lazy imports —
+  `from ._reproducer import reproduce` and
+  `from ._utils._image_diff import compare_images` — kept the single-dot
+  form, so at runtime they resolved to non-existent
+  `figrecipe._quality._reproducer` / `figrecipe._quality._utils`. v0.28.15
+  shipped this regression and `fr.save(..., validate=True)` raised
+  `ModuleNotFoundError` on the validate path (caught by the release CI's
+  test-matrix — release publish was skipped, no broken wheel hit PyPI).
+  Bump both imports to `from .._reproducer` / `from .._utils._image_diff`
+  to point at the actual sibling packages of `figrecipe/`, not of
+  `figrecipe/_quality/`. Adds an inline comment so the next move catches
+  it. The rename-symbols pass at #141 only rewrote OUTSIDE-pointing
+  references; this PR closes the inside-pointing gap.
+
+## [0.28.15] - 2026-06-03
+
+### Added
+- **`fr.nice_lim(data, lower=0.0, round_to=None)` — tick-friendly axis limit
+  helper (closes #140, PR #146).** Snaps an axis limit to a "round" boundary
+  above (and optionally below) the data extent so the right (or top) spine
+  doesn't get its own tick label. `round_to=None` auto-picks the data's
+  order of magnitude. `lower=None` snaps the left edge down to a round
+  boundary below `data.min()` (negative-friendly). Edge cases handled:
+  empty input, all-NaN, `data.max() == 0`, exact round-boundary `data.max()`
+  (lifted one step), `round_to <= 0` raises `ValueError`. Exposed via
+  PEP-562 lazy-attr so `import figrecipe as fr; fr.nice_lim(...)` works at
+  zero matplotlib-import cost on plain `import figrecipe`.
+
+### Changed
+- **`fr.compose()` default `gap_mm=2` (was 5) + panel-label fontsize from
+  `SCITEX_STYLE.yaml` (PR #138).** Multi-panel mm-based layouts looked too
+  sparse at 5 mm; 2 mm gives the close-pack default users expect. Explicit
+  `gap_mm=...` callers unaffected. `_add_panel_labels_{grid,mm}` now read
+  `fontsize` from a `_panel_label_fontsize()` helper that consults
+  `SCITEX_STYLE.yaml`'s new `panel_label_pt` key (default 10 — Nature-style
+  panel label convention).
+- **Topical refactor: four quality-gate modules grouped into
+  `src/figrecipe/_quality/` (PR #141).** `_axis_alignment_checker`,
+  `_axis_range_alignment`, `_linter_plugin`, `_validator` moved under
+  `_quality/` per the audit-all `PS-108b` recommendation (flat-file count
+  16 → 14, well under threshold). All import paths updated via
+  `scitex-dev rename-symbols --regex` (3 passes, 9 files, 11 substitutions,
+  0 collisions). Public surface (`figrecipe.fr.*`) unaffected — moved
+  modules were private (underscore-prefixed) throughout. Test mirror
+  created at `tests/figrecipe/_quality/` (PR #142).
+
+### Fixed
+- **`Diagram.render(ax)` now emits a recipe `CallRecord` so
+  `fr.save(fig, validate=True)` round-trips cleanly on figures containing
+  a `figrecipe.diagram.Diagram` panel (closes #139, PR #144).** Previously,
+  the direct-render path bypassed the recipe-recording mechanism that the
+  `ax.diagram(...)` wrapper path uses, so the reproducer rendered an empty
+  panel where the diagram should be → MSE > 100 → validation raised. Round
+  trip is figrecipe's core concept. Single-call high-level recording via
+  the existing `_record_diagram_call` helper; the replay side
+  (`_reproducer/_replay_diagram.py`) was already in place.
+- **Test-quality fix-forwards** for #144 and #146: split combined
+  `# Act / Assert` markers and multi-assert tests into AAA-marked
+  one-assertion siblings per STX-TQ002 / STX-TQ007 (#145, #147).
+
+## [0.28.14] - 2026-06-02
+
+### Added
+- **STX-FIG001 `axis-range-alignment` static lint rule** (#136). AST checker that fires when two or more subplots on the same figure carry explicit literal `set_xlim` / `set_ylim` calls with disagreeing tuples — mismatched ranges destroy the visual comparison the subplots are presumably trying to make (scientific-figure standards rule #4). Severity WARNING; opt-out via `# stx-allow: STX-FIG001`. Covers the literal-mismatch case only.
+- **`axis_range_alignment` runtime validator** (#137). Fires at savefig time, walks `fig.axes`, groups peers by inferred shared quantity (matching xlabel/ylabel or same gridspec row/col), warns when `get_xlim`/`get_ylim` disagree above tolerance. Honors matplotlib `sharex`/`sharey`, twin axes, and a `fig._figrecipe_allow_axis_mismatch` opt-out sentinel. Default `validate_error_level="warning"` per issue #134 preference. Covers the dominant autoscale-with-different-data case that the static checker provably cannot detect.
+
 ## [0.28.9] - 2026-05-16
 
 ### Fixed

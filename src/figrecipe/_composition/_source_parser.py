@@ -12,6 +12,9 @@ from typing import Optional, Tuple, Union
 
 from .._recorder import FigureRecord
 from .._serializer import load_recipe
+from .._utils._grid import grid_id
+
+_DEFAULT_AX_KEY = grid_id(0, 0)
 
 # Supported image file extensions for raw image composition
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".gif", ".webp"}
@@ -100,7 +103,7 @@ def create_image_record(image_path: Path) -> FigureRecord:
         dpi=dpi,
         matplotlib_version=matplotlib.__version__,
     )
-    record.axes["ax_0_0"] = ax_record
+    record.axes[_DEFAULT_AX_KEY] = ax_record
 
     return record
 
@@ -126,11 +129,11 @@ def parse_source_spec_with_path(
         if is_image_file(path):
             recipe = find_companion_recipe(path)
             if recipe is not None:
-                return load_recipe(recipe), "ax_0_0", recipe
-            return create_image_record(path), "ax_0_0", path
-        return load_recipe(path), "ax_0_0", path
+                return load_recipe(recipe), _DEFAULT_AX_KEY, recipe
+            return create_image_record(path), _DEFAULT_AX_KEY, path
+        return load_recipe(path), _DEFAULT_AX_KEY, path
     elif isinstance(spec, FigureRecord):
-        return spec, "ax_0_0", None
+        return spec, _DEFAULT_AX_KEY, None
     elif isinstance(spec, tuple) and len(spec) == 2:
         source, ax_key = spec
         if isinstance(source, (str, Path)):
@@ -139,12 +142,28 @@ def parse_source_spec_with_path(
                 recipe = find_companion_recipe(path)
                 if recipe is not None:
                     return load_recipe(recipe), ax_key, recipe
-                return create_image_record(path), "ax_0_0", path
+                return create_image_record(path), _DEFAULT_AX_KEY, path
             return load_recipe(path), ax_key, path
         elif isinstance(source, FigureRecord):
             return source, ax_key, None
         raise TypeError(f"Invalid source in tuple: {type(source)}")
     raise TypeError(f"Invalid source spec type: {type(spec)}")
+
+
+def parse_source_spec_with_key(
+    spec: Union[str, Path, FigureRecord, Tuple],
+) -> Tuple[FigureRecord, str, Optional[Path], bool]:
+    """Like ``parse_source_spec_with_path`` but also report key explicitness.
+
+    Returns ``(FigureRecord, ax_key, source_path, explicit_key)`` where
+    ``explicit_key`` is True only when the caller selected a specific axes via a
+    ``(source, ax_key)`` tuple. When False, the source is a plain recipe/path
+    and composition should place ALL of its axes (so multi-subplot panels are
+    not silently reduced to their first axes).
+    """
+    explicit_key = isinstance(spec, tuple) and len(spec) == 2
+    record, ax_key, path = parse_source_spec_with_path(spec)
+    return record, ax_key, path, explicit_key
 
 
 __all__ = [
@@ -153,6 +172,7 @@ __all__ = [
     "create_image_record",
     "parse_source_spec",
     "parse_source_spec_with_path",
+    "parse_source_spec_with_key",
 ]
 
 # EOF

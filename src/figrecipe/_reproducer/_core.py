@@ -12,6 +12,9 @@ from matplotlib.axes import Axes
 from .._recorder import CallRecord, FigureRecord
 from .._serializer import load_recipe
 from .._utils._bundle import resolve_recipe_path
+from .._utils._grid import parse_grid_id
+from ._axis_coerce import coerce_axis_value
+from ._colorbars import _replay_colorbars
 
 
 def reproduce(
@@ -115,6 +118,34 @@ def reproduce_from_record(
     axes : RecordingAxes or ndarray of RecordingAxes
         Reproduced axes (wrapped, numpy array for multi-axes).
     """
+    import matplotlib as mpl
+
+    # mm-based composed figures (plt.compose) key their panels "ax_mm_*" and
+    # position each via add_axes(bbox); the grid model below can't represent that
+    # (every ax_mm_* collapses to grid cell (0,0) -> only one panel survives, wrong
+    # size). Rebuild them faithfully via the dedicated mm reproducer.
+    from ._mm_compose import is_mm_composed, reproduce_mm_composed
+
+    if is_mm_composed(record):
+        return reproduce_mm_composed(record)
+
+    # Restore the recipe's captured rcParams (a loaded theme like SCITEX_STYLE,
+    # or ANY globally-set rcParam) for the entire grid build, so every artist
+    # renders under the identical environment as the original. rc_context scopes
+    # it -- reproduce never leaks rcParams to the caller.
+    from ..styles._rcparams import apply_recorded_rcparams
+
+    with mpl.rc_context():
+        apply_recorded_rcparams(record.rcparams or {})
+        return _reproduce_grid(record, calls, skip_decorations)
+
+
+def _reproduce_grid(
+    record: FigureRecord,
+    calls: Optional[List[str]] = None,
+    skip_decorations: bool = False,
+):
+    """Build the grid figure (runs inside the caller's rc_context)."""
     from .._recorder import Recorder
     from .._wrappers import RecordingAxes, RecordingFigure
 
@@ -122,10 +153,10 @@ def reproduce_from_record(
     max_row = 0
     max_col = 0
     for ax_key in record.axes.keys():
-        parts = ax_key.split("_")
-        if len(parts) >= 3:
-            max_row = max(max_row, int(parts[1]))
-            max_col = max(max_col, int(parts[2]))
+        parsed = parse_grid_id(ax_key)
+        if parsed is not None:
+            max_row = max(max_row, parsed[0])
+            max_col = max(max_col, parsed[1])
 
     nrows = max_row + 1
     ncols = max_col + 1
@@ -169,30 +200,17 @@ def reproduce_from_record(
 
     # Replay calls on each axes
     for ax_key, ax_record in record.axes.items():
-        parts = ax_key.split("_")
-        if len(parts) >= 3:
-            row, col = int(parts[1]), int(parts[2])
-        else:
-            row, col = 0, 0
+        parsed = parse_grid_id(ax_key)
+        row, col = parsed if parsed else (0, 0)
 
         ax = axes_2d[row, col]
 
-        # Replay plotting calls
-        for call in ax_record.calls:
-            if calls is not None and call.id not in calls:
-                continue
-            result = _replay_call(ax, call, result_cache)
-            if result is not None:
-                result_cache[call.id] = result
+        # Replay this axes' calls, decorations, and inset sub-panels.
+        from ._replay_axes import replay_axes_calls
 
-        # Replay decorations
-        if not skip_decorations:
-            for call in ax_record.decorations:
-                if calls is not None and call.id not in calls:
-                    continue
-                result = _replay_call(ax, call, result_cache)
-                if result is not None:
-                    result_cache[call.id] = result
+        replay_axes_calls(
+            ax, ax_record, calls, skip_decorations, result_cache, record.style
+        )
 
         # Apply panel visibility
         if not getattr(ax_record, "visible", True):
@@ -201,17 +219,18 @@ def reproduce_from_record(
     # Replay recorded colorbars (exact reproduction)
     _replay_colorbars(fig, axes_2d, record, result_cache)
 
-    # Finalize tick configuration and special plot types
-    from ..styles._style_applier import finalize_special_plots, finalize_ticks
-    from ._line_styles import apply_line_styles
+    # Per-axes post-replay finalization passes (tick/special-plot finalizers,
+    # imshow tick-suppression, recorded-limit reapply). Order is load-bearing;
+    # see ._finalize_axes for the rationale of each pass.
+    from ._finalize_axes import finalize_reproduced_axes
 
-    for row in range(nrows):
-        for col in range(ncols):
-            finalize_ticks(axes_2d[row, col])
-            finalize_special_plots(axes_2d[row, col], record.style or {})
+    finalize_reproduced_axes(
+        fig, axes_2d, record, nrows, ncols, calls, skip_decorations
+    )
 
-    # Apply trace linewidth to all Line2D objects created during replay
-    apply_line_styles(axes_2d, record.style or {})
+    # Line widths are NOT post-processed: apply_style_mm() set lines.linewidth
+    # from linewidth_mm pre-replay; signal/explicit lw= replay as recorded.
+    # (A prior apply_line_styles() forced trace width on all lines -> MSE ~363.)
 
     # Apply figure-level labels if recorded
     if record.suptitle is not None:
@@ -290,7 +309,10 @@ def reproduce_from_record(
 
 
 def _replay_call(
-    ax: Axes, call: CallRecord, result_cache: Optional[Dict[str, Any]] = None
+    ax: Axes,
+    call: CallRecord,
+    result_cache: Optional[Dict[str, Any]] = None,
+    coerce_sequences: bool = False,
 ) -> Any:
     """Replay a single call on an axes.
 
@@ -302,6 +324,13 @@ def _replay_call(
         The call to replay.
     result_cache : dict, optional
         Cache mapping call_id -> result for resolving references.
+    coerce_sequences : bool
+        If True, promote reconstructed plain-sequence positional args (and
+        sequence kwargs) to numpy arrays via ``coerce_sequence_arg``. Used by
+        the inset/embed replay path, where sub-panel array args round-trip as
+        ruamel ``CommentedSeq`` lists (the data-file loader does not descend
+        into subpanels) and would otherwise reach array-arg plotters like
+        ``streamplot`` as raw lists, failing on ``.shape``.
 
     Returns
     -------
@@ -326,6 +355,10 @@ def _replay_call(
         from ._violin import replay_violinplot_call
 
         return replay_violinplot_call(ax, call)
+    if method_name == "add_patch":
+        from ._replay_patches import replay_add_patch_call
+
+        return replay_add_patch_call(ax, call)
     if method_name == "joyplot":
         from ._custom_plots import replay_joyplot_call
 
@@ -356,6 +389,27 @@ def _replay_call(
         from ._stem import replay_stem_call
 
         return replay_stem_call(ax, call)
+    if method_name == "rotate_labels":
+        # figrecipe tick-label rotation: a styles helper, not an mpl axes method,
+        # so getattr(ax, "rotate_labels") fails on the raw replay axes. Dispatch
+        # to the helper so the rotation (and the tick re-nicing it applies) is
+        # reproduced -- otherwise labels stay horizontal + limits drift.
+        from ..styles._axis_helpers import rotate_labels as _rotate_labels
+
+        kw = {k: call.kwargs.get(k) for k in ("x", "y", "x_ha", "y_ha", "auto_adjust")}
+        try:
+            _rotate_labels(ax, **{k: v for k, v in kw.items() if v is not None})
+        except Exception:
+            pass
+        return None
+    if method_name.startswith("stx_"):
+        # figrecipe scitex-compat plot methods are functions taking a raw mpl
+        # axes; a plain getattr(ax, name) fails on raw axes (e.g. mm-compose
+        # add_axes panels), silently dropping the plot + its make_axes_locatable
+        # marginals. Dispatch to the compat function so it reconstructs fully.
+        from ._scitex import replay_stx_call
+
+        return replay_stx_call(ax, call, result_cache)
 
     method = getattr(ax, method_name, None)
 
@@ -364,15 +418,39 @@ def _replay_call(
         return None
 
     # Reconstruct args
-    from ._reconstruct import reconstruct_kwargs, reconstruct_value
+    from ._reconstruct import (
+        coerce_sequence_arg,
+        reconstruct_kwargs,
+        reconstruct_value,
+    )
 
     args = []
     for arg_data in call.args:
         value = reconstruct_value(arg_data, result_cache)
+        if coerce_sequences:
+            value = coerce_sequence_arg(value)
         args.append(value)
 
     # Get kwargs and reconstruct arrays
     kwargs = reconstruct_kwargs(call.kwargs)
+    if coerce_sequences:
+        kwargs = {k: coerce_sequence_arg(v) for k, v in kwargs.items()}
+
+    # These methods are inherently numeric/datetime, but a recipe may store the
+    # value as a string -- an ISO datetime (datetime axes) or a stringified
+    # number like '0' from stale recipes. matplotlib can't convert a raw string
+    # to axis units on replay ("Failed to convert value(s) to axis units"), so
+    # coerce it back to datetime/float before reapplying the recorded value.
+    if method_name in ("set_xlim", "set_ylim", "axvline", "axhline"):
+        args = [coerce_axis_value(a) for a in args]
+        kwargs = {k: coerce_axis_value(v) for k, v in kwargs.items()}
+
+    # Axis scale (set_xscale / set_yscale) replays as a generic decoration; warn
+    # loudly on an unsupported scale name instead of degrading silently to linear.
+    if method_name in ("set_xscale", "set_yscale"):
+        from ._axis_scale import warn_if_unsupported_scale
+
+        warn_if_unsupported_scale(method_name, args)
 
     # Handle special transform markers
     if "transform" in kwargs:
@@ -383,6 +461,21 @@ def _replay_call(
             kwargs["transform"] = ax.transData
         elif transform_val == "figure":
             kwargs["transform"] = ax.figure.transFigure
+        elif isinstance(transform_val, str):
+            # A non-marker stringified transform (e.g. a Bbox/blended transform
+            # that the recorder could not serialize as a clean marker). Passing
+            # the raw string to matplotlib raises
+            # "'str' object has no attribute 'contains_branch_seperately'".
+            # Map an axes-bbox transform back to ax.transAxes (the common case,
+            # e.g. scalebars drawn in axes fraction); otherwise drop it so the
+            # element still draws in the default (data) transform.
+            low = transform_val.replace("\n", " ").replace(" ", "")
+            if "BboxTransformTo" in transform_val and (
+                "x1=1.0" in low or "Affine2D().scale" in transform_val
+            ):
+                kwargs["transform"] = ax.transAxes
+            else:
+                kwargs.pop("transform")
 
     # Fix fill_between: 'color' overrides 'edgecolor', use 'facecolor' instead
     if method_name in ("fill_between", "fill_betweenx"):
@@ -400,122 +493,7 @@ def _replay_call(
         return None
 
 
-def _replay_colorbars(fig, axes_2d, record, result_cache):
-    """Replay recorded colorbars for exact reproduction."""
-    # Get recorded colorbars
-    colorbars = getattr(record, "colorbars", []) or []
-
-    if not colorbars:
-        # No recorded colorbars - nothing to do
-        # (Old recipes without colorbar recording won't reproduce colorbars)
-        return
-
-    # 2D plot methods that return ScalarMappable (for finding mappable)
-    COLORBAR_METHODS = {
-        "imshow",
-        "pcolormesh",
-        "pcolor",
-        "contourf",
-        "contour",
-        "hexbin",
-        "hist2d",
-        "tripcolor",
-        "tricontourf",
-        "tricontour",
-        "matshow",
-        "spy",
-        "specgram",
-    }
-
-    # Replay each recorded colorbar
-    for cbar_info in colorbars:
-        ax_key = cbar_info.get("ax_key")
-        kwargs = cbar_info.get("kwargs", {})
-
-        if ax_key is None:
-            continue
-
-        # Parse ax position
-        parts = ax_key.split("_")
-        if len(parts) >= 3:
-            row, col = int(parts[1]), int(parts[2])
-        else:
-            continue
-
-        ax = axes_2d[row, col]
-
-        # Find the mappable for this axes from result_cache
-        ax_record = record.axes.get(ax_key)
-        if ax_record is None:
-            continue
-
-        mappable = None
-        method_name = None
-        for call in ax_record.calls:
-            if call.function in COLORBAR_METHODS and call.id in result_cache:
-                mappable = result_cache[call.id]
-                method_name = call.function
-                break
-
-        if mappable is None:
-            continue
-
-        # Some methods return tuples - extract the actual mappable
-        if isinstance(mappable, tuple):
-            if method_name == "hist2d":
-                # hist2d returns (counts, xedges, yedges, image)
-                mappable = mappable[3]
-            elif method_name == "specgram":
-                # specgram returns (spectrum, freqs, t, image)
-                mappable = mappable[3]
-
-        # Add colorbar with recorded kwargs - use raw fig.colorbar to avoid
-        # add_colorbar adding extra styling kwargs that weren't in original
-        cbar = fig.colorbar(mappable, ax=ax, **kwargs)
-
-        # Apply styling to match original (style_colorbar is called by add_colorbar)
-        from .._utils._colorbar import style_colorbar
-
-        style_colorbar(cbar, record.style)
-
-
-def get_recipe_info(path: Union[str, Path]) -> Dict[str, Any]:
-    """Get recipe metadata (id, figsize, dpi, n_axes, calls) without reproducing."""
-    record = load_recipe(path)
-
-    all_calls = []
-    for ax_record in record.axes.values():
-        for call in ax_record.calls:
-            all_calls.append(
-                {
-                    "id": call.id,
-                    "function": call.function,
-                    "n_args": len(call.args),
-                    "kwargs": list(call.kwargs.keys()),
-                }
-            )
-        for call in ax_record.decorations:
-            all_calls.append(
-                {
-                    "id": call.id,
-                    "function": call.function,
-                    "type": "decoration",
-                }
-            )
-
-    return {
-        "id": record.id,
-        "created": record.created,
-        "matplotlib_version": record.matplotlib_version,
-        "figsize": record.figsize,
-        "dpi": record.dpi,
-        "n_axes": len(record.axes),
-        "calls": all_calls,
-    }
-
-
 __all__ = [
     "reproduce",
     "reproduce_from_record",
-    "get_recipe_info",
 ]

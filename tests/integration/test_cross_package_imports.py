@@ -28,7 +28,6 @@ CROSS_PACKAGE_IMPORTS = [
     "scitex_config",
     "scitex_dev",
     "scitex_dev._branding",
-    "scitex_dev._cli._completion",
     "scitex_dev.cli",
     "scitex_dev.linter._fm_checker",
     "scitex_dev.linter._rules._base",

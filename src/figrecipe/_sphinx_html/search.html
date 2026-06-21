@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Search &mdash; FigRecipe v0.27.0</title>
+  <title>Search &mdash; FigRecipe v0.28.12</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
@@ -15,7 +15,7 @@
     
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=3b7790a3"></script>
+      <script src="_static/documentation_options.js?v=29f6473e"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -244,6 +244,10 @@
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.validate"><code class="docutils literal notranslate"><span class="pre">validate()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.extract_data"><code class="docutils literal notranslate"><span class="pre">extract_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.add_qr_to_figure"><code class="docutils literal notranslate"><span class="pre">add_qr_to_figure()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.add_figure_caption"><code class="docutils literal notranslate"><span class="pre">add_figure_caption()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.add_panel_captions"><code class="docutils literal notranslate"><span class="pre">add_panel_captions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.panel_label"><code class="docutils literal notranslate"><span class="pre">panel_label()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.Figz"><code class="docutils literal notranslate"><span class="pre">Figz</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#figrecipe.Figz.__init__"><code class="docutils literal notranslate"><span class="pre">Figz.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#figrecipe.Figz.create"><code class="docutils literal notranslate"><span class="pre">Figz.create()</span></code></a></li>
@@ -295,20 +299,19 @@
 <li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#figrecipe.Diagram.from_dict"><code class="docutils literal notranslate"><span class="pre">Diagram.from_dict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.build_spec"><code class="docutils literal notranslate"><span class="pre">build_spec()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.build_spec_from_csv"><code class="docutils literal notranslate"><span class="pre">build_spec_from_csv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.render_spec_to_bytes"><code class="docutils literal notranslate"><span class="pre">render_spec_to_bytes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.termplot"><code class="docutils literal notranslate"><span class="pre">termplot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.draw_graph"><code class="docutils literal notranslate"><span class="pre">draw_graph()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.smart_align"><code class="docutils literal notranslate"><span class="pre">smart_align()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.edit"><code class="docutils literal notranslate"><span class="pre">edit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.export_editable"><code class="docutils literal notranslate"><span class="pre">export_editable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.enable_svg"><code class="docutils literal notranslate"><span class="pre">enable_svg()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.apply_style"><code class="docutils literal notranslate"><span class="pre">apply_style()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.signature"><code class="docutils literal notranslate"><span class="pre">signature()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.caption_with_signature"><code class="docutils literal notranslate"><span class="pre">caption_with_signature()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#core-functions">Core Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id0"><code class="docutils literal notranslate"><span class="pre">subplots()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id1"><code class="docutils literal notranslate"><span class="pre">save()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id2"><code class="docutils literal notranslate"><span class="pre">reproduce()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id3"><code class="docutils literal notranslate"><span class="pre">compose()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id4"><code class="docutils literal notranslate"><span class="pre">validate()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id5"><code class="docutils literal notranslate"><span class="pre">crop()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id6"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id7"><code class="docutils literal notranslate"><span class="pre">extract_data()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#recording-classes">Recording Classes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#recording-wrappers-internal">Recording Wrappers (internal)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure"><code class="docutils literal notranslate"><span class="pre">RecordingFigure</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__init__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__init__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure._on_draw_finalize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._on_draw_finalize()</span></code></a></li>
@@ -320,10 +323,6 @@
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.record"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.record</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontsize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontsize()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_theme_text_color()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.suptitle"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.suptitle()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.supxlabel"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.supxlabel()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.supylabel"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.supylabel()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.text"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.text()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.colorbar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.add_panel_labels"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.add_panel_labels()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_title_metadata"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_title_metadata()</span></code></a></li>
@@ -335,8 +334,6 @@
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.generate_caption"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.generate_caption()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.__getattr__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.savefig"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.savefig()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_supxyt"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_supxyt()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_supxytc"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.set_supxytc()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingFigure.save_recipe"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.save_recipe()</span></code></a></li>
 </ul>
 </li>
@@ -345,6 +342,7 @@
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.ax"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.ax</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.position"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.position</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__getattr__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__getattr__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.embed"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.embed()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__dir__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__dir__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_recording_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_recording_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_bar_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_bar_wrapper()</span></code></a></li>
@@ -367,45 +365,6 @@
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.get_title"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.get_title()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.caption"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.caption</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.generate_panel_caption"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.generate_panel_caption()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#style-management">Style Management</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id10"><code class="docutils literal notranslate"><span class="pre">load_style()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id11"><code class="docutils literal notranslate"><span class="pre">unload_style()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id12"><code class="docutils literal notranslate"><span class="pre">list_presets()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#alignment-functions">Alignment Functions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id13"><code class="docutils literal notranslate"><span class="pre">align_panels()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id14"><code class="docutils literal notranslate"><span class="pre">align_smart()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id15"><code class="docutils literal notranslate"><span class="pre">distribute_panels()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#gui-editor">GUI Editor</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id16"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#diagram-class">Diagram Class</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="api/figrecipe.html#id17"><code class="docutils literal notranslate"><span class="pre">Diagram</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id18"><code class="docutils literal notranslate"><span class="pre">Diagram.__init__()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id19"><code class="docutils literal notranslate"><span class="pre">Diagram.add_box()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id20"><code class="docutils literal notranslate"><span class="pre">Diagram.add_container()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id21"><code class="docutils literal notranslate"><span class="pre">Diagram.add_arrow()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id22"><code class="docutils literal notranslate"><span class="pre">Diagram.add_icon()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id23"><code class="docutils literal notranslate"><span class="pre">Diagram.validate_containers()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id24"><code class="docutils literal notranslate"><span class="pre">Diagram.validate_no_overlap()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id25"><code class="docutils literal notranslate"><span class="pre">Diagram.auto_layout()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id26"><code class="docutils literal notranslate"><span class="pre">Diagram._auto_box_height()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id27"><code class="docutils literal notranslate"><span class="pre">Diagram._finalize_canvas_size()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id28"><code class="docutils literal notranslate"><span class="pre">Diagram._get_anchor()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id29"><code class="docutils literal notranslate"><span class="pre">Diagram._auto_anchor()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id30"><code class="docutils literal notranslate"><span class="pre">Diagram.render()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id31"><code class="docutils literal notranslate"><span class="pre">Diagram.save()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id32"><code class="docutils literal notranslate"><span class="pre">Diagram.render_to_file()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id33"><code class="docutils literal notranslate"><span class="pre">Diagram.to_dict()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#id34"><code class="docutils literal notranslate"><span class="pre">Diagram.from_dict()</span></code></a></li>
 </ul>
 </li>
 </ul>

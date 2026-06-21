@@ -7,13 +7,15 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Uni
 
 from matplotlib.figure import Figure
 
+from .._utils._grid import grid_id
 from ._axes import RecordingAxes
+from ._figure_text import FigureTextMixin
 
 if TYPE_CHECKING:
     from .._recorder import FigureRecord, Recorder
 
 
-class RecordingFigure:
+class RecordingFigure(FigureTextMixin):
     """Wrapper around matplotlib Figure that manages recording.
 
     Parameters
@@ -87,6 +89,7 @@ class RecordingFigure:
                 finalize_special_plots,
                 finalize_ticks,
             )
+
             for ax in self._fig.get_axes():
                 try:
                     finalize_ticks(ax)
@@ -171,126 +174,83 @@ class RecordingFigure:
             pass
         return default
 
-    def suptitle(self, t: str, **kwargs) -> Any:
-        """Set super title for the figure and record it.
-
-        Parameters
-        ----------
-        t : str
-            The super title text.
-        **kwargs
-            Additional arguments passed to matplotlib's suptitle().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        # Auto-apply fontsize from style if not specified
-        if "fontsize" not in kwargs:
-            kwargs["fontsize"] = self._get_style_fontsize("suptitle_pt", 10)
-        # Record the suptitle call
-        self._recorder.figure_record.suptitle = {"text": t, "kwargs": kwargs}
-        # Call the underlying figure's suptitle
-        return self._fig.suptitle(t, **kwargs)
-
-    def supxlabel(self, t: str, **kwargs) -> Any:
-        """Set super x-label for the figure and record it.
-
-        Parameters
-        ----------
-        t : str
-            The super x-label text.
-        **kwargs
-            Additional arguments passed to matplotlib's supxlabel().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        # Auto-apply fontsize from style if not specified
-        if "fontsize" not in kwargs:
-            kwargs["fontsize"] = self._get_style_fontsize("supxlabel_pt", 8)
-        # Record the supxlabel call
-        self._recorder.figure_record.supxlabel = {"text": t, "kwargs": kwargs}
-        # Call the underlying figure's supxlabel
-        return self._fig.supxlabel(t, **kwargs)
-
-    def supylabel(self, t: str, **kwargs) -> Any:
-        """Set super y-label for the figure and record it.
-
-        Parameters
-        ----------
-        t : str
-            The super y-label text.
-        **kwargs
-            Additional arguments passed to matplotlib's supylabel().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        # Auto-apply fontsize from style if not specified
-        if "fontsize" not in kwargs:
-            kwargs["fontsize"] = self._get_style_fontsize("supylabel_pt", 8)
-        # Record the supylabel call
-        self._recorder.figure_record.supylabel = {"text": t, "kwargs": kwargs}
-        # Call the underlying figure's supylabel
-        return self._fig.supylabel(t, **kwargs)
-
-    def text(self, x: float, y: float, s: str, **kwargs) -> Any:
-        """Place text on the figure and record it.
-
-        Proxy for ``matplotlib.figure.Figure.text`` that also captures the
-        call in the recipe so ``reproduce()`` can replay it. Without this,
-        ``fig.text`` annotations would be rendered in the original figure
-        but missing from the reproduction, leading to dimension mismatches
-        during reproducibility validation.
-
-        Parameters
-        ----------
-        x, y : float
-            Position in figure coordinates.
-        s : str
-            The text string.
-        **kwargs
-            Additional arguments passed to matplotlib's fig.text().
-
-        Returns
-        -------
-        Text
-            The matplotlib Text object.
-        """
-        serializable_kwargs = {
-            k: v
-            for k, v in kwargs.items()
-            if isinstance(v, (str, int, float, bool, list, tuple, type(None)))
-        }
-        self._recorder.figure_record.figure_texts.append(
-            {"x": x, "y": y, "s": s, "kwargs": serializable_kwargs}
-        )
-        return self._fig.text(x, y, s, **kwargs)
+    # suptitle / supxlabel / supylabel / text live in FigureTextMixin
+    # (._figure_text); the suptitle there inherits SCITEX_STYLE (size +
+    # non-bold weight).
 
     def colorbar(self, mappable, ax=None, **kwargs) -> Any:
-        """Add a colorbar and record it for reproduction."""
-        ax_key = None
-        mpl_ax = getattr(ax, "_ax", ax)  # RecordingAxes._ax or raw Axes
-        for row in self._axes:
-            for rec_ax in row:
-                if rec_ax._ax is mpl_ax:
-                    ax_key = f"ax_{rec_ax._position[0]}_{rec_ax._position[1]}"
-                    break
+        """Add a colorbar and record it for reproduction.
+
+        ``ax`` may be a single axes OR a list/array of axes (a shared colorbar
+        that steals space from several panels, e.g.
+        ``fig.colorbar(im, ax=axes.ravel().tolist())``). Every source axes is
+        recorded in ``ax_keys`` so replay knows the full steal set; the colorbar's
+        resolved geometry is captured later at SAVE time (see
+        ``_capture_colorbar_geometry``) so reproduction can pin it exactly.
+        """
+        # Normalize ``ax`` to a flat list of raw matplotlib axes, unwrapping any
+        # RecordingAxes. Build the matching grid keys in the same order.
+        if isinstance(ax, (list, tuple)):
+            ax_seq = list(ax)
+        elif hasattr(ax, "ravel") and not hasattr(ax, "_ax"):
+            # numpy array of axes
+            ax_seq = list(ax.ravel())
+        elif ax is None:
+            ax_seq = []
+        else:
+            ax_seq = [ax]
+
+        mpl_axes = [getattr(a, "_ax", a) for a in ax_seq]
+
+        ax_keys: List[str] = []
+        for mpl_ax in mpl_axes:
+            for row in self._axes:
+                for rec_ax in row:
+                    if rec_ax._ax is mpl_ax:
+                        ax_keys.append(
+                            grid_id(rec_ax._position[0], rec_ax._position[1])
+                        )
+                        break
+
+        # Identify the axes that OWNS the mappable (``mappable.axes``). With a
+        # shared colorbar over a list of panels, the mappable belongs to ONE
+        # specific panel (e.g. the last ``imshow``); its clim drives the
+        # colorbar ticks. Recording this key lets replay pick the SAME mappable
+        # (hence the same clim/ticks) rather than guessing the first panel.
+        mappable_ax_key = None
+        owner_ax = getattr(mappable, "axes", None)
+        if owner_ax is not None:
+            for row in self._axes:
+                for rec_ax in row:
+                    if rec_ax._ax is owner_ax:
+                        mappable_ax_key = grid_id(
+                            rec_ax._position[0], rec_ax._position[1]
+                        )
+                        break
+
+        # First matched key locates the mappable on replay (back-compat field).
+        ax_key = mappable_ax_key or (ax_keys[0] if ax_keys else None)
+
         ser_kw = {
             k: v
             for k, v in kwargs.items()
             if isinstance(v, (str, int, float, bool, list, type(None)))
         }
-        self._recorder.figure_record.colorbars.append(
-            {"ax_key": ax_key, "kwargs": ser_kw}
-        )
-        return self._fig.colorbar(mappable, ax=mpl_ax, **kwargs)
+        record = {"ax_key": ax_key, "kwargs": ser_kw}
+        if ax_keys:
+            record["ax_keys"] = ax_keys
+        if mappable_ax_key is not None:
+            record["mappable_ax_key"] = mappable_ax_key
+        self._recorder.figure_record.colorbars.append(record)
+
+        # ``fig.colorbar`` accepts a single axes or a sequence; pass the
+        # unwrapped form so matplotlib never sees a RecordingAxes wrapper.
+        cbar_ax = mpl_axes if len(mpl_axes) > 1 else (mpl_axes[0] if mpl_axes else None)
+        cbar = self._fig.colorbar(mappable, ax=cbar_ax, **kwargs)
+        # Stash the live colorbar so the save path can read its resolved cax
+        # position (index-aligned with ``colorbars``).
+        self._recorder.figure_record.live_colorbars.append(cbar)
+        return cbar
 
     def add_panel_labels(
         self,
@@ -497,64 +457,7 @@ class RecordingFigure:
             save_hitmap=save_hitmap,
         )
 
-    def set_supxyt(
-        self,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        title: Optional[str] = None,
-        **kwargs,
-    ) -> "RecordingFigure":
-        """Set supxlabel, supylabel, and suptitle in one call.
-
-        Parameters
-        ----------
-        xlabel : str, optional
-        ylabel : str, optional
-        title : str, optional
-        **kwargs : dict
-            Passed to the underlying methods.
-
-        Examples
-        --------
-        >>> fig.set_supxyt('Time (s)', 'Amplitude', 'All Channels')
-        """
-        if xlabel is not None:
-            self.supxlabel(xlabel, **kwargs)
-        if ylabel is not None:
-            self.supylabel(ylabel, **kwargs)
-        if title is not None:
-            self.suptitle(title, **kwargs)
-        return self
-
-    def set_supxytc(
-        self,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        title: Optional[str] = None,
-        caption: Optional[str] = None,
-        **kwargs,
-    ) -> "RecordingFigure":
-        """Set supxlabel, supylabel, suptitle, and caption in one call.
-
-        Parameters
-        ----------
-        xlabel : str, optional
-        ylabel : str, optional
-        title : str, optional
-        caption : str, optional
-            Figure caption metadata (stored in recipe, not rendered).
-        **kwargs : dict
-            Passed to the underlying methods.
-
-        Examples
-        --------
-        >>> fig.set_supxytc('Time', 'Voltage', 'Neural Data',
-        ...                 'Figure 1. Overview of neural recordings.')
-        """
-        self.set_supxyt(xlabel, ylabel, title, **kwargs)
-        if caption is not None:
-            self.set_caption(caption)
-        return self
+    # set_supxyt / set_supxytc live in FigureTextMixin (._figure_text).
 
     def save_recipe(
         self,

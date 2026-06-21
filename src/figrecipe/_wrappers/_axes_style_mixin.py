@@ -34,10 +34,28 @@ class AxesStyleMixin:
         --------
         >>> ax.hide_spines()  # Hide top and right
         >>> ax.hide_spines(['top', 'right', 'bottom'])
+
+        Notes
+        -----
+        The underlying helper ``figrecipe.styles._axis_helpers.hide_spines``
+        takes per-side booleans (``top=``, ``bottom=``, ``left=``,
+        ``right=``). This mixin previously forwarded the list as the
+        first positional argument, which matplotlib silently coerced to
+        truthy → ``top=True`` and left bottom/left at their defaults, so
+        ``ax.hide_spines(['top','right','left','bottom'])`` only hid top
+        + right regardless of the list contents. Per neurovista
+        2026-06-14: unpack the list into per-side booleans before calling
+        the helper.
         """
         from ..styles._axis_helpers import hide_spines
 
-        return hide_spines(self._ax, spines)
+        if spines is None:
+            return hide_spines(self._ax)
+        # Default ``hide_spines`` has top=True/right=True; passing a list
+        # means "hide exactly these sides" so we explicitly disable any
+        # side not in the list as well.
+        flags = {side: (side in spines) for side in ("top", "bottom", "left", "right")}
+        return hide_spines(self._ax, **flags)
 
     def show_spines(self, spines: Optional[List[str]] = None):
         """Show specified spines.
@@ -50,10 +68,17 @@ class AxesStyleMixin:
         Examples
         --------
         >>> ax.show_spines(['left', 'bottom'])
+
+        Notes
+        -----
+        See ``hide_spines`` — same list-vs-kwarg bug, same fix.
         """
         from ..styles._axis_helpers import show_spines
 
-        return show_spines(self._ax, spines)
+        if spines is None:
+            return show_spines(self._ax)
+        flags = {side: (side in spines) for side in ("top", "bottom", "left", "right")}
+        return show_spines(self._ax, **flags)
 
     def toggle_spines(self, spines: Optional[List[str]] = None):
         """Toggle spine visibility.
@@ -61,15 +86,36 @@ class AxesStyleMixin:
         Parameters
         ----------
         spines : list, optional
-            Spines to toggle
+            Spines to toggle. Sides not listed are left untouched.
 
         Examples
         --------
         >>> ax.toggle_spines(['top'])
+
+        Notes
+        -----
+        See ``hide_spines`` — same list-vs-kwarg bug, same fix. Note that
+        the underlying ``toggle_spines`` helper treats ``None`` as
+        "toggle this side" and an explicit ``True``/``False`` as "set to
+        this value". So for sides NOT in the list we pass ``None`` ... no,
+        that would toggle them too. We instead read their current
+        visibility from the axis and pass that back, which is the correct
+        "leave this side alone" semantics.
         """
         from ..styles._axis_helpers import toggle_spines
 
-        return toggle_spines(self._ax, spines)
+        if spines is None:
+            return toggle_spines(self._ax)
+        # For each side: if it's in the requested list, pass None to let
+        # the helper toggle it; otherwise pass its current visibility back
+        # so it remains unchanged.
+        flags = {}
+        for side in ("top", "bottom", "left", "right"):
+            if side in spines:
+                flags[side] = None  # None = toggle
+            else:
+                flags[side] = self._ax.spines[side].get_visible()
+        return toggle_spines(self._ax, **flags)
 
     def rotate_labels(
         self,
@@ -101,9 +147,34 @@ class AxesStyleMixin:
         """
         from ..styles._axis_helpers import rotate_labels
 
-        return rotate_labels(
+        result = rotate_labels(
             self._ax, x=x, y=y, x_ha=x_ha, y_ha=y_ha, auto_adjust=auto_adjust
         )
+
+        # Record as a decoration so reproduce() replays the rotation (and the
+        # tick re-nicing it triggers). Without this, rotate_labels mutated only
+        # the raw matplotlib axes and never reached the recipe -- a reproduced
+        # figure kept horizontal labels + different limits, diverging from the
+        # original (scitex-io/figrecipe#: scatter_hist live-vs-reproduce). Guarded
+        # by self._track so internal/no-record contexts don't double-record.
+        if getattr(self, "_track", False) and self._recorder is not None:
+            try:
+                self._recorder.record_call(
+                    ax_position=self._position,
+                    method_name="rotate_labels",
+                    args=(),
+                    kwargs={
+                        "x": x,
+                        "y": y,
+                        "x_ha": x_ha,
+                        "y_ha": y_ha,
+                        "auto_adjust": auto_adjust,
+                    },
+                )
+            except Exception:
+                pass  # recording is best-effort; never break the styling call
+
+        return result
 
     def set_xyt(
         self,

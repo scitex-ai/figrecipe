@@ -87,6 +87,20 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
         if callable(attr) and name == "stem":
             return self._create_stem_wrapper()
 
+        # Route add_patch to a wrapper that records a serializable patch spec
+        # (raw patches are objects that otherwise vanish on replay)
+        if callable(attr) and name == "add_patch":
+            from ._axes_patches import build_add_patch_wrapper
+
+            return build_add_patch_wrapper(self)
+
+        # Route inset_axes to a wrapper that records its content as a managed
+        # sub-panel (raw inset axes are otherwise unrecorded and vanish on replay)
+        if callable(attr) and name == "inset_axes":
+            from ._axes_insets import build_inset_axes_wrapper
+
+            return build_inset_axes_wrapper(self)
+
         # If it's a plotting or decoration method, wrap it
         if callable(attr) and name in (
             self._recorder.PLOTTING_METHODS | self._recorder.DECORATION_METHODS
@@ -95,6 +109,18 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
 
         # For other methods/attributes, return as-is
         return attr
+
+    def embed(self, source, bounds=None, *, ax_key=None, track=True, id=None):
+        """Embed a recipe or diagram as a managed sub-panel that round-trips.
+
+        ``source`` may be a recipe path, image, FigureRecord, diagram recipe,
+        composed multi-panel recipe, or ``(source, ax_key)``. ``bounds`` is an
+        axes-fraction ``[x, y, w, h]`` (defaults to the whole axes). Returns the
+        embedded inset RecordingAxes (or a list for a multi-panel source).
+        """
+        from ._axes_embed import embed_source
+
+        return embed_source(self, source, bounds, ax_key=ax_key, track=track, id=id)
 
     def __dir__(self):
         """Return list of attributes for tab completion.

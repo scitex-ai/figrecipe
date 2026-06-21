@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple
 
 from matplotlib.patches import FancyBboxPatch
 
-from ._styles_native import FONT_CONFIG, get_emphasis_style
+from ._styles_native import get_emphasis_style, resolve_font_config
 
 # Shape configurations - boxstyle strings for FancyBboxPatch
 # Note: pad and rounding_size are in axes fraction, keep them small
@@ -65,6 +65,7 @@ def create_node_patch(
     """
     colors = get_emphasis_style(emphasis)
     boxstyle = get_shape_style(shape)
+    font = resolve_font_config()
 
     # Use provided dimensions or compute adaptive size
     if width is not None:
@@ -96,9 +97,9 @@ def create_node_patch(
         "s": label,
         "ha": "center",
         "va": "center",
-        "fontsize": FONT_CONFIG["node_size"],
-        "fontfamily": FONT_CONFIG["family"],
-        "fontweight": FONT_CONFIG["weight"],
+        "fontsize": font["node_size"],
+        "fontfamily": font["family"],
+        "fontweight": font["weight"],
         "color": colors["text"],
         "zorder": 3,
     }

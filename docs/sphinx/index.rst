@@ -1,6 +1,6 @@
 .. FigRecipe documentation master file
 
-FigRecipe (``scitex-plt``) - Reproducible Scientific Figures
+FigRecipe - Reproducible Scientific Figures
 =============================================================
 
 **FigRecipe** is a framework for creating reproducible, style-editable scientific figures via YAML recipes. It wraps matplotlib with automatic recording, enabling figures to be reproduced, modified, and shared. Part of `SciTeX <https://scitex.ai>`_.

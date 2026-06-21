@@ -8,6 +8,7 @@ import ReactDOM from "react-dom/client";
 
 // React app content (Plot/Canvas editor — NOT shell)
 import { InnerEditor } from "./InnerEditor";
+import { useEditorStore } from "./store/useEditorStore";
 
 // Styles (app-specific)
 import "./styles/app-variables.css";
@@ -67,7 +68,7 @@ import type { ViewerAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts
 
 // Vanilla TS shell ChatMode — full chat orchestration (scitex-ui)
 import { ChatMode } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
-import type { ChatAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
+import { figrecipeChatAdapter } from "./bootstrap/chatAdapter";
 
 // Vanilla TS shell SessionsPanel — chat session management (scitex-ui)
 import { SessionsPanel } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
@@ -92,8 +93,13 @@ if (root) {
 
 // Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
-  async fetchTree() {
-    const resp = await fetch("api/tree");
+  async fetchTree(rootPath?: string) {
+    // rootPath (breadcrumb navigation) re-roots the backend tree via the
+    // working_dir query param; omit it for the default launch folder.
+    const url = rootPath
+      ? `api/tree?working_dir=${encodeURIComponent(rootPath)}`
+      : "api/tree";
+    const resp = await fetch(url);
     if (!resp.ok)
       return {
         success: false,
@@ -101,7 +107,9 @@ const figrecipeFileTreeAdapter: FileTreeAdapter = {
         error: `HTTP ${resp.status}: ${resp.statusText}`,
       };
     const data = await resp.json();
-    return { success: true, tree: data.tree ?? [] };
+    // Return the absolute root the backend resolved so the breadcrumb shows the
+    // path from filesystem root.
+    return { success: true, tree: data.tree ?? [], rootPath: data.working_dir };
   },
   getCsrfToken() {
     const meta = document.querySelector<HTMLMetaElement>(
@@ -119,6 +127,7 @@ const fileTree = new WorkspaceFilesTree({
   adapter: figrecipeFileTreeAdapter,
   showGitStatus: false,
   showFolderActions: false,
+  showBreadcrumb: true,
   onFileSelect: (_path, item) => {
     window.dispatchEvent(
       new CustomEvent("figrecipe:file-select", {
@@ -225,29 +234,19 @@ window.addEventListener("figrecipe:file-select", ((e: CustomEvent) => {
   }
 }) as EventListener);
 
-// ChatMode — figrecipe adapter posts to scitex-app's chat endpoint
-const FIGRECIPE_SYSTEM =
-  "You are a helpful AI assistant in the FigRecipe figure editor. " +
-  "Help with YAML recipes, matplotlib plots, and figure composition.";
+// Wire file tree → canvas: selecting a recipe (.yaml/.yml) loads its rendered
+// figure onto the canvas. The WorkspaceFilesTree refactor (3a91d7f) dropped
+// this, so selecting a recipe only opened the YAML text and the canvas stayed
+// blank. switchFile() surfaces an error toast on failure (fail-loud).
+window.addEventListener("figrecipe:file-select", ((e: CustomEvent) => {
+  const path: string | undefined = e.detail?.path;
+  if (path && /\.ya?ml$/i.test(path)) {
+    void useEditorStore.getState().switchFile(path);
+  }
+}) as EventListener);
 
-const figrecipeChatAdapter: ChatAdapter = {
-  async streamChat(message, _context, images) {
-    return fetch("api/chat/stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: message,
-        history: [],
-        system_prompt: FIGRECIPE_SYSTEM,
-        ...(images?.length
-          ? {
-              images: images.map((b64) => `data:image/png;base64,${b64}`),
-            }
-          : {}),
-      }),
-    });
-  },
-};
+// ChatMode — figrecipe adapter posts to scitex-app's chat endpoint
+// (figrecipeChatAdapter + FIGRECIPE_SYSTEM extracted to ./bootstrap/chatAdapter)
 
 const chatPreview = document.getElementById("stx-shell-ai-image-preview");
 const chatFileInput = document.getElementById(

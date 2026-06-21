@@ -4,6 +4,7 @@
 
 from typing import Tuple
 
+from .._utils._grid import grid_id
 from .._wrappers import RecordingFigure
 
 
@@ -27,7 +28,7 @@ def hide_panel(fig: RecordingFigure, position: Tuple[int, int]) -> None:
     >>> axes[0].plot([1, 2], [1, 2])
     >>> fr.hide_panel(fig, (0, 1))  # Hide empty second panel
     """
-    ax_key = f"ax_{position[0]}_{position[1]}"
+    ax_key = grid_id(position[0], position[1])
     if ax_key in fig.record.axes:
         fig.record.axes[ax_key].visible = False
         _set_axes_visible(fig, position, False)
@@ -50,7 +51,7 @@ def show_panel(fig: RecordingFigure, position: Tuple[int, int]) -> None:
     >>> fr.hide_panel(fig, (0, 1))
     >>> fr.show_panel(fig, (0, 1))  # Restore visibility
     """
-    ax_key = f"ax_{position[0]}_{position[1]}"
+    ax_key = grid_id(position[0], position[1])
     if ax_key in fig.record.axes:
         fig.record.axes[ax_key].visible = True
         _set_axes_visible(fig, position, True)
@@ -78,7 +79,7 @@ def toggle_panel(fig: RecordingFigure, position: Tuple[int, int]) -> bool:
     >>> fr.toggle_panel(fig, (0, 0))  # Returns False (now hidden)
     >>> fr.toggle_panel(fig, (0, 0))  # Returns True (now visible)
     """
-    ax_key = f"ax_{position[0]}_{position[1]}"
+    ax_key = grid_id(position[0], position[1])
     if ax_key in fig.record.axes:
         current = fig.record.axes[ax_key].visible
         if current:

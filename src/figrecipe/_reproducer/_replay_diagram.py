@@ -52,13 +52,14 @@ def replay_diagram_call(ax: Axes, call: CallRecord) -> Any:
     ax.set_aspect("equal")
     ax.axis("off")
 
-    # Add title if specified
+    # Add title if specified. Resolve the size from the active style (same as
+    # the save-time renderer in _native_render.render) so save == reproduce.
     if renderer.spec.title:
-        from .._diagram._shared._styles_native import FONT_CONFIG
+        from .._diagram._shared._styles_native import resolve_font_config
 
         ax.set_title(
             renderer.spec.title,
-            fontsize=FONT_CONFIG["title_size"],
+            fontsize=resolve_font_config()["title_size"],
             fontweight="bold",
         )
 
@@ -91,6 +92,7 @@ def replay_diagram_native_call(ax: Axes, call: CallRecord) -> Any:
     diagram_data = kwargs.pop("diagram_data", None) or kwargs.pop(
         "schematic_data", None
     )
+    figsize_in = kwargs.pop("figsize_in", None)
 
     if diagram_data is None:
         import warnings
@@ -101,6 +103,17 @@ def replay_diagram_native_call(ax: Axes, call: CallRecord) -> Any:
     # Reconstruct diagram from serialized data
     info = Diagram.from_dict(diagram_data)
 
+    single_axis = len(ax.figure.get_axes()) <= 1
+
+    # Restore the EXACT figure size used at save time, BEFORE rendering. render()
+    # lays out text/boxes against the current figure size and can widen info.xlim
+    # to fit; at save the figure was sized before that, so rendering reproduce at
+    # a different incoming size diverged in both width and the cropped height
+    # (NeuroVista Fig 02 panel b SIZE mismatch). The recorder now stores the true
+    # figsize; pin it first so save and reproduce render identically.
+    if single_axis and figsize_in is not None:
+        ax.figure.set_size_inches(float(figsize_in[0]), float(figsize_in[1]))
+
     # Render to provided axes
     fig, rendered_ax = info.render(ax=ax)
 
@@ -110,10 +123,20 @@ def replay_diagram_native_call(ax: Axes, call: CallRecord) -> Any:
     if len(fig.get_axes()) > 1:
         ax.set_aspect("auto")
         ax.set_facecolor("white")
+    elif figsize_in is not None:
+        # render() may have re-touched the figure size; re-pin to the saved size.
+        fig.set_size_inches(float(figsize_in[0]), float(figsize_in[1]))
     else:
         x_range = info.xlim[1] - info.xlim[0]
         y_range = info.ylim[1] - info.ylim[0]
         fig.set_size_inches(x_range / 25.4, y_range / 25.4)
+
+    # Standalone diagram: pin the axes to fill the figure, matching the recorder
+    # (_wrappers/_axes_diagram). Default subplot margins differ between the save
+    # figure and this rebuilt one, so with aspect="equal" the diagram would
+    # letterbox at a different vertical offset -> different cropped height.
+    if single_axis:
+        rendered_ax.set_position((0.0, 0.0, 1.0, 1.0))
 
     return fig, rendered_ax
 

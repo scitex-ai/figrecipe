@@ -10,7 +10,7 @@ import numpy as np
 
 from .._reproducer import reproduce
 from .._utils._image_diff import compare_images
-from .._validator import ValidationResult
+from .._quality._validator import ValidationResult
 
 
 def validate_recipe(

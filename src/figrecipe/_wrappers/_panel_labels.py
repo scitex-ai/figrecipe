@@ -122,6 +122,58 @@ def _calculate_position(
     return x, y, ha, va
 
 
-__all__ = ["add_panel_labels"]
+__all__ = ["add_panel_labels", "panel_label"]
+
+
+def panel_label(
+    ax: Any,
+    label: str,
+    loc: str = "upper left",
+    offset: Tuple[float, float] = (-0.1, 1.05),
+    fontsize: float = 10,
+    fontweight: str = "bold",
+    text_color: str = "black",
+    **kwargs,
+) -> Any:
+    """Place a single panel label (A, B, C, etc.) on one axes.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axes to annotate.
+    label : str
+        The panel label text (e.g. 'A', 'B', '(1)').
+    loc : str
+        Location hint: 'upper left' (default), 'upper right',
+        'lower left', 'lower right'.
+    offset : tuple of float
+        (x, y) offset in axes coordinates. Default (-0.1, 1.05).
+    fontsize : float
+        Font size in points (default 10).
+    fontweight : str
+        Font weight (default 'bold').
+    text_color : str
+        Text color (default 'black').
+    **kwargs
+        Additional arguments passed to ``ax.text()``.
+
+    Returns
+    -------
+    matplotlib.text.Text
+        The created text annotation.
+    """
+    x, y, ha, va = _calculate_position(loc, offset)
+    return ax.ax.text(
+        x,
+        y,
+        label,
+        transform=ax.ax.transAxes,
+        fontsize=fontsize,
+        fontweight=fontweight,
+        color=text_color,
+        ha=ha,
+        va=va,
+        **kwargs,
+    )
 
 # EOF

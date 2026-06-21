@@ -220,6 +220,7 @@ class TestAxesRecordCaption:
             "matplotlib_version": "3.8.0",
             "figure": {"figsize": [6.4, 4.8], "dpi": 300},
             "axes": {
+                # Legacy "ax_R_C" key on input must still load (back-compat)
                 "ax_0_0": {
                     "calls": [],
                     "decorations": [],
@@ -228,7 +229,8 @@ class TestAxesRecordCaption:
             },
         }
         record = FigureRecord.from_dict(data)
-        assert record.axes["ax_0_0"].caption == "(A) Test panel"
+        # ...and is normalized to the canonical "r0c0" key.
+        assert record.axes["r0c0"].caption == "(A) Test panel"
 
 
 class TestRecordingFigureMetadata:
@@ -336,9 +338,9 @@ class TestMetadataRoundtrip:
             fig2, ax2 = fr.reproduce(png_path)
 
             # Verify metadata
-            if not (fig2.title_metadata == 'Test Title for Roundtrip'):
+            if not (fig2.title_metadata == "Test Title for Roundtrip"):
                 raise AssertionError
-            if not (fig2.caption == 'Figure 1. Testing metadata persistence.'):
+            if not (fig2.caption == "Figure 1. Testing metadata persistence."):
                 raise AssertionError
         assert True  # TQ001-placeholder: body exercises code under test
 
@@ -363,9 +365,9 @@ class TestMetadataRoundtrip:
             fig2, axes2 = fr.reproduce(png_path)
 
             # Verify panel captions
-            if not (axes2[0].caption == '(A) First panel description'):
+            if not (axes2[0].caption == "(A) First panel description"):
                 raise AssertionError
-            if not (axes2[1].caption == '(B) Second panel description'):
+            if not (axes2[1].caption == "(B) Second panel description"):
                 raise AssertionError
         assert True  # TQ001-placeholder: body exercises code under test
 
@@ -392,12 +394,12 @@ class TestMetadataRoundtrip:
             fig2, axes2 = fr.reproduce(png_path)
 
             # Verify
-            if not (fig2.title_metadata == 'Multi-panel Analysis'):
+            if not (fig2.title_metadata == "Multi-panel Analysis"):
                 raise AssertionError
-            if not (fig2.caption == 'Figure 2. Comprehensive analysis results.'):
+            if not (fig2.caption == "Figure 2. Comprehensive analysis results."):
                 raise AssertionError
             for i, ax in enumerate(axes2.flat):
-                if not (ax.caption == f'({chr(65 + i)}) Panel {i + 1}'):
+                if not (ax.caption == f"({chr(65 + i)}) Panel {i + 1}"):
                     raise AssertionError
         assert True  # TQ001-placeholder: body exercises code under test
 
@@ -493,7 +495,7 @@ class TestPanelLabelsOption:
             if not (fig2.record.panel_labels is not None):
                 raise AssertionError
             labels = fig2.record.panel_labels.get("labels")
-            if not (labels == ['A', 'B', 'C', 'D']):
+            if not (labels == ["A", "B", "C", "D"]):
                 raise AssertionError
         assert True  # TQ001-placeholder: body exercises code under test
 
@@ -505,7 +507,7 @@ class TestPanelLabelsOption:
 
 import numpy as np
 
-from figrecipe._recorder import CallRecord, FigureRecord, Recorder
+from figrecipe._recorder import CallRecord, Recorder
 
 
 class TestCallRecord:
@@ -691,7 +693,7 @@ class TestFigureRecord:
         # Assert
         record = FigureRecord()
         ax = record.get_or_create_axes(0, 0)
-        assert "ax_0_0" in record.axes
+        assert "r0c0" in record.axes
 
     def test_get_or_create_axes_part_3(self):
         """Test getting or creating axes."""
@@ -758,7 +760,7 @@ class TestFigureRecord:
         )
         d = record.to_dict()
         restored = FigureRecord.from_dict(d)
-        assert "ax_0_0" in restored.axes
+        assert "r0c0" in restored.axes
 
     def test_to_dict_and_from_dict_part_4(self):
         """Test round-trip serialization."""
@@ -777,7 +779,7 @@ class TestFigureRecord:
         )
         d = record.to_dict()
         restored = FigureRecord.from_dict(d)
-        assert len(restored.axes["ax_0_0"].calls) == 1
+        assert len(restored.axes["r0c0"].calls) == 1
 
 
 class TestRecorder:
@@ -911,7 +913,7 @@ class TestRecorder:
         recorder.record_call((0, 1), "scatter", (), {})
         recorder.record_call((1, 0), "bar", (), {})
         record = recorder.figure_record
-        assert len(record.axes["ax_0_0"].calls) == 1
+        assert len(record.axes["r0c0"].calls) == 1
 
     def test_record_to_correct_axes_part_2(self):
         """Test that calls are recorded to correct axes."""
@@ -924,7 +926,7 @@ class TestRecorder:
         recorder.record_call((0, 1), "scatter", (), {})
         recorder.record_call((1, 0), "bar", (), {})
         record = recorder.figure_record
-        assert len(record.axes["ax_0_1"].calls) == 1
+        assert len(record.axes["r0c1"].calls) == 1
 
     def test_record_to_correct_axes_part_3(self):
         """Test that calls are recorded to correct axes."""
@@ -937,4 +939,4 @@ class TestRecorder:
         recorder.record_call((0, 1), "scatter", (), {})
         recorder.record_call((1, 0), "bar", (), {})
         record = recorder.figure_record
-        assert len(record.axes["ax_1_0"].calls) == 1
+        assert len(record.axes["r1c0"].calls) == 1

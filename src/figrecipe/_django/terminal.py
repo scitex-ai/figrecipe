@@ -81,6 +81,63 @@ async def terminal_ws_handler(websocket, path=None):
             pass
 
 
+def _repair_connection_header(request):
+    """Make a non-strict WebSocket upgrade request acceptable.
+
+    Some browsers and (more often) reverse proxies send a request that is
+    clearly a WebSocket upgrade -- it carries ``Upgrade: websocket`` and a
+    ``Sec-WebSocket-Key`` -- but whose ``Connection`` header does not contain
+    an ``Upgrade`` token (e.g. ``Connection: keep-alive``). Since
+    ``websockets`` >= 14 the handshake parser strictly requires an ``Upgrade``
+    token in ``Connection`` and otherwise rejects the handshake with
+    HTTP 426 (``InvalidUpgrade: invalid Connection header``).
+
+    This runs as a ``process_request`` hook, *before* the strict ``accept()``
+    validation, and appends ``Upgrade`` to the ``Connection`` header only when
+    the request is unambiguously a WebSocket upgrade. It never fabricates an
+    upgrade for plain HTTP requests, so normal (already-correct) clients are
+    unaffected.
+
+    Returns ``None`` so the handshake continues normally.
+    """
+    try:
+        headers = request.headers
+        upgrade_values = ",".join(headers.get_all("Upgrade")).lower()
+        is_ws_upgrade = (
+            "websocket" in upgrade_values
+            and headers.get("Sec-WebSocket-Key") is not None
+        )
+        if not is_ws_upgrade:
+            return None
+
+        connection_tokens = []
+        for value in headers.get_all("Connection"):
+            connection_tokens.extend(
+                tok.strip() for tok in value.split(",") if tok.strip()
+            )
+        has_upgrade_token = any(tok.lower() == "upgrade" for tok in connection_tokens)
+        if not has_upgrade_token:
+            # Replace the Connection header with a clean, RFC-compliant value
+            # that preserves any existing tokens and adds "Upgrade".
+            del headers["Connection"]
+            connection_tokens.append("Upgrade")
+            headers["Connection"] = ", ".join(connection_tokens)
+            logger.debug("Repaired non-strict Connection header for WebSocket upgrade")
+    except Exception as exc:  # never block the handshake on a repair failure
+        logger.debug("Connection header repair skipped: %s", exc)
+    return None
+
+
+def _process_request(connection, request):
+    """``process_request`` hook for the modern ``websockets.asyncio`` server.
+
+    Signature is ``(connection, request)``; ``request`` exposes a mutable
+    ``headers`` mapping. Returning ``None`` lets the handshake proceed.
+    """
+    _repair_connection_header(request)
+    return None
+
+
 def start_terminal_server(port: int = 5051):
     """Start standalone WebSocket terminal server."""
     try:
@@ -93,7 +150,12 @@ def start_terminal_server(port: int = 5051):
         return None
 
     async def serve():
-        async with websockets.serve(terminal_ws_handler, "127.0.0.1", port):
+        async with websockets.serve(
+            terminal_ws_handler,
+            "127.0.0.1",
+            port,
+            process_request=_process_request,
+        ):
             logger.info("Terminal server on ws://127.0.0.1:%d", port)
             await asyncio.Future()
 

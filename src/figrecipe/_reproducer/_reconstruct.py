@@ -49,6 +49,34 @@ def reconstruct_kwargs(kwargs: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
+def coerce_sequence_arg(value: Any) -> Any:
+    """Coerce a plain Python sequence to a numpy array for replay.
+
+    Used by the inset/embed replay path. Sub-panel array args are inlined into
+    the host YAML (the data-file loader does not descend into subpanels), so
+    they round-trip as ruamel ``CommentedSeq`` lists rather than numpy arrays.
+    Plotters like ``streamplot``/``contour``/``imshow`` call ``.shape`` on their
+    inputs and raise on a raw list; promoting such sequences to ``np.asarray``
+    makes any array-arg plotter work through nesting.
+
+    Only homogeneous *numeric* sequences are promoted: if ``np.asarray`` would
+    yield an object dtype (e.g. a per-element color list mixing tuples and
+    ``'none'``, or inhomogeneous boxplot groups), the original sequence is
+    returned unchanged so matplotlib can interpret each entry on its own --
+    mirroring the defensive promotion in ``reconstruct_kwargs``/``reconstruct_value``.
+    """
+    if isinstance(value, np.ndarray):
+        return value
+    if isinstance(value, (list, tuple)) and len(value) > 0:
+        try:
+            arr = np.asarray(value)
+        except (TypeError, ValueError):
+            return value
+        if arr.dtype != object:
+            return arr
+    return value
+
+
 def reconstruct_value(
     arg_data: Dict[str, Any], result_cache: Optional[Dict[str, Any]] = None
 ) -> Any:

@@ -10,110 +10,26 @@ from django.http import FileResponse, JsonResponse
 
 logger = logging.getLogger(__name__)
 
+# Directory-listing helpers extracted to _files_tree.py (tree enrichment,
+# recipe detection, working-dir/backend resolution).
+from ._files_tree import (  # noqa: E402
+    _enrich_tree,
+    _find_default_working_dir,
+    _get_working_dir_and_backend,
+    _is_figrecipe_yaml,
+    _is_figrecipe_yaml_rel,
+    _local_build_tree,
+)
+from .core import _dpi_from_request  # noqa: E402
 
-def _enrich_tree(tree, working_dir, editor, files_backend):
-    """Add figrecipe-specific metadata to a generic file tree.
-
-    Filters to recipe files only (must contain figure: and axes:),
-    and adds has_image and is_current flags.
-    """
-    enriched = []
-    for item in tree:
-        if item["type"] == "directory":
-            children = _enrich_tree(
-                item.get("children", []), working_dir, editor, files_backend
-            )
-            if children:
-                enriched.append({**item, "children": children})
-        else:
-            # Skip non-recipe files and overrides
-            name = item["name"]
-            if name.endswith(".overrides.yaml") or name == "__pycache__":
-                continue
-            rel_path = item["path"]
-            full_path = working_dir / rel_path
-            # Use relative path for backend reads, absolute for fallback
-            if not _is_figrecipe_yaml_rel(rel_path, files_backend):
-                continue
-            png_path = Path(rel_path).with_suffix(".png").as_posix()
-            enriched.append(
-                {
-                    **item,
-                    "has_image": files_backend.exists(png_path),
-                    "is_current": bool(
-                        editor
-                        and getattr(editor, "recipe_path", None)
-                        and full_path.resolve() == editor.recipe_path.resolve()
-                    ),
-                }
-            )
-    return enriched
-
-
-def _find_default_working_dir():
-    """Find the working directory — respects FIGRECIPE_WORKING_DIR env var."""
-    import os
-
-    env_dir = os.environ.get("FIGRECIPE_WORKING_DIR")
-    if env_dir:
-        p = Path(env_dir)
-        if p.is_dir():
-            return p
-    return Path.cwd()
-
-
-def _is_figrecipe_yaml(path: Path, files_backend=None) -> bool:
-    """Check if a YAML file is a figrecipe recipe (has figure: and axes: keys)."""
-    try:
-        if files_backend is not None:
-            text = files_backend.read(str(path))[:2048]
-        else:
-            text = path.read_text(errors="ignore")[:2048]
-        return "figure:" in text and "axes:" in text
-    except (OSError, UnicodeDecodeError, FileNotFoundError):
-        return False
-
-
-def _is_figrecipe_yaml_rel(rel_path: str, files_backend) -> bool:
-    """Check if a YAML file is a figrecipe recipe using a relative path."""
-    try:
-        text = files_backend.read(rel_path)[:2048]
-        return "figure:" in text and "axes:" in text
-    except (OSError, UnicodeDecodeError, FileNotFoundError):
-        return False
-
-
-def _local_build_tree(files_backend, extensions=None):
-    """Fallback tree builder when scitex-app is not installed."""
-    tree = []
-    for f in files_backend.list("", extensions=extensions or []):
-        tree.append({"name": Path(f).name, "path": f, "type": "file"})
-    return tree
-
-
-def _get_working_dir_and_backend(request, editor):
-    """Resolve working directory and files backend from request context."""
-    working_dir = getattr(editor, "working_dir", None) if editor else None
-    wd_param = request.GET.get("working_dir")
-    if wd_param:
-        wd_path = Path(wd_param)
-        if wd_path.is_dir():
-            working_dir = wd_path
-    if working_dir is None:
-        working_dir = _find_default_working_dir()
-
-    files_backend = editor.files if editor else None
-    if files_backend is None:
-        try:
-            from scitex_app import get_files
-
-            files_backend = get_files(root=str(working_dir))
-        except ImportError:
-            from .._local_files import LocalFilesAdapter
-
-            files_backend = LocalFilesAdapter(working_dir)
-
-    return working_dir, files_backend
+__all__ = [
+    "_enrich_tree",
+    "_find_default_working_dir",
+    "_get_working_dir_and_backend",
+    "_is_figrecipe_yaml",
+    "_is_figrecipe_yaml_rel",
+    "_local_build_tree",
+]
 
 
 def handle_api_tree(request, editor):
@@ -221,10 +137,13 @@ def handle_api_switch(request, editor):
         editor.recipe_path = full_path
         editor._hitmap_generated = False
         editor._color_map = {}
-        editor._init_style_overrides(None)
+        editor._overrides = None  # reset overrides; lazy rebuild from style
 
         img, bboxes, size = render_with_overrides(
-            editor.fig, editor.get_effective_style(), editor.dark_mode
+            editor.fig,
+            editor.get_effective_style(),
+            editor.dark_mode,
+            dpi=_dpi_from_request(request),
         )
         editor._hitmap_generated = False
         editor._color_map = {}
@@ -271,10 +190,13 @@ def handle_api_new(request, editor):
         editor.recipe_path = file_path
         editor._hitmap_generated = False
         editor._color_map = {}
-        editor._init_style_overrides(None)
+        editor._overrides = None  # reset overrides; lazy rebuild from style
 
         img, bboxes, size = render_with_overrides(
-            editor.fig, editor.get_effective_style(), editor.dark_mode
+            editor.fig,
+            editor.get_effective_style(),
+            editor.dark_mode,
+            dpi=_dpi_from_request(request),
         )
         editor._hitmap_generated = False
         editor._color_map = {}

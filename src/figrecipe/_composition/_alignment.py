@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple, Union
 
 from matplotlib.transforms import Bbox
 
+from .._utils._grid import parse_grid_id
 from .._wrappers import RecordingFigure
 
 
@@ -167,7 +168,8 @@ def align_smart(
     from .._utils._units import mm_to_inch
 
     if panels is None:
-        panels = [tuple(map(int, ax_key.split("_")[1:3])) for ax_key in fig.record.axes]
+        panels = [parse_grid_id(ax_key) for ax_key in fig.record.axes]
+        panels = [p for p in panels if p is not None]
 
     if not panels:
         return

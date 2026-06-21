@@ -230,6 +230,66 @@ def stx_raster(
     return ax, df
 
 
+def _to_float_array(values):
+    """Convert an array-like (incl. pandas datetime) to a float ndarray.
+
+    Returns
+    -------
+    floats : np.ndarray
+        Float representation suitable for KDE estimation.
+    is_datetime : bool
+        True when the input was datetime-like and converted via
+        ``matplotlib.dates.date2num`` (so the caller can plot the density
+        curve back onto the native datetime axis).
+    """
+    # Datetime detection: pandas datetime Series/Index, numpy datetime64,
+    # or python datetime objects.
+    is_datetime = False
+    arr = np.asarray(values)
+
+    pandas_dt = pd.api.types.is_datetime64_any_dtype(getattr(values, "dtype", None))
+    if pandas_dt or np.issubdtype(arr.dtype, np.datetime64):
+        import matplotlib.dates as mdates
+
+        floats = mdates.date2num(np.asarray(values))
+        return np.asarray(floats, dtype=float), True
+
+    # Object dtype that may hold python datetimes / Timestamps.
+    if arr.dtype == object:
+        try:
+            import matplotlib.dates as mdates
+
+            converted = pd.to_datetime(values)
+            floats = mdates.date2num(np.asarray(converted))
+            return np.asarray(floats, dtype=float), True
+        except (ValueError, TypeError):
+            pass
+
+    return np.asarray(arr, dtype=float), is_datetime
+
+
+def _kde_curve(float_values, n_points=200, pad_frac=0.05):
+    """Estimate a 1D KDE and return (grid, density) on a float grid.
+
+    Returns ``(None, None)`` when the KDE cannot be estimated (e.g. fewer
+    than two finite points or zero variance).
+    """
+    from scipy.stats import gaussian_kde
+
+    vals = np.asarray(float_values, dtype=float)
+    vals = vals[np.isfinite(vals)]
+    if vals.size < 2 or np.allclose(vals, vals[0]):
+        return None, None
+    try:
+        kde = gaussian_kde(vals)
+    except (np.linalg.LinAlgError, ValueError):
+        return None, None
+    lo, hi = vals.min(), vals.max()
+    pad = (hi - lo) * pad_frac if hi > lo else 1.0
+    grid = np.linspace(lo - pad, hi + pad, n_points)
+    return grid, kde(grid)
+
+
 def stx_scatter_hist(
     ax: Axes,
     x,
@@ -238,28 +298,63 @@ def stx_scatter_hist(
     hist_bins=20,
     scatter_alpha=0.6,
     scatter_size=20,
-    scatter_color="blue",
+    scatter_color=None,
     hist_color_x="blue",
     hist_color_y="red",
     hist_alpha=0.5,
     scatter_ratio=0.8,
+    kde=False,
+    kde_fill=False,
+    groups=None,
+    palette=None,
+    marginal_label=None,
     **kwargs,
 ):
-    """Scatter plot with marginal histograms.
+    """Scatter plot with marginal histograms or per-class KDE curves.
 
     Parameters
     ----------
     ax : Axes
         Main axes for scatter plot.
     x, y : array-like
-        Data arrays.
+        Data arrays. ``x`` may be a pandas datetime Series; in that case the
+        scatter stays on a native datetime axis and the KDE is estimated on
+        the ``matplotlib.dates.date2num`` float representation, then plotted
+        back on the datetime axis.
     fig : Figure, optional
-        Figure object (needed for histogram axes). Auto-detected if None.
+        Figure object (needed for marginal axes). Auto-detected if None.
     hist_bins : int
-    scatter_alpha, scatter_size, scatter_color : scatter styling
-    hist_color_x, hist_color_y, hist_alpha : histogram styling
+    scatter_alpha, scatter_size : scatter styling
+    scatter_color : color or array-like, optional
+        Per-point colour(s) for the scatter. When None and ``groups`` +
+        ``palette`` are given, points are coloured per group. When None and
+        no groups, falls back to ``"blue"``.
+    hist_color_x, hist_color_y, hist_alpha : histogram styling (hist mode)
     scatter_ratio : float
         Fraction of axes used for scatter.
+    kde : bool, default False
+        When True, draw smooth KDE density curves on the marginals instead of
+        histograms. With ``groups`` set, one KDE per group is drawn on each
+        marginal, coloured to match the scatter.
+    kde_fill : bool, default False
+        When ``kde=True``, controls whether the area under each KDE curve is
+        shaded. Default ``False`` draws the KDE marginals as line outlines only
+        (no fill) for readability. Set ``True`` to restore the filled look
+        (a translucent band under each curve).
+    groups : array-like, optional
+        Per-point group labels (``len == len(x)``). One KDE per unique group.
+    palette : dict, optional
+        ``{group: color}`` mapping used to colour per-group KDE curves and,
+        when ``scatter_color`` is None, the scatter points per group.
+    marginal_label : str, optional
+        Text label for the density/count dimension of the marginal axes. When
+        set, it is applied as the y-label of the top marginal (``ax_histx``)
+        and the x-label of the right marginal (``ax_histy``). The numeric ticks
+        stay hidden (the scale is arbitrary); only the text is shown. Applies in
+        both ``kde=True`` (density) and ``kde=False`` (count) modes. When left
+        as ``None`` it auto-labels ``"Density"`` in kde mode and ``"Count"`` in
+        histogram mode, so the operator need not set it on every call; pass an
+        explicit value (including ``""``) to override or opt out.
 
     Returns
     -------
@@ -268,13 +363,46 @@ def stx_scatter_hist(
     """
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-    x, y = np.asarray(x), np.asarray(y)
+    # Keep original x for datetime-aware scatter / DataFrame; floats for KDE.
+    x_orig = x
+    y_arr = np.asarray(y, dtype=float)
+    x_float, x_is_datetime = _to_float_array(x)
+    x_plot = np.asarray(x_orig) if x_is_datetime else np.asarray(x, dtype=float)
+
+    groups_arr = None if groups is None else np.asarray(groups)
+    palette = palette or {}
 
     if fig is None:
         fig = ax.get_figure()
 
-    # Main scatter
-    ax.scatter(x, y, s=scatter_size, alpha=scatter_alpha, c=scatter_color, **kwargs)
+    # ── Main scatter ────────────────────────────────────────────────
+    if scatter_color is None and groups_arr is not None:
+        # Per-group colouring.
+        for g in pd.unique(groups_arr):
+            mask = groups_arr == g
+            ax.scatter(
+                x_plot[mask],
+                y_arr[mask],
+                s=scatter_size,
+                alpha=scatter_alpha,
+                c=palette.get(g),
+                label=str(g),
+                **kwargs,
+            )
+    else:
+        c = scatter_color if scatter_color is not None else "blue"
+        ax.scatter(x_plot, y_arr, s=scatter_size, alpha=scatter_alpha, c=c, **kwargs)
+
+    # Default the marginal label to "Density" for KDE marginals when the caller
+    # passed nothing (None == auto). An explicit value (incl. "") still wins.
+    if kde and marginal_label is None:
+        marginal_label = "Density"
+
+    # Default the marginal label to "Count" for histogram marginals when the
+    # caller passed nothing (None == auto). An explicit value (incl. "") still
+    # wins, so callers can opt out without surprising defaults.
+    if marginal_label is None:
+        marginal_label = "Count"
 
     # Marginal size as percentage string (e.g. scatter_ratio=0.8 → margin=20%)
     margin_pct = f"{int(round((1 - scatter_ratio) * 100))}%"
@@ -282,26 +410,70 @@ def stx_scatter_hist(
     ax_histx = divider.append_axes("top", size=margin_pct, pad=0.1, sharex=ax)
     ax_histy = divider.append_axes("right", size=margin_pct, pad=0.1, sharey=ax)
 
-    ax_histx.hist(x, bins=hist_bins, alpha=hist_alpha, color=hist_color_x)
-    ax_histy.hist(
-        y,
-        bins=hist_bins,
-        alpha=hist_alpha,
-        color=hist_color_y,
-        orientation="horizontal",
-    )
+    if kde:
+        import matplotlib.dates as mdates
 
-    # Top histogram: hide x-tick labels (shared with scatter) and y-axis entirely
+        def _x_grid_to_plot(grid):
+            # Map a float KDE grid back to the native scatter x-axis.
+            return mdates.num2date(grid) if x_is_datetime else grid
+
+        if groups_arr is not None:
+            for g in pd.unique(groups_arr):
+                mask = groups_arr == g
+                color = palette.get(g)
+                # Top marginal: KDE over x (datetime-aware).
+                gx, dx = _kde_curve(x_float[mask])
+                if gx is not None:
+                    gx_plot = _x_grid_to_plot(gx)
+                    ax_histx.plot(gx_plot, dx, color=color, alpha=hist_alpha)
+                    if kde_fill:
+                        ax_histx.fill_between(
+                            gx_plot, dx, color=color, alpha=hist_alpha * 0.4
+                        )
+                # Right marginal: KDE over y (plotted horizontally).
+                gy, dy = _kde_curve(y_arr[mask])
+                if gy is not None:
+                    ax_histy.plot(dy, gy, color=color, alpha=hist_alpha)
+                    if kde_fill:
+                        ax_histy.fill_betweenx(
+                            gy, dy, color=color, alpha=hist_alpha * 0.4
+                        )
+        else:
+            gx, dx = _kde_curve(x_float)
+            if gx is not None:
+                ax_histx.plot(
+                    _x_grid_to_plot(gx), dx, color=hist_color_x, alpha=hist_alpha
+                )
+            gy, dy = _kde_curve(y_arr)
+            if gy is not None:
+                ax_histy.plot(dy, gy, color=hist_color_y, alpha=hist_alpha)
+    else:
+        ax_histx.hist(x_plot, bins=hist_bins, alpha=hist_alpha, color=hist_color_x)
+        ax_histy.hist(
+            y_arr,
+            bins=hist_bins,
+            alpha=hist_alpha,
+            color=hist_color_y,
+            orientation="horizontal",
+        )
+
+    # Top marginal: hide x-tick labels (shared with scatter) and y-axis entirely
     ax_histx.tick_params(labelbottom=False, labelleft=False, left=False)
     ax_histx.spines["right"].set_visible(False)
     ax_histx.spines["top"].set_visible(False)
 
-    # Right histogram: hide y-tick labels (shared with scatter) and x-axis entirely
+    # Right marginal: hide y-tick labels (shared with scatter) and x-axis entirely
     ax_histy.tick_params(labelleft=False, labelbottom=False, bottom=False)
     ax_histy.spines["top"].set_visible(False)
     ax_histy.spines["right"].set_visible(False)
 
-    df = pd.DataFrame({"x": x, "y": y})
+    # Apply the (auto-defaulted) marginal label; numeric ticks stay hidden
+    # because the scale is arbitrary. Pass "" to opt out (falsy -> no label).
+    if marginal_label:
+        ax_histx.set_ylabel(marginal_label)
+        ax_histy.set_xlabel(marginal_label)
+
+    df = pd.DataFrame({"x": np.asarray(x_orig), "y": y_arr})
     return ax, df
 
 
