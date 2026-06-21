@@ -1,49 +1,56 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Module docstring is defined below after branding import
+# Module docstring is defined below (static default; rebranded lazily).
 
-# Branding support (must be imported first, before docstring is set)
 from __future__ import annotations
 
-from pathlib import Path as _Path
+# =============================================================================
+# IMPORT-TIME BUDGET (audit-cli §10): a bare ``import figrecipe`` must stay
+# well under the marginal threshold so Click tab-completion (which re-runs the
+# program once per Tab press) stays snappy.
+#
+# Therefore the module body does the BARE MINIMUM: resolve __version__, install
+# the cheap pure-stdlib _compat sys.modules aliases (the back-compat tests do
+# ``import figrecipe`` then ``import figrecipe._validator`` with no attribute
+# access, so the aliases must exist eagerly), and declare the lazy maps.
+#
+# Everything with any real cost — the scitex_config .env walk (a filesystem
+# walk that can spike on a loaded/NFS CI node), the branding/docstring rebrand,
+# the brand-triggered house-style hook, matplotlib, and every public symbol —
+# is deferred to first attribute access via PEP 562 ``__getattr__``.
+# =============================================================================
 
-# Best-effort .env loading: walk parent dirs from cwd up to $HOME, loading
-# every .env found (closest wins). Imported lazily and tolerantly so that a
-# missing/broken scitex-config never breaks `import figrecipe`.
+# --- Version (must stay eager: cheap, and consumers read it without touching
+# any heavy attribute) -------------------------------------------------------
 try:
-    from scitex_config import load_dotenv as _load_dotenv
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import version as _get_version
 
-    _load_dotenv(walk_up=True, stop_at=str(_Path.home()))
-except Exception:
-    pass
+    try:
+        __version__ = _get_version("figrecipe")
+    except PackageNotFoundError:
+        __version__ = "0.0.0+local"
+    del _get_version, PackageNotFoundError
+except ImportError:  # pragma: no cover — only on ancient Pythons
+    __version__ = "0.0.0+local"
 
-from ._branding import BRAND_NAME as _BRAND_NAME
-from ._branding import rebrand_text as _rebrand_text
-from ._qr import add_qr_to_figure
 
-# Register sys.modules aliases for modules moved by #141 (figrecipe._quality
-# topical refactor) so legacy `from figrecipe._validator import X` style
-# imports keep working with a single-fire DeprecationWarning pointing at the
-# new path. See figrecipe._compat for details.
+# --- Back-compat module aliases (#141 _quality topical refactor) -------------
+# install_module_aliases() only registers lazy proxy entries in sys.modules
+# (pure stdlib, no heavy import); the real modules load on first access. It
+# must run eagerly so ``import figrecipe; import figrecipe._validator`` works
+# even with no attribute access in between (see tests/figrecipe/_compat/).
 from ._compat import install_module_aliases as _install_module_aliases
 
 _install_module_aliases()
 del _install_module_aliases
 
-# Brand-triggered house style: when a parent package (e.g. scitex.plt) sets
-# FIGRECIPE_BRAND, auto-apply that brand's global plotting style on import so
-# the parent needs zero in-tree auto-config. No-op for the default brand, so
-# plain `import figrecipe` pays no matplotlib import cost here.
-if _BRAND_NAME != "figrecipe":
-    try:
-        from ._brand_style import apply_brand_style as _apply_brand_style
 
-        _apply_brand_style(_BRAND_NAME)
-    except Exception:
-        pass
-
-# Define module docstring with branding applied
-_RAW_DOC = """
+# --- Static module docstring (default brand) --------------------------------
+# Non-default brands (parent packages such as scitex.plt) rebrand this lazily
+# in _bootstrap() on first attribute access — keeping `import figrecipe` from
+# paying the branding import up-front.
+__doc__ = """
 figrecipe - Record and reproduce matplotlib figures.
 
 A lightweight library for capturing matplotlib plotting calls and
@@ -91,25 +98,13 @@ Submodules:
 >>> from figrecipe import styles
 >>> styles.hide_spines(ax)  # Spine management
 """
-__doc__ = _rebrand_text(_RAW_DOC)
 
-# Version
-try:
-    from importlib.metadata import PackageNotFoundError
-    from importlib.metadata import version as _get_version
-
-    try:
-        __version__ = _get_version("figrecipe")
-    except PackageNotFoundError:
-        __version__ = "0.0.0+local"
-except ImportError:  # pragma: no cover — only on ancient Pythons
-    __version__ = "0.0.0+local"
 
 # =============================================================================
 # CORE PUBLIC API - lazy via PEP 562 __getattr__ (audit-cli §10).
 #
 # Click runs the program once per Tab press for shell completion, so a slow
-# top-level import (~1.5s here, mostly matplotlib + diagram subsystem) makes
+# top-level import (mostly matplotlib + the diagram subsystem) makes
 # tab-completion noticeably sluggish. The map below records (submodule,
 # attribute) for every public name; each entry imports lazily on first use.
 # =============================================================================
@@ -188,6 +183,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "panel_label": ("._wrappers._panel_labels", "panel_label"),
     # ._composition (alias)
     "smart_align": ("._composition", "align_smart"),
+    # ._qr (figure-level QR overlay; pure-stdlib top, matplotlib lazy in-body)
+    "add_qr_to_figure": ("._qr", "add_qr_to_figure"),
 }
 
 
@@ -204,8 +201,65 @@ _MODULE_ALIASES: dict[str, str] = {
 }
 
 
+# Guard so the one-time bootstrap (env load + branding) runs at most once,
+# on the first attribute access — never during a bare ``import figrecipe``.
+_BOOTSTRAPPED = False
+
+
+def _bootstrap() -> None:
+    """One-time, lazy initialization deferred out of the import hot path.
+
+    Runs on the first attribute access (from ``__getattr__``), i.e. before any
+    figrecipe function executes but after ``import figrecipe`` returns. Does:
+
+    1. Best-effort ``.env`` loading (walk parent dirs from cwd up to $HOME,
+       closest wins). This is a filesystem walk — keeping it out of the import
+       body is what stops a loaded/NFS CI node from spiking the §10 budget.
+    2. Brand-triggered house style: when a parent package (e.g. scitex.plt)
+       sets ``FIGRECIPE_BRAND``, apply that brand's global plotting style and
+       rebrand this module's ``__doc__``. No-op for the default brand.
+
+    All steps are wrapped tolerantly so a missing/broken scitex-config or
+    branding module never breaks attribute resolution.
+    """
+    global _BOOTSTRAPPED
+    if _BOOTSTRAPPED:
+        return
+    _BOOTSTRAPPED = True
+
+    # 1. .env loading (best-effort, tolerant).
+    try:
+        from pathlib import Path as _Path
+
+        from scitex_config import load_dotenv as _load_dotenv
+
+        _load_dotenv(walk_up=True, stop_at=str(_Path.home()))
+    except Exception:
+        pass
+
+    # 2. Branding / house-style (only meaningful for a non-default brand).
+    try:
+        from ._branding import BRAND_NAME as _BRAND_NAME
+        from ._branding import rebrand_text as _rebrand_text
+
+        if _BRAND_NAME != "figrecipe":
+            globals()["__doc__"] = _rebrand_text(__doc__)
+            try:
+                from ._brand_style import apply_brand_style as _apply_brand_style
+
+                _apply_brand_style(_BRAND_NAME)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 def __getattr__(name: str):
     """PEP 562 lazy attribute resolution for the figrecipe public surface."""
+    # First touch of any public attribute triggers the deferred bootstrap
+    # (env + branding); kept out of the import body for the §10 budget.
+    if not _BOOTSTRAPPED:
+        _bootstrap()
     if name in _LAZY_ATTRS:
         import importlib
 
@@ -227,11 +281,7 @@ def __getattr__(name: str):
 
 def __dir__() -> list[str]:
     """Expose lazy names for tab completion in REPLs."""
-    return sorted(
-        set(__all__)
-        | set(_LAZY_ATTRS.keys())
-        | {"colors", "color", "styles", "presets", "utils", "gallery"}
-    )
+    return sorted(set(__all__) | set(_LAZY_ATTRS.keys()) | set(_MODULE_ALIASES.keys()))
 
 
 # Lazy seaborn access (avoids import error if seaborn not installed)
@@ -328,8 +378,8 @@ def _patch_pyplot_close() -> None:
     ``matplotlib.figure.Figure``.
 
     Called lazily from ``__getattr__`` on first access of any matplotlib-
-    touching attribute, so importing figrecipe does not pay the ~700ms
-    matplotlib.pyplot import cost up-front (audit-cli §10).
+    touching attribute, so importing figrecipe does not pay the matplotlib.pyplot
+    import cost up-front (audit-cli §10).
     """
     import sys
 
