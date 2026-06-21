@@ -100,6 +100,29 @@ Submodules:
 """
 
 
+# Brand-triggered house style + docstring. FIGRECIPE_BRAND is read at IMPORT
+# time (a parent package such as scitex.plt sets it), so the brand's global
+# plotting style + rebranded docstring must apply EAGERLY here — tests/users
+# read rcParams (and __doc__) right after `import figrecipe` with no attribute
+# access (see tests/figrecipe/test__brand_style.py). This is a no-op and pulls
+# NO matplotlib for the default brand, so the §10 import budget is unaffected;
+# the costly scitex_config .env walk stays deferred in _bootstrap().
+from ._branding import BRAND_NAME as _BRAND_NAME
+
+if _BRAND_NAME != "figrecipe":
+    from ._branding import rebrand_text as _rebrand_text
+
+    __doc__ = _rebrand_text(__doc__)
+    del _rebrand_text
+    try:
+        from ._brand_style import apply_brand_style as _apply_brand_style
+
+        _apply_brand_style(_BRAND_NAME)
+        del _apply_brand_style
+    except Exception:
+        pass
+
+
 # =============================================================================
 # CORE PUBLIC API - lazy via PEP 562 __getattr__ (audit-cli §10).
 #
@@ -237,21 +260,10 @@ def _bootstrap() -> None:
     except Exception:
         pass
 
-    # 2. Branding / house-style (only meaningful for a non-default brand).
-    try:
-        from ._branding import BRAND_NAME as _BRAND_NAME
-        from ._branding import rebrand_text as _rebrand_text
-
-        if _BRAND_NAME != "figrecipe":
-            globals()["__doc__"] = _rebrand_text(__doc__)
-            try:
-                from ._brand_style import apply_brand_style as _apply_brand_style
-
-                _apply_brand_style(_BRAND_NAME)
-            except Exception:
-                pass
-    except Exception:
-        pass
+    # (Branding / house-style + docstring rebrand now apply EAGERLY in the
+    # module body — they must be in effect right after `import figrecipe`, with
+    # no attribute access. Only the .env walk above is deferred here, since that
+    # filesystem walk is the actual §10 import-budget cost.)
 
 
 def __getattr__(name: str):
