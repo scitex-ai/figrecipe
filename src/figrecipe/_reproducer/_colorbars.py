@@ -62,6 +62,33 @@ def _find_mappable(record, ax_key, result_cache):
     return None
 
 
+def _rebuild_standalone_mappable(spec):
+    """Rebuild a standalone ScalarMappable from a recorded ``mappable_spec``.
+
+    Used when a manual colorbar was created over a standalone
+    ``cm.ScalarMappable(cmap=, norm=)`` (no source plot call to recover it from
+    -- the NeuroVista shared-comodulogram pattern). ``spec`` carries ``cmap`` and
+    optionally ``vmin``/``vmax``. Returns the mappable (with ``set_array([])`` so
+    it is colorbar-ready) or ``None`` on any failure.
+    """
+    if not spec:
+        return None
+    try:
+        from matplotlib import cm
+        from matplotlib.colors import Normalize
+
+        norm = None
+        vmin = spec.get("vmin")
+        vmax = spec.get("vmax")
+        if vmin is not None and vmax is not None:
+            norm = Normalize(vmin=vmin, vmax=vmax)
+        sm = cm.ScalarMappable(cmap=spec.get("cmap"), norm=norm)
+        sm.set_array([])
+        return sm
+    except Exception:
+        return None
+
+
 def _pin_source_axes(record, axes_2d, ax_keys):
     """Pin each source axes to its recorded (settled) position.
 
@@ -122,15 +149,24 @@ def _replay_colorbars(fig, axes_2d, record, result_cache):
         kwargs = dict(cbar_info.get("kwargs", {}))
         cax_bbox = cbar_info.get("cax_bbox")
 
-        if ax_key is None:
-            continue
-
-        parsed = parse_grid_id(ax_key)
-        if parsed is None:
-            continue
-
-        mappable = _find_mappable(record, ax_key, result_cache)
+        # Resolve the mappable. Prefer the one recorded on a source panel's plot
+        # call; fall back to rebuilding a STANDALONE ScalarMappable from its
+        # recorded ``mappable_spec`` (a manual colorbar over a freestanding
+        # ``cm.ScalarMappable`` -- no plot call to recover it from).
+        parsed = parse_grid_id(ax_key) if ax_key is not None else None
+        mappable = (
+            _find_mappable(record, ax_key, result_cache) if parsed is not None else None
+        )
         if mappable is None:
+            mappable = _rebuild_standalone_mappable(cbar_info.get("mappable_spec"))
+        if mappable is None:
+            continue
+
+        # A rebuilt standalone mappable has no source panel to steal from, so it
+        # can only be placed via the captured ``cax_bbox``. Without it there is
+        # no faithful position -> skip (matches the pre-fix drop, but now only
+        # when geometry is genuinely unavailable).
+        if parsed is None and (cax_bbox is None or len(cax_bbox) != 4):
             continue
 
         if cax_bbox is not None and len(cax_bbox) == 4:
@@ -147,7 +183,12 @@ def _replay_colorbars(fig, axes_2d, record, result_cache):
             # ink (a SIZE/MSE mismatch). The recorded ``cax_bbox`` (geometry),
             # ``cax_ticks`` (labels) and the replayed rcParams already reproduce
             # the colorbar's appearance exactly.
-            ax_keys = cbar_info.get("ax_keys") or [ax_key]
+            # Steal-set: the panels a shared colorbar shrank, to re-pin. Drop
+            # ``None`` so a standalone-mappable colorbar (no source panel, only a
+            # pinned cax) yields an empty set -- nothing to pin or freeze.
+            ax_keys = [
+                k for k in (cbar_info.get("ax_keys") or [ax_key]) if k is not None
+            ]
             _pin_source_axes(record, axes_2d, ax_keys)
             cax = fig.add_axes(cax_bbox)
             pinned_kwargs = {
