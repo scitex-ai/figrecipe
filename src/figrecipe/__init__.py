@@ -8,24 +8,39 @@ from __future__ import annotations
 from pathlib import Path as _Path
 
 # Best-effort .env loading: walk parent dirs from cwd up to $HOME, loading
-# every .env found (closest wins). Imported lazily and tolerantly so that a
-# missing/broken scitex-config never breaks `import figrecipe`.
-try:
-    from scitex_config import load_dotenv as _load_dotenv
+# every .env found (closest wins). DEFERRED to first public-attribute access
+# (see _ensure_env_loaded / __getattr__) rather than run at import: importing
+# scitex_config pulls in importlib.metadata and the walk_up does many filesystem
+# stat calls, which on a network filesystem (e.g. Spartan gpfs) dominate
+# `import figrecipe` startup and trip audit-cli §10. A bare `import figrecipe`
+# that never touches the public API pays none of this; any real use loads it
+# once before the first API call.
+_env_loaded = False
 
-    _load_dotenv(walk_up=True, stop_at=str(_Path.home()))
-except Exception:
-    pass
+
+def _ensure_env_loaded() -> None:
+    """Load .env files once, on first public-API use (best-effort, tolerant)."""
+    global _env_loaded
+    if _env_loaded:
+        return
+    _env_loaded = True
+    try:
+        from scitex_config import load_dotenv as _load_dotenv
+
+        _load_dotenv(walk_up=True, stop_at=str(_Path.home()))
+    except Exception:
+        pass
+
 
 from ._branding import BRAND_NAME as _BRAND_NAME
 from ._branding import rebrand_text as _rebrand_text
-from ._qr import add_qr_to_figure
 
 # Register sys.modules aliases for modules moved by #141 (figrecipe._quality
 # topical refactor) so legacy `from figrecipe._validator import X` style
 # imports keep working with a single-fire DeprecationWarning pointing at the
 # new path. See figrecipe._compat for details.
 from ._compat import install_module_aliases as _install_module_aliases
+from ._qr import add_qr_to_figure
 
 _install_module_aliases()
 del _install_module_aliases
@@ -209,6 +224,8 @@ def __getattr__(name: str):
     if name in _LAZY_ATTRS:
         import importlib
 
+        # Best-effort .env load on first real use (deferred from import).
+        _ensure_env_loaded()
         # Patch on first matplotlib-touching access — see _patch_pyplot_close.
         _patch_pyplot_close()
         module_path, attr = _LAZY_ATTRS[name]
@@ -219,6 +236,7 @@ def __getattr__(name: str):
     if name in _MODULE_ALIASES:
         import importlib
 
+        _ensure_env_loaded()
         value = importlib.import_module(_MODULE_ALIASES[name], __name__)
         globals()[name] = value
         return value
@@ -237,6 +255,7 @@ def __dir__() -> list[str]:
 # Lazy seaborn access (avoids import error if seaborn not installed)
 class _SnsModule:
     def __getattr__(self, name):
+        _ensure_env_loaded()
         from ._seaborn import get_seaborn_recorder
 
         return getattr(get_seaborn_recorder(), name)
