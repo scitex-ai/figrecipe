@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.2] - 2026-06-25
+
+### Performance
+- **`import figrecipe` no longer pays the `.env` walk-up cost up front
+  (audit-cli §10).** The eager `scitex_config` import + `load_dotenv(walk_up=True)`
+  is deferred to first public-API use: importing `scitex_config` pulls in
+  `importlib.metadata`, and the parent-dir `.env` walk does many filesystem stat
+  calls that, on a network filesystem (Spartan gpfs), dominate import startup and
+  tripped the §10 import-speed audit. A bare `import figrecipe` that never touches
+  the public API now performs no `.env` walk; any real use loads it once before
+  the first API call. **Behavior note:** `.env` is loaded on first figrecipe API
+  use rather than at `import figrecipe` time.
+
+### Note
+- Also carries the 0.29.1 colorbar round-trip fix below, which never reached PyPI
+  (its release run was blocked by this same §10 audit gate).
+
 ## [0.29.1] - 2026-06-25
 
 ### Fixed
