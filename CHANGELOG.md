@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.1] - 2026-06-25
+
+### Fixed
+- **Manual `plt.colorbar`/`fig.colorbar` calls now survive the recipe
+  round-trip.** Colorbars added via the manual matplotlib API (rather than
+  figrecipe's wrappers) were not recorded, so `reproduce` dropped them.
+  The recorder now captures these calls and the reproducer replays them,
+  keeping the colorbar (and its mappable spec, clim, and axes geometry)
+  faithful through record → save → reproduce.
+
 ## [0.28.20] - 2026-06-04
 
 ### Fixed
