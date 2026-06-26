@@ -156,6 +156,9 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     # ._captions (public caption API)
     "add_figure_caption": ("._captions._public", "add_figure_caption"),
     "add_panel_captions": ("._captions._public", "add_panel_captions"),
+    "set_manuscript_mode": ("._captions._manuscript_mode", "set_manuscript_mode"),
+    "manuscript_mode": ("._captions._manuscript_mode", "manuscript_mode"),
+    "is_manuscript_mode": ("._captions._manuscript_mode", "is_manuscript_mode"),
     # ._composition
     "align_panels": ("._composition", "align_panels"),
     "align_smart": ("._composition", "align_smart"),
@@ -286,6 +289,9 @@ __all__ = [
     # Caption API
     "add_figure_caption",
     "add_panel_captions",
+    "set_manuscript_mode",
+    "manuscript_mode",
+    "is_manuscript_mode",
     "panel_label",
     # Bundle format
     "Figz",
