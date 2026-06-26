@@ -17,6 +17,7 @@ from numpy.typing import NDArray
 
 from .._utils._grid import grid_id, parse_grid_id
 from .._wrappers import RecordingAxes, RecordingFigure
+from ._caption_carry import auto_panel_captions_grid, auto_panel_captions_seq
 from ._crop_aware import _apply_source_style, panel_rel_bbox, replay_panel_suptitle
 from ._panel_labels import (
     _add_panel_labels_grid,
@@ -249,9 +250,14 @@ def _compose_grid_based(
     fig, axes = subplots(nrows=nrows, ncols=ncols, panel_labels=False, **kwargs)
 
     source_data_dirs = {}
+    # Collect each source panel's own caption so compose can carry them forward
+    # into the composed figure (see _auto_panel_captions below). Keyed by grid
+    # position so the assembled list lines up with the row-major axes order.
+    source_captions: Dict[Tuple[int, int], Optional[str]] = {}
 
     for (row, col), source_spec in sources.items():
         source_record, ax_key, source_path = _parse_source_spec_with_path(source_spec)
+        source_captions[(row, col)] = getattr(source_record, "caption", None)
         # Accept either "rRcC" or legacy "ax_R_C" regardless of which form the
         # source record uses for its keys.
         ax_record = source_record.axes.get(ax_key)
@@ -296,6 +302,13 @@ def _compose_grid_based(
     # Add panel labels if requested
     if panel_labels:
         _add_panel_labels_grid(axes, nrows, ncols, label_style)
+
+    # Carry source panel captions forward when the caller didn't pass any:
+    # each panel's own record.caption becomes its (A)/(B)/... entry. Without
+    # this the composed figure silently drops panel captions (same gap class
+    # as composed colorbars).
+    if panel_captions is None:
+        panel_captions = auto_panel_captions_grid(source_captions, nrows, ncols)
 
     # Render caption and panel captions
     render_compose_captions(fig, axes, caption, panel_captions)
@@ -344,6 +357,9 @@ def _compose_mm_based(
 
     axes_list = []
     source_data_dirs = {}
+    # Per-source captions + axes-counts for caption carry-forward (see below).
+    mm_source_captions: List[Optional[str]] = []
+    mm_axis_counts: List[int] = []
 
     sub_idx = 0  # global counter for ax_mm_* keys across all panels + subplots
     for source_path, spec in sources.items():
@@ -386,6 +402,9 @@ def _compose_mm_based(
             selected = dict(source_record.axes)
             if not selected:
                 raise ValueError(f"Source '{source_path}' has no axes to compose.")
+
+        mm_source_captions.append(getattr(source_record, "caption", None))
+        mm_axis_counts.append(len(selected))
 
         data_dir = None
         if path is not None:
@@ -446,6 +465,11 @@ def _compose_mm_based(
 
     if panel_labels:
         _add_panel_labels_mm(mpl_fig, sources, canvas_size_mm, label_style)
+
+    # Carry source panel captions forward when the caller didn't pass any
+    # (only when each source contributed exactly one axes — see helper).
+    if panel_captions is None:
+        panel_captions = auto_panel_captions_seq(mm_source_captions, mm_axis_counts)
 
     # Render caption and panel captions for mm-based
     render_compose_captions(fig, axes_list, caption, panel_captions)

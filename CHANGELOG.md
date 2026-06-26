@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.3] - 2026-06-26
+
+### Added
+- **Composed figures now carry their source panels' captions forward.**
+  `compose()` pulls each source panel's own `record.caption`, prefixes its
+  `(A)/(B)/...` label, and assembles them into the composed figure's
+  `figure.panel_captions` when the caller passes no explicit `panel_captions`
+  (grid mode always; mm/tiled when each source contributes one axes). Closes
+  the gap where composed figures silently dropped panel captions — the same
+  defect class as the composed-colorbar drop. Caller-supplied `panel_captions`
+  still take precedence.
+- **Writer-compatible caption-only `.tex` sidecar.** Saving a recipe that
+  carries caption text now emits `<stem>.tex` next to the `.png`/`.yaml`,
+  derived from the canonical `record.caption` (+ folded per-panel captions).
+  It is a bare `\caption{...}\label{fig:<stem>}` fragment with NO
+  `\begin{figure}` wrapper, so it `\input`s directly inside a manuscript's own
+  float without nesting figure environments. New `format_caption_only_tex()`.
+- **Manuscript mode** (`fr.set_manuscript_mode()`, `fr.manuscript_mode()`
+  context manager, or `FIGRECIPE_MANUSCRIPT_MODE=1`). When active, captions are
+  recorded canonically (`metadata.caption`) and the `.tex` sidecar is still
+  emitted, but the caption is NOT drawn onto the canvas — so a manuscript build
+  doesn't double-render the caption (baked pixels + LaTeX `\caption`).
+
 ## [0.29.2] - 2026-06-25
 
 ### Performance

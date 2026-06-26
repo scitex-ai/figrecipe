@@ -150,11 +150,58 @@ def save_recipe(
         raise
     os.replace(tmp_name, path)
 
+    # Emit a writer-compatible caption-only .tex sidecar next to the recipe
+    # (loose-coupling seam: scitex-writer reads the file, never imports
+    # figrecipe). Only when the recipe actually carries caption text.
+    _emit_caption_sidecar(record, path)
+
     # Record the recipe as a clew output of the active session (no-op without
     # clew). This is the handle that connects a composed figure to its source
     # panels: compose later record_inputs these recipes -> clew links sessions.
     record_output(path)
     return path
+
+
+def _assemble_caption_text(record: FigureRecord) -> str:
+    """Fold the figure caption + per-panel captions into one manuscript caption.
+
+    Returns the figure-level ``record.caption`` followed by ``(A) ...`` lines
+    for each non-empty per-panel caption, in panel order — the complete text a
+    manuscript ``\\caption{...}`` wants. Empty string when there is nothing.
+    """
+    parts = []
+    if record.caption:
+        parts.append(str(record.caption).strip())
+    panel_caps = getattr(record, "figure_panel_captions", None)
+    if panel_caps:
+        for i, cap in enumerate(panel_caps):
+            if cap and str(cap).strip():
+                label = chr(ord("A") + i)
+                parts.append(f"({label}) {str(cap).strip()}")
+    return " ".join(p for p in parts if p)
+
+
+def _emit_caption_sidecar(record: FigureRecord, path: Path) -> None:
+    """Write ``<stem>.tex`` (caption-only fragment) next to the recipe, if any.
+
+    No-op when the recipe carries no caption text, so a figure without a
+    caption produces no stray sidecar.
+    """
+    text = _assemble_caption_text(record)
+    if not text:
+        return
+    from .._captions._formats import format_caption_only_tex
+    from .._captions._manuscript_mode import is_manuscript_mode
+
+    # In manuscript mode the .tex is symlinked into the manuscript under a
+    # different filename and scitex-writer auto-labels by that symlink stem;
+    # a hardcoded \label here would win and break \ref{fig:<filename-stem>}.
+    # So omit the label in manuscript mode; keep it for standalone use.
+    label_slug = None if is_manuscript_mode() else path.stem
+    tex_path = path.with_suffix(".tex")
+    tex_path.write_text(
+        format_caption_only_tex(text, label_slug=label_slug), encoding="utf-8"
+    )
 
 
 def _process_arrays_for_save(

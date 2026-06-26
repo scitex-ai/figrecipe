@@ -5,6 +5,7 @@
 __all__ = [
     "format_caption_for_txt",
     "format_caption_for_tex",
+    "format_caption_only_tex",
     "format_caption_for_md",
     "escape_latex",
     "create_text_figure_list",
@@ -14,7 +15,7 @@ __all__ = [
 
 import textwrap
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 def escape_latex(text: str) -> str:
@@ -136,6 +137,48 @@ def format_caption_for_tex(
     \\label{{fig:{label_slug}}}
 \\end{{figure}}
 """
+
+
+def format_caption_only_tex(
+    caption: str,
+    label_slug: Optional[str] = None,
+) -> str:
+    r"""Format a caption as a bare ``\caption{...}`` (+ optional ``\label``).
+
+    Unlike :func:`format_caption_for_tex`, this emits NO ``\begin{figure}``
+    wrapper, so the fragment can be ``\input`` directly inside a manuscript's
+    own float (e.g. scitex-writer's ``\begin{figure*}``) without nesting two
+    figure environments.
+
+    The figure NUMBER is intentionally never injected: LaTeX numbers the float
+    where the fragment is included, so a hardcoded ``Figure N.`` here would
+    fight the manuscript's own numbering. The caption text is emitted verbatim
+    (LaTeX-escaped); any bold lead-in is the caption author's responsibility.
+
+    Parameters
+    ----------
+    caption : str
+        Caption text (already assembled; for composed figures this is the
+        figure-level caption with per-panel ``(A) ...`` lines folded in).
+    label_slug : str, optional
+        When given, append ``\label{fig:<slug>}`` (typically the recipe stem),
+        so a standalone fragment can ``\ref{fig:<stem>}``. When ``None`` (the
+        manuscript-symlink path), the ``\label`` is OMITTED so the consumer
+        (scitex-writer) can deterministically auto-label by the SYMLINK
+        filename stem — a hardcoded label would otherwise win and break
+        ``\ref{fig:<filename-stem>}``.
+
+    Returns
+    -------
+    str
+        ``"\\caption{...}\n"`` and, when ``label_slug`` is set, a following
+        ``"\\label{fig:<slug>}\n"``.
+    """
+    tex_caption = escape_latex(caption)
+    out = f"\\caption{{{tex_caption}}}\n"
+    if label_slug:
+        out += f"\\label{{fig:{label_slug}}}\n"
+    return out
 
 
 def format_caption_for_md(
