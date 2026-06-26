@@ -1,5 +1,7 @@
 """Tests for figrecipe._captions._manuscript_mode."""
 
+import os
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -14,18 +16,21 @@ from figrecipe._captions._manuscript_mode import (
 def test_default_is_off():
     # Arrange
     set_manuscript_mode(False)
-    # Act / Assert
-    assert is_manuscript_mode() is False
+    # Act
+    active = is_manuscript_mode()
+    # Assert
+    assert active is False
 
 
-def test_set_toggles_on_and_off():
-    # Arrange / Act
+def test_set_enables_mode():
+    # Arrange
+    set_manuscript_mode(False)
+    # Act
     set_manuscript_mode(True)
-    try:
-        # Assert
-        assert is_manuscript_mode() is True
-    finally:
-        set_manuscript_mode(False)
+    active = is_manuscript_mode()
+    set_manuscript_mode(False)
+    # Assert
+    assert active is True
 
 
 def test_context_manager_restores_previous_state():
@@ -34,17 +39,26 @@ def test_context_manager_restores_previous_state():
     # Act
     with manuscript_mode():
         inside = is_manuscript_mode()
+    after = is_manuscript_mode()
     # Assert
-    assert inside is True
-    assert is_manuscript_mode() is False
+    assert (inside, after) == (True, False)
 
 
-def test_env_var_enables_mode(monkeypatch):
+def test_env_var_enables_mode():
     # Arrange
     set_manuscript_mode(False)
-    monkeypatch.setenv("FIGRECIPE_MANUSCRIPT_MODE", "1")
-    # Act / Assert
-    assert is_manuscript_mode() is True
+    prev = os.environ.get("FIGRECIPE_MANUSCRIPT_MODE")
+    os.environ["FIGRECIPE_MANUSCRIPT_MODE"] = "1"
+    # Act
+    try:
+        active = is_manuscript_mode()
+    finally:
+        if prev is None:
+            os.environ.pop("FIGRECIPE_MANUSCRIPT_MODE", None)
+        else:
+            os.environ["FIGRECIPE_MANUSCRIPT_MODE"] = prev
+    # Assert
+    assert active is True
 
 
 def test_add_caption_in_manuscript_mode_records_but_does_not_draw():
@@ -57,9 +71,11 @@ def test_add_caption_in_manuscript_mode_records_but_does_not_draw():
     # Act
     with manuscript_mode():
         fr.add_figure_caption(fig, "Off-canvas caption.")
-    # Assert: caption recorded canonically, but no text drawn on the figure.
-    assert fig.record.caption == "Off-canvas caption."
-    assert len(fig._fig.texts) == n_before
+    # Assert
+    assert (fig.record.caption, len(fig._fig.texts)) == (
+        "Off-canvas caption.",
+        n_before,
+    )
 
 
 def test_add_caption_normally_draws_on_canvas():

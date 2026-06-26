@@ -36,8 +36,7 @@ def test_caption_only_tex_emits_caption_and_label():
     # Act
     out = format_caption_only_tex("Latency comparison.", label_slug="fig01")
     # Assert
-    assert "\\caption{Latency comparison.}" in out
-    assert "\\label{fig:fig01}" in out
+    assert out == "\\caption{Latency comparison.}\n\\label{fig:fig01}\n"
 
 
 def test_caption_only_tex_escapes_latex_specials():
@@ -56,6 +55,5 @@ def test_caption_only_tex_omits_label_when_slug_none():
 
     # Act: no slug -> no \label, so the consumer auto-labels by filename stem.
     out = format_caption_only_tex("Some caption.", label_slug=None)
-    # Assert
-    assert "\\caption{Some caption.}" in out
-    assert "\\label" not in out
+    # Assert: caption present and NO label line at all.
+    assert out == "\\caption{Some caption.}\n"
