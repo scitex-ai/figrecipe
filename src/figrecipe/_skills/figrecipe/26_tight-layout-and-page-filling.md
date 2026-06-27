@@ -7,7 +7,7 @@ description: |
   them), and the figrecipe layout-introspection APIs (empty_cells / layout_report)
   for agent-driven tight packing. Living doc — distil each new figure request into
   a reusable rule.
-tags: [figrecipe-tight-layout-page-filling, figrecipe]
+tags: [figrecipe-tight-layout-and-page-filling, figrecipe]
 ---
 
 # Tight layout & page filling
