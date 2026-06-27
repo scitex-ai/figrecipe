@@ -246,6 +246,23 @@ def _compose_grid_based(
         layout = (max_row, max_col)
 
     nrows, ncols = layout
+
+    # No silent blanks: warn when the grid is under-filled (cells with no source
+    # render empty). The agent-facing fr.empty_cells / fr.layout_report expose the
+    # same info programmatically; the warning nudges toward a tiled layout.
+    from ._layout_report import empty_cells
+
+    _blanks = empty_cells((nrows, ncols), sources)
+    if _blanks:
+        import warnings
+
+        warnings.warn(
+            f"figrecipe.compose: grid {nrows}x{ncols} has {len(_blanks)} empty "
+            f"cell(s) {_blanks} that will render blank. For tight page use, pass a "
+            f"tiled layout=[[...],[...]] (whitespace-free), or fr.layout_report(fig) "
+            f"/ fr.empty_cells(layout, sources) to inspect the blank regions."
+        )
+
     # Suppress auto panel labels from global style; compose manages its own
     fig, axes = subplots(nrows=nrows, ncols=ncols, panel_labels=False, **kwargs)
 
