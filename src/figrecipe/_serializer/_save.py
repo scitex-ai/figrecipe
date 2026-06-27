@@ -69,6 +69,10 @@ def save_recipe(
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Fail loud (with file + which caption/panel) on caption content that breaks
+    # downstream LaTeX (FR-CAP-001) -- the authoritative output-side check.
+    _validate_record_captions(record, path)
+
     # Create data directory for large arrays (only for separate format)
     data_dir = path.parent / f"{path.stem}_data"
 
@@ -160,6 +164,21 @@ def save_recipe(
     # panels: compose later record_inputs these recipes -> clew links sessions.
     record_output(path)
     return path
+
+
+def _validate_record_captions(record: FigureRecord, path: Path) -> None:
+    """Fail loud on caption content that breaks LaTeX (FR-CAP-001), naming the
+    file + which caption/panel offends."""
+    from .._captions._validate import check_caption_latex_safe
+
+    check_caption_latex_safe(
+        getattr(record, "caption", None), f"the figure caption of {path.name}"
+    )
+    panel_caps = getattr(record, "figure_panel_captions", None) or []
+    for i, cap in enumerate(panel_caps):
+        check_caption_latex_safe(
+            cap, f"the panel {chr(ord('A') + i)} caption of {path.name}"
+        )
 
 
 def _assemble_caption_text(record: FigureRecord) -> str:
