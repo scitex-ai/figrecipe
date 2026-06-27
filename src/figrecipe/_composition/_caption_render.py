@@ -49,20 +49,38 @@ def render_compose_captions(
     flat = _flatten_axes(axes)
     mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
 
-    # Persist in record for round-trip
+    # Fail loud on caption content that breaks downstream LaTeX (FR-CAP-001).
+    from .._captions._validate import check_caption_latex_safe
+
+    check_caption_latex_safe(caption, "the composed figure caption")
+    for i, cap in enumerate(panel_captions or []):
+        check_caption_latex_safe(cap, f"the panel {chr(ord('A') + i)} caption")
+
+    # Persist in record for round-trip (canonical — kept even in manuscript
+    # mode; only the on-canvas DRAW is suppressed below).
     if caption is not None:
         fig.record.caption = caption
     if panel_captions:
         fig.record.figure_panel_captions = panel_captions
 
+    from .._captions._manuscript_mode import is_manuscript_mode
+
+    _manuscript = is_manuscript_mode()
+
     # --- Per-panel captions: render label + text above each panel ---
-    if panel_captions:
+    # Suppressed in manuscript mode (LaTeX typesets them from the .tex sidecar).
+    if panel_captions and not _manuscript:
         import string
 
         n = len(flat)
         labels = list(string.ascii_uppercase[:n])
 
         for i, (ax, label, cap_text) in enumerate(zip(flat, labels, panel_captions)):
+            # Skip panels with no caption text so auto-assembled lists with
+            # gaps (some sources carry a caption, some don't) don't draw a
+            # bare "(C)" label with nothing after it.
+            if not (cap_text and str(cap_text).strip()):
+                continue
             raw = ax._ax if hasattr(ax, "_ax") else ax
             pos = raw.get_position()
             x_center = pos.x0 + pos.width / 2.0

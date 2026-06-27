@@ -5,6 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.5] - 2026-06-27
+
+### Fixed
+- **Tick record/replay faithfulness safeguards.** A pre-0.29.3 bug could
+  serialize `set_xticks` POSITIONS with a different count than the labels (e.g.
+  `[8,16,24]` written as `[0,1]`), so reproducing such a recipe raised
+  "FixedLocator locations (N) does not match the number of labels (M)" and the
+  axis rendered garbled. Current figrecipe already records ticks faithfully;
+  these are guards so it can never silently regress:
+  - **Reproduce-side heal**: loading a recipe whose tick positions/labels counts
+    diverge now truncates/pins to the common length and WARNS loudly instead of
+    hard-failing — legacy recipes render rather than crash.
+  - **Record-time fail-loud guard** (`FR-FAITHFUL-TICKS`): a `set_xticks`/
+    `set_yticks` op whose serialized positions count != labels count raises at
+    save, so a mismatched (unreproducible) recipe is never shipped.
+  - Regression tests lock faithful `set_xticks([8,16,24], labels=...)` round-trip.
+
+## [0.29.4] - 2026-06-27
+
+### Added
+- **Caption validation FR-CAP-001: `\footnote` in a caption now errors loud.**
+  figrecipe owns captions canonically, so it rejects caption text containing the
+  `\footnote` command (and the `\footnotemark`/`\footnotetext` family) — which
+  breaks LaTeX in spanning floats (`figure*`): `\caption@ydblarg` "extra }" + a
+  runaway `\@xfootnote`. Checked at input (`add_figure_caption`, `compose`
+  `caption=`/`panel_captions=`) and at the save/`.tex`-emit output (naming the
+  file + which caption/panel). Raises `figrecipe._captions.FootnoteInCaptionError`
+  (a `ValueError`). Inline the footnote text into the caption instead. This is
+  figrecipe's own independent rule (scitex-writer enforces its own on the
+  manuscript-LaTeX side).
+
+## [0.29.3] - 2026-06-26
+
+### Added
+- **Composed figures now carry their source panels' captions forward.**
+  `compose()` pulls each source panel's own `record.caption`, prefixes its
+  `(A)/(B)/...` label, and assembles them into the composed figure's
+  `figure.panel_captions` when the caller passes no explicit `panel_captions`
+  (grid mode always; mm/tiled when each source contributes one axes). Closes
+  the gap where composed figures silently dropped panel captions — the same
+  defect class as the composed-colorbar drop. Caller-supplied `panel_captions`
+  still take precedence.
+- **Writer-compatible caption-only `.tex` sidecar.** Saving a recipe that
+  carries caption text now emits `<stem>.tex` next to the `.png`/`.yaml`,
+  derived from the canonical `record.caption` (+ folded per-panel captions).
+  It is a bare `\caption{...}\label{fig:<stem>}` fragment with NO
+  `\begin{figure}` wrapper, so it `\input`s directly inside a manuscript's own
+  float without nesting figure environments. New `format_caption_only_tex()`.
+- **Manuscript mode** (`fr.set_manuscript_mode()`, `fr.manuscript_mode()`
+  context manager, or `FIGRECIPE_MANUSCRIPT_MODE=1`). When active, captions are
+  recorded canonically (`metadata.caption`) and the `.tex` sidecar is still
+  emitted, but the caption is NOT drawn onto the canvas — so a manuscript build
+  doesn't double-render the caption (baked pixels + LaTeX `\caption`).
+
+## [0.29.2] - 2026-06-25
+
+### Performance
+- **`import figrecipe` no longer pays the `.env` walk-up cost up front
+  (audit-cli §10).** The eager `scitex_config` import + `load_dotenv(walk_up=True)`
+  is deferred to first public-API use: importing `scitex_config` pulls in
+  `importlib.metadata`, and the parent-dir `.env` walk does many filesystem stat
+  calls that, on a network filesystem (Spartan gpfs), dominate import startup and
+  tripped the §10 import-speed audit. A bare `import figrecipe` that never touches
+  the public API now performs no `.env` walk; any real use loads it once before
+  the first API call. **Behavior note:** `.env` is loaded on first figrecipe API
+  use rather than at `import figrecipe` time.
+
+### Note
+- Also carries the 0.29.1 colorbar round-trip fix below, which never reached PyPI
+  (its release run was blocked by this same §10 audit gate).
+
+## [0.29.1] - 2026-06-25
+
+### Fixed
+- **Manual `plt.colorbar`/`fig.colorbar` calls now survive the recipe
+  round-trip.** Colorbars added via the manual matplotlib API (rather than
+  figrecipe's wrappers) were not recorded, so `reproduce` dropped them.
+  The recorder now captures these calls and the reproducer replays them,
+  keeping the colorbar (and its mappable spec, clim, and axes geometry)
+  faithful through record → save → reproduce.
+
 ## [0.28.20] - 2026-06-04
 
 ### Fixed

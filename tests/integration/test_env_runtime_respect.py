@@ -4,8 +4,10 @@
 
 Two coupled invariants:
 
-1. Importing figrecipe walks parent dirs for ``.env`` (best-effort) and never
-   raises when scitex-config is missing/broken or when no .env exists.
+1. On first figrecipe API use (deferred out of bare import — audit-cli §10),
+   figrecipe walks parent dirs for ``.env`` (best-effort) and never raises when
+   scitex-config is missing/broken or when no .env exists. A bare ``import
+   figrecipe`` that never touches the public API performs no walk.
 2. ``figrecipe._runtime_paths.runtime_dir(sub)`` resolves to
    ``<SCITEX_DIR>/figrecipe/runtime/<sub>/`` and creates it.
 
@@ -120,8 +122,14 @@ def _scitex_config_supports_walk_up() -> bool:
     not _scitex_config_supports_walk_up(),
     reason="installed scitex_config.load_dotenv predates walk_up=True kwarg",
 )
-def test_import_loads_dotenv_from_cwd(tmp_path):
-    """A .env in cwd must populate os.environ for a child `import figrecipe`."""
+def test_first_api_use_loads_dotenv_from_cwd(tmp_path):
+    """A .env in cwd must populate os.environ on first figrecipe API use.
+
+    The .env walk-up is DEFERRED out of bare `import figrecipe` (audit-cli §10:
+    importing scitex_config + the walk_up's filesystem stat calls dominate import
+    on a network filesystem). It runs once, lazily, on the first public-attribute
+    access — touching ``figrecipe.subplots`` here is what triggers it.
+    """
     # Arrange: write a real .env with a sentinel key and a fake HOME so the
     # walk_up terminates at tmp_path.
     work = tmp_path / "with_env"
@@ -130,7 +138,8 @@ def test_import_loads_dotenv_from_cwd(tmp_path):
     script = textwrap.dedent(
         """
         import os
-        import figrecipe  # noqa: F401  -- triggers load_dotenv(walk_up=True)
+        import figrecipe
+        figrecipe.subplots  # first public-attr access triggers load_dotenv(walk_up=True)
         print(os.environ.get("FIGRECIPE_ENV_RESPECT_PROBE", ""))
         """
     )

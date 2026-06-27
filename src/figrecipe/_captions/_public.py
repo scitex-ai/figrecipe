@@ -68,8 +68,37 @@ def add_figure_caption(
     str
         The rendered caption text (Markdown-stripped).
     """
+    # Fail loud on caption content that breaks downstream LaTeX (FR-CAP-001).
+    from ._validate import check_caption_latex_safe
+
+    check_caption_latex_safe(caption, "the figure caption")
+
     # Resolve the underlying matplotlib Figure (RecordingFigure wraps it).
     mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
+
+    # Manuscript mode: record the caption (canonical YAML + numbering/sidecar)
+    # but do NOT reserve canvas space or draw it — LaTeX typesets the caption
+    # from the emitted .tex sidecar, so baking it onto the PNG would double-
+    # render. The image stays clean; the drawn copy is a derived view.
+    from ._manuscript_mode import is_manuscript_mode
+
+    if is_manuscript_mode():
+        if hasattr(fig, "record"):
+            fig.record.caption = caption
+        caption_manager.add_figure_caption(
+            fig,
+            caption,
+            figure_label=figure_label,
+            style=style,
+            position=position,
+            width_ratio=width_ratio,
+            font_size=font_size,
+            wrap_width=wrap_width,
+            save_to_file=save_to_file,
+            file_path=file_path,
+            render=False,
+        )
+        return _strip_markdown(caption)
 
     # Reserve room for the caption BEFORE rendering, by adjusting axes
     # positions when they encroach on the caption strip.  The previous

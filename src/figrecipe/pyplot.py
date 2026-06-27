@@ -44,6 +44,56 @@ from ._wrappers import RecordingFigure
 subplots = _ps_subplots
 
 
+def colorbar(mappable=None, cax=None, ax=None, **kwargs):
+    """Add a colorbar, recording it when the target figure is recording.
+
+    Drop-in for ``matplotlib.pyplot.colorbar``. A manual colorbar call on a
+    figrecipe figure (``plt.colorbar(im, cax=...)`` / ``plt.colorbar(im, ax=...)``)
+    must be recorded or it is DROPPED when the figure is rebuilt from its recipe.
+    matplotlib's ``plt.colorbar`` only ever sees the RAW current figure, so this
+    wrapper resolves the owning ``RecordingFigure`` -- from an explicit ``cax``/
+    ``ax`` axes, the mappable's axes, or ``plt.gcf()`` -- and delegates to its
+    recording ``.colorbar``. When no recording figure owns the target (plain
+    matplotlib usage), it falls back to the raw ``matplotlib.pyplot.colorbar``.
+
+    Parameters mirror ``matplotlib.pyplot.colorbar``.
+    """
+    from ._wrappers._figure_registry import get_recording_figure
+
+    def _fig_of(obj):
+        a = getattr(obj, "_ax", obj)  # unwrap RecordingAxes
+        return getattr(a, "figure", None)
+
+    # Resolve the raw figure the colorbar will be drawn on, preferring the most
+    # explicit hint, then fall back to the current figure.
+    raw_fig = None
+    for hint in (cax, ax):
+        if hint is not None and not isinstance(hint, (list, tuple)):
+            raw_fig = _fig_of(hint)
+            if raw_fig is not None:
+                break
+    if raw_fig is None and isinstance(ax, (list, tuple)) and ax:
+        raw_fig = _fig_of(ax[0])
+    if raw_fig is None and mappable is not None:
+        raw_fig = getattr(getattr(mappable, "axes", None), "figure", None)
+    if raw_fig is None:
+        raw_fig = _plt.gcf()
+
+    wrapper = get_recording_figure(raw_fig)
+    if wrapper is not None:
+        # RecordingFigure.colorbar takes ``cax`` via **kwargs.
+        if cax is not None:
+            kwargs["cax"] = cax
+        return wrapper.colorbar(mappable, ax=ax, **kwargs)
+
+    # No recording figure -> behave exactly like matplotlib.
+    if cax is not None:
+        kwargs["cax"] = cax
+    if ax is not None:
+        kwargs["ax"] = ax
+    return _plt.colorbar(mappable, **kwargs)
+
+
 def figure(*args, **kwargs):
     """Create a new figure with optional recording support.
 
@@ -129,7 +179,6 @@ hist = _plt.hist
 imshow = _plt.imshow
 contour = _plt.contour
 contourf = _plt.contourf
-colorbar = _plt.colorbar
 axhline = _plt.axhline
 axvline = _plt.axvline
 text = _plt.text
