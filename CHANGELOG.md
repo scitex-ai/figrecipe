@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.4] - 2026-06-27
+
+### Added
+- **Caption validation FR-CAP-001: `\footnote` in a caption now errors loud.**
+  figrecipe owns captions canonically, so it rejects caption text containing the
+  `\footnote` command (and the `\footnotemark`/`\footnotetext` family) — which
+  breaks LaTeX in spanning floats (`figure*`): `\caption@ydblarg` "extra }" + a
+  runaway `\@xfootnote`. Checked at input (`add_figure_caption`, `compose`
+  `caption=`/`panel_captions=`) and at the save/`.tex`-emit output (naming the
+  file + which caption/panel). Raises `figrecipe._captions.FootnoteInCaptionError`
+  (a `ValueError`). Inline the footnote text into the caption instead. This is
+  figrecipe's own independent rule (scitex-writer enforces its own on the
+  manuscript-LaTeX side).
+
 ## [0.29.3] - 2026-06-26
 
 ### Added

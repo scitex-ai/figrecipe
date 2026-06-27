@@ -68,6 +68,11 @@ def add_figure_caption(
     str
         The rendered caption text (Markdown-stripped).
     """
+    # Fail loud on caption content that breaks downstream LaTeX (FR-CAP-001).
+    from ._validate import check_caption_latex_safe
+
+    check_caption_latex_safe(caption, "the figure caption")
+
     # Resolve the underlying matplotlib Figure (RecordingFigure wraps it).
     mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
 

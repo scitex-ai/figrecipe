@@ -42,8 +42,12 @@ from ._formats import (
     format_caption_for_tex,
     format_caption_for_txt,
 )
+from ._validate import FootnoteInCaptionError, check_caption_latex_safe
 
 __all__ = [
+    # Validation (FR-CAP-001)
+    "FootnoteInCaptionError",
+    "check_caption_latex_safe",
     # Core class
     "ScientificCaption",
     "caption_manager",
