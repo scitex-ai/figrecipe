@@ -482,6 +482,17 @@ def _replay_call(
         if "color" in kwargs and "edgecolor" in kwargs:
             kwargs["facecolor"] = kwargs.pop("color")
 
+    # Heal legacy recipes whose tick positions/labels counts diverge (warn loud).
+    if method_name in (
+        "set_xticks",
+        "set_yticks",
+        "set_xticklabels",
+        "set_yticklabels",
+    ):
+        from ._tick_heal import heal_tick_call
+
+        args, kwargs = heal_tick_call(ax, method_name, args, kwargs)
+
     # Call the method
     try:
         return method(*args, **kwargs)

@@ -35,6 +35,34 @@ def _panel_prefix(ax_key: str, nrows, ncols) -> str:
     return f"{label}_" if label else ""
 
 
+def _assert_tick_call_faithful(call: Dict[str, Any]) -> None:
+    """Record-time faithfulness guard (FR-FAITHFUL-TICKS): a set_xticks/set_yticks
+    op must carry as many tick POSITIONS as LABELS, else the recipe can't
+    round-trip (replay raises "FixedLocator locations != labels"). Fail loud at
+    save rather than ship a silently-unreproducible recipe."""
+    if call.get("function") not in ("set_xticks", "set_yticks"):
+        return
+    labels = call.get("kwargs", {}).get("labels")
+    args = call.get("args", [])
+    if labels is None or not args:
+        return
+    pos = args[0]
+    if isinstance(pos, dict) and "_array" in pos:
+        n_pos = len(pos["_array"])
+    elif isinstance(pos, dict) and isinstance(pos.get("data"), list):
+        n_pos = len(pos["data"])
+    else:
+        return  # positions length not determinable here; skip
+    if n_pos != len(labels):
+        raise ValueError(
+            f"figrecipe [FR-FAITHFUL-TICKS]: {call.get('function')} recorded "
+            f"{n_pos} tick positions but {len(labels)} labels (call "
+            f"{call.get('id')}). This recipe would not round-trip (replay would "
+            f"raise FixedLocator count != labels) -- indicates a recording/"
+            f"serialization bug. Not shipping a mismatched recipe."
+        )
+
+
 def save_recipe(
     record: FigureRecord,
     path: Union[str, Path],
@@ -279,6 +307,7 @@ def _process_arrays_with_symlinks(
             for call in call_list:
                 call_id = call.get("id", "unknown")
                 safe_call_id = _sanitize_filename(call_id)
+                _assert_tick_call_faithful(call)
 
                 for i, arg in enumerate(call.get("args", [])):
                     source_file_path = arg.pop("_source_file", None)
