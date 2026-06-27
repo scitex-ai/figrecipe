@@ -1,5 +1,14 @@
-<!-- Figure-making skill: tight layout & page filling. Living doc — distil each
-new figure request into a reusable, principle-first rule (tool-aware: figrecipe). -->
+---
+description: |
+  [TOPIC] Tight layout & page filling (figure-making skill)
+  [DETAILS] Principle-first, accumulated know-how for composing publication
+  figures that use the page well — tile-over-grid to avoid empty panel cells,
+  never stretch/upscale panels (re-plot each at true 1:1 and let compose place
+  them), and the figrecipe layout-introspection APIs (empty_cells / layout_report)
+  for agent-driven tight packing. Living doc — distil each new figure request into
+  a reusable rule.
+tags: [figrecipe-tight-layout-page-filling, figrecipe]
+---
 
 # Tight layout & page filling
 
