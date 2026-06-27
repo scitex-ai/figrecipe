@@ -49,6 +49,13 @@ def render_compose_captions(
     flat = _flatten_axes(axes)
     mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
 
+    # Fail loud on caption content that breaks downstream LaTeX (FR-CAP-001).
+    from .._captions._validate import check_caption_latex_safe
+
+    check_caption_latex_safe(caption, "the composed figure caption")
+    for i, cap in enumerate(panel_captions or []):
+        check_caption_latex_safe(cap, f"the panel {chr(ord('A') + i)} caption")
+
     # Persist in record for round-trip (canonical — kept even in manuscript
     # mode; only the on-canvas DRAW is suppressed below).
     if caption is not None:
