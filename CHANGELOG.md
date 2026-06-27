@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.6] - 2026-06-28
+
+### Added
+- **Machine-readable layout introspection** (`figrecipe.empty_cells`,
+  `figrecipe.layout_report`) — the agent-facing foundation for tight,
+  empty-cell-free page packing. `empty_cells(layout, sources)` returns the blank
+  `(row, col)` positions of a grid (fast path); `layout_report(fig)` returns a
+  native-float report `{mode, canvas_mm, panels[...mm/frac/aspect],
+  empty_regions[maximal blank rectangles], coverage_frac}` with a top-left
+  origin. Panels are reported at their measured millimetre sizes so a caller can
+  re-plot at 1:1 — figrecipe never stretches a panel to fill space.
+- **Compose-time under-fill warning** — composing an under-filled grid now emits
+  a `UserWarning` naming the empty cells, so blank page space is caught at build
+  time rather than discovered in the PDF.
+- **Figure-making skill** (`_skills/figrecipe/26_tight-layout-and-page-filling.md`)
+  capturing the tight-layout / page-filling know-how, indexed in `SKILL.md`.
+
 ## [0.29.5] - 2026-06-27
 
 ### Fixed
