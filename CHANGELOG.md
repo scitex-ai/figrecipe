@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.5] - 2026-06-27
+
+### Fixed
+- **Tick record/replay faithfulness safeguards.** A pre-0.29.3 bug could
+  serialize `set_xticks` POSITIONS with a different count than the labels (e.g.
+  `[8,16,24]` written as `[0,1]`), so reproducing such a recipe raised
+  "FixedLocator locations (N) does not match the number of labels (M)" and the
+  axis rendered garbled. Current figrecipe already records ticks faithfully;
+  these are guards so it can never silently regress:
+  - **Reproduce-side heal**: loading a recipe whose tick positions/labels counts
+    diverge now truncates/pins to the common length and WARNS loudly instead of
+    hard-failing — legacy recipes render rather than crash.
+  - **Record-time fail-loud guard** (`FR-FAITHFUL-TICKS`): a `set_xticks`/
+    `set_yticks` op whose serialized positions count != labels count raises at
+    save, so a mismatched (unreproducible) recipe is never shipped.
+  - Regression tests lock faithful `set_xticks([8,16,24], labels=...)` round-trip.
+
 ## [0.29.4] - 2026-06-27
 
 ### Added
