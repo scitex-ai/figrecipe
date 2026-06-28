@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.8] - 2026-06-28
+
+### Fixed
+- **Justified captions no longer stretch sparse lines into huge gaps.** With
+  `align="justify"` (the default), a line is now only stretched edge-to-edge
+  when its words already fill at least 60% of the available width; a sparser
+  line (few words on a wide figure) is left-aligned instead of having its
+  inter-word spaces blown up to several times normal. Full lines stay flush
+  left-and-right (the caption body matches the panel width), only the sparse and
+  last lines ragged-right. Adds test coverage for `align="center"`/`"left"` and
+  `position="top"`.
+- **Auto panel labels (A)/(B) now render at the correct size and font.**
+  `fig.add_panel_labels()` (used by `fr.subplots(..., panel_labels=True)`) read
+  the plot-title size (`title_pt`, 8pt) instead of the panel-label convention
+  (`panel_label_pt`, 10pt), and inherited a generic `sans-serif` family rather
+  than the style's explicitly-resolved family — so the labels came out the wrong
+  size and in a different face from the axis labels/ticks. They now use
+  `panel_label_pt` (10pt bold in SCITEX) and the same resolved family as the
+  body (Arial, or its installed fallback), so labels match the rest of the
+  figure.
+
 ## [0.29.7] - 2026-06-28
 
 ### Fixed

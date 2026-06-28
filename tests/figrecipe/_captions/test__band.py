@@ -159,3 +159,81 @@ def test_caption_band_round_trips_figsize(tmp_path):
     # Assert
     assert reproduced_figsize == pytest.approx(recorded_figsize, abs=1e-6)
     plt.close(reproduced_mpl)
+
+
+def test_justify_left_aligns_sparse_lines_on_wide_figure():
+    # Arrange
+    import figrecipe as fr
+    from figrecipe._captions._band import wrap_caption_lines
+
+    fr.load_style("SCITEX", background="white")
+    fig, ax = fr.subplots(1, 1, axes_width_mm=180, axes_height_mm=60)
+    n_lines = len(wrap_caption_lines(_NEUROVISTA_CAPTION, 30))
+
+    # Act: narrow char-wrap on a wide figure -> every line is physically sparse,
+    # so the justify cap left-aligns them all (one recorded text per line, never
+    # split into stretched word fragments).
+    fr.add_figure_caption(
+        fig, _NEUROVISTA_CAPTION, position="bottom", align="justify", wrap_width=30
+    )
+    n_recorded = len(fig.record.figure_texts)
+
+    # Assert
+    assert n_recorded == n_lines
+    mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
+    plt.close(mpl_fig)
+
+
+def test_align_center_records_a_centered_text():
+    # Arrange
+    import figrecipe as fr
+
+    fr.load_style("SCITEX", background="white")
+    fig, ax = fr.subplots(1, 1, axes_width_mm=120, axes_height_mm=68)
+
+    # Act
+    fr.add_figure_caption(fig, _NEUROVISTA_CAPTION, position="bottom", align="center")
+    has_centered = any(
+        t.get("kwargs", {}).get("ha") == "center" for t in fig.record.figure_texts
+    )
+
+    # Assert
+    assert has_centered
+    mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
+    plt.close(mpl_fig)
+
+
+def test_align_left_records_only_left_text():
+    # Arrange
+    import figrecipe as fr
+
+    fr.load_style("SCITEX", background="white")
+    fig, ax = fr.subplots(1, 1, axes_width_mm=120, axes_height_mm=68)
+
+    # Act
+    fr.add_figure_caption(fig, _NEUROVISTA_CAPTION, position="bottom", align="left")
+    only_left = all(
+        t.get("kwargs", {}).get("ha") == "left" for t in fig.record.figure_texts
+    )
+
+    # Assert
+    assert only_left
+    mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
+    plt.close(mpl_fig)
+
+
+def test_top_position_places_caption_in_upper_band():
+    # Arrange
+    import figrecipe as fr
+
+    fr.load_style("SCITEX", background="white")
+    fig, ax = fr.subplots(1, 1, axes_width_mm=120, axes_height_mm=68)
+
+    # Act
+    fr.add_figure_caption(fig, _NEUROVISTA_CAPTION, position="top", align="left")
+    min_caption_y = min((t["y"] for t in fig.record.figure_texts), default=0.0)
+
+    # Assert
+    assert min_caption_y > 0.5
+    mpl_fig = fig._fig if hasattr(fig, "_fig") else fig
+    plt.close(mpl_fig)

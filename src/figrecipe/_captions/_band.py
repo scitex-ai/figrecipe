@@ -50,6 +50,12 @@ _RELATIVE_FONT_PT = {
 # Line-height multiple (caption line pitch = font_pt * this / 72 inch).
 _LINE_HEIGHT = 1.35
 
+# A justified line is only stretched edge-to-edge when its words already fill at
+# least this fraction of the available width. Sparser lines (few words on a wide
+# figure) left-align instead, so justify never blows the inter-word gaps up to
+# several times a normal space.
+_JUSTIFY_MIN_FILL = 0.6
+
 # Caption white round bbox (kept identical to the historical look).
 _CAPTION_BBOX = dict(boxstyle="round,pad=0.5", facecolor="white", alpha=0.8)
 
@@ -302,43 +308,39 @@ def place_caption(
 
     content_left = left_margin
     content_right = right_margin
+    span = content_right - content_left
 
     for i, line in enumerate(lines):
         y = top_y - i * line_pitch_frac
         words = line.split()
         is_last = i == n - 1
-        if is_last or len(words) <= 1:
-            # Left-aligned (last line, or a single-word line cannot justify).
-            kwargs = {
-                "ha": "left",
-                "va": "center",
-                "fontsize": fontsize,
-            }
-            mpl_fig.text(content_left, y, line, **kwargs)
-            _record_text(record, content_left, y, line, kwargs)
-            continue
 
-        # Measure each word's width as a figure fraction.
+        # Measure each word's width as a figure fraction. We need the totals to
+        # decide whether the line is full enough to justify without ugly gaps.
         word_fracs: List[float] = []
         for word in words:
             t = mpl_fig.text(0, 0, word, fontsize=fontsize)
             ext = t.get_window_extent(renderer)
             t.remove()
             word_fracs.append(ext.width / (dpi * w_in))
-
         total_words = sum(word_fracs)
         gaps = len(words) - 1
-        span = content_right - content_left
-        slack = span - total_words
-        gap = slack / gaps if gaps > 0 else 0.0
 
+        # Justify only lines that are non-last, multi-word, AND at least
+        # ``_JUSTIFY_MIN_FILL`` of the span full. A sparse line (few words on a
+        # wide figure) would otherwise stretch the inter-word gaps to several
+        # times a normal space — left-align it instead so the body still reads
+        # cleanly while the full lines stay flush left-and-right.
+        if is_last or gaps < 1 or total_words < _JUSTIFY_MIN_FILL * span:
+            kwargs = {"ha": "left", "va": "center", "fontsize": fontsize}
+            mpl_fig.text(content_left, y, line, **kwargs)
+            _record_text(record, content_left, y, line, kwargs)
+            continue
+
+        gap = (span - total_words) / gaps
         x = content_left
         for j, word in enumerate(words):
-            kwargs = {
-                "ha": "left",
-                "va": "center",
-                "fontsize": fontsize,
-            }
+            kwargs = {"ha": "left", "va": "center", "fontsize": fontsize}
             mpl_fig.text(x, y, word, **kwargs)
             _record_text(record, x, y, word, kwargs)
             x += word_fracs[j] + gap
