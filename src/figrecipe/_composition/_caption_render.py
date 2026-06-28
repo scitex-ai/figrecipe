@@ -67,6 +67,16 @@ def render_compose_captions(
 
     _manuscript = is_manuscript_mode()
 
+    # --- Figure-level caption (rendered FIRST so the additive caption band has
+    # already grown the figure and shifted the panels up; the per-panel captions
+    # below are then placed against the final post-band panel positions instead
+    # of stale pre-band ones). add_figure_caption suppresses its own draw in
+    # manuscript mode, so this stays a no-op on the canvas there. ---
+    if caption:
+        from .._captions._public import add_figure_caption
+
+        add_figure_caption(fig, caption, position="bottom")
+
     # --- Per-panel captions: render label + text above each panel ---
     # Suppressed in manuscript mode (LaTeX typesets them from the .tex sidecar).
     if panel_captions and not _manuscript:
@@ -109,12 +119,6 @@ def render_compose_captions(
                         "kwargs": dict(text_kwargs),
                     }
                 )
-
-    # --- Figure-level caption ---
-    if caption:
-        from .._captions._public import add_figure_caption
-
-        add_figure_caption(fig, caption, position="bottom")
 
 
 __all__ = [
