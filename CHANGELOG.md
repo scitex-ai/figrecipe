@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.7] - 2026-06-28
+
+### Fixed
+- **In-image captions never overlap the axes anymore.** `add_figure_caption`
+  is now ADDITIVE: instead of reserving space by shrinking the axes (the old
+  fixed `subplots_adjust(bottom=0.15)` + per-axes `set_position`, which let a
+  multi-line caption grow into the x/ylabels on mm-precise figures), it GROWS
+  the figure by a measured caption band and keeps the axes at their EXACT mm
+  size and position. The band height is derived from the wrapped line count and
+  font size; the axes are pinned across the figrecipe constrained-layout engine
+  so they never move. Applies to single figures **and** composed figures
+  (`fr.compose(caption=...)`), whose per-panel `(A)/(B)` labels are re-placed
+  against the post-band panel positions.
+
+### Added
+- **Justified in-image captions.** `add_figure_caption(..., align=...)` accepts
+  `"justify"` (default — full-width lines, last line left-aligned), `"center"`,
+  and `"left"`, plus a `pad_mm` knob for the band gap. In-image captions are for
+  casual researcher communication / reports / grant figures; the manuscript path
+  is unchanged (the `.tex` caption sidecar / manuscript mode). The band and
+  justified word fragments round-trip faithfully through `save`→`reproduce`.
+
 ## [0.29.6] - 2026-06-28
 
 ### Added
