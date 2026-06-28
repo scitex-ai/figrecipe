@@ -69,3 +69,23 @@ def test_numpy_int_text_x_replays_as_number(np_int_text_recipe):
     plt.close("all")
     # Assert
     assert not isinstance(replayed_x, str)
+
+
+def test_numpy_str_label_saves_without_representer_crash(tmp_path):
+    # Arrange — np.str_ (e.g. a label from a DataFrame column) used to crash
+    # recipe->YAML save with ruamel RepresenterError (no representer for np.str_).
+    fig, ax = fr.subplots(axes_width_mm=60, axes_height_mm=40)
+    ax.plot([0, 1, 2], [0, 1, 4], label=np.str_("P01"))
+    ax.legend()
+    out = tmp_path / "npstr.png"
+
+    # Act
+    saved = True
+    try:
+        fr.save(fig, str(out), validate=False, verbose=False)
+    except Exception:
+        saved = False
+    plt.close("all")
+
+    # Assert
+    assert saved

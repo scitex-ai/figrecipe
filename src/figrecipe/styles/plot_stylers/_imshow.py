@@ -8,6 +8,13 @@ from typing import Any, Optional
 
 from ._base import PlotStyler
 
+# Sentinel distinguishing "caller did not pass aspect" (-> default to the
+# style's "equal") from an explicit aspect the caller DID pass (including the
+# string "auto"). Using ``None`` for the default is not enough: ``None`` is a
+# legitimate value a caller might forward, and historically caused an explicit
+# user aspect to be clobbered back to "equal" when the styler was re-applied.
+_ASPECT_UNSET = object()
+
 
 class ImshowStyler(PlotStyler):
     """Styler for matplotlib imshow elements.
@@ -37,7 +44,7 @@ class ImshowStyler(PlotStyler):
         image: Any,
         ax: Optional[Any] = None,
         interpolation: Optional[str] = None,
-        aspect: Optional[str] = None,
+        aspect: Any = _ASPECT_UNSET,
         cmap: Optional[str] = None,
     ) -> Any:
         """Apply styling to an imshow plot.
@@ -51,7 +58,10 @@ class ImshowStyler(PlotStyler):
         interpolation : str, optional
             Interpolation method. Default from style or "nearest".
         aspect : str, optional
-            Aspect ratio. Default: "equal".
+            Aspect ratio. If the caller passes one EXPLICITLY (e.g. "auto"),
+            it wins and is applied as-is. Only when the caller omits ``aspect``
+            entirely does this default to the style's "equal" -- so a user's
+            ``ax.imshow(..., aspect="auto")`` is never clobbered to "equal".
         cmap : str, optional
             Colormap to apply.
 
@@ -63,7 +73,9 @@ class ImshowStyler(PlotStyler):
         # Get parameters with defaults from style
         if interpolation is None:
             interpolation = self.get_param("interpolation", "nearest")
-        if aspect is None:
+        # Only fall back to the style default when the caller did NOT pass an
+        # aspect. An explicitly-passed aspect (including "auto") wins.
+        if aspect is _ASPECT_UNSET:
             aspect = self.get_param("aspect", "equal")
 
         # Apply interpolation
@@ -85,7 +97,7 @@ def style_imshow(
     image: Any,
     ax: Optional[Any] = None,
     interpolation: Optional[str] = None,
-    aspect: Optional[str] = None,
+    aspect: Any = _ASPECT_UNSET,
     cmap: Optional[str] = None,
     style: Any = None,
 ) -> Any:
@@ -102,7 +114,8 @@ def style_imshow(
     interpolation : str, optional
         Interpolation method. Default: "nearest".
     aspect : str, optional
-        Aspect ratio. Default: "equal".
+        Aspect ratio. If passed explicitly (e.g. "auto") it wins; only when
+        omitted does it default to the style's "equal".
     cmap : str, optional
         Colormap to apply.
     style : DotDict, optional
