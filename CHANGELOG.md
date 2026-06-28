@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.9] - 2026-06-28
+
+### Fixed
+- **Auto panel labels no longer overlap the axes title.** `fr.subplots(...,
+  panel_labels=True)` adds the (A)/(B)/(C)/(D) labels at construction time —
+  before titles exist — so a fixed `y=1.05` offset landed the label on a title
+  set later via `set_xyt`. Labels are now lifted clear of the title at save
+  time: a title-aware label sits just above the title (scaled by the title
+  height), while an axes with no title keeps the default placement (back-compat),
+  and an explicit user `offset` is honored verbatim.
+- **`imshow` honors an explicitly-passed `aspect` (e.g. `"auto"`).** The imshow
+  styler now distinguishes "caller passed no aspect" (defaults to the style's
+  `"equal"`) from an explicit aspect, so `ax.imshow(..., aspect="auto")` is never
+  silently coerced back to `"equal"` by the styler. (Note: for a square heatmap
+  filling square mm axes, also use a dedicated colorbar axes — e.g.
+  `make_axes_locatable(...).append_axes(...)` — so the colorbar doesn't shrink
+  the host axes off-square.)
+- **Recipe save no longer crashes on numpy-scalar labels/values.** A numpy
+  scalar reaching the recipe serializer (most commonly `np.str_` from a
+  DataFrame column, but also `np.complex*`, `np.datetime64`, etc.) was handed
+  straight to the YAML representer and raised
+  `RepresenterError: cannot represent np.str_('…')`. The numpy→native coercion
+  now has an `np.generic` catch-all (`.item()`) so any numpy scalar normalises to
+  its native Python type before serialization. (Previously only `np.ndarray`/
+  `np.integer`/`np.floating`/`np.bool_` were handled.)
+
 ## [0.29.8] - 2026-06-28
 
 ### Fixed

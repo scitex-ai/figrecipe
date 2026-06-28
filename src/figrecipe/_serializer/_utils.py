@@ -17,6 +17,14 @@ def _convert_numpy_types(obj: Any) -> Any:
         return float(obj)
     elif isinstance(obj, np.bool_):
         return bool(obj)
+    elif isinstance(obj, np.generic):
+        # Catch-all for any remaining numpy scalar — np.str_, np.bytes_,
+        # np.complex*, np.datetime64, etc. `.item()` returns the native Python
+        # equivalent. Labels/ticks coming from a DataFrame column or numpy array
+        # commonly arrive as np.str_ / np.float64; without this they reach the
+        # YAML representer untouched and crash recipe save (ruamel
+        # RepresenterError: cannot represent np.str_(...)).
+        return obj.item()
     elif isinstance(obj, dict):
         return {k: _convert_numpy_types(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple)):

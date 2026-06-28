@@ -286,6 +286,11 @@ class RecordingFigure(FigureTextMixin):
         def record_callback(info):
             self._recorder.figure_record.panel_labels = info
 
+        # Title-awareness applies only to the default upper-position placement.
+        # When the user passes an explicit offset we honor it verbatim (the
+        # label is then their responsibility), preserving back-compat.
+        title_aware = loc == "upper left" and offset == (-0.1, 1.05)
+
         return _add_panel_labels(
             all_axes=self.flat,
             labels=labels,
@@ -295,6 +300,7 @@ class RecordingFigure(FigureTextMixin):
             fontweight=fontweight,
             text_color=text_color,
             record_callback=record_callback,
+            title_aware=title_aware,
             **kwargs,
         )
 

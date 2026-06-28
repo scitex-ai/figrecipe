@@ -146,6 +146,12 @@ def save_figure(
         finalize_ticks(ax)
         finalize_special_plots(ax, style_dict)
 
+    # Lift auto panel labels above their axes titles (titles set via set_xyt
+    # exist by now; panel_labels=True added the labels before them).
+    from .._wrappers._panel_labels import finalize_panel_labels
+
+    finalize_panel_labels(fig.fig)
+
     # Runtime axis-range-alignment check (complements static STX-FIG001).
     # Default warning-level — per operator preference (figrecipe #134), never
     # kill the script after the PNG has been written.
