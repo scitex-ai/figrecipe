@@ -163,6 +163,25 @@ class RecordingFigure(FigureTextMixin):
             pass
         return default
 
+    def _get_resolved_font_family(self) -> Optional[str]:
+        """Resolve the actual font family the active style pins.
+
+        Returns the installed family the style applier uses for the body
+        elements (the requested font, e.g. ``Arial``, or its available
+        fallback) so the auto panel labels render in the SAME face. ``None``
+        when nothing can be resolved.
+        """
+        try:
+            from ..styles._fonts import check_font
+            from ..styles._style_loader import _STYLE_CACHE
+
+            requested = "Arial"
+            if _STYLE_CACHE is not None:
+                requested = getattr(_STYLE_CACHE, "font_family", None) or requested
+            return check_font(requested)
+        except Exception:
+            return None
+
     def _get_theme_text_color(self, default: str = "black") -> str:
         """Get text color from loaded style's theme settings."""
         try:
@@ -241,15 +260,28 @@ class RecordingFigure(FigureTextMixin):
         """
         from ._panel_labels import add_panel_labels as _add_panel_labels
 
-        # Get fontsize from style if not specified
+        # Get fontsize from style if not specified. Panel labels follow the
+        # panel_label_pt convention (10pt bold in SCITEX), NOT title_pt (the
+        # plot-title size, 8pt) — the previous title_pt lookup made the auto
+        # (A)/(B) labels the wrong size.
         if fontsize is None:
-            fontsize = self._get_style_fontsize("title_pt", 10)
+            fontsize = self._get_style_fontsize("panel_label_pt", 10)
 
         # Get theme text color (unless user provided 'color' in kwargs)
         if "color" not in kwargs:
             text_color = self._get_theme_text_color()
         else:
             text_color = kwargs.pop("color")
+
+        # Match the body's explicitly-resolved font family. The style applier
+        # pins the resolved family (e.g. Arial, or its DejaVu fallback) on the
+        # axis labels/ticks/title, but the auto panel labels otherwise inherit a
+        # generic 'sans-serif' that can resolve to a different/heavier face,
+        # making the labels look inconsistent with the rest of the figure.
+        if not any(k in kwargs for k in ("fontfamily", "fontname", "family")):
+            family = self._get_resolved_font_family()
+            if family:
+                kwargs["fontfamily"] = family
 
         def record_callback(info):
             self._recorder.figure_record.panel_labels = info
