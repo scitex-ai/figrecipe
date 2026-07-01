@@ -89,6 +89,20 @@ def test_two_overlapping_texts_warn():
     assert _has_pair(conflicts, "text", "text")
 
 
+def test_two_overlapping_annotations_warn():
+    # Arrange: ax.annotate makes an Annotation (a Text SUBCLASS); it must not
+    # slip past the text enumeration the way an exact class-name check let it.
+    fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.annotate("P01", xy=(0.5, 0.5), ha="center", va="center", fontsize=20)
+    ax.annotate("P02", xy=(0.5, 0.5), ha="center", va="center", fontsize=20)
+    # Act
+    conflicts = detect_layout_conflicts(fig)
+    # Assert
+    assert _has_pair(conflicts, "text", "text")
+
+
 # ---------------------------------------------------------------------------
 # (colorbar, axes) -> forbidden
 # ---------------------------------------------------------------------------
