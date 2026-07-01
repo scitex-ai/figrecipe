@@ -25,6 +25,10 @@ def test_audit_all_for_package_reports_clean():
     # a clean return is the assertion proxy. The §6 MCP<->Python-API
     # parity rule is exempted via `.scitex/dev/config.yaml`
     # (audit.mcp-parity-exempt: true), read by scitex-dev >= 0.12.0.
-    audit_all_for_package("figrecipe")
+    # timeout override of the generated 120s default: audit-all runs clean in
+    # ~55s standalone but exceeds 120s inside the pytest-matrix SIF (coverage +
+    # parallel load), flaking every PR. 300s is a realistic cap for a
+    # slow-but-clean audit. (scitex-dev owns the write-audit-test default.)
+    audit_all_for_package("figrecipe", timeout=300)
     # Assert
     assert True  # `audit_all_for_package` raises on failure

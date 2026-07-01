@@ -12,6 +12,7 @@ from typing import Optional
 # the same try-import policy as the scitex-clew integration; falls back to
 # print() when scitex-logging is absent.
 from .._logging import get_logger
+from .._serializer._clew import record_output
 
 # Import helpers from separate module
 from ._save_capture import _capture_colorbar_geometry
@@ -389,6 +390,7 @@ def save_figure(
     # Store mm_layout in record for consistent cropping on reproduce
     if hasattr(fig, "_mm_layout") and fig._mm_layout is not None:
         fig.record.mm_layout = fig._mm_layout
+    record_output(image_path)  # clew co-output: closes recipe->data->image chain
 
     # Save hitmap if requested (for GUI editor element selection).
     # The hitmap must be cropped IDENTICALLY to the saved image so pixel->element
