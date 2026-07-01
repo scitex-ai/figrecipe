@@ -233,7 +233,7 @@ def _enumerate_text(fig: "Figure", renderer, overlays: set) -> List[_Component]:
     comps: List[_Component] = []
     seen = set()
     for artist in fig.findobj():
-        if artist.__class__.__name__ != "Text":
+        if not any(k.__name__ == "Text" for k in type(artist).__mro__):
             continue
         if id(artist) in seen:
             continue
