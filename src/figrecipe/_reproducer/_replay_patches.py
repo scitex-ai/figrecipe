@@ -40,6 +40,14 @@ def reconstruct_patch(spec: Dict[str, Any]):
         )
     if ptype == "Polygon":
         return mpatches.Polygon(spec["xy"], closed=spec.get("closed", True))
+    if ptype == "FancyArrowPatch":
+        return mpatches.FancyArrowPatch(
+            tuple(spec["posA"]),
+            tuple(spec["posB"]),
+            arrowstyle=spec.get("arrowstyle", "-|>"),
+            connectionstyle=spec.get("connectionstyle", "arc3"),
+            mutation_scale=spec.get("mutation_scale", 1.0),
+        )
     raise ValueError(
         f"figrecipe cannot reproduce patch type {ptype!r} (recipe written by an "
         f"incompatible figrecipe version)."

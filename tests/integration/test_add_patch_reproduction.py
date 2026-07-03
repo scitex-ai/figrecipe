@@ -4,8 +4,8 @@
 
 Raw patches were forwarded to matplotlib but never recorded, so they vanished
 on replay and the figure failed save-time reproducibility. These tests guard
-that supported patches (Rectangle/Circle/Ellipse/Polygon) round-trip and that
-unsupported patch types fail loud at call time.
+that supported patches (Rectangle/Circle/Ellipse/Polygon/FancyArrowPatch)
+round-trip and that unsupported patch types fail loud at call time.
 """
 
 import matplotlib
@@ -137,9 +137,78 @@ def test_patch_only_figure_reproduces_clean(tmp_path):
 def test_unsupported_patch_fails_loud(tmp_path):
     # Arrange
     fig, ax = fr.subplots(axes_width_mm=60, axes_height_mm=40)
-    arrow = mpatches.FancyArrowPatch((0.1, 0.1), (0.9, 0.9))
+    wedge = mpatches.Wedge((0.5, 0.5), 0.2, 0, 90)
     # Act
     # adding an unsupported patch type must raise at call time (see Assert)
     # Assert
     with pytest.raises(ValueError, match="cannot record patch type"):
-        ax.add_patch(arrow)
+        ax.add_patch(wedge)
+
+
+@pytest.fixture
+def arrow_round_trip(tmp_path):
+    fig, ax = fr.subplots(axes_width_mm=60, axes_height_mm=40)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.add_patch(
+        mpatches.FancyArrowPatch(
+            (0.2, 0.3),
+            (0.7, 0.8),
+            arrowstyle="-|>",
+            connectionstyle="arc3,rad=0.2",
+            mutation_scale=12,
+            edgecolor="red",
+        )
+    )
+    spec, rax = _save_and_reproduce(fig, tmp_path / "arrow.png")
+    return {"spec": spec, "patches": _patches_of(rax, mpatches.FancyArrowPatch)}
+
+
+def test_arrow_recorded_in_recipe(arrow_round_trip):
+    # Arrange
+    spec = arrow_round_trip["spec"]
+    # Act
+    recorded_type = spec["type"] if spec else None
+    # Assert
+    assert recorded_type == "FancyArrowPatch"
+
+
+def test_arrow_reproduced_once(arrow_round_trip):
+    # Arrange
+    patches = arrow_round_trip["patches"]
+    # Act
+    count = len(patches)
+    # Assert
+    assert count == 1
+
+
+def test_arrow_endpoints_reproduced(arrow_round_trip):
+    # Arrange
+    arrow = arrow_round_trip["patches"][0]
+    # Act
+    posA, posB = arrow._posA_posB
+    endpoints = (*posA, *posB)
+    # Assert
+    assert endpoints == pytest.approx((0.2, 0.3, 0.7, 0.8))
+
+
+def test_arrow_connectionstyle_rad_reproduced(arrow_round_trip):
+    # Arrange
+    spec = arrow_round_trip["spec"]
+    # Act
+    connectionstyle = spec["connectionstyle"] if spec else ""
+    # Assert
+    assert "rad=0.2" in connectionstyle
+
+
+def test_path_based_arrow_fails_loud():
+    # Arrange
+    from figrecipe._wrappers._axes_patches import extract_patch_spec
+
+    arrow = mpatches.FancyArrowPatch((0.1, 0.1), (0.9, 0.9))
+    arrow._posA_posB = None  # a path-based arrow carries no endpoints
+    # Act
+    # no posA/posB means the arrow cannot round-trip and must fail loud (Assert)
+    # Assert
+    with pytest.raises(ValueError, match="path-based FancyArrowPatch"):
+        extract_patch_spec(arrow)

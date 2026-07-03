@@ -16,7 +16,13 @@ import matplotlib.patches as mpatches
 
 # Geometry-clean patch types supported for round-trip. Extend by adding a
 # branch in extract_patch_spec() + _replay_patches.reconstruct_patch().
-SUPPORTED_PATCH_TYPES = ("Rectangle", "Circle", "Ellipse", "Polygon")
+SUPPORTED_PATCH_TYPES = (
+    "Rectangle",
+    "Circle",
+    "Ellipse",
+    "Polygon",
+    "FancyArrowPatch",
+)
 
 # facecolor/edgecolor are captured as RGBA hex (alpha folded in), so the
 # patch-level alpha is intentionally NOT captured separately to avoid
@@ -63,6 +69,79 @@ def _style_of(patch) -> Dict[str, Any]:
     return style
 
 
+def _registered_style_name(style_obj, registry) -> str:
+    """Return the registered short name (e.g. ``'-|>'``, ``'arc3'``) for an
+    ArrowStyle/ConnectionStyle instance. FAIL LOUD on an unregistered style
+    rather than silently dropping it.
+    """
+    for name, cls in getattr(registry, "_style_list", {}).items():
+        if type(style_obj) is cls:
+            return name
+    raise ValueError(
+        f"figrecipe cannot record {registry.__name__} "
+        f"{type(style_obj).__name__!r} for reproduction. Use a standard named "
+        f"style, or draw the arrow via annotate(arrowprops=...) which is recorded."
+    )
+
+
+def _connectionstyle_string(style_obj) -> str:
+    """Serialize a ConnectionStyle to ``'name,param=value,...'``.
+
+    A ConnectionStyle's public numeric attrs map straight back to constructor
+    params (``Arc3.rad``, ``Arc.armA/armB/rad``, ``Angle.angleA/angleB``), so
+    ``rad`` and friends round-trip faithfully. The candidate string is
+    validated by re-parsing; a non-standard set falls back to the base named
+    style (which always reconstructs) rather than raising on a valid figure.
+    """
+    name = _registered_style_name(style_obj, mpatches.ConnectionStyle)
+    params = {
+        key: float(val)
+        for key, val in vars(style_obj).items()
+        if not key.startswith("_")
+        and isinstance(val, (int, float))
+        and not isinstance(val, bool)
+    }
+    if not params:
+        return name
+    candidate = name + "," + ",".join(f"{k}={v}" for k, v in sorted(params.items()))
+    try:
+        mpatches.ConnectionStyle(candidate)
+    except (ValueError, TypeError):
+        return name
+    return candidate
+
+
+def _fancyarrow_spec(patch, style: Dict[str, Any]) -> Dict[str, Any]:
+    """Decompose a FancyArrowPatch (posA/posB form) into a serializable spec.
+
+    The arrowstyle is stored by its registered name only: the class identity
+    already encodes the head shape + filled/open variant, and overall size is
+    carried by ``mutation_scale``. Non-default per-head geometry (custom
+    ``head_length``/``head_width``) is intentionally not captured -- it is rare
+    for leader arrows and would pollute the spec with base-class attrs that are
+    invalid params for the named style.
+    """
+    pos = getattr(patch, "_posA_posB", None)
+    if not pos or pos[0] is None or pos[1] is None:
+        raise ValueError(
+            "figrecipe cannot record a path-based FancyArrowPatch (no posA/posB) "
+            "for reproduction. Construct it with posA/posB, or draw the arrow via "
+            "annotate(arrowprops=...) which figrecipe records."
+        )
+    (ax0, ay0), (ax1, ay1) = pos
+    return {
+        "type": "FancyArrowPatch",
+        "posA": [float(ax0), float(ay0)],
+        "posB": [float(ax1), float(ay1)],
+        "arrowstyle": _registered_style_name(
+            patch.get_arrowstyle(), mpatches.ArrowStyle
+        ),
+        "connectionstyle": _connectionstyle_string(patch.get_connectionstyle()),
+        "mutation_scale": float(patch.get_mutation_scale()),
+        "style": style,
+    }
+
+
 def extract_patch_spec(patch) -> Dict[str, Any]:
     """Decompose a matplotlib patch into a serializable spec.
 
@@ -107,6 +186,11 @@ def extract_patch_spec(patch) -> Dict[str, Any]:
             "closed": bool(patch.get_closed()),
             "style": style,
         }
+    # FancyArrowPatch (add_patch path, e.g. adjustText leaders). The
+    # annotate() path already round-trips; this closes the add_patch gap so
+    # standalone arrows replay too. Path-based arrows (no posA/posB) FAIL LOUD.
+    if isinstance(patch, mpatches.FancyArrowPatch):
+        return _fancyarrow_spec(patch, style)
     raise ValueError(
         f"figrecipe cannot record patch type {type(patch).__name__!r} for "
         f"reproduction (it would be dropped on replay). Supported: "
