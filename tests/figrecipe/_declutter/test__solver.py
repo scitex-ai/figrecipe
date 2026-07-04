@@ -15,6 +15,11 @@ def _all_ink(size=200):
     return np.ones((size, size), dtype=bool), size
 
 
+def _box(center, half_w=10, half_h=5):
+    cx, cy = center
+    return (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
+
+
 def test_single_label_sits_at_clear_anchor():
     # Arrange
     ink, h = _no_ink()
@@ -31,21 +36,9 @@ def test_two_labels_same_anchor_do_not_overlap():
     sizes = [(20.0, 10.0), (20.0, 10.0)]
     # Act
     centers, clear = solve_label_positions(anchors, sizes, ink, h)
-    box0 = (
-        centers[0][0] - 10,
-        centers[0][1] - 5,
-        centers[0][0] + 10,
-        centers[0][1] + 5,
-    )
-    box1 = (
-        centers[1][0] - 10,
-        centers[1][1] - 5,
-        centers[1][0] + 10,
-        centers[1][1] + 5,
-    )
+    overlap = _overlap_fraction(_box(centers[0]), _box(centers[1]))
     # Assert
-    assert clear == [True, True]
-    assert _overlap_fraction(box0, box1) == 0.0
+    assert clear == [True, True] and overlap == 0.0
 
 
 def test_deterministic_same_inputs_same_output():
@@ -54,10 +47,12 @@ def test_deterministic_same_inputs_same_output():
     anchors = [(50.0, 50.0), (50.0, 50.0), (60.0, 55.0)]
     sizes = [(18.0, 9.0)] * 3
     # Act
-    a = solve_label_positions(anchors, sizes, ink, h)
-    b = solve_label_positions(anchors, sizes, ink, h)
+    first, second = (
+        solve_label_positions(anchors, sizes, ink, h),
+        solve_label_positions(anchors, sizes, ink, h),
+    )
     # Assert
-    assert a == b
+    assert first == second
 
 
 def test_label_avoids_ink_lands_in_clear_patch():
@@ -69,9 +64,8 @@ def test_label_avoids_ink_lands_in_clear_patch():
     centers, clear = solve_label_positions(
         [(100.0, 150.0)], [(10.0, 10.0)], ink, h, clip_rect=clip
     )
-    # Assert
-    assert clear == [True]
-    assert centers[0][0] > 100.0  # pushed to the right, into the clear patch
+    # Assert -- pushed to the right, into the clear patch.
+    assert clear == [True] and centers[0][0] > 100.0
 
 
 def test_no_clear_spot_falls_back_to_anchor_flagged():
@@ -94,7 +88,6 @@ def test_obstacle_box_is_avoided():
     centers, clear = solve_label_positions(
         [(100.0, 100.0)], [(20.0, 10.0)], ink, h, obstacles=[obstacle]
     )
-    box = (centers[0][0] - 10, centers[0][1] - 5, centers[0][0] + 10, centers[0][1] + 5)
+    overlap = _overlap_fraction(_box(centers[0]), obstacle)
     # Assert
-    assert clear == [True]
-    assert _overlap_fraction(box, obstacle) == 0.0
+    assert clear == [True] and overlap == 0.0

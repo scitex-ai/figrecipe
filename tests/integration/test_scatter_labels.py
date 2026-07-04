@@ -6,6 +6,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+import pytest
+
 import figrecipe as fr
 
 
@@ -85,8 +87,8 @@ def test_scatter_labels_round_trip(tmp_path):
 def test_scatter_labels_length_mismatch_raises():
     # Arrange
     fig, ax = fr.subplots(axes_width_mm=80, axes_height_mm=60)
-    # Act / Assert
-    import pytest
-
+    # Act
+    # mismatched x / y / labels lengths must raise at call time (see Assert)
+    # Assert
     with pytest.raises(ValueError, match="equal length"):
         ax.scatter_labels([0.1, 0.2], [0.1], ["only-one"])
