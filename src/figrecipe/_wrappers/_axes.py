@@ -9,6 +9,7 @@ from matplotlib.axes import Axes
 
 from ._axes_diagram import DiagramMixin
 from ._axes_methods import RecordingAxesMethods
+from ._axes_scatter_labels import ScatterLabelsMixin
 from ._axes_scitex import SciTexMixin
 from ._axes_style_mixin import AxesStyleMixin
 
@@ -16,7 +17,13 @@ if TYPE_CHECKING:
     from .._recorder import Recorder
 
 
-class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMixin):
+class RecordingAxes(
+    RecordingAxesMethods,
+    AxesStyleMixin,
+    SciTexMixin,
+    DiagramMixin,
+    ScatterLabelsMixin,
+):
     """Wrapper around matplotlib Axes that records all calls.
 
     This wrapper intercepts calls to plotting methods and records them
