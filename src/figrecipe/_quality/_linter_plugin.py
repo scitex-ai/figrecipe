@@ -4,6 +4,8 @@ Rule families:
 - FM001-FM009  — inch-based matplotlib patterns; suggest mm-based alternatives.
 - FM010-FM011  — figure-method style rules (set_xlabel/set_ylabel/set_title
                  → set_xyt; ax.spines[...].set_visible(False) → hide_spines).
+- FM016        — raw-mpl-bypass: raw `plt.subplots`/`plt.figure` figure
+                 creation that bypasses figrecipe recording (→ fr.subplots).
 - FIG001       — scientific-figure hygiene (axis-range alignment across subplots).
 - P001-P009    — bare matplotlib calls; suggest scitex/figrecipe tracked variants
                  and flag style-override kwargs.
@@ -17,6 +19,7 @@ file stays focused on the rule-object definitions + plugin wiring.
 
 from ._linter_checkers import (  # noqa: F401
     _make_figure_method_checker,
+    _make_raw_mpl_bypass_checker,
     _make_style_kwarg_checker,
 )
 
@@ -171,6 +174,31 @@ def get_plugin():
         requires="scitex",
     )
 
+    # FM016 — raw matplotlib figure creation (`plt.subplots`/`plt.figure`/
+    # `matplotlib.pyplot.*`/bare `subplots` from matplotlib.pyplot) bypasses
+    # figrecipe entirely: the figure and every draw on it are un-recorded, so
+    # there is no recipe and no clew provenance. Equivalence-gated — fires only
+    # because the tracked equivalent (`fr.subplots`/`stx.plt.subplots`) exists.
+    # category="figure" ⇒ auto-promoted to ERROR in project-type:research.
+    # Per operator 2026-07-08 ("raw mpl バイパス検出大事") + neurovista fixture.
+    FM016 = Rule(
+        id="STX-FM016",
+        severity="warning",
+        category="figure",
+        message=(
+            "raw matplotlib figure creation (`plt.subplots`/`plt.figure`) detected "
+            "— the figure and everything drawn on it bypass figrecipe recording "
+            "(no recipe, no clew provenance)"
+        ),
+        suggestion=(
+            "Create the figure with `fr.subplots(...)` (or `stx.plt.subplots(...)`) "
+            "so all draws are recorded and the figure round-trips + becomes a clew "
+            "claim. If raw matplotlib is genuinely required here, annotate the line "
+            "with `# stx-allow: STX-FM016` (add the reason in an adjacent comment)."
+        ),
+        requires="figrecipe",
+    )
+
     # ------------------------------------------------------------------
     # FIG: Scientific-figure hygiene rules (FIG001+)
     # FIG001 — multiple subplots that declare different literal axis
@@ -320,6 +348,11 @@ def get_plugin():
     if figure_method_checker is not None:
         checkers.append(figure_method_checker)
 
+    # FM016 raw-mpl-bypass AST checker. Same deferred-import discipline.
+    raw_mpl_bypass_checker = _make_raw_mpl_bypass_checker(FM016)
+    if raw_mpl_bypass_checker is not None:
+        checkers.append(raw_mpl_bypass_checker)
+
     # FIG001 axis-range-alignment checker. We subclass the base checker
     # here so it ships the FIG001 rule object without the plugin loader
     # needing to know about it.
@@ -347,6 +380,7 @@ def get_plugin():
             FM009,
             FM010,
             FM011,
+            FM016,
             FIG001,
             P001,
             P002,

@@ -4,7 +4,7 @@ Extracted from ``_linter_plugin.py`` to keep that orchestrator module
 under the project line-cap and to make the checker logic independently
 testable.
 
-Two factories live here:
+Three factories live here:
 
 - ``_make_style_kwarg_checker(P006, P007, P008, P009)`` — flags
   style-override kwargs (``s=`` on scatter, ``fontsize=``, ``figsize=``,
@@ -12,6 +12,11 @@ Two factories live here:
 - ``_make_figure_method_checker(FM010, FM011)`` — flags
   ``set_xlabel`` / ``set_ylabel`` / ``set_title`` (recommend ``set_xyt``)
   and ``ax.spines[...].set_visible(False)`` (recommend ``hide_spines``).
+- ``_make_raw_mpl_bypass_checker(FM016)`` — flags raw matplotlib figure
+  creation (``plt.subplots`` / ``plt.figure`` / ``matplotlib.pyplot.*`` /
+  ``from matplotlib.pyplot import subplots``) that bypasses figrecipe
+  recording; ``fr.subplots`` / ``stx.plt.subplots`` are the tracked
+  equivalents and are NOT flagged (binding-based receiver resolution).
 
 Circular-import discipline (per neurovista 2026-06-14): both factories
 defer the ``scitex_dev.linter.checker`` import into ``_emit()`` rather
@@ -176,6 +181,117 @@ def _make_figure_method_checker(FM010, FM011):
     return FigureMethodChecker
 
 
-__all__ = ["_make_style_kwarg_checker", "_make_figure_method_checker"]
+def _make_raw_mpl_bypass_checker(FM016):
+    """Build an AST NodeVisitor that flags raw matplotlib figure creation.
+
+    Creating a figure with raw ``matplotlib.pyplot`` (``plt.subplots`` /
+    ``plt.figure`` / ``matplotlib.pyplot.subplots`` / bare ``subplots``
+    imported ``from matplotlib.pyplot``) means the figure and every draw on
+    it BYPASS figrecipe recording — no recipe, no clew provenance. The
+    equivalent tracked entry points ``fr.subplots`` / ``stx.plt.subplots``
+    are NOT flagged, distinguished by the call receiver's import BINDING
+    (so ``import figrecipe as plt`` is correctly not treated as raw pyplot).
+
+    Flagging the figure CREATION (one site per figure) rather than each
+    draw keeps the signal at the root and non-noisy. Same deferred-import
+    discipline as the other factories.
+    """
+
+    class RawMplBypassChecker(ast.NodeVisitor):
+        category = "figure"
+
+        # pyplot figure-creation functions with a recorded figrecipe
+        # equivalent (fr.subplots / stx.plt.subplots).
+        _CREATORS = ("subplots", "figure", "subplot_mosaic")
+
+        def __init__(self, source_lines, config):
+            self.source_lines = source_lines
+            self.config = config
+            self.issues: list = []
+            self._pyplot_modules: set = set()  # names bound to matplotlib.pyplot
+            self._pyplot_funcs: set = set()  # names bound to a pyplot creator
+
+        def _src(self, ln):
+            if 1 <= ln <= len(self.source_lines):
+                return self.source_lines[ln - 1].rstrip()
+            return ""
+
+        def _emit(self, rule, node):
+            from dataclasses import replace as _replace
+
+            # Deferred import — see _make_style_kwarg_checker.
+            from scitex_dev.linter.checker import Issue, _is_allowed_by_comment
+
+            line = self._src(node.lineno)
+            if rule.id in self.config.disable:
+                return
+            if _is_allowed_by_comment(line, rule.id):
+                return
+            sev = self.config.per_rule_severity.get(rule.id)
+            if sev:
+                rule = _replace(rule, severity=sev)
+            self.issues.append(
+                Issue(
+                    rule=rule, line=node.lineno, col=node.col_offset, source_line=line
+                )
+            )
+
+        def _collect_imports(self, tree):
+            for n in ast.walk(tree):
+                if isinstance(n, ast.Import):
+                    for a in n.names:
+                        if a.name == "matplotlib.pyplot":
+                            self._pyplot_modules.add(a.asname or "matplotlib.pyplot")
+                elif isinstance(n, ast.ImportFrom):
+                    if n.module == "matplotlib":
+                        for a in n.names:
+                            if a.name == "pyplot":
+                                self._pyplot_modules.add(a.asname or "pyplot")
+                    elif n.module == "matplotlib.pyplot":
+                        for a in n.names:
+                            if a.name in self._CREATORS:
+                                self._pyplot_funcs.add(a.asname or a.name)
+
+        @staticmethod
+        def _dotted(node):
+            """Flatten Name / nested Attribute to a dotted string, else None."""
+            parts = []
+            while isinstance(node, ast.Attribute):
+                parts.append(node.attr)
+                node = node.value
+            if isinstance(node, ast.Name):
+                parts.append(node.id)
+                return ".".join(reversed(parts))
+            return None
+
+        def _check_call(self, node):
+            func = node.func
+            # Bare `subplots(...)` imported `from matplotlib.pyplot`.
+            if isinstance(func, ast.Name):
+                if func.id in self._pyplot_funcs:
+                    self._emit(FM016, node)
+                return
+            # `<pyplot>.subplots(...)` — receiver must be a raw-pyplot binding.
+            if isinstance(func, ast.Attribute) and func.attr in self._CREATORS:
+                receiver = self._dotted(func.value)
+                if receiver is not None and receiver in self._pyplot_modules:
+                    self._emit(FM016, node)
+
+        def visit(self, tree):
+            # Two-pass: collect raw-pyplot bindings first (order-independent),
+            # then flag figure-creation calls made through them.
+            self._collect_imports(tree)
+            for n in ast.walk(tree):
+                if isinstance(n, ast.Call):
+                    self._check_call(n)
+
+    return RawMplBypassChecker
+
+
+__all__ = [
+    "_make_style_kwarg_checker",
+    "_make_figure_method_checker",
+    "_make_raw_mpl_bypass_checker",
+]
 
 # EOF
