@@ -62,6 +62,14 @@ PLOTTING_METHODS = {
     "magnitude_spectrum",
     "phase_spectrum",
     "graph",
+    # Coverage-completeness (wrapper-completeness audit): these draw data
+    # artists from serializable args and generically record+replay, but were
+    # previously unlisted -> forwarded to raw matplotlib -> silently vanished
+    # on reproduce(). arrow (dx/dy floats), broken_barh (list of (start,width)
+    # tuples + (ymin,height)), table (cellText/cellColours nested lists).
+    "arrow",
+    "broken_barh",
+    "table",
 }
 
 # EOF

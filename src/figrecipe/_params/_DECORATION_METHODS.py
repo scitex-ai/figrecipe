@@ -19,6 +19,8 @@ DECORATION_METHODS = {
     "grid",
     "axhline",
     "axvline",
+    "axline",  # arbitrary-slope reference line (xy1/xy2 tuples or slope) — a
+    # decoration like axhline/axvline; serializable args, generic record+replay
     "axhspan",
     "axvspan",
     "text",
