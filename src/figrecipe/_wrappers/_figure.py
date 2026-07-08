@@ -163,6 +163,25 @@ class RecordingFigure(FigureTextMixin):
             pass
         return default
 
+    def _get_style_fontweight(self, key: str, default: str) -> str:
+        """Get a font WEIGHT string from the loaded style's fonts block.
+
+        Sibling of ``_get_style_fontsize`` for weight-valued keys (e.g.
+        ``panel_label_weight``) so the weight is a style-owned field, not a
+        hardcoded code default. Falls back to ``default`` when no style is
+        loaded or the key is absent (older styles), so behaviour is unchanged.
+        """
+        try:
+            from ..styles._style_loader import _STYLE_CACHE
+
+            if _STYLE_CACHE is not None:
+                fonts = getattr(_STYLE_CACHE, "fonts", None)
+                if fonts is not None:
+                    return getattr(fonts, key, default)
+        except Exception:
+            pass
+        return default
+
     def _get_resolved_font_family(self) -> Optional[str]:
         """Resolve the actual font family the active style pins.
 
@@ -225,7 +244,7 @@ class RecordingFigure(FigureTextMixin):
         loc: str = "upper left",
         offset: Tuple[float, float] = (-0.1, 1.05),
         fontsize: Optional[float] = None,
-        fontweight: str = "bold",
+        fontweight: Optional[str] = None,
         **kwargs,
     ) -> List[Any]:
         """Add panel labels (A, B, C, D, etc.) to multi-panel figures.
@@ -240,9 +259,10 @@ class RecordingFigure(FigureTextMixin):
             (x, y) offset in axes coordinates from the corner.
             Default is (-0.1, 1.05) for upper left positioning.
         fontsize : float, optional
-            Font size in points. If None, uses style's title_pt or 10.
-        fontweight : str
-            Font weight (default: 'bold').
+            Font size in points. If None, uses style's panel_label_pt or 10.
+        fontweight : str, optional
+            Font weight. If None, uses the style's ``panel_label_weight``
+            (SCITEX: 'bold'), falling back to 'bold'.
         **kwargs
             Additional arguments passed to ax.text().
 
@@ -266,6 +286,12 @@ class RecordingFigure(FigureTextMixin):
         # (A)/(B) labels the wrong size.
         if fontsize is None:
             fontsize = self._get_style_fontsize("panel_label_pt", 10)
+
+        # Resolve weight from the style (panel_label_weight) when the caller
+        # didn't pass one, so the weight is style-owned like the size/family --
+        # 'bold' is only the ultimate fallback for styles without the field.
+        if fontweight is None:
+            fontweight = self._get_style_fontweight("panel_label_weight", "bold")
 
         # Get theme text color (unless user provided 'color' in kwargs)
         if "color" not in kwargs:

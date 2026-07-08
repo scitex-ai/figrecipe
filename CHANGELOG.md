@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.20] - 2026-07-09
+
+### Changed
+- **Panel-label font WEIGHT is now a style-owned field** (`fonts.panel_label_weight`
+  in SCITEX, default `bold`), matching how panel-label size (`panel_label_pt`) and
+  family are already style-owned — "the style owns the field, not a code default".
+  `fig.add_panel_labels()` resolves `fontweight` from the active style when the
+  caller passes none, with `'bold'` only the ultimate fallback for styles without
+  the field. Rendered output is unchanged (labels already rendered bold); the
+  weight is simply now driven by the style rather than a hardcoded literal.
+
 ## [0.29.19] - 2026-07-09
 
 ### Fixed
