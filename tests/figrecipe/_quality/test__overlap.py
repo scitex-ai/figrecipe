@@ -166,4 +166,29 @@ def test_flush_adjacent_panels_silent():
     assert not _has_pair(conflicts, "axes", "axes")
 
 
+# ---------------------------------------------------------------------------
+# ink mask: Text subclasses (Annotation) are NOT counted as data ink
+# ---------------------------------------------------------------------------
+def test_annotation_not_counted_as_data_ink():
+    # Arrange -- an annotation in empty axes space. The data-only ink mask must
+    # hide it (Annotation is a Text subclass), so its bbox holds ~no ink; an
+    # exact class-name check leaked the annotation pixels into the mask.
+    from figrecipe._quality._overlap_ink import (
+        _ink_fraction_in_bbox,
+        _render_ink_mask,
+    )
+
+    fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ann = ax.annotate("XXXXXX", xy=(0.5, 0.5), ha="center", va="center", fontsize=24)
+    fig.canvas.draw()
+    bbox = ann.get_window_extent(renderer=fig._get_renderer())
+    mask, height = _render_ink_mask(fig, None)
+    # Act
+    frac = _ink_fraction_in_bbox(mask, height, bbox)
+    # Assert
+    assert frac < 0.02
+
+
 # EOF
