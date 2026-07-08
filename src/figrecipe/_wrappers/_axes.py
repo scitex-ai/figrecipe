@@ -17,6 +17,29 @@ if TYPE_CHECKING:
     from .._recorder import Recorder
 
 
+# Methods that draw but cannot round-trip because their arguments are not
+# recipe-serializable. They are wrapped to WARN on use (never silently drop).
+_UNRECORDED_WARN_METHODS = frozenset(
+    {"bar_label", "secondary_xaxis", "secondary_yaxis"}
+)
+_UNRECORDED_WARN_HINT = {
+    "bar_label": (
+        "It takes a live BarContainer. For a reproducible figure, add the "
+        "labels via recorded ax.text(...) at the bar tops instead."
+    ),
+    "secondary_xaxis": (
+        "It takes forward/inverse transform callables, which cannot be "
+        "serialized. Recreate the secondary axis in the reproduce script if "
+        "it is essential."
+    ),
+    "secondary_yaxis": (
+        "It takes forward/inverse transform callables, which cannot be "
+        "serialized. Recreate the secondary axis in the reproduce script if "
+        "it is essential."
+    ),
+}
+
+
 class RecordingAxes(
     RecordingAxesMethods,
     AxesStyleMixin,
@@ -108,6 +131,13 @@ class RecordingAxes(
 
             return build_inset_axes_wrapper(self)
 
+        # These draw but cannot round-trip: their args are not recipe-
+        # serializable (bar_label takes a live BarContainer; secondary_xaxis/
+        # secondary_yaxis take forward/inverse transform CALLABLES). Rather than
+        # let them silently vanish on reproduce(), warn the author on use.
+        if callable(attr) and name in _UNRECORDED_WARN_METHODS:
+            return self._create_unrecorded_warn_wrapper(name, attr)
+
         # If it's a plotting or decoration method, wrap it
         if callable(attr) and name in (
             self._recorder.PLOTTING_METHODS | self._recorder.DECORATION_METHODS
@@ -183,6 +213,25 @@ class RecordingAxes(
                     self._result_refs,
                     self._RESULT_REFERENCING_METHODS,
                     self._RESULT_REFERENCEABLE_METHODS,
+                )
+            return result
+
+        return wrapper
+
+    def _create_unrecorded_warn_wrapper(self, method_name: str, method: callable):
+        """Wrap a draw-but-unrecordable method so it WARNS instead of silently
+        vanishing on reproduce() (its args are not recipe-serializable)."""
+        import warnings
+
+        def wrapper(*args, track: bool = True, **kwargs):
+            result = method(*args, **kwargs)
+            if self._track and track:
+                hint = _UNRECORDED_WARN_HINT.get(method_name, "")
+                warnings.warn(
+                    f"figrecipe: ax.{method_name}(...) is drawn but NOT recorded, "
+                    f"so it will be absent when the recipe is reproduced. {hint}",
+                    UserWarning,
+                    stacklevel=2,
                 )
             return result
 

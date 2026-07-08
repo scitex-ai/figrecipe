@@ -19,6 +19,14 @@ DECORATION_METHODS = {
     "grid",
     "axhline",
     "axvline",
+    # Recorded as decorations (serializable args, generic record+replay): they
+    # were previously forwarded to raw matplotlib and silently vanished on
+    # reproduce(). They are NOT data-series "plotters" (no CSV builder in
+    # figrecipe._dev.list_plotters), so they live here, not in PLOTTING_METHODS.
+    "axline",  # arbitrary-slope reference line (xy1/xy2 tuples or slope)
+    "arrow",  # single arrow patch (x, y, dx, dy floats)
+    "broken_barh",  # bar spans ((start,width)... + (ymin,height))
+    "table",  # tabular overlay (cellText/cellColours nested lists)
     "axhspan",
     "axvspan",
     "text",
