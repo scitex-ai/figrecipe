@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Wrapper-completeness: newly-recorded methods round-trip; un-serializable
-draw methods warn instead of silently vanishing on reproduce().
+"""Wrapper-completeness: element-producing methods that were forwarded to raw
+matplotlib (and vanished on replay) now round-trip.
 
-arrow / axline / broken_barh / table were forwarded to raw matplotlib and
-vanished on replay; they now record + reproduce. bar_label / secondary_xaxis
-/ secondary_yaxis cannot round-trip (live container / transform callables) so
-they must WARN on use.
+arrow / axline / broken_barh / table record + reproduce directly. bar_label is
+frozen into recorded annotate() calls. secondary_xaxis/secondary_yaxis record
+the plain-location case; only the custom-transform-functions case (not
+serializable) warns instead of silently vanishing.
 """
 
 import matplotlib
@@ -74,32 +74,54 @@ def test_table_round_trips(tmp_path):
     assert len(mpl_ax.tables) == 1
 
 
-def test_bar_label_warns_not_recorded():
-    # Arrange
+def test_bar_label_round_trips(tmp_path):
+    # Arrange -- bar_label draws Annotations; they are frozen into recorded
+    # annotate() calls so the labels reproduce without the live BarContainer.
     fig, ax = _axes()
-    bars = ax.bar([0, 1], [0.3, 0.6])
+    bars = ax.bar([0, 1, 2], [0.3, 0.6, 0.2])
+    ax.bar_label(bars, fmt="%.1f")
     # Act
-    # bar_label takes a live BarContainer -> not recordable -> must warn (Assert)
+    mpl_ax = _reproduce(fig, tmp_path, "bar_label")
+    reproduced = {t.get_text() for t in mpl_ax.texts if t.get_text()}
     # Assert
-    with pytest.warns(UserWarning, match="NOT recorded"):
-        ax.bar_label(bars)
+    assert {"0.3", "0.6", "0.2"}.issubset(reproduced)
 
 
-def test_secondary_xaxis_warns_not_recorded():
-    # Arrange
+def test_secondary_xaxis_plain_records_without_warning():
+    # Arrange -- a plain secondary_xaxis(location) mirrors the primary and is
+    # recorded by location, so it must NOT emit the not-recorded warning.
+    import warnings
+
     fig, ax = _axes()
+    ax.plot([0, 1], [0, 1])
     # Act
-    # secondary_xaxis takes transform callables -> not recordable -> warn (Assert)
-    # Assert
-    with pytest.warns(UserWarning, match="NOT recorded"):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         ax.secondary_xaxis("top")
+    # Assert
+    assert not any("NOT recorded" in str(w.message) for w in caught)
 
 
-def test_secondary_yaxis_warns_not_recorded():
-    # Arrange
+def test_secondary_xaxis_with_functions_warns():
+    # Arrange -- custom transform callables are not serializable.
     fig, ax = _axes()
+    ax.plot([0, 1], [0, 1])
     # Act
-    # secondary_yaxis takes transform callables -> not recordable -> warn (Assert)
+    # a functions= secondary axis cannot be recorded -> must warn (see Assert)
     # Assert
     with pytest.warns(UserWarning, match="NOT recorded"):
+        ax.secondary_xaxis("top", functions=(lambda x: x * 2, lambda x: x / 2))
+
+
+def test_secondary_yaxis_plain_records_without_warning():
+    # Arrange
+    import warnings
+
+    fig, ax = _axes()
+    ax.plot([0, 1], [0, 1])
+    # Act
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
         ax.secondary_yaxis("right")
+    # Assert
+    assert not any("NOT recorded" in str(w.message) for w in caught)
