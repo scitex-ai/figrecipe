@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.21] - 2026-07-09
+
+### Fixed
+- **Audit conformance for the 0.29.20 panel-label-weight regression test.** The new
+  `tests/integration/test_panel_label_weight_style.py` combined `# Arrange / Act`
+  on one line, tripping the STX-TQ002 AAA-marker audit rule (which runs only on the
+  3.13 CI SIF) and blocking the 0.29.20 release from publishing. Split into separate
+  `# Arrange` / `# Act` / `# Assert` markers. (0.29.20's panel-label-weight change is
+  included here — 0.29.20 never published.)
+
 ## [0.29.20] - 2026-07-09
 
 ### Changed
