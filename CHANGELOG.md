@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.18] - 2026-07-09
+
+### Added
+- **Color-collision detection (save-time, always-on).** A new perceptual
+  color check flags two data series a reader must tell apart (both carrying a
+  real legend label) drawn in colors so close they are indistinguishable —
+  even when the shapes never geometrically overlap. Per data axes, every pair
+  of labelled series is compared in CIELAB space (`ΔE*76`); pairs below a
+  conservative just-noticeable threshold (default `ΔE 5.0`) surface through the
+  existing `run_overlap_check` save-time warning. Scope guards keep it quiet on
+  legitimate figures: only labelled series are compared, same-label series (one
+  logical series in parts) are exempt, colormapped scatters (intentional
+  gradients) are skipped, and colors are only compared within a single axes
+  (cross-panel color reuse is fine). Lives in `figrecipe._quality._color_collision`
+  (`detect_color_collisions`, `delta_e76`); `Conflict` gains a `kind` field
+  (`"overlap"` | `"color"`).
+
 ## [0.29.9] - 2026-06-28
 
 ### Fixed
