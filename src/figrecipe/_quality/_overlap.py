@@ -101,13 +101,16 @@ class _Component:
 
 @dataclass
 class Conflict:
-    """A detected, forbidden overlap between two components.
+    """A detected figure-quality conflict between two components.
 
     ``role_a``/``role_b`` are the colliding roles; ``label_a``/``label_b``
     are short human labels (e.g. ``"colorbar"``, ``"axes r0c4"``,
-    ``"text 'PAC z-score'"``); ``fraction`` is the overlap measure that
-    tripped the rule (intersection/min-area for bbox pairs; non-background
-    pixel fraction for ``legend <-> ink``).
+    ``"text 'PAC z-score'"``). ``kind`` selects the conflict class:
+    ``"overlap"`` (default) for a geometric overlap -- ``fraction`` is then
+    the overlap measure that tripped the rule (intersection/min-area for
+    bbox pairs; non-background pixel fraction for ``legend <-> ink``) -- or
+    ``"color"`` for two labelled series with near-identical colors, where
+    ``fraction`` carries the measured CIELAB ΔE*76.
     """
 
     role_a: str
@@ -115,9 +118,15 @@ class Conflict:
     label_a: str
     label_b: str
     fraction: float
+    kind: str = "overlap"
 
     def describe(self) -> str:
         """One-line, actionable description of the conflict."""
+        if self.kind == "color":
+            return (
+                f"{self.label_a} and {self.label_b} share near-identical "
+                f"colors (ΔE={self.fraction:.1f})"
+            )
         return f"{self.label_a} overlaps {self.label_b} ({self.fraction:.0%} coverage)"
 
 
@@ -392,6 +401,13 @@ def detect_layout_conflicts(
                 _detect_legend_ink_conflicts(legends, ink_mask, height, tol)
             )
 
+    # Color-collision: labelled series drawn in indistinguishable colors.
+    # The figure is already drawn above, so pass the classified data axes to
+    # skip a redraw. Lazy import keeps _color_collision one-directional.
+    from ._color_collision import detect_color_collisions
+
+    conflicts.extend(detect_color_collisions(data_axes))
+
     return conflicts
 
 
@@ -409,10 +425,11 @@ def run_overlap_check(
     if conflicts:
         lines = "\n  ".join(c.describe() for c in conflicts)
         warnings.warn(
-            "Layout conflict detected: components overlap that should not.\n"
+            "Figure-quality conflict detected: components overlap or share "
+            "indistinguishable colors.\n"
             f"  {lines}\n"
-            "  (Move/resize the offending element, or pass a larger figure "
-            "/ tighter layout.)",
+            "  (Move/resize the offending element, pass a larger figure / "
+            "tighter layout, or use more distinct colors.)",
             UserWarning,
             stacklevel=2,
         )
