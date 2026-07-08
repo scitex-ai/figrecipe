@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.19] - 2026-07-09
+
+### Fixed
+- **Serializing a figure record no longer destroys its in-memory data** (root
+  cause of the flaky imshow nested / compose-of-composed round-trip failure).
+  `CallRecord.to_dict()` returned its `args`/`kwargs` **by reference**, and the
+  save pipeline (`_process_arrays_for_save`) pops `_array` and rewrites `data`
+  on those dicts in place — so the first save mutated the *live* record,
+  stripping each arg's `_array`. A second save/compose of the same live record
+  then emitted a data reference with no CSV written behind it, and reproduce
+  raised `FileNotFoundError: <name>_data/<id>_x.csv` (intermittently on py3.11
+  in CI, deterministically for any double-serialize). `to_dict()` now returns a
+  shallow-copied snapshot of `args`/`kwargs`, so the save pipeline mutates only
+  the snapshot; the `_array` values are shared by reference (not deep-copied, so
+  file-based storage is unaffected). Regression tests: `to_dict` non-aliasing
+  (recorder) + save-same-figure-twice writes data files both times (serializer).
+
 ## [0.29.18] - 2026-07-09
 
 ### Added
