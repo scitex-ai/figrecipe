@@ -32,6 +32,7 @@ fonts:
   supxlabel_pt: 7     # Figure-level x-label (same as axis labels)
   supylabel_pt: 7     # Figure-level y-label (same as axis labels)
   panel_label_pt: 10  # Panel labels (A, B, C, ...) - bold, prominent
+  panel_label_weight: bold  # Panel-label font weight (style-owned, not a code default)
   legend_pt: 6
   annotation_pt: 6
 
