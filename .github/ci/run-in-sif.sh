@@ -29,8 +29,12 @@ export LC_ALL=C.UTF-8 LANG=C.UTF-8
 # Real writable scratch. The runner profile exports TMPDIR=~/.cache/tmp, a host
 # path that does NOT resolve inside the container; tests (tmp_path) and the
 # install target both need a working, writable tmp. Node-local /tmp is writable
-# + ephemeral and per-version-isolated so concurrent matrix legs don't collide.
-export TMPDIR="/tmp/ci-figrecipe-$V"
+# + ephemeral. Scoped per-RUN, not just per-version: the workflow triggers on
+# BOTH push:[develop] and pull_request, so two same-version jobs can run
+# concurrently on one self-hosted runner — a per-version dir collides (one job's
+# `rm -rf` nukes the other's tmp_path → FileNotFoundError / "Directory not
+# empty"). $GITHUB_RUN_ID + attempt make each job's scratch unique.
+export TMPDIR="/tmp/ci-figrecipe-$V-${GITHUB_RUN_ID:-$$}-${GITHUB_RUN_ATTEMPT:-0}"
 rm -rf "$TMPDIR"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
 
