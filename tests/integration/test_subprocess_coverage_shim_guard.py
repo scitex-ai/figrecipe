@@ -6,49 +6,50 @@ before the conditional, so a venv without ``coverage`` installed raised
 ``ModuleNotFoundError`` on every single interpreter start (not just test
 runs) -- surfaced by a user running plain CLI commands like
 ``figrecipe --help`` in a fresh dev venv.
+
+No mocks: the "coverage not installed" condition is a REAL environment
+(a subprocess launched with `-S`, which skips `site` initialization so no
+site-packages -- including wherever `coverage` lives -- end up on
+`sys.path`), not a monkeypatched import.
 """
 
 from __future__ import annotations
 
-import builtins
+import os
+import subprocess
+import sys
+import sysconfig
+from pathlib import Path
 
 from tests.conftest import _ensure_subprocess_coverage_shim
 
 
-def test_shim_pth_content_guards_coverage_import_behind_env_check(
-    tmp_path, monkeypatch
-):
+def test_shim_pth_content_guards_coverage_import_behind_env_check():
     # Arrange
-    monkeypatch.setattr(
-        "tests.conftest.sysconfig.get_paths", lambda: {"purelib": str(tmp_path)}
-    )
-    monkeypatch.delenv("COVERAGE_PROCESS_START", raising=False)
-
-    # Act
     _ensure_subprocess_coverage_shim()
-    pth_text = (tmp_path / "_figrecipe_subprocess_coverage.pth").read_text()
-
+    purelib = Path(sysconfig.get_paths()["purelib"])
+    pth_path = purelib / "_figrecipe_subprocess_coverage.pth"
+    # Act
+    pth_text = pth_path.read_text()
     # Assert
     assert pth_text.index("import coverage") > pth_text.index("if os.environ.get(")
 
 
-def test_shim_does_not_import_coverage_when_env_var_unset(tmp_path, monkeypatch):
+def test_shim_does_not_import_coverage_when_env_var_unset():
     # Arrange
-    monkeypatch.setattr(
-        "tests.conftest.sysconfig.get_paths", lambda: {"purelib": str(tmp_path)}
-    )
-    monkeypatch.delenv("COVERAGE_PROCESS_START", raising=False)
     _ensure_subprocess_coverage_shim()
-    pth_text = (tmp_path / "_figrecipe_subprocess_coverage.pth").read_text()
-
-    real_import = builtins.__import__
-
-    def _blocking_import(name, *args, **kwargs):
-        if name == "coverage":
-            raise ModuleNotFoundError("simulated: coverage not installed")
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", _blocking_import)
-
-    # Act / Assert (must not raise, since COVERAGE_PROCESS_START is unset)
-    exec(compile(pth_text, "_figrecipe_subprocess_coverage.pth", "exec"), {})
+    purelib = Path(sysconfig.get_paths()["purelib"])
+    pth_text = (purelib / "_figrecipe_subprocess_coverage.pth").read_text()
+    env = dict(os.environ)
+    env.pop("COVERAGE_PROCESS_START", None)
+    # Act: -S skips site-packages entirely, so `coverage` is genuinely
+    # unimportable here -- a real "not installed" condition.
+    result = subprocess.run(
+        [sys.executable, "-S", "-c", pth_text],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    # Assert
+    assert result.returncode == 0, result.stderr
