@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.23] - 2026-07-11
+
+### Fixed
+- **Root-caused the flaky imshow nested/composed round-trip test.** `ax.embed()`
+  materializes the source recipe's array data inline (`load_recipe()` sets
+  `arg["data"] = arr.tolist()` plus `_source_file`), but the save pipeline
+  (`_serializer/_save.py::_process_arrays_for_save` /
+  `_process_arrays_with_symlinks`) only ever walked each axes' top-level
+  `calls`/`decorations` — never the nested `subpanels` list that
+  `ax.embed()`/`ax.inset_axes()` produce. So an embedded source's array data
+  (e.g. a 512x512 RGBA `imshow` icon, ~1M scalars) was never re-filed to
+  CSV/NPZ; it stayed inline on every save, turning `_convert_numpy_types` +
+  `ruamel.yaml.dump` into an O(N) walk over ~1M Python-level scalar nodes —
+  a multi-minute, deterministic hang that CI's per-job timeout (or a loaded
+  runner) intermittently killed, misread as "flaky." Both serializer
+  functions now recurse into `subpanels`; the loader (`_load.py`) resolves
+  the same nested file references back into real array data. A missing
+  source file now falls back to inline data with a loud warning (was
+  previously silent). Re-filing only kicks in above a size floor
+  (`_SUBPANEL_FILE_REF_MIN_ELEMENTS = 256`): a smaller sub-panel array stays
+  inline, because the reproducer's inset/embed replay path
+  (`_reproducer/_replay_insets.py`) resolves a sub-panel's `data` straight
+  from the recipe dict rather than through the file-reference loader, so a
+  filed reference there isn't (yet) something it understands — filing a
+  below-threshold array broke the ordinary small-embed case (a save-time
+  reproducibility-validation failure), caught by a regression test before
+  shipping. Regression tests: `tests/integration/test_embed_subpanel_data_filing.py`.
+
 ## [0.29.21] - 2026-07-09
 
 ### Fixed
