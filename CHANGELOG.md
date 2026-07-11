@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.26] - 2026-07-11
+
+### Fixed
+- **Audit conformance for the 0.29.25 coverage-shim regression test.** The
+  new `tests/integration/test_subprocess_coverage_shim_guard.py` used the
+  `monkeypatch` fixture (forbidden as a mock by PA-306) and had a test
+  with no explicit assertion / AAA markers, tripping PA-306/STX-TQ001/
+  STX-TQ002 (3.11+ CI) and blocking the 0.29.25 release from publishing.
+  Rewritten to avoid mocking entirely: the "coverage not installed"
+  condition is now a REAL environment (a subprocess launched with `-S`,
+  which skips `site` initialization so no site-packages end up on
+  `sys.path`), not a monkeypatched import. (0.29.25's coverage-pth fix
+  is included here — 0.29.25 never published.)
+
+## [0.29.25] - 2026-07-11
+
+### Fixed
+- **Subprocess-coverage `.pth` shim crashed every CLI invocation in venvs without
+  `coverage` installed.** `tests/conftest.py::_ensure_subprocess_coverage_shim()`
+  writes a `.pth` file that starts coverage tracing in child interpreters. Its
+  template had `import os, coverage` at the top level, executed unconditionally
+  by `site.py` on *every* interpreter start in that venv — not just test runs.
+  Any plain command (e.g. `figrecipe --help`) in a venv where `coverage` wasn't
+  installed raised `ModuleNotFoundError` on every invocation, once a prior
+  `pytest` run had dropped the shim into site-packages. `coverage` is now
+  imported only inside the `COVERAGE_PROCESS_START` conditional. Regression
+  test: `tests/integration/test_subprocess_coverage_shim_guard.py`.
+
 ## [0.29.24] - 2026-07-11
 
 ### Fixed
