@@ -18,28 +18,25 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-import sysconfig
 from pathlib import Path
 
 from tests.conftest import _ensure_subprocess_coverage_shim
 
 
-def test_shim_pth_content_guards_coverage_import_behind_env_check():
-    # Arrange
-    _ensure_subprocess_coverage_shim()
-    purelib = Path(sysconfig.get_paths()["purelib"])
-    pth_path = purelib / "_figrecipe_subprocess_coverage.pth"
+def test_shim_pth_content_guards_coverage_import_behind_env_check(tmp_path: Path):
+    # Arrange: write to a writable tmp dir, not the real site-packages --
+    # that may be read-only in CI (e.g. a layered/squashfs SIF image).
+    pth_path = _ensure_subprocess_coverage_shim(purelib=tmp_path)
     # Act
     pth_text = pth_path.read_text()
     # Assert
     assert pth_text.index("import coverage") > pth_text.index("if os.environ.get(")
 
 
-def test_shim_does_not_import_coverage_when_env_var_unset():
+def test_shim_does_not_import_coverage_when_env_var_unset(tmp_path: Path):
     # Arrange
-    _ensure_subprocess_coverage_shim()
-    purelib = Path(sysconfig.get_paths()["purelib"])
-    pth_text = (purelib / "_figrecipe_subprocess_coverage.pth").read_text()
+    pth_path = _ensure_subprocess_coverage_shim(purelib=tmp_path)
+    pth_text = pth_path.read_text()
     env = dict(os.environ)
     env.pop("COVERAGE_PROCESS_START", None)
     # Act: -S skips site-packages entirely, so `coverage` is genuinely

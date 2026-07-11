@@ -36,12 +36,18 @@ os.environ["COVERAGE_PROCESS_START"] = str(_PROJECT_ROOT / "pyproject.toml")
 os.environ["COVERAGE_FILE"] = str(_PROJECT_ROOT / ".coverage")
 
 
-def _ensure_subprocess_coverage_shim() -> None:
+def _ensure_subprocess_coverage_shim(purelib: Path | None = None) -> Path | None:
     """Drop an idempotent `.pth` file in site-packages that auto-starts
     coverage in every child Python interpreter via
     `coverage.process_startup()`.
+
+    `purelib` is overridable (tests pass a writable `tmp_path`) because the
+    real venv site-packages is read-only in some CI environments (e.g. a
+    layered/squashfs SIF image) — asserting against that path directly is
+    not hermetic. Returns the `.pth` path written, or None if the write was
+    skipped (read-only site-packages).
     """
-    purelib = Path(sysconfig.get_paths()["purelib"])
+    purelib = purelib if purelib is not None else Path(sysconfig.get_paths()["purelib"])
     pth = purelib / "_figrecipe_subprocess_coverage.pth"
     # `coverage` is imported ONLY inside the conditional: this .pth line runs
     # on every interpreter start in the venv (not just test runs), and an
@@ -58,9 +64,11 @@ def _ensure_subprocess_coverage_shim() -> None:
         if not pth.exists() or pth.read_text() != shim:
             pth.write_text(shim)
     except OSError:
-        # site-packages may be read-only (e.g. system Python); silently
-        # skip — local dev venvs are writable and that's where this matters.
-        pass
+        # site-packages may be read-only (e.g. system Python, or a
+        # layered/squashfs CI image); silently skip — local dev venvs are
+        # writable and that's where this matters.
+        return None
+    return pth
 
 
 _ensure_subprocess_coverage_shim()
