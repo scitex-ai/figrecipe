@@ -145,8 +145,10 @@ def test_small_embedded_array_stays_inline_and_validates():
         host_fig, host_ax = fr.subplots(axes_width_mm=80, axes_height_mm=60)
         host_ax.plot([0, 1, 2, 3], [3, 2, 1, 0])
         host_ax.embed(str(source_recipe), bounds=[0.55, 0.55, 0.4, 0.4])
-        # Act / Assert: validate=True raises on a reproducibility mismatch.
+        # Act
         fr.save(host_fig, str(tmp_dir / "small_host.png"), validate=True)
+        # Assert: no "not-reproduced" divergence artifact was written.
+        assert list(tmp_dir.glob("*not-reproduced*")) == []
 
 
 def test_embedded_recipe_round_trips_via_reproduce():

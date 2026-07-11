@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.24] - 2026-07-11
+
+### Fixed
+- **Audit conformance for the 0.29.23 regression-guard test.** The new
+  `test_small_embedded_array_stays_inline_and_validates` had no explicit
+  `assert` and combined `# Act / Assert` on one line, tripping the
+  STX-TQ001/STX-TQ002 audit rules (3.11+ CI) and blocking the 0.29.23
+  release from publishing. Split into separate `# Act` / `# Assert`
+  markers with an explicit assertion (no `*-not-reproduced*` divergence
+  artifact was written). (0.29.23's serializer fix is included here —
+  0.29.23 never published.)
+
 ## [0.29.23] - 2026-07-11
 
 ### Fixed
