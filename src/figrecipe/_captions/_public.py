@@ -21,6 +21,22 @@ def _strip_markdown(text: str) -> str:
     return text.replace("**", "").replace("*", "")
 
 
+class _NullRecord:
+    """Stand-in record for a bare matplotlib Figure (no ``fig.record``).
+
+    The band helpers mirror geometry into a record so the recipe round-trips;
+    when there is nothing to round-trip (a plain ``Figure``), they harmlessly
+    write to this throwaway object instead.
+    """
+
+    def __init__(self) -> None:
+        self.figsize = None
+        self.layout = None
+        self.mm_layout = None
+        self.figure_texts: list = []
+        self.caption = None
+
+
 def add_figure_caption(
     fig: Any,
     caption: str,
@@ -31,6 +47,8 @@ def add_figure_caption(
     width_ratio: float = 0.9,
     font_size: Union[str, int] = "small",
     wrap_width: int = 80,
+    align: str = "justify",
+    pad_mm: float = 2.0,
     save_to_file: bool = False,
     file_path: Optional[str] = None,
 ) -> str:
@@ -58,6 +76,12 @@ def add_figure_caption(
         Font size for caption text.
     wrap_width : int
         Character width for text wrapping.
+    align : str
+        Caption alignment: "justify" (default), "left", or "center".
+        "justify" spans the full content width with the last line
+        left-aligned.
+    pad_mm : float
+        Gap (mm) between the caption band and the axes / figure edge.
     save_to_file : bool
         Whether to also save caption to a separate file.
     file_path : str, optional
@@ -100,80 +124,48 @@ def add_figure_caption(
         )
         return _strip_markdown(caption)
 
-    # Reserve room for the caption BEFORE rendering, by adjusting axes
-    # positions when they encroach on the caption strip.  The previous
-    # implementation called ``mpl_fig.subplots_adjust(bottom=0.15)`` and
-    # trusted that to move the panels, but on figrecipe's mm-laid figures
-    # (the paper-figure default) the bottom-row axes stayed near y0≈0.05
-    # and the caption text at y=0.02 landed on top of them.  We now
-    # nudge each axes via ``set_position`` so the fix is robust to the
-    # mm-layout path AND the plain subplots_adjust path.
-    reserved = 0.15  # caption strip height in figure-fraction
-    pad = 0.02  # gap between caption and nearest axes
-    if position == "bottom":
-        mpl_fig.subplots_adjust(bottom=reserved)
-        mpl_fig.canvas.draw()
-        mpl_axes = [ax for ax in mpl_fig.axes if ax.get_visible()]
-        if mpl_axes:
-            lowest = min(ax.get_position().y0 for ax in mpl_axes)
-            if lowest < reserved + pad:
-                delta = (reserved + pad) - lowest
-                for ax in mpl_axes:
-                    pos = ax.get_position()
-                    new_height = max(0.05, pos.height - delta)
-                    ax.set_position([pos.x0, pos.y0 + delta, pos.width, new_height])
-        y_pos, va = 0.02, "bottom"
-    else:
-        mpl_fig.subplots_adjust(top=1.0 - reserved)
-        mpl_fig.canvas.draw()
-        mpl_axes = [ax for ax in mpl_fig.axes if ax.get_visible()]
-        if mpl_axes:
-            highest = max(ax.get_position().y1 for ax in mpl_axes)
-            if highest > 1.0 - reserved - pad:
-                delta = highest - (1.0 - reserved - pad)
-                for ax in mpl_axes:
-                    pos = ax.get_position()
-                    new_height = max(0.05, pos.height - delta)
-                    ax.set_position([pos.x0, pos.y0, pos.width, new_height])
-        y_pos, va = 0.98, "top"
+    # ADDITIVE caption band: the figure GROWS by a caption band and the axes
+    # keep their EXACT mm size/position (identical to the no-caption figure).
+    # The previous implementation reserved space by SHRINKING the axes (a fixed
+    # 0.15 strip + per-axes ``set_position``), which on figrecipe's mm-precise
+    # figures grew the multi-line caption into the axes/xlabel and crowded the
+    # ylabel. We never shrink axes now: ``extend_figure_for_caption`` enlarges
+    # the canvas + rewrites subplotpars so the axes land at the same physical
+    # place, and ``place_caption`` draws the caption into the freed band and
+    # records every drawn fragment for verbatim save->reproduce replay.
+    from ._band import (
+        caption_band_inches,
+        extend_figure_for_caption,
+        place_caption,
+        resolve_caption_font_pt,
+        wrap_caption_lines,
+    )
 
     clean_caption = _strip_markdown(caption)
 
-    # Persist caption in the recipe record for round-trip.
+    font_pt = resolve_caption_font_pt(font_size, mpl_fig)
+    lines = wrap_caption_lines(clean_caption, wrap_width)
+    band_in = caption_band_inches(len(lines), font_pt, pad_mm)
+
+    # Persist the caption text itself for round-trip metadata.
     if hasattr(fig, "record"):
         fig.record.caption = caption
-        fig.record.figure_texts.append(
-            {
-                "x": 0.5,
-                "y": y_pos,
-                "s": clean_caption,
-                "kwargs": {
-                    "ha": "center",
-                    "va": va,
-                    "fontsize": font_size,
-                    "wrap": True,
-                    "bbox": dict(
-                        boxstyle="round,pad=0.5", facecolor="white", alpha=0.8
-                    ),
-                },
-            }
-        )
 
-    # Render the caption text — ONCE.  This is the single source of
-    # visual truth; ``caption_manager.add_figure_caption`` below is
-    # called with ``render=False`` so it only registers metadata
-    # (numbering, registry, optional file save) and does NOT draw a
-    # second copy of the caption (the previous double-render bug stacked
-    # two captions on the same y-anchor and they overlapped each other).
-    mpl_fig.text(
-        0.5,
-        y_pos,
-        clean_caption,
-        ha="center",
-        va=va,
-        fontsize=font_size,
-        wrap=True,
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="white", alpha=0.8),
+    record = fig.record if hasattr(fig, "record") else _NullRecord()
+
+    extend_figure_for_caption(mpl_fig, record, band_in, position)
+    # Render the caption text — ONCE. This is the single source of visual truth;
+    # ``caption_manager.add_figure_caption`` below is called with render=False so
+    # it only registers metadata and does NOT draw a second copy.
+    place_caption(
+        mpl_fig,
+        record,
+        lines,
+        font_pt,
+        position,
+        align,
+        band_in,
+        width_ratio,
     )
 
     # Register with internal manager for numbering/export ONLY.

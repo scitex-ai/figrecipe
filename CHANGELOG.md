@@ -5,6 +5,187 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.24] - 2026-07-11
+
+### Fixed
+- **Audit conformance for the 0.29.23 regression-guard test.** The new
+  `test_small_embedded_array_stays_inline_and_validates` had no explicit
+  `assert` and combined `# Act / Assert` on one line, tripping the
+  STX-TQ001/STX-TQ002 audit rules (3.11+ CI) and blocking the 0.29.23
+  release from publishing. Split into separate `# Act` / `# Assert`
+  markers with an explicit assertion (no `*-not-reproduced*` divergence
+  artifact was written). (0.29.23's serializer fix is included here —
+  0.29.23 never published.)
+
+## [0.29.23] - 2026-07-11
+
+### Fixed
+- **Root-caused the flaky imshow nested/composed round-trip test.** `ax.embed()`
+  materializes the source recipe's array data inline (`load_recipe()` sets
+  `arg["data"] = arr.tolist()` plus `_source_file`), but the save pipeline
+  (`_serializer/_save.py::_process_arrays_for_save` /
+  `_process_arrays_with_symlinks`) only ever walked each axes' top-level
+  `calls`/`decorations` — never the nested `subpanels` list that
+  `ax.embed()`/`ax.inset_axes()` produce. So an embedded source's array data
+  (e.g. a 512x512 RGBA `imshow` icon, ~1M scalars) was never re-filed to
+  CSV/NPZ; it stayed inline on every save, turning `_convert_numpy_types` +
+  `ruamel.yaml.dump` into an O(N) walk over ~1M Python-level scalar nodes —
+  a multi-minute, deterministic hang that CI's per-job timeout (or a loaded
+  runner) intermittently killed, misread as "flaky." Both serializer
+  functions now recurse into `subpanels`; the loader (`_load.py`) resolves
+  the same nested file references back into real array data. A missing
+  source file now falls back to inline data with a loud warning (was
+  previously silent). Re-filing only kicks in above a size floor
+  (`_SUBPANEL_FILE_REF_MIN_ELEMENTS = 256`): a smaller sub-panel array stays
+  inline, because the reproducer's inset/embed replay path
+  (`_reproducer/_replay_insets.py`) resolves a sub-panel's `data` straight
+  from the recipe dict rather than through the file-reference loader, so a
+  filed reference there isn't (yet) something it understands — filing a
+  below-threshold array broke the ordinary small-embed case (a save-time
+  reproducibility-validation failure), caught by a regression test before
+  shipping. Regression tests: `tests/integration/test_embed_subpanel_data_filing.py`.
+
+## [0.29.21] - 2026-07-09
+
+### Fixed
+- **Audit conformance for the 0.29.20 panel-label-weight regression test.** The new
+  `tests/integration/test_panel_label_weight_style.py` combined `# Arrange / Act`
+  on one line, tripping the STX-TQ002 AAA-marker audit rule (which runs only on the
+  3.13 CI SIF) and blocking the 0.29.20 release from publishing. Split into separate
+  `# Arrange` / `# Act` / `# Assert` markers. (0.29.20's panel-label-weight change is
+  included here — 0.29.20 never published.)
+
+## [0.29.20] - 2026-07-09
+
+### Changed
+- **Panel-label font WEIGHT is now a style-owned field** (`fonts.panel_label_weight`
+  in SCITEX, default `bold`), matching how panel-label size (`panel_label_pt`) and
+  family are already style-owned — "the style owns the field, not a code default".
+  `fig.add_panel_labels()` resolves `fontweight` from the active style when the
+  caller passes none, with `'bold'` only the ultimate fallback for styles without
+  the field. Rendered output is unchanged (labels already rendered bold); the
+  weight is simply now driven by the style rather than a hardcoded literal.
+
+## [0.29.19] - 2026-07-09
+
+### Fixed
+- **Serializing a figure record no longer destroys its in-memory data** (root
+  cause of the flaky imshow nested / compose-of-composed round-trip failure).
+  `CallRecord.to_dict()` returned its `args`/`kwargs` **by reference**, and the
+  save pipeline (`_process_arrays_for_save`) pops `_array` and rewrites `data`
+  on those dicts in place — so the first save mutated the *live* record,
+  stripping each arg's `_array`. A second save/compose of the same live record
+  then emitted a data reference with no CSV written behind it, and reproduce
+  raised `FileNotFoundError: <name>_data/<id>_x.csv` (intermittently on py3.11
+  in CI, deterministically for any double-serialize). `to_dict()` now returns a
+  shallow-copied snapshot of `args`/`kwargs`, so the save pipeline mutates only
+  the snapshot; the `_array` values are shared by reference (not deep-copied, so
+  file-based storage is unaffected). Regression tests: `to_dict` non-aliasing
+  (recorder) + save-same-figure-twice writes data files both times (serializer).
+
+## [0.29.18] - 2026-07-09
+
+### Added
+- **Color-collision detection (save-time, always-on).** A new perceptual
+  color check flags two data series a reader must tell apart (both carrying a
+  real legend label) drawn in colors so close they are indistinguishable —
+  even when the shapes never geometrically overlap. Per data axes, every pair
+  of labelled series is compared in CIELAB space (`ΔE*76`); pairs below a
+  conservative just-noticeable threshold (default `ΔE 5.0`) surface through the
+  existing `run_overlap_check` save-time warning. Scope guards keep it quiet on
+  legitimate figures: only labelled series are compared, same-label series (one
+  logical series in parts) are exempt, colormapped scatters (intentional
+  gradients) are skipped, and colors are only compared within a single axes
+  (cross-panel color reuse is fine). Lives in `figrecipe._quality._color_collision`
+  (`detect_color_collisions`, `delta_e76`); `Conflict` gains a `kind` field
+  (`"overlap"` | `"color"`).
+
+## [0.29.9] - 2026-06-28
+
+### Fixed
+- **Auto panel labels no longer overlap the axes title.** `fr.subplots(...,
+  panel_labels=True)` adds the (A)/(B)/(C)/(D) labels at construction time —
+  before titles exist — so a fixed `y=1.05` offset landed the label on a title
+  set later via `set_xyt`. Labels are now lifted clear of the title at save
+  time: a title-aware label sits just above the title (scaled by the title
+  height), while an axes with no title keeps the default placement (back-compat),
+  and an explicit user `offset` is honored verbatim.
+- **`imshow` honors an explicitly-passed `aspect` (e.g. `"auto"`).** The imshow
+  styler now distinguishes "caller passed no aspect" (defaults to the style's
+  `"equal"`) from an explicit aspect, so `ax.imshow(..., aspect="auto")` is never
+  silently coerced back to `"equal"` by the styler. (Note: for a square heatmap
+  filling square mm axes, also use a dedicated colorbar axes — e.g.
+  `make_axes_locatable(...).append_axes(...)` — so the colorbar doesn't shrink
+  the host axes off-square.)
+- **Recipe save no longer crashes on numpy-scalar labels/values.** A numpy
+  scalar reaching the recipe serializer (most commonly `np.str_` from a
+  DataFrame column, but also `np.complex*`, `np.datetime64`, etc.) was handed
+  straight to the YAML representer and raised
+  `RepresenterError: cannot represent np.str_('…')`. The numpy→native coercion
+  now has an `np.generic` catch-all (`.item()`) so any numpy scalar normalises to
+  its native Python type before serialization. (Previously only `np.ndarray`/
+  `np.integer`/`np.floating`/`np.bool_` were handled.)
+
+## [0.29.8] - 2026-06-28
+
+### Fixed
+- **Justified captions no longer stretch sparse lines into huge gaps.** With
+  `align="justify"` (the default), a line is now only stretched edge-to-edge
+  when its words already fill at least 60% of the available width; a sparser
+  line (few words on a wide figure) is left-aligned instead of having its
+  inter-word spaces blown up to several times normal. Full lines stay flush
+  left-and-right (the caption body matches the panel width), only the sparse and
+  last lines ragged-right. Adds test coverage for `align="center"`/`"left"` and
+  `position="top"`.
+- **Auto panel labels (A)/(B) now render at the correct size and font.**
+  `fig.add_panel_labels()` (used by `fr.subplots(..., panel_labels=True)`) read
+  the plot-title size (`title_pt`, 8pt) instead of the panel-label convention
+  (`panel_label_pt`, 10pt), and inherited a generic `sans-serif` family rather
+  than the style's explicitly-resolved family — so the labels came out the wrong
+  size and in a different face from the axis labels/ticks. They now use
+  `panel_label_pt` (10pt bold in SCITEX) and the same resolved family as the
+  body (Arial, or its installed fallback), so labels match the rest of the
+  figure.
+
+## [0.29.7] - 2026-06-28
+
+### Fixed
+- **In-image captions never overlap the axes anymore.** `add_figure_caption`
+  is now ADDITIVE: instead of reserving space by shrinking the axes (the old
+  fixed `subplots_adjust(bottom=0.15)` + per-axes `set_position`, which let a
+  multi-line caption grow into the x/ylabels on mm-precise figures), it GROWS
+  the figure by a measured caption band and keeps the axes at their EXACT mm
+  size and position. The band height is derived from the wrapped line count and
+  font size; the axes are pinned across the figrecipe constrained-layout engine
+  so they never move. Applies to single figures **and** composed figures
+  (`fr.compose(caption=...)`), whose per-panel `(A)/(B)` labels are re-placed
+  against the post-band panel positions.
+
+### Added
+- **Justified in-image captions.** `add_figure_caption(..., align=...)` accepts
+  `"justify"` (default — full-width lines, last line left-aligned), `"center"`,
+  and `"left"`, plus a `pad_mm` knob for the band gap. In-image captions are for
+  casual researcher communication / reports / grant figures; the manuscript path
+  is unchanged (the `.tex` caption sidecar / manuscript mode). The band and
+  justified word fragments round-trip faithfully through `save`→`reproduce`.
+
+## [0.29.6] - 2026-06-28
+
+### Added
+- **Machine-readable layout introspection** (`figrecipe.empty_cells`,
+  `figrecipe.layout_report`) — the agent-facing foundation for tight,
+  empty-cell-free page packing. `empty_cells(layout, sources)` returns the blank
+  `(row, col)` positions of a grid (fast path); `layout_report(fig)` returns a
+  native-float report `{mode, canvas_mm, panels[...mm/frac/aspect],
+  empty_regions[maximal blank rectangles], coverage_frac}` with a top-left
+  origin. Panels are reported at their measured millimetre sizes so a caller can
+  re-plot at 1:1 — figrecipe never stretches a panel to fill space.
+- **Compose-time under-fill warning** — composing an under-filled grid now emits
+  a `UserWarning` naming the empty cells, so blank page space is caught at build
+  time rather than discovered in the PDF.
+- **Figure-making skill** (`_skills/figrecipe/26_tight-layout-and-page-filling.md`)
+  capturing the tight-layout / page-filling know-how, indexed in `SKILL.md`.
+
 ## [0.29.5] - 2026-06-27
 
 ### Fixed

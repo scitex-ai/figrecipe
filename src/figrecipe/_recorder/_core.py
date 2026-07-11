@@ -31,12 +31,24 @@ class CallRecord:
     stats: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for serialization."""
+        """Convert to dictionary for serialization.
+
+        ``args``/``kwargs`` are SHALLOW-COPIED so the save pipeline
+        (``_process_arrays_for_save`` pops ``_array`` and rewrites ``data``
+        in place) mutates only this snapshot, never the live record. Without
+        the copy, serializing a record DESTROYS its in-memory ``_array``: a
+        second save/compose of the same live record then emits a data
+        reference with no CSV written behind it, so reproduce raises
+        ``FileNotFoundError: <name>_data/<id>_x.csv`` (the flaky imshow
+        nested/compose-of-composed round-trip failure). The ``_array`` values
+        are shared by reference (not deep-copied) -- the save path only reads
+        them, and deep-copying the arrays would defeat file-based storage.
+        """
         result = {
             "id": self.id,
             "function": self.function,
-            "args": self.args,
-            "kwargs": self.kwargs,
+            "args": [dict(a) if isinstance(a, dict) else a for a in self.args],
+            "kwargs": dict(self.kwargs),
             "timestamp": self.timestamp,
         }
         if self.stats is not None:

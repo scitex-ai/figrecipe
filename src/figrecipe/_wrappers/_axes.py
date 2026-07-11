@@ -9,6 +9,7 @@ from matplotlib.axes import Axes
 
 from ._axes_diagram import DiagramMixin
 from ._axes_methods import RecordingAxesMethods
+from ._axes_scatter_labels import ScatterLabelsMixin
 from ._axes_scitex import SciTexMixin
 from ._axes_style_mixin import AxesStyleMixin
 
@@ -16,7 +17,13 @@ if TYPE_CHECKING:
     from .._recorder import Recorder
 
 
-class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMixin):
+class RecordingAxes(
+    RecordingAxesMethods,
+    AxesStyleMixin,
+    SciTexMixin,
+    DiagramMixin,
+    ScatterLabelsMixin,
+):
     """Wrapper around matplotlib Axes that records all calls.
 
     This wrapper intercepts calls to plotting methods and records them
@@ -100,6 +107,20 @@ class RecordingAxes(RecordingAxesMethods, AxesStyleMixin, SciTexMixin, DiagramMi
             from ._axes_insets import build_inset_axes_wrapper
 
             return build_inset_axes_wrapper(self)
+
+        # Route bar_label to a wrapper that freezes each label into a recorded
+        # annotate (its live BarContainer arg is otherwise un-serializable).
+        if callable(attr) and name == "bar_label":
+            from ._axes_barlabel import build_bar_label_wrapper
+
+            return build_bar_label_wrapper(self)
+
+        # Route secondary_xaxis/secondary_yaxis to a wrapper that records the
+        # plain-location case and warns when custom transform functions are given.
+        if callable(attr) and name in ("secondary_xaxis", "secondary_yaxis"):
+            from ._axes_barlabel import build_secondary_axis_wrapper
+
+            return build_secondary_axis_wrapper(self, name)
 
         # If it's a plotting or decoration method, wrap it
         if callable(attr) and name in (

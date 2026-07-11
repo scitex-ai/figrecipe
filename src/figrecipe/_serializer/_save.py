@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Save-side serialization for recipe files (YAML + data files)."""
 
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Union
 
@@ -19,6 +20,16 @@ from .._utils._numpy_io import (
 )
 from ._clew import record_output
 from ._utils import _convert_numpy_types, _sanitize_filename
+
+# Sub-panel array args below this size stay inline on save: the inset/embed
+# replay path (_reproducer/_replay_insets.py) doesn't resolve file-reference
+# ``data`` strings, only the top-level loader does. Above it, re-filing wins
+# (avoids the pathological large-array inline-YAML slowdown/CI hang).
+_SUBPANEL_FILE_REF_MIN_ELEMENTS = 256
+
+
+def _subpanel_arr_size(loaded_array) -> int:
+    return int(getattr(loaded_array, "size", 0) or 0)
 
 
 def _panel_prefix(ax_key: str, nrows, ncols) -> str:
@@ -266,37 +277,105 @@ def _process_arrays_for_save(
     panel F's data lands in ``F_<call_id>_<argname>.csv``. Single-panel
     figures and legacy recipes that don't carry the grid shape get no panel
     prefix (the operator never thinks of them as having "panels").
+
+    Recurses into ``subpanels`` (``ax.embed()``/``ax.inset_axes()``): an
+    embedded source's LARGE array-backed calls (e.g. an ``imshow`` image,
+    >= ``_SUBPANEL_FILE_REF_MIN_ELEMENTS``) are re-filed/symlinked to their
+    original backing file instead of staying inline forever -- avoids the
+    pathologically slow ``_convert_numpy_types``+``ruamel.yaml.dump`` walk
+    over a giant nested-list literal (the "flaky imshow nested round-trip"
+    CI hang, see ``tests/integration/test_embed_subpanel_data_filing.py``).
+    Small sub-panel arrays stay inline: the inset replay path
+    (``_reproducer/_replay_insets.py``) resolves sub-panel args straight
+    from the recipe dict, not through the file-reference resolver.
     """
+    import os
+
     data_dir_created = False
 
-    for ax_key, ax_data in data.get("axes", {}).items():
-        panel_prefix = _panel_prefix(ax_key, nrows, ncols)
-        for call_list in [ax_data.get("calls", []), ax_data.get("decorations", [])]:
-            for call in call_list:
-                call_id = call.get("id", "unknown")
-                safe_call_id = _sanitize_filename(call_id)
+    def _process_call_list(
+        call_list, panel_prefix: str, id_prefix: str, in_subpanel: bool
+    ) -> None:
+        nonlocal data_dir_created
+        for call in call_list:
+            call_id = call.get("id", "unknown")
+            safe_call_id = _sanitize_filename(f"{id_prefix}{call_id}")
 
-                # Process args
-                for i, arg in enumerate(call.get("args", [])):
-                    if "_array" in arg:
+            for i, arg in enumerate(call.get("args", [])):
+                arr = arg.pop("_array", None)
+                source_file_path = arg.pop("_source_file", None)
+                loaded_array = arg.pop("_loaded_array", None)
+
+                if arr is not None:
+                    if not data_dir_created:
+                        data_dir.mkdir(parents=True, exist_ok=True)
+                        data_dir_created = True
+
+                    filename = (
+                        f"{panel_prefix}{safe_call_id}_{arg.get('name', f'arg{i}')}"
+                    )
+                    file_path = save_array(arr, data_dir / filename, data_format)
+                    arg["data"] = str(file_path.relative_to(data_dir.parent))
+                    record_output(file_path)  # clew: data file as session output
+
+                elif source_file_path and (
+                    not in_subpanel
+                    or _subpanel_arr_size(loaded_array)
+                    >= _SUBPANEL_FILE_REF_MIN_ELEMENTS
+                ):
+                    source_file = Path(source_file_path)
+                    if source_file.exists():
                         if not data_dir_created:
                             data_dir.mkdir(parents=True, exist_ok=True)
                             data_dir_created = True
 
-                        arr = arg.pop("_array")
-                        filename = (
-                            f"{panel_prefix}{safe_call_id}_{arg.get('name', f'arg{i}')}"
+                        target_path = data_dir / source_file.name
+                        # Refresh: drop any stale/broken link left by a prior
+                        # run so the symlink always points at the CURRENT
+                        # source, never a renamed/moved phantom.
+                        if target_path.is_symlink() or target_path.exists():
+                            target_path.unlink()
+                        rel_source = os.path.relpath(source_file, target_path.parent)
+                        os.symlink(rel_source, target_path)
+                        arg["data"] = str(target_path.relative_to(data_dir.parent))
+                        record_output(target_path)
+                    else:
+                        # The source file that backed this loaded value has
+                        # vanished. Best-effort here (this is a re-filing
+                        # OPTIMIZATION, not the sole path to correctness) --
+                        # leave the inline "data" load already reconstructed
+                        # rather than failing loud, since the recipe still
+                        # reproduces (just without the size/speed win). Warn
+                        # so a bloated re-saved recipe doesn't go unnoticed.
+                        warnings.warn(
+                            f"figrecipe: source data file for call "
+                            f"{call_id!r} no longer exists at "
+                            f"{source_file_path!r}; this array will be "
+                            f"re-saved INLINE in the recipe YAML instead of "
+                            f"filed/symlinked, which can bloat the file for "
+                            f"large arrays.",
+                            stacklevel=2,
                         )
-                        file_path = save_array(arr, data_dir / filename, data_format)
-                        arg["data"] = str(file_path.relative_to(data_dir.parent))
-                        record_output(file_path)  # clew: data file as session output
 
-                    # Drop transient load-side artifacts so a re-saved recipe never
-                    # serializes the in-memory array or an absolute source path
-                    # (both set by load when resolving file refs); otherwise they
-                    # leak into the YAML, bloating it and breaking portability.
-                    arg.pop("_loaded_array", None)
-                    arg.pop("_source_file", None)
+    def _process_ax_data(
+        ax_data, panel_prefix: str, id_prefix: str, in_subpanel: bool
+    ) -> None:
+        _process_call_list(
+            ax_data.get("calls", []), panel_prefix, id_prefix, in_subpanel
+        )
+        _process_call_list(
+            ax_data.get("decorations", []), panel_prefix, id_prefix, in_subpanel
+        )
+        for sp_idx, sp in enumerate(ax_data.get("subpanels", []) or []):
+            sp_axes = sp.get("axes")
+            if sp_axes is not None:
+                _process_ax_data(
+                    sp_axes, panel_prefix, f"{id_prefix}sub{sp_idx}_", True
+                )
+
+    for ax_key, ax_data in data.get("axes", {}).items():
+        panel_prefix = _panel_prefix(ax_key, nrows, ncols)
+        _process_ax_data(ax_data, panel_prefix, "", False)
 
     return data
 
@@ -315,60 +394,77 @@ def _process_arrays_with_symlinks(
     For arrays that aren't symlinked (no ``_source_file`` recorded), the
     panel-letter prefix is applied to the resulting filename so the
     composition path uses the same naming convention as the standard save.
+
+    Recurses into ``subpanels`` for the same reason ``_process_arrays_for_save``
+    does (see its docstring): an embedded source's array-backed calls must be
+    re-filed (symlinked or written), never left inline, or a sizeable embedded
+    array turns every save into a multi-minute ``_convert_numpy_types`` +
+    ``ruamel.yaml.dump`` walk over a giant nested-list literal.
     """
     import os
 
     data_dir_created = False
 
+    def _process_call_list(call_list, panel_prefix: str, id_prefix: str) -> None:
+        nonlocal data_dir_created
+        for call in call_list:
+            call_id = call.get("id", "unknown")
+            safe_call_id = _sanitize_filename(f"{id_prefix}{call_id}")
+            _assert_tick_call_faithful(call)
+
+            for i, arg in enumerate(call.get("args", [])):
+                source_file_path = arg.pop("_source_file", None)
+                arr = arg.pop("_array", None)
+                arg.pop("_loaded_array", None)
+
+                if source_file_path:
+                    if not data_dir_created:
+                        data_dir.mkdir(parents=True, exist_ok=True)
+                        data_dir_created = True
+
+                    source_file = Path(source_file_path)
+                    target_path = data_dir / source_file.name
+
+                    # Fail loud: composition references the REAL source data
+                    # (single source of truth); a missing source must never
+                    # produce a silently-broken recipe symlink.
+                    if not source_file.exists():
+                        raise FileNotFoundError(
+                            f"compose source data file missing: {source_file} "
+                            f"(call {call_id}). Cannot create a valid data "
+                            f"symlink for the composed recipe."
+                        )
+                    # Refresh: drop any stale/broken link left by a prior run
+                    # so the symlink always points at the CURRENT source, never
+                    # a renamed/moved phantom.
+                    if target_path.is_symlink() or target_path.exists():
+                        target_path.unlink()
+                    rel_source = os.path.relpath(source_file, target_path.parent)
+                    os.symlink(rel_source, target_path)
+
+                    arg["data"] = str(target_path.relative_to(data_dir.parent))
+
+                elif arr is not None:
+                    if not data_dir_created:
+                        data_dir.mkdir(parents=True, exist_ok=True)
+                        data_dir_created = True
+
+                    var_name = arg.get("name", f"arg{i}")
+                    filename = f"{panel_prefix}{safe_call_id}_{var_name}"
+                    file_path = save_array(arr, data_dir / filename, data_format)
+                    arg["data"] = str(file_path.relative_to(data_dir.parent))
+
+    def _process_ax_data(ax_data, panel_prefix: str, id_prefix: str) -> None:
+        _process_call_list(ax_data.get("calls", []), panel_prefix, id_prefix)
+        _process_call_list(ax_data.get("decorations", []), panel_prefix, id_prefix)
+        for sp_idx, sp in enumerate(ax_data.get("subpanels", []) or []):
+            sp_axes = sp.get("axes")
+            if sp_axes is not None:
+                _process_ax_data(sp_axes, panel_prefix, f"{id_prefix}sub{sp_idx}_")
+
     for ax_key, ax_data in data.get("axes", {}).items():
         panel_prefix = _panel_prefix(ax_key, nrows, ncols)
-        for call_list in [ax_data.get("calls", []), ax_data.get("decorations", [])]:
-            for call in call_list:
-                call_id = call.get("id", "unknown")
-                safe_call_id = _sanitize_filename(call_id)
-                _assert_tick_call_faithful(call)
-
-                for i, arg in enumerate(call.get("args", [])):
-                    source_file_path = arg.pop("_source_file", None)
-                    arr = arg.pop("_array", None)
-                    arg.pop("_loaded_array", None)
-
-                    if source_file_path:
-                        if not data_dir_created:
-                            data_dir.mkdir(parents=True, exist_ok=True)
-                            data_dir_created = True
-
-                        source_file = Path(source_file_path)
-                        target_path = data_dir / source_file.name
-
-                        # Fail loud: composition references the REAL source data
-                        # (single source of truth); a missing source must never
-                        # produce a silently-broken recipe symlink.
-                        if not source_file.exists():
-                            raise FileNotFoundError(
-                                f"compose source data file missing: {source_file} "
-                                f"(call {call_id}). Cannot create a valid data "
-                                f"symlink for the composed recipe."
-                            )
-                        # Refresh: drop any stale/broken link left by a prior run
-                        # so the symlink always points at the CURRENT source, never
-                        # a renamed/moved phantom.
-                        if target_path.is_symlink() or target_path.exists():
-                            target_path.unlink()
-                        rel_source = os.path.relpath(source_file, target_path.parent)
-                        os.symlink(rel_source, target_path)
-
-                        arg["data"] = str(target_path.relative_to(data_dir.parent))
-
-                    elif arr is not None:
-                        if not data_dir_created:
-                            data_dir.mkdir(parents=True, exist_ok=True)
-                            data_dir_created = True
-
-                        var_name = arg.get("name", f"arg{i}")
-                        filename = f"{panel_prefix}{safe_call_id}_{var_name}"
-                        file_path = save_array(arr, data_dir / filename, data_format)
-                        arg["data"] = str(file_path.relative_to(data_dir.parent))
+        _process_ax_data(ax_data, panel_prefix, "")
 
     return data
 

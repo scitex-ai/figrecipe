@@ -12,6 +12,7 @@ from typing import Optional
 # the same try-import policy as the scitex-clew integration; falls back to
 # print() when scitex-logging is absent.
 from .._logging import get_logger
+from .._serializer._clew import record_output
 
 # Import helpers from separate module
 from ._save_capture import _capture_colorbar_geometry
@@ -145,6 +146,12 @@ def save_figure(
     for ax in fig.fig.get_axes():
         finalize_ticks(ax)
         finalize_special_plots(ax, style_dict)
+
+    # Lift auto panel labels above their axes titles (titles set via set_xyt
+    # exist by now; panel_labels=True added the labels before them).
+    from .._wrappers._panel_labels import finalize_panel_labels
+
+    finalize_panel_labels(fig.fig)
 
     # Runtime axis-range-alignment check (complements static STX-FIG001).
     # Default warning-level — per operator preference (figrecipe #134), never
@@ -383,6 +390,7 @@ def save_figure(
     # Store mm_layout in record for consistent cropping on reproduce
     if hasattr(fig, "_mm_layout") and fig._mm_layout is not None:
         fig.record.mm_layout = fig._mm_layout
+    record_output(image_path)  # clew co-output: closes recipe->data->image chain
 
     # Save hitmap if requested (for GUI editor element selection).
     # The hitmap must be cropped IDENTICALLY to the saved image so pixel->element
