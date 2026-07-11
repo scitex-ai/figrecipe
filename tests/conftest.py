@@ -43,9 +43,15 @@ def _ensure_subprocess_coverage_shim() -> None:
     """
     purelib = Path(sysconfig.get_paths()["purelib"])
     pth = purelib / "_figrecipe_subprocess_coverage.pth"
+    # `coverage` is imported ONLY inside the conditional: this .pth line runs
+    # on every interpreter start in the venv (not just test runs), and an
+    # unconditional top-level `import coverage` breaks any invocation where
+    # coverage isn't installed (e.g. `figrecipe --help` in a plain user venv)
+    # with a ModuleNotFoundError printed by site.py on every single command.
     shim = (
-        "import os, coverage\n"
+        "import os\n"
         "if os.environ.get('COVERAGE_PROCESS_START'):\n"
+        "    import coverage\n"
         "    coverage.process_startup()\n"
     )
     try:

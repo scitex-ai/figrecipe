@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.25] - 2026-07-11
+
+### Fixed
+- **Subprocess-coverage `.pth` shim crashed every CLI invocation in venvs without
+  `coverage` installed.** `tests/conftest.py::_ensure_subprocess_coverage_shim()`
+  writes a `.pth` file that starts coverage tracing in child interpreters. Its
+  template had `import os, coverage` at the top level, executed unconditionally
+  by `site.py` on *every* interpreter start in that venv — not just test runs.
+  Any plain command (e.g. `figrecipe --help`) in a venv where `coverage` wasn't
+  installed raised `ModuleNotFoundError` on every invocation, once a prior
+  `pytest` run had dropped the shim into site-packages. `coverage` is now
+  imported only inside the `COVERAGE_PROCESS_START` conditional. Regression
+  test: `tests/integration/test_subprocess_coverage_shim_guard.py`.
+
 ## [0.29.24] - 2026-07-11
 
 ### Fixed
