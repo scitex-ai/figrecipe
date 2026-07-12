@@ -30,8 +30,20 @@ export LC_ALL=C.UTF-8 LANG=C.UTF-8
 # path that does NOT resolve inside the container; tests (tmp_path) and the
 # install target both need a working, writable tmp. Node-local /tmp is writable
 # + ephemeral and per-version-isolated so concurrent matrix legs don't collide.
-export TMPDIR="/tmp/ci-figrecipe-$V"
-rm -rf "$TMPDIR"
+#
+# RUN-UNIQUE, not just version-unique (incident 2026-07-12): a fixed
+# /tmp/ci-figrecipe-$V path let a killed/OOM'd worker from a PRIOR run leave a
+# file handle open in there, so the next run's `rm -rf` on that same fixed
+# path failed loud with "Directory not empty" and took the whole leg down —
+# hit twice in one day, on two different python legs, during the v0.30.0
+# release. Suffixing with the run id makes this run's path impossible to
+# collide with any leftover from a previous one; the stale-path cleanup below
+# is now best-effort so a still-stuck prior directory WARNS instead of
+# aborting a run that no longer depends on it.
+RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
+TMPDIR="/tmp/ci-figrecipe-$V-$RUN_TAG"
+export TMPDIR
+rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
 
 # The HPC compute-node $HOME is READ-ONLY inside the container, so uv/pip cannot
