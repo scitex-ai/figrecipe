@@ -222,6 +222,33 @@ def _png_aspect(path):
     return size[0] / size[1]
 
 
+def _row_height_mm(aspects: List[float], width_mm: float, gap_mm: float) -> float:
+    """Return the ONE common row height (mm) for panels of ``aspects`` in a row.
+
+    This is the single formula shared by :func:`build_tiled_sources` (which
+    resolves aspects from real ``sources``) and the auto-tiler (which packs
+    raw aspect ratios before any source exists) -- factored out here so both
+    callers compute row geometry identically (no drift between the two).
+
+    ``h_r = (width_mm - (k-1) * gap_mm) / sum(aspects)`` where ``k =
+    len(aspects)``; each panel's width is then ``aspect_i * h_r`` (never
+    stretched -- see :func:`_row_panel_widths_mm`).
+    """
+    k = len(aspects)
+    avail = width_mm - (k - 1) * gap_mm
+    sum_aspect = sum(aspects)
+    return avail / sum_aspect if sum_aspect else avail
+
+
+def _row_panel_widths_mm(aspects: List[float], row_height_mm: float) -> List[float]:
+    """Return each panel's true width (mm) at the row's common height.
+
+    ``width_i = aspect_i * row_height_mm`` -- the panel is drawn at its own
+    aspect ratio, never stretched to fill leftover space.
+    """
+    return [a * row_height_mm for a in aspects]
+
+
 def build_tiled_sources(
     layout: Union[str, List[List[str]]],
     sources: Dict[str, Any],
@@ -305,16 +332,13 @@ def build_tiled_sources(
     y = 0.0
     row_heights: List[float] = []
     for r, row in enumerate(rows):
-        k = len(row)
-        sum_aspect = sum(aspect_of[lab] for lab in row)
-        # Width available for actual panel ink (gaps removed).
-        avail = W - (k - 1) * gap_mm
-        h_r = avail / sum_aspect if sum_aspect else avail
+        row_aspects = [aspect_of[lab] for lab in row]
+        h_r = _row_height_mm(row_aspects, W, gap_mm)
+        row_widths = _row_panel_widths_mm(row_aspects, h_r)
         row_heights.append(h_r)
 
         x = 0.0
-        for lab in row:
-            w_i = aspect_of[lab] * h_r
+        for lab, w_i in zip(row, row_widths):
             sources_mm[sources[lab]] = {
                 "xy_mm": (x, y),
                 "size_mm": (w_i, h_r),
@@ -326,6 +350,11 @@ def build_tiled_sources(
     return sources_mm, (W, total_height)
 
 
-__all__ = ["build_tiled_sources", "_is_tiled_layout"]
+__all__ = [
+    "build_tiled_sources",
+    "_is_tiled_layout",
+    "_row_height_mm",
+    "_row_panel_widths_mm",
+]
 
 # EOF

@@ -167,6 +167,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     # ._composition._layout_report (machine-readable layout introspection)
     "empty_cells": ("._composition._layout_report", "empty_cells"),
     "layout_report": ("._composition._layout_report", "layout_report"),
+    # ._composition._auto_tile (aspect-ratio bin-packing for tight tiling)
+    "auto_tile_layout": ("._composition._auto_tile", "auto_tile_layout"),
     # ._configure_mpl
     "configure_mpl": ("._configure_mpl", "configure_mpl"),
     # ._diagram
@@ -285,6 +287,7 @@ __all__ = [
     "align_smart",
     "empty_cells",
     "layout_report",
+    "auto_tile_layout",
     "gui",
     "crop",
     "info",
