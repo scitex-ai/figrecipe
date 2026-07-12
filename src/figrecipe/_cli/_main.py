@@ -105,6 +105,34 @@ def _print_command_help(cmd, prefix: str, parent_ctx) -> None:
             _print_command_help(sub_cmd, f"{prefix} {sub_name}", sub_ctx)
 
 
+#: Console-script name -> (GUI page title, favicon hex color). Consumer
+#: packages (scitex-plt today; scitex-scholar/etc. potentially later) alias
+#: this same CLI/Django app under their own entry point
+#: (`[project.scripts]` -> `figrecipe._cli:main`, see figrecipe's own
+#: pyproject.toml and scitex-plt's) -- this is the one place that tells
+#: them apart, so branding is set here rather than forked per-consumer.
+_CONSUMER_BRANDING = {
+    "scitex-plt": ("SciTeX Plot", "#001f3f"),  # navy
+}
+
+
+def _apply_consumer_branding(prog_name: str) -> None:
+    """Set FIGRECIPE_APP_LABEL/FIGRECIPE_FAVICON_COLOR for aliased consumers.
+
+    Read by `_django.views.editor_page` when it renders the GUI shell.
+    `setdefault` so an explicit env override (e.g. tests, a future
+    `--title` flag) always wins over this program-name inference.
+    """
+    import os
+
+    branding = _CONSUMER_BRANDING.get(prog_name)
+    if branding is None:
+        return
+    label, favicon_color = branding
+    os.environ.setdefault("FIGRECIPE_APP_LABEL", label)
+    os.environ.setdefault("FIGRECIPE_FAVICON_COLOR", favicon_color)
+
+
 @click.group(
     cls=CategorizedGroup,
     invoke_without_command=True,
@@ -132,6 +160,7 @@ def main(
     # Stash --json so subcommands can read it via ctx.obj
     ctx.ensure_object(dict)
     ctx.obj["as_json"] = as_json
+    _apply_consumer_branding(ctx.info_name)
 
     if version:
         click.echo(f"figrecipe {__version__}")

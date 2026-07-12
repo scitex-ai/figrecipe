@@ -38,7 +38,7 @@ class DemoRecorder(ABC):
     duration_target : int
         Target duration in seconds.
     url : str
-        URL to navigate to (default: http://127.0.0.1:5050).
+        URL to navigate to (default: http://127.0.0.1:31296).
     output_dir : Path
         Directory for output files.
 
@@ -61,7 +61,7 @@ class DemoRecorder(ABC):
     title: str = "Demo"
     demo_id: str = ""  # e.g., "01" for numbered output filenames
     duration_target: int = 10
-    url: str = "http://127.0.0.1:5050"
+    url: str = "http://127.0.0.1:31296"
     output_dir: Path = Path("examples/demo_movie/outputs")
 
     def __init__(

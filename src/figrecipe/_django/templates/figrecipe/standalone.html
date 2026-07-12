@@ -1,6 +1,7 @@
 {% extends "scitex_ui/standalone_shell.html" %}
 {% load static %}
 {% block extra_css %}
+    {% if favicon_href %}<link rel="icon" href="{{ favicon_href }}">{% endif %}
     <link rel="stylesheet"
           crossorigin
           href="{% static 'figrecipe/assets/index.css' %}">
