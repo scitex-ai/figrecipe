@@ -34,17 +34,31 @@ def _make_panel(tmp_path, name, figsize):
 class TestAutoTileWidthOnly:
     """width_mm only (no height_mm): a valid row-list covering every label once."""
 
+    def test_layout_is_a_list_of_lists(self):
+        # Arrange: four panels with mixed aspect ratios.
+        aspects = {"A": 3.0 / 2.0, "B": 1.0, "C": 2.0 / 3.0, "D": 5.0 / 2.0}
+        # Act
+        layout, _sizes_mm, _canvas = auto_tile_layout(aspects, width_mm=180)
+        # Assert: row-list format.
+        assert isinstance(layout, list) and all(isinstance(row, list) for row in layout)
+
     def test_layout_covers_every_label_exactly_once(self):
         # Arrange: four panels with mixed aspect ratios.
         aspects = {"A": 3.0 / 2.0, "B": 1.0, "C": 2.0 / 3.0, "D": 5.0 / 2.0}
         # Act
-        layout, sizes_mm, _canvas = auto_tile_layout(aspects, width_mm=180)
-        # Assert: row-list format, every label placed exactly once.
-        assert isinstance(layout, list)
-        assert all(isinstance(row, list) for row in layout)
+        layout, _sizes_mm, _canvas = auto_tile_layout(aspects, width_mm=180)
         placed = [lab for row in layout for lab in row]
-        assert sorted(placed) == sorted(aspects.keys())
-        assert len(placed) == len(set(placed))
+        # Assert: every label placed exactly once, no duplicates.
+        assert sorted(placed) == sorted(aspects.keys()) and len(placed) == len(
+            set(placed)
+        )
+
+    def test_sizes_mm_covers_every_label(self):
+        # Arrange: four panels with mixed aspect ratios.
+        aspects = {"A": 3.0 / 2.0, "B": 1.0, "C": 2.0 / 3.0, "D": 5.0 / 2.0}
+        # Act
+        _layout, sizes_mm, _canvas = auto_tile_layout(aspects, width_mm=180)
+        # Assert
         assert set(sizes_mm.keys()) == set(aspects.keys())
 
     def test_panel_aspect_ratio_is_preserved_not_stretched(self):
@@ -85,15 +99,37 @@ class TestAutoTileWithHeightTarget:
 class TestAutoTileSinglePanel:
     """N=1 degenerate case: one row, full width, height derived from aspect."""
 
-    def test_single_panel_fills_width(self):
+    def test_single_panel_is_one_row(self):
         # Arrange
         aspect = 4.0 / 3.0
         width_mm = 100.0
         # Act
-        layout, sizes_mm, canvas_mm = auto_tile_layout({"A": aspect}, width_mm=width_mm)
+        layout, _sizes_mm, _canvas_mm = auto_tile_layout(
+            {"A": aspect}, width_mm=width_mm
+        )
         # Assert
         assert layout == [["A"]]
+
+    def test_single_panel_size_fills_width_at_true_aspect(self):
+        # Arrange
+        aspect = 4.0 / 3.0
+        width_mm = 100.0
+        # Act
+        _layout, sizes_mm, _canvas_mm = auto_tile_layout(
+            {"A": aspect}, width_mm=width_mm
+        )
+        # Assert
         assert sizes_mm["A"] == pytest.approx((width_mm, width_mm / aspect))
+
+    def test_single_panel_canvas_matches_panel_size(self):
+        # Arrange
+        aspect = 4.0 / 3.0
+        width_mm = 100.0
+        # Act
+        _layout, _sizes_mm, canvas_mm = auto_tile_layout(
+            {"A": aspect}, width_mm=width_mm
+        )
+        # Assert
         assert canvas_mm == pytest.approx((width_mm, width_mm / aspect))
 
 
@@ -106,13 +142,17 @@ class TestAutoTileMatchesBuildTiledSources:
     row-height formula rather than two independently drifting ones.
     """
 
-    def test_sizes_match_real_build_tiled_sources(self, tmp_path):
-        # Arrange: real saved panels. `_source_aspect` (the same resolver
-        # `build_tiled_sources` uses) prefers the tight cropped
-        # `content_size_mm` over raw `figsize`, so its aspect is not exactly
-        # the figsize ratio passed to `_make_panel` -- resolve it from the
-        # real saved source (no mocks) so `aspects` is apples-to-apples with
-        # what `build_tiled_sources` will actually use internally.
+    @pytest.fixture
+    def _dry_check_fixtures(self, tmp_path):
+        """Real saved panels + the auto-tiler's proposal + the real placement.
+
+        `_source_aspect` (the same resolver `build_tiled_sources` uses)
+        prefers the tight cropped `content_size_mm` over raw `figsize`, so
+        its aspect is not exactly the figsize ratio passed to `_make_panel`
+        -- resolve it from the real saved source (no mocks) so `aspects` is
+        apples-to-apples with what `build_tiled_sources` will actually use
+        internally.
+        """
         panels = {
             "A": _make_panel(tmp_path, "A", (3, 2)),
             "B": _make_panel(tmp_path, "B", (2, 2)),
@@ -122,19 +162,30 @@ class TestAutoTileMatchesBuildTiledSources:
         aspects = {label: _source_aspect(spec) for label, spec in panels.items()}
         width_mm = 180.0
         gap_mm = 1.0
-        # Act
         layout, sizes_mm, canvas_mm = auto_tile_layout(
             aspects, width_mm=width_mm, gap_mm=gap_mm
         )
         sources_mm, real_canvas_mm = build_tiled_sources(
             layout, panels, width_mm=width_mm, gap_mm=gap_mm
         )
-        # Assert: same canvas size and same per-panel size_mm (same formula).
+        return panels, sizes_mm, canvas_mm, sources_mm, real_canvas_mm
+
+    def test_canvas_size_matches_real_build_tiled_sources(self, _dry_check_fixtures):
+        # Arrange
+        _panels, _sizes_mm, canvas_mm, _sources_mm, real_canvas_mm = _dry_check_fixtures
+        # Act
+        # (auto_tile_layout + build_tiled_sources already run in the fixture)
+        # Assert: same canvas size (same shared row-height formula).
         assert real_canvas_mm == pytest.approx(canvas_mm)
-        for label in aspects:
-            assert sources_mm[panels[label]]["size_mm"] == pytest.approx(
-                sizes_mm[label]
-            )
+
+    def test_per_panel_sizes_match_real_build_tiled_sources(self, _dry_check_fixtures):
+        # Arrange
+        panels, sizes_mm, _canvas_mm, sources_mm, _real_canvas_mm = _dry_check_fixtures
+        # Act
+        real_sizes = [sources_mm[panels[label]]["size_mm"] for label in sizes_mm]
+        proposed_sizes = [sizes_mm[label] for label in sizes_mm]
+        # Assert: same per-panel size_mm (same formula, no drift).
+        assert real_sizes == pytest.approx(proposed_sizes)
 
 
 class TestAutoTileValidation:
