@@ -79,7 +79,7 @@ fr.gui(fig)  # Launch visual editor at http://127.0.0.1:5050
 
 ## Architecture
 
-FigRecipe is the **first app built on the SciTeX platform** -- it proves the app pattern that other apps follow. It works standalone (`figrecipe gui`) AND embedded inside scitex-cloud.
+FigRecipe is the **first app built on the SciTeX platform** -- it proves the app pattern that other apps follow. It works standalone (`figrecipe gui open`) AND embedded inside scitex-cloud.
 
 ```
 scitex (orchestrator) — re-exports figrecipe as scitex.plt
@@ -300,7 +300,7 @@ ax.add_stat_annotation(x1=0, x2=1, p_value=0.01, style="stars")
 ```bash
 figrecipe --help-recursive            # Show all commands
 figrecipe reproduce fig.yaml          # Recreate figure from recipe
-figrecipe gui figure.png              # Launch visual editor
+figrecipe gui open figure.png          # Launch visual editor
 figrecipe validate fig.yaml           # Verify pixel-identical reproduction
 figrecipe extract fig.yaml            # Extract plotted data as CSV
 figrecipe compose a.yaml b.yaml       # Compose multi-panel figure

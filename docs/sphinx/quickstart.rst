@@ -161,7 +161,7 @@ FigRecipe provides a comprehensive CLI:
     figrecipe diff original.png reproduced.png
 
     # Launch GUI editor
-    figrecipe gui trig_plot.yaml
+    figrecipe gui open trig_plot.yaml
 
 MCP Server for AI Agents
 ------------------------
