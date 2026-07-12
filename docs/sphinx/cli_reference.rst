@@ -71,7 +71,7 @@ group with four verbs: `open` (auto-serves + opens the browser), `serve`
    figrecipe gui open recipe.yaml
 
    # Options (gui open / gui serve):
-   #   --port INTEGER       Server port (default: 5050)
+   #   --port INTEGER       Server port (default: 31296)
    #   --host TEXT          Host address
    #   --no-browser         Don't open browser automatically (gui open only)
    #   --desktop            Launch as native desktop window (gui open only)

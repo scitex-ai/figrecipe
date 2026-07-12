@@ -17,6 +17,13 @@ bundle, or directory — not scitex-writer's `project`), and a directory
 without `recipe.yaml` resolves to a browse-root `working_dir` instead of a
 specific recipe.
 
+`gui` is a DefaultGroup (`_DefaultGroup` below): a bare `figrecipe gui
+[SOURCE]` still works exactly like the old flat `start-gui` did (defaults
+to the `open` verb) alongside the explicit `gui open`/`gui serve`/`gui
+status`/`gui stop` subcommands — required because `scitex-plt` (an alias
+console-script pointing at this same CLI) invokes `gui serve` directly, and
+existing callers/docs also invoke bare `gui <source>`. Both must resolve.
+
 `start-gui` remains as a hidden warn-forward alias for one deprecation
 cycle, keeping its original `--force`/`--yes` options so existing scripts
 don't break mid-cycle; the new `gui open`/`gui serve` do NOT expose
@@ -25,6 +32,12 @@ server this CLI started. `_kill_port` is kept as a private helper used only
 by the deprecated alias's `--force` path (untracked stray processes holding
 the port are out of scope for the new lifecycle; users can reach for
 `fuser`/`lsof` directly, matching this project's simplicity-first stance).
+
+`gui serve` binds its port fixed-or-fail-loud (see `_port_is_free` /
+`_port_holder`) and refuses to start a second instance when one is already
+tracked as running (see the `_gui_runtime.status()` check at the top of
+`gui_serve`) — ported from scitex-writer#312, which fixed the exact same
+"silently stacks duplicate instances on the next free port" incident.
 """
 
 from __future__ import annotations
@@ -39,37 +52,9 @@ from typing import Optional, Tuple
 import click
 
 from . import _gui_runtime
+from ._gui_click import _DefaultGroup, _kill_port, _port_holder, _port_is_free
 
-
-def _kill_port(port: int) -> bool:
-    """Kill process occupying the given port. Returns True if killed.
-
-    Legacy helper retained ONLY for the deprecated `start-gui --force` alias
-    (see module docstring) — the new `gui` group's own lifecycle uses
-    `gui stop` instead.
-    """
-    try:
-        result = subprocess.run(
-            ["lsof", "-ti", f":{port}"],
-            capture_output=True,
-            text=True,
-        )
-        pids = result.stdout.strip().split()
-        if not pids:
-            return False
-        for pid in pids:
-            subprocess.run(["kill", "-9", pid], capture_output=True)
-        return True
-    except FileNotFoundError:
-        # lsof not available, try fuser
-        try:
-            subprocess.run(
-                ["fuser", "-k", f"{port}/tcp"],
-                capture_output=True,
-            )
-            return True
-        except FileNotFoundError:
-            return False
+DEFAULT_PORT = _gui_runtime.DEFAULT_PORT
 
 
 def _resolve_source(
@@ -99,9 +84,13 @@ def _emit_json(payload: dict) -> None:
     click.echo(_json.dumps(payload, indent=2))
 
 
-@click.group("gui")
+@click.group("gui", cls=_DefaultGroup, default_cmd_name="open")
 def gui():
-    """Browser-based editor: open, serve, status, stop."""
+    """Browser-based editor: open, serve, status, stop.
+
+    Bare `figrecipe gui [SOURCE]` implicitly runs `gui open` (source
+    optional; opens a blank figure when omitted).
+    """
 
 
 # =========================================================================
@@ -111,12 +100,20 @@ def gui():
 
 @gui.command("serve")
 @click.argument("source", type=click.Path(exists=True), required=False)
-@click.option("--port", type=int, default=5050, help="Server port (default: 5050).")
+@click.option(
+    "--port",
+    type=int,
+    default=DEFAULT_PORT,
+    help=f"Server port (default: {DEFAULT_PORT}).",
+)
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1).")
 @click.option("--dry-run", is_flag=True, default=False, help="Print, don't launch.")
 @click.option("--json", "as_json", is_flag=True, default=False, help="Emit JSON.")
 def gui_serve(source, port, host, dry_run, as_json):
     """Run the editor server in the foreground (Ctrl-C to stop).
+
+    Binds exactly the requested port, and refuses to start when that port
+    is taken or when an editor server is already running.
 
     SOURCE is the optional path to a .yaml recipe file or a directory.
     If not provided, creates a new blank figure.
@@ -124,7 +121,7 @@ def gui_serve(source, port, host, dry_run, as_json):
     \b
     Example:
         $ figrecipe gui serve
-        $ figrecipe gui serve figure.yaml --port 5051
+        $ figrecipe gui serve figure.yaml --port 31297
     """
     source_path, working_dir = _resolve_source(source)
     if working_dir is not None:
@@ -142,6 +139,28 @@ def gui_serve(source, port, host, dry_run, as_json):
         else:
             click.echo(f"Would serve editor at http://{host}:{port}.")
         return 0
+
+    current = _gui_runtime.status()
+    if current.get("running"):
+        click.echo(
+            f"Error: editor already running at {current['url']} "
+            f"(pid {current['pid']}).\n"
+            "Open that URL, or stop it first: figrecipe gui stop -y",
+            err=True,
+        )
+        # `return 1` would be silently discarded by Click's standalone mode
+        # (see `gui_open`'s comment below) — raise explicitly.
+        raise SystemExit(1)
+    if not _port_is_free(host, port):
+        holder = _port_holder(port)
+        held_by = f"\nHeld by: {holder}" if holder else ""
+        click.echo(
+            f"Error: port {port} is already in use on {host}.{held_by}\n"
+            "Rerun on another port (--port <other>), free the port, or stop a "
+            "stray editor: figrecipe gui stop -y",
+            err=True,
+        )
+        raise SystemExit(1)
 
     import os
 
@@ -197,7 +216,12 @@ def _autoserve(source: Optional[str], port: int, host: str) -> dict:
 
 @gui.command("open")
 @click.argument("source", type=click.Path(exists=True), required=False)
-@click.option("--port", type=int, default=5050, help="Server port (default: 5050).")
+@click.option(
+    "--port",
+    type=int,
+    default=DEFAULT_PORT,
+    help=f"Server port (default: {DEFAULT_PORT}).",
+)
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1).")
 @click.option("--no-browser", is_flag=True, default=False, help="Don't open browser.")
 @click.option(
@@ -217,7 +241,7 @@ def gui_open(source, port, host, no_browser, desktop, dry_run, as_json):
     \b
     Example:
         $ figrecipe gui open
-        $ figrecipe gui open figure.yaml --port 5051
+        $ figrecipe gui open figure.yaml --port 31297
         $ figrecipe gui open --desktop
     """
     source_path, working_dir = _resolve_source(source)
@@ -358,7 +382,7 @@ def gui_stop(dry_run, yes, as_json):
 
 @click.command("start-gui", hidden=True)
 @click.argument("source", type=click.Path(exists=True), required=False)
-@click.option("--port", type=int, default=5050)
+@click.option("--port", type=int, default=DEFAULT_PORT)
 @click.option("--host", default="127.0.0.1")
 @click.option("--no-browser", is_flag=True, default=False)
 @click.option("--desktop", is_flag=True, default=False)

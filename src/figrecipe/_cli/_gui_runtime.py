@@ -40,6 +40,13 @@ from typing import Optional, Union
 
 PathLike = Union[str, Path]
 
+#: figrecipe's fixed slot in the fleet-wide GUI port scheme (figrecipe=31296,
+#: scholar=31297, writer=31298, todo=31299). The GUI binds exactly this port
+#: (or an explicit ``--port``) and fails loud when it is taken — it never
+#: silently drifts to the next free port (see
+#: scitex-writer#312 for the incident this pattern fixes).
+DEFAULT_PORT = 31296
+
 # "source" (not "project") to match figrecipe's own CLI argument semantics
 # (a .yaml recipe path, a bundle/directory, or None for a blank figure).
 _STATE_FIELDS = ("pid", "port", "host", "source", "started_at")

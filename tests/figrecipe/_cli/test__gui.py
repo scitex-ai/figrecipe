@@ -222,3 +222,188 @@ class TestGuiStop:
         runner.invoke(main, args)
         # Assert
         assert isolated_state.exists()
+
+
+class TestGuiDefaultGroup:
+    """`gui` falls back to `open` when the first token isn't a known verb."""
+
+    def test_bare_source_dry_run_resolves_to_open(self, runner, tmp_path):
+        # Arrange
+        source = tmp_path / "figure.yaml"
+        source.write_text("")
+        args = ["gui", str(source), "--dry-run", "--json"]
+        # Act
+        result = runner.invoke(main, args)
+        payload = json.loads(result.output)
+        # Assert
+        assert payload["would_open"]
+
+    def test_bare_source_dry_run_carries_source_path(self, runner, tmp_path):
+        # Arrange
+        source = tmp_path / "figure.yaml"
+        source.write_text("")
+        args = ["gui", str(source), "--dry-run", "--json"]
+        # Act
+        result = runner.invoke(main, args)
+        payload = json.loads(result.output)
+        # Assert
+        assert payload["source"] == str(source)
+
+    def test_bare_no_args_dry_run_resolves_to_open(self, runner):
+        # Arrange
+        args = ["gui", "--dry-run", "--json"]
+        # Act
+        result = runner.invoke(main, args)
+        payload = json.loads(result.output)
+        # Assert
+        assert payload["would_open"]
+
+    def test_explicit_serve_verb_still_resolves_to_serve(self, runner, tmp_path):
+        # Arrange
+        source = tmp_path / "figure.yaml"
+        source.write_text("")
+        args = ["gui", "serve", str(source), "--dry-run", "--json"]
+        # Act
+        result = runner.invoke(main, args)
+        payload = json.loads(result.output)
+        # Assert
+        assert payload["would_serve"]
+
+    def test_explicit_status_verb_still_resolves_to_status(
+        self, runner, isolated_state
+    ):
+        # Arrange
+        args = ["gui", "status", "--json"]
+        # Act
+        result = runner.invoke(main, args)
+        payload = json.loads(result.output)
+        # Assert
+        assert payload == {"running": False}
+
+    def test_bare_help_shows_group_help_not_open_help(self, runner):
+        # Arrange: --help must never silently default to `open --help`.
+        args = ["gui", "--help"]
+        # Act
+        result = runner.invoke(main, args)
+        # Assert
+        assert "serve" in result.output and "status" in result.output
+
+
+class TestGuiServeBindOrFail:
+    """`gui serve` never silently drifts to a different port than requested."""
+
+    def test_refuses_when_port_already_bound(self, runner, isolated_state):
+        # Arrange: hold a real socket on an ephemeral port first.
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(1)
+        held_port = sock.getsockname()[1]
+        args = ["gui", "serve", "--port", str(held_port)]
+        # Act
+        try:
+            result = runner.invoke(main, args)
+        finally:
+            sock.close()
+        # Assert
+        assert result.exit_code == 1
+
+    def test_refuses_when_port_already_bound_message(self, runner, isolated_state):
+        # Arrange
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(1)
+        held_port = sock.getsockname()[1]
+        args = ["gui", "serve", "--port", str(held_port)]
+        # Act
+        try:
+            result = runner.invoke(main, args)
+        finally:
+            sock.close()
+        # Assert
+        assert "already in use" in result.output
+
+    def test_refuses_when_port_taken_leaves_no_state_file(self, runner, isolated_state):
+        # Arrange
+        import socket
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(1)
+        held_port = sock.getsockname()[1]
+        args = ["gui", "serve", "--port", str(held_port)]
+        # Act
+        try:
+            runner.invoke(main, args)
+        finally:
+            sock.close()
+        # Assert: no silent instance is ever recorded as running.
+        assert not isolated_state.exists()
+
+    def test_refuses_when_already_recorded_running(self, runner, isolated_state):
+        # Arrange: a live pid (our own test process) recorded as running.
+        _gui_runtime.write_state(os.getpid(), 31296, "127.0.0.1", None, isolated_state)
+        args = ["gui", "serve"]
+        # Act
+        result = runner.invoke(main, args)
+        # Assert
+        assert result.exit_code == 1
+
+    def test_refuses_when_already_recorded_running_message(
+        self, runner, isolated_state
+    ):
+        # Arrange
+        _gui_runtime.write_state(os.getpid(), 31296, "127.0.0.1", None, isolated_state)
+        args = ["gui", "serve"]
+        # Act
+        result = runner.invoke(main, args)
+        # Assert
+        assert "already running" in result.output
+
+
+class TestGuiConsumerBranding:
+    """Consumer console-scripts (e.g. scitex-plt) get a rebranded GUI title/favicon."""
+
+    @pytest.fixture(autouse=True)
+    def _clean_branding_env(self):
+        for key in ("FIGRECIPE_APP_LABEL", "FIGRECIPE_FAVICON_COLOR"):
+            os.environ.pop(key, None)
+        yield
+        for key in ("FIGRECIPE_APP_LABEL", "FIGRECIPE_FAVICON_COLOR"):
+            os.environ.pop(key, None)
+
+    def test_scitex_plt_prog_name_sets_app_label(self, runner):
+        # Arrange
+        args = ["--version"]
+        # Act
+        runner.invoke(main, args, prog_name="scitex-plt")
+        # Assert
+        assert os.environ.get("FIGRECIPE_APP_LABEL") == "SciTeX Plot"
+
+    def test_scitex_plt_prog_name_sets_favicon_color(self, runner):
+        # Arrange
+        args = ["--version"]
+        # Act
+        runner.invoke(main, args, prog_name="scitex-plt")
+        # Assert
+        assert os.environ.get("FIGRECIPE_FAVICON_COLOR") == "#001f3f"
+
+    def test_figrecipe_prog_name_sets_no_branding(self, runner):
+        # Arrange
+        args = ["--version"]
+        # Act
+        runner.invoke(main, args, prog_name="figrecipe")
+        # Assert
+        assert os.environ.get("FIGRECIPE_APP_LABEL") is None
+
+    def test_existing_env_override_wins_over_inference(self, runner):
+        # Arrange
+        os.environ["FIGRECIPE_APP_LABEL"] = "Custom Title"
+        args = ["--version"]
+        # Act
+        runner.invoke(main, args, prog_name="scitex-plt")
+        # Assert
+        assert os.environ.get("FIGRECIPE_APP_LABEL") == "Custom Title"

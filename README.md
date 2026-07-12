@@ -72,7 +72,7 @@ Reload and edit from the saved recipe:
 
 ```python
 fig, ax = fr.reproduce("figure.yaml")
-fr.gui(fig)  # Launch visual editor at http://127.0.0.1:5050
+fr.gui(fig)  # Launch visual editor at http://127.0.0.1:31296
 ```
 
 ---
