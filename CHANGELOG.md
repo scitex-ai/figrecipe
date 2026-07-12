@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-07-12
+
+### Added
+- **`auto_tile_layout(aspects, width_mm, height_mm=None, gap_mm=1.0)`** — bin-packs
+  panels (keyed only by their true aspect ratio) into a tight row-list `layout`
+  ready for `build_tiled_sources`/`fr.compose`. LPT-greedy shelf partition over
+  candidate row-counts, scored against a target `height_mm` when given or to
+  minimize wasted canvas area otherwise. Panels are never stretched/upscaled —
+  `sizes_mm` always preserves each panel's exact input aspect ratio, by
+  construction (shares the row-height formula with `build_tiled_sources`, not a
+  separate implementation). Exported as `fr.auto_tile_layout`.
+- **`gui` command group**: `open`/`serve`/`status`/`stop`, replacing the flat
+  `start-gui` command (kept as a hidden deprecated alias for one cycle).
+  `serve` runs the editor server in the foreground; `open` auto-serves a
+  detached background instance when none is running, then opens the browser;
+  `status`/`stop` work from a fresh shell via a tracked PID/port state file.
+  `gui` is a DefaultGroup — a bare `figrecipe gui [SOURCE]` still resolves to
+  `gui open`, matching the old flat command's ergonomic, alongside the
+  explicit subcommands (required for `scitex-plt`, a console-script alias of
+  this same CLI, which invokes `gui serve` directly).
+- Consumer console-script branding: `scitex-plt`'s GUI now renders its own
+  page title ("SciTeX Plot") and a navy favicon, auto-detected from the
+  invoked program name (no fork needed for future aliased consumers).
+
+### Fixed
+- **`gui` default port changed 5050 → 31296** (figrecipe's reserved slot in
+  the corrected scitex-dev per-package GUI port scheme; 5050 collided live
+  with scitex-writer, both defaulting there). `gui serve` now binds the
+  requested port or fails loud with an actionable message — it never
+  silently drifts to the next free port — and refuses to start a second
+  instance when one is already tracked running.
+
 ## [0.29.26] - 2026-07-11
 
 ### Fixed
