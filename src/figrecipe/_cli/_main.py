@@ -15,7 +15,7 @@ from ._diagram import diagram as _diagram_cmd
 from ._diff import diff
 from ._extract import extract
 from ._fonts import fonts
-from ._gui import gui
+from ._gui import gui, start_gui
 from ._hitmap import hitmap
 from ._info import info
 from ._mcp import mcp
@@ -32,7 +32,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 # Command categories for organized help display
 COMMAND_CATEGORIES = [
-    ("Figure Creation", ["plot", "reproduce", "compose", "start-gui"]),
+    ("Figure Creation", ["plot", "reproduce", "compose", "gui"]),
     ("Image Processing", ["convert", "crop", "diff", "show-hitmap"]),
     ("Data & Validation", ["extract", "validate", "info"]),
     ("Diagram", ["diagram"]),
@@ -124,7 +124,7 @@ def main(
 ) -> None:
     """FigRecipe - Reproducible, style-editable scientific figures via YAML recipes.
 
-    Use 'figrecipe start-gui' to launch the GUI editor.
+    Use 'figrecipe gui open' to launch the GUI editor.
 
     Config is loaded with the SciTeX precedence chain:
       config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
@@ -164,6 +164,7 @@ main.add_command(diff)
 main.add_command(extract)
 main.add_command(fonts)
 main.add_command(gui)
+main.add_command(start_gui)
 main.add_command(hitmap)
 main.add_command(info)
 main.add_command(list_python_apis)
