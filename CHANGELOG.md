@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0] - 2026-07-14
+
+### Added
+- **Per-figure-type annotation hints** (`figrecipe.hints_for`) — a small registry
+  answering two questions for a given plot type: *where does a comparison line
+  go*, and *which statistical methods are conventional for the kind of data this
+  plot shows*.
+
+  ```python
+  hint = fr.hints_for("scatter")
+  hint.geometry        # ComparisonGeometry.INLINE_TEXT — a bracket has nothing to span
+  hint.draws_bracket   # False
+  hint.methods         # ["Pearson correlation", "Spearman correlation", ...]
+  ```
+
+  Deliberately a skeleton: five entries, each added because a real figure needed
+  it. It grows an entry at a time as concrete cases turn up and is **not** a
+  pre-populated taxonomy of every plot type.
+
+  Two things it is not:
+  - It does not **compute**. Values still come from a producer via `StatResult`;
+    this only says where to *draw* the comparison and what is conventional.
+  - It does not **enforce**. `methods` is a hint for a human, not a whitelist —
+    whether a test suits a figure is a judgement about the *data* (paired?
+    normal? how many groups?), which the plot type only hints at. `hints_for`
+    returns `None` for an unknown type, meaning "the registry has nothing to
+    say", never "this figure is wrong". Nothing in figrecipe rejects a
+    `StatResult` because of this table.
+
 ## [0.32.1] - 2026-07-14
 
 ### Fixed
