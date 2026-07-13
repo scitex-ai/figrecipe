@@ -104,13 +104,14 @@ def finalize_imshow_axes(ax, ax_record, style: Optional[Dict[str, Any]]) -> None
     if show_axes:
         return
 
+    # Clear tick LOCATIONS only. set_xticklabels([]) would additionally pin a
+    # NullFormatter, which blanks every tick the caller sets afterwards and so
+    # makes the suppression irreversible -- see apply_imshow_axes_visibility.
     decorations = ax_record.decorations
     if not any(c.function == "set_xticks" for c in decorations):
         ax.set_xticks([])
-        ax.set_xticklabels([])
     if not any(c.function == "set_yticks" for c in decorations):
         ax.set_yticks([])
-        ax.set_yticklabels([])
     for spine in ax.spines.values():
         spine.set_visible(False)
 

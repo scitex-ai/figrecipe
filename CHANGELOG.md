@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.1] - 2026-07-14
+
+### Fixed
+- **A heatmap no longer loses its tick numbers with no way to get them back.**
+  The SCITEX style suppresses axis chrome on `imshow` — correct for a picture,
+  where ticks are noise, but the same call also draws heatmaps and spectrograms
+  whose x/y axes carry physical meaning (time, frequency) and must stay readable.
+
+  The suppression cleared the ticks with `set_xticks([])` **and**
+  `set_xticklabels([])`. The second call was not merely redundant: it pinned a
+  `NullFormatter` on the axis, so every tick the caller set *afterwards* rendered
+  blank. A `ax.set_xticks([0, 0.5, 1.0])` after the `imshow` therefore produced
+  tick marks with no numbers — silently, with no warning, and with no way to
+  override it. That contradicts the readable-heatmap rule in figrecipe's own
+  six-stat doctrine skill, and it violated the no-silent-fallback rule.
+
+  Suppression now clears tick *locations* only, in both the live wrapper
+  (`apply_imshow_axes_visibility`) and the replay finaliser
+  (`finalize_imshow_axes`), so it stays reversible: a heatmap author who ticks
+  the axes after the `imshow` gets those ticks, live and through
+  save → reproduce. Found while building `examples/12_six_stat_annotation.py`,
+  whose panel C had to route around it.
+
 ## [0.32.0] - 2026-07-14
 
 ### Added
