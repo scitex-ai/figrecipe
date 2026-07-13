@@ -85,7 +85,7 @@ class TestAnnotateN:
         # Assert
         assert out.get_text() == "N=12 patients"
 
-    def test_suffix_appended(self):
+    def test_suffix_is_appended_to_label(self):
         # Arrange
         from figrecipe._scitex_compat._annotate_n import stx_annotate_n
 
@@ -166,9 +166,10 @@ class TestAnnotateN:
         assert (xd, yd) != (0.5, 0.5)
 
     def test_crowded_axes_emits_warning_not_silent(self):
-        # Arrange: box the annotation in on all sides with dense ink so the
-        # ring search exhausts its reach and must fall back -- this must
-        # warn, never fail silently.
+        # Arrange
+        # Box the annotation in on all sides with dense ink so the ring
+        # search exhausts its reach and must fall back -- this must warn,
+        # never fail silently.
         import numpy as np
 
         from figrecipe._scitex_compat._annotate_n import stx_annotate_n
@@ -176,9 +177,11 @@ class TestAnnotateN:
         fig, ax = plt.subplots(figsize=(1.0, 1.0))
         xx, yy = np.meshgrid(np.linspace(0, 1, 60), np.linspace(0, 1, 60))
         ax.pcolormesh(xx, yy, xx + yy)
-        # Act / Assert
-        with pytest.warns(UserWarning):
+        # Act
+        with pytest.warns(UserWarning) as warnings_raised:
             stx_annotate_n(ax, 0.5, 0.5, 10, max_radius=8.0)
+        # Assert
+        assert len(warnings_raised) >= 1
 
     def test_recording_axes_method_returns_result(self):
         # Arrange

@@ -114,8 +114,10 @@ class TestCommaFormat:
         # Act
         comma_format(ax)
         # Assert
-        assert not isinstance(ax.xaxis.get_major_formatter(), CommaFormatter)
-        assert not isinstance(ax.yaxis.get_major_formatter(), CommaFormatter)
+        assert not any(
+            isinstance(axis.get_major_formatter(), CommaFormatter)
+            for axis in (ax.xaxis, ax.yaxis)
+        )
 
     def test_rendered_tick_label_has_comma(self):
         # Arrange
@@ -142,10 +144,13 @@ class TestCommaFormat:
         # Assert
         assert out is not None
 
-    def test_rejects_non_axes(self):
+    def test_rejects_non_axes_argument_with_type_error(self):
         # Arrange
         from figrecipe.styles._axis_helpers._comma_format import comma_format
 
-        # Act / Assert
-        with pytest.raises(TypeError):
-            comma_format("not an axes", x=True)
+        not_an_axes = "not an axes"
+        # Act
+        raised = pytest.raises(TypeError)
+        # Assert
+        with raised:
+            comma_format(not_an_axes, x=True)
