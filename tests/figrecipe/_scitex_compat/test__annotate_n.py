@@ -178,10 +178,10 @@ class TestAnnotateN:
         xx, yy = np.meshgrid(np.linspace(0, 1, 60), np.linspace(0, 1, 60))
         ax.pcolormesh(xx, yy, xx + yy)
         # Act
-        with pytest.warns(UserWarning) as warnings_raised:
-            stx_annotate_n(ax, 0.5, 0.5, 10, max_radius=8.0)
+        warns_on_fallback = pytest.warns(UserWarning)
         # Assert
-        assert len(warnings_raised) >= 1
+        with warns_on_fallback:
+            stx_annotate_n(ax, 0.5, 0.5, 10, max_radius=8.0)
 
     def test_recording_axes_method_returns_result(self):
         # Arrange
