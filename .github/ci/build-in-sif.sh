@@ -30,9 +30,15 @@ export LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 # Writable scratch (the runner's TMPDIR=~/.cache/tmp is a host path that does
 # NOT resolve inside the container). Node-local /tmp is writable + ephemeral.
-TMPDIR="/tmp/build-figrecipe-$V"
+#
+# RUN-UNIQUE (incident 2026-07-12, same fix as run-in-sif.sh): a fixed
+# per-version path let a stuck leftover from a prior run block this run's
+# `rm -rf` with "Directory not empty". Suffix with the run id so this run's
+# path can never collide with a stale one; old-path cleanup is best-effort.
+RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
+TMPDIR="/tmp/build-figrecipe-$V-$RUN_TAG"
 export TMPDIR
-rm -rf "$TMPDIR"
+rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
 
 # The compute-node $HOME is RO inside the container — point every cache the

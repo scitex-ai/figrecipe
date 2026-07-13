@@ -49,9 +49,13 @@ echo "=== dist to publish ==="
 ls -l dist
 
 # --- writable scratch (compute-node HOME is RO inside the container) ---
-TMPDIR="/tmp/publish-figrecipe-$V"
+# RUN-UNIQUE (incident 2026-07-12, same fix as run-in-sif.sh/build-in-sif.sh):
+# suffix with the run id so this run's path can never collide with a stuck
+# leftover from a prior run; old-path cleanup is best-effort, not fatal.
+RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
+TMPDIR="/tmp/publish-figrecipe-$V-$RUN_TAG"
 export TMPDIR
-rm -rf "$TMPDIR"
+rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
 export UV_CACHE_DIR="$TMPDIR/uv-cache"
 export XDG_CACHE_HOME="$TMPDIR"

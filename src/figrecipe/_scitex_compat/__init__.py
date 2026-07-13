@@ -7,6 +7,7 @@ These are wired into RecordingAxes as stx_* methods.
 Code is preserved here for easy recovery and maintenance.
 """
 
+from ._annotate_n import stx_annotate_n
 from ._heatmap import stx_heatmap
 from ._scientific import stx_conf_mat, stx_ecdf, stx_raster, stx_scatter_hist
 from ._shaded_lines import (
@@ -25,6 +26,7 @@ from ._simple import (
 )
 
 __all__ = [
+    "stx_annotate_n",
     "stx_conf_mat",
     "stx_ecdf",
     "stx_fillv",
