@@ -156,6 +156,13 @@ so they auto-promote to error under `project-type: research`:
   scope. It cannot statically verify tick labels / axis label / units —
   that half of Rule 2 is enforced by review, matching the "doc-only where
   a linter can't reach" acknowledgement in the sister scitex-dev doctrine.
+- **STX-FM019** (`_missing_caption_checker.py`) — flags a scope that builds a
+  figure and saves it with no caption anywhere in that scope. Every scientific
+  figure needs a caption, not just axis labels. Conservative: a scope that only
+  writes data files is never examined, and a bare `save(...)` only counts when
+  its first argument is *named* like a figure, so `stx.io.save(df, "t.csv")`
+  never fires. Any of `caption=` / `panel_captions=` / `add_figure_caption` /
+  `add_panel_captions` satisfies it.
 
 Opt out per call site with `# stx-allow: STX-FM017` / `# stx-allow:
 STX-FM018` when a partial annotation or colorbar-less heatmap is
