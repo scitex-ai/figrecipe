@@ -44,7 +44,7 @@ dependencies = [
     "scipy>=1.7.0",
     "click>=8.0.0",
     "rich>=13.0.0",
-    "scitex-app>=0.2.0",
+    "scitex-app>=0.3.0",
     "scitex-config>=0.3.0",
     "scitex-dev>=0.12.2",
 ]
@@ -59,7 +59,7 @@ dev = [
     "scitex-dev>=0.12.2",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
-    "scitex-app>=0.1.0",
+    "scitex-app>=0.3.0",
     "scitex-ui>=0.1.0",
     "scitex-logging",
     "scitex-pd",
@@ -83,7 +83,7 @@ seaborn = [
     "pandas>=1.3.0",
 ]
 scitex = [
-    "scitex-app>=0.1.0",
+    "scitex-app>=0.3.0",
     "scitex-ui>=0.1.0",
     "scitex-logging",
     "scitex-pd",
@@ -97,7 +97,7 @@ editor = [
 app = [
     "django>=4.2.0",
     "Pillow>=9.0.0",
-    "scitex-app>=0.1.0",
+    "scitex-app>=0.3.0",
     "scitex-ui>=0.1.0",
 ]
 desktop = [
