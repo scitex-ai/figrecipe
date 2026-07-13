@@ -59,3 +59,27 @@ def test_imshow_with_explicit_ticks_reproduces_keeping_them(tmp_path):
     fr.save(fig, str(tmp_path / "comodulogram_ticked.png"))
     # Assert
     assert not list(tmp_path.glob("*-not-reproduced.*"))
+
+
+def test_imshow_separate_set_xticks_and_set_xticklabels_round_trip(tmp_path):
+    # No set_xyt/set_xlabel/set_ylabel here (is_specgram stays False) -- the
+    # exact neurovista dogfooding repro: imshow() then a bare ``range(N)``
+    # passed to set_xticks() followed by a SEPARATE set_xticklabels() call
+    # (not the combined set_xticks(pos, labels=...) form covered above).
+    # Two compounding bugs used to drop the labels here: (1) the recorder
+    # serialized the raw range() arg to the literal string "range(0, 19)",
+    # which failed to replay; (2) finalize_special_plots unconditionally
+    # wiped ticks/labels on any imshow axis with no x/y label, clobbering
+    # even a correctly-replayed explicit set_xticks/set_xticklabels pair.
+    # Arrange
+    n = 19
+    labels = [f"L{i}" for i in range(n)]
+    fig, ax = fr.subplots()
+    ax.imshow(np.random.rand(n, n))
+    ax.set_xticks(range(n))
+    ax.set_xticklabels(labels, rotation=90)
+    fr.save(fig, str(tmp_path / "matrix.yaml"))
+    # Act
+    _, ax2 = fr.reproduce(str(tmp_path / "matrix.yaml"))
+    # Assert
+    assert [t.get_text() for t in ax2._ax.get_xticklabels()] == labels
