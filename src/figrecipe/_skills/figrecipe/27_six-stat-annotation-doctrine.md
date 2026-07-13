@@ -100,6 +100,16 @@ ax.add_stat_annotation(x1=0, x2=1, text="p=0.03")  # STX-FM017: missing n, CI, m
 
 Working example: `examples/12_six_stat_annotation.py`.
 
+### Where the comparison goes
+
+`fr.hints_for("<plot type>")` answers where a comparison line belongs and which
+tests are conventional for that plot's data — a bracket spans two categories on
+a bar/box/violin; a scatter has no categories to span, so the statistic is
+written inline; a heatmap marks significant cells instead. It is ADVISORY:
+`methods` is a hint for a human, not a whitelist (whether a test suits a figure
+is a judgement about the *data*), and `None` means the registry has nothing to
+say, never that the figure is wrong.
+
 ## Rule 2 — heatmap colorbar requirement
 
 Any 2D heatmap (an `imshow`-style plot of a 2D array — `imshow`, `matshow`,
