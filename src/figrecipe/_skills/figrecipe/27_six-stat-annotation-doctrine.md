@@ -68,25 +68,37 @@ within-subject sample count exist hides the actual unit of statistical
 independence from the reader — a common and serious inferential error in
 per-window / per-trial neuroscience and physiology figures.
 
-### Compliant example
+### Compliant example — build it, do not type it
+
+Do NOT hand-type the mathtext. Pass a `figrecipe.StatResult` (see
+`_annotations/_stat_result.py`) and let figrecipe render it: the six fields
+are then structurally present or you get a warning naming exactly which are
+missing, and the italic / N-vs-n conventions are applied for you.
 
 ```python
-ax.add_stat_annotation(
-    x1=0, x2=1,
-    text=(
-        r"$N$=12, $n$=340, $r$=0.42, 95% CI [0.21, 0.60], "
-        r"$t$(338)=5.1, $p$<0.001 (Pearson correlation)"
-    ),
+result = fr.StatResult(
+    p_value=pearson.pvalue, method="Pearson correlation",
+    statistic=t_stat, statistic_name="t", dof=338,
+    effect_size=pearson.statistic, effect_name="r", ci=(0.21, 0.60),
+    n=340, n_subjects=12, n_unit="windows", n_subjects_unit="patients",
 )
+ax.add_stat_annotation(0, 1, stat=result, stars=True)
+result.missing_fields()  # -> []  (the check the lint cannot do on an f-string)
 ```
 
-All six fields are present (n, CI, method, p, effect, statistic), N and n
-are distinguished, and every statistical symbol is wrapped for italic
-rendering. Compare to the incomplete, lint-flagged form:
+`StatResult` is the DISPLAY-side port: figrecipe renders statistics, it never
+computes them. A producer (scitex-stats, scipy, a stored results table) fills
+the fields — via the constructor or `StatResult.from_mapping(result_dict)`,
+the adapter seam — and neither package imports the other. Every number must
+come from a computation, never a keyboard.
+
+Compare to the incomplete, lint-flagged form:
 
 ```python
 ax.add_stat_annotation(x1=0, x2=1, text="p=0.03")  # STX-FM017: missing n, CI, method, effect, statistic
 ```
+
+Working example: `examples/12_six_stat_annotation.py`.
 
 ## Rule 2 — heatmap colorbar requirement
 

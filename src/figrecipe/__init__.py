@@ -173,6 +173,7 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "configure_mpl": ("._configure_mpl", "configure_mpl"),
     # ._diagram
     "Diagram": ("._diagram", "Diagram"),
+    "StatResult": ("._annotations", "StatResult"),
     "_Graphviz": ("._diagram._graphviz.graphviz", "Graphviz"),
     "_Mermaid": ("._diagram._mermaid.mermaid", "Mermaid"),
     # ._graph._presets
@@ -313,6 +314,8 @@ __all__ = [
     "list_presets",
     # Diagram
     "Diagram",
+    # Statistics display port (six-stat annotation doctrine)
+    "StatResult",
     # Color utilities
     "colors",
     "color",

@@ -45,6 +45,7 @@ from ._stat_bracket import (
     remove_stat_bracket,
     update_stat_bracket,
 )
+from ._stat_result import StatResult
 from ._stat_text import add_stat_text, list_stat_texts, remove_stat_text
 
 __all__ = [
@@ -59,6 +60,8 @@ __all__ = [
     "list_stat_texts",
     # Auto-placement
     "auto_y_position",
+    # Display port for a computed test result (six-stat doctrine)
+    "StatResult",
 ]
 
 # EOF

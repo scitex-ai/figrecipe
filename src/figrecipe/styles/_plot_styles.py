@@ -170,6 +170,16 @@ def apply_imshow_axes_visibility(ax: Axes, show_axes: bool, show_labels: bool) -
     never had it, so adding it here would desync save vs. reproduce -- exactly
     the bug where a labelled ``imshow`` reproduced with extra numeric ticks.
 
+    Suppression must stay REVERSIBLE. ``set_xticks([])`` alone already clears
+    both the ticks and their labels, and a later ``ax.set_xticks([...])``
+    restores them. The additional ``set_xticklabels([])`` this used to call was
+    not just redundant -- it pinned a ``NullFormatter`` on the axis, so every
+    tick the caller set afterwards rendered BLANK. A heatmap whose axes carry
+    physical meaning (a time-by-frequency map) therefore lost its numbers with
+    no warning and no way to get them back, which contradicts the readable-
+    heatmap rule in the six-stat doctrine skill. Suppress by clearing the tick
+    locations only; never install a formatter.
+
     Parameters
     ----------
     ax : matplotlib.axes.Axes
@@ -182,8 +192,6 @@ def apply_imshow_axes_visibility(ax: Axes, show_axes: bool, show_labels: bool) -
     if not show_axes:
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
         for spine in ax.spines.values():
             spine.set_visible(False)
 
