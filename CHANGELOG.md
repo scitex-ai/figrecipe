@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-07-14
+
+### Added
+- **`STX-FM019` missing-caption lint** — a figure with no caption forces the
+  reader to reconstruct what they are looking at from the axes alone, and a panel
+  with no caption of its own leaves a hole in the assembled caption when panels
+  are composed. Flags a scope that **builds** a figure and **saves** it with no
+  caption anywhere in that scope.
+
+  Conservative by construction, because the obvious implementation is wrong:
+  naively flagging every `save(...)` would fire on `stx.io.save(df, "table.csv")`,
+  and a table needs no caption. So a scope is only examined when it builds a
+  figure, and only figure-shaped saves count — `savefig(...)`, or `save(fig, ...)`
+  whose first argument is *named* like a figure. Any of `caption=`,
+  `panel_captions=`, `add_figure_caption(...)` or `add_panel_captions(...)`
+  satisfies it. Soft (warning), opt out per call site with
+  `# stx-allow: STX-FM019`.
+
+### Changed
+- **`_quality/_linter_plugin.py` split** — the rule catalogue (a `Rule` literal per
+  rule, which grows every time a rule is added) moved to a new
+  `_quality/_linter_rules.py`; the plugin file stays the orchestrator that wires
+  rules to checkers. Pure extraction: same rules, same call/axes-hint maps, same
+  `get_plugin()` shape, verified against the live plugin surface.
+
 ## [0.33.0] - 2026-07-14
 
 ### Added
