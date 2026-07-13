@@ -186,11 +186,26 @@ class RecordingAxes(
                 record_kwargs = kwargs.copy()
                 if stats is not None:
                     record_kwargs["stats"] = stats
+                record_args = args
+                if method_name in ("set_xticks", "set_yticks") and args:
+                    # Read the tick POSITIONS back from the live axis after
+                    # the call instead of recording the caller's raw arg.
+                    # matplotlib happily accepts a range/tuple/generator for
+                    # ``ticks``, none of which the generic arg serializer
+                    # round-trips (a bare ``range(19)`` degrades to the
+                    # literal string ``"range(0, 19)"`` and later fails to
+                    # replay) — the live axis always holds a well-formed
+                    # numeric array, so recording that is both simpler and
+                    # self-consistent with whatever a later
+                    # set_xticklabels() on this axis will see.
+                    axis_letter = "x" if method_name == "set_xticks" else "y"
+                    live_ticks = list(getattr(self._ax, f"get_{axis_letter}ticks")())
+                    record_args = (live_ticks,) + tuple(args[1:])
                 record_call_with_color_capture(
                     self._recorder,
                     self._position,
                     method_name,
-                    args,
+                    record_args,
                     record_kwargs,
                     result,
                     id,
