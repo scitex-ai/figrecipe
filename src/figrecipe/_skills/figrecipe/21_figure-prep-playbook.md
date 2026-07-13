@@ -23,7 +23,7 @@ quality `examples/<NN>_*.py`, or reviewing such a script before merge.
 Skip for throwaway exploratory plots (`ax.plot` and move on) and unit-test
 fixtures that merely exercise the figrecipe API surface.
 
-## The seven rules
+## The eight rules
 
 ### 1. Real data only
 
@@ -174,6 +174,22 @@ silently rescale the data and forget to update the bar label.
 See `24_l-shaped-scale-bar.md` for the worked-example leaf with the
 matplotlib pattern and a longer DO/DON'T list.
 
+### 8. Six-stat annotation doctrine + heatmap colorbar
+
+Any statistical annotation on a figure (a p-value / effect-size label
+next to a comparison) MUST carry all six of **n, CI, method, p, effect,
+statistic** — never a bare p-value or star. Render statistical symbols
+(`p`, `t`, `F`, `r`, ...) in *italic*, and keep **N** (subjects) distinct
+from **n** (windows/trials/samples) when both are relevant.
+
+Separately: any 2D heatmap (`imshow`-style plot of a 2D array) MUST ship
+a colorbar with tick labels, an axis label, and units on that label.
+
+Both are operator-issued doctrine (2026-07-05) and both have a soft lint
+check (`STX-FM017`, `STX-FM018`) in figrecipe's linter plugin. See
+`27_six-stat-annotation-doctrine.md` for the full rule text, the italic
+and N-vs-n conventions, and compliant/non-compliant examples.
+
 ## Pre-render checklist & anti-patterns
 
 The merge-gate checklist (one line per rule above) and the catalogue of
@@ -191,6 +207,8 @@ authoring or reviewing a publication-bound figure script.
   signal-trace panels (rule 7 worked example).
 - `25_figure-prep-checklist.md` — pre-render merge-gate checklist and
   anti-patterns companion to this playbook.
+- `27_six-stat-annotation-doctrine.md` — six-stat annotation doctrine +
+  heatmap colorbar requirement (rule 8 worked example).
 - `05_styles.md` — `SCITEX` and dark-variant presets.
 - `17_composition.md` — multi-panel mm-precision composition.
 - `scitex-dev/_skills/scientific/01_figures_01_standards.md` — universal scientific-figure standards (color, layout, typography).

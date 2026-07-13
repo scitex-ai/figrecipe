@@ -57,11 +57,12 @@ This package does not ship as a submodule of the `scitex` umbrella.
 
 ### Standards
 * [20_return-fig](20_return-fig.md) — Convention: plotting functions must return fig
-* [21_figure-prep-playbook](21_figure-prep-playbook.md) — Seven-rule playbook for publication-bound figures (real data, NaN handling, common scale, representative-example criteria, config-as-SSoT, figrecipe dogfood, L-shaped scale bar on signal traces)
+* [21_figure-prep-playbook](21_figure-prep-playbook.md) — Eight-rule playbook for publication-bound figures (real data, NaN handling, common scale, representative-example criteria, config-as-SSoT, figrecipe dogfood, L-shaped scale bar on signal traces, six-stat annotation doctrine + heatmap colorbar)
 * [22_nan-sentinel-on-read](22_nan-sentinel-on-read.md) — Convert storage-layer sentinels (e.g. `-32768`) to `np.nan` at the figure layer; example: neurovista ECoG gap sentinel
 * [23_no-synthetic-data-policy](23_no-synthetic-data-policy.md) — figrecipe rendering-side guard for the ecosystem no-synthetic-data policy (canonical home in scitex-dev scientific)
 * [24_l-shaped-scale-bar](24_l-shaped-scale-bar.md) — L-shaped scale-bar convention for representative signal-trace panels (hide axes; lower-left time + amplitude bars sharing a corner); worked-example leaf for playbook rule 7
 * [25_figure-prep-checklist](25_figure-prep-checklist.md) — pre-render merge-gate checklist + anti-patterns companion to the playbook (21)
+* [27_six-stat-annotation-doctrine](27_six-stat-annotation-doctrine.md) — every stat annotation carries n/CI/method/p/effect/statistic (italic symbols, N-vs-n), and every 2D heatmap ships a labelled colorbar; worked-example leaf for playbook rule 8, checked by STX-FM017/STX-FM018
 
 ## At a glance
 

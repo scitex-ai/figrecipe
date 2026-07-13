@@ -6,6 +6,11 @@ Rule families:
                  → set_xyt; ax.spines[...].set_visible(False) → hide_spines).
 - FM016        — raw-mpl-bypass: raw `plt.subplots`/`plt.figure` figure
                  creation that bypasses figrecipe recording (→ fr.subplots).
+- FM017        — six-stat-annotation-completeness: a stats-shaped annotation
+                 string missing several of the six doctrine fields (n, CI,
+                 method, p, effect, statistic).
+- FM018        — heatmap-without-colorbar: `imshow(...)` with no `colorbar(...)`
+                 call anywhere in the same function/module scope.
 - FIG001       — scientific-figure hygiene (axis-range alignment across subplots).
 - P001-P009    — bare matplotlib calls; suggest scitex/figrecipe tracked variants
                  and flag style-override kwargs.
@@ -199,6 +204,60 @@ def get_plugin():
         requires="figrecipe",
     )
 
+    # FM017 — six-stat-annotation-completeness doctrine (companion to the
+    # scitex-dev "Statistics Completeness Doctrine",
+    # scitex_dev/_skills/scientific/03_reporting_02_statistics-completeness.md,
+    # scitex-ai/scitex-dev#290, operator 2026-07-05): a reported statistic
+    # must carry all six of n / 95% CI / method / p / effect size / test
+    # statistic. Heuristic on literal annotation strings — only strings that
+    # already look like a p-value annotation are considered, and only a
+    # clear multi-field miss fires. category="figure" ⇒ auto-promoted to
+    # ERROR in project-type:research.
+    FM017 = Rule(
+        id="STX-FM017",
+        severity="warning",
+        category="figure",
+        message=(
+            "statistical annotation string looks incomplete — missing "
+            "several of the six required fields (n, CI, method, p, "
+            "effect size, statistic)"
+        ),
+        suggestion=(
+            "Every reported statistic needs all six: n=<count>, a 95% CI, "
+            "the method/test name, the p-value, an effect size, and the "
+            "test statistic (e.g. `t(df)=`). Add the missing fields to the "
+            "annotation text (or move them to the caption / a stats table) — "
+            "see 27_six-stat-annotation-doctrine.md for a compliant example. "
+            "If this string is intentionally partial (e.g. significance "
+            "stars only, full stats reported elsewhere), annotate the line "
+            "with `# stx-allow: STX-FM017`."
+        ),
+    )
+
+    # FM018 — heatmap-colorbar requirement: any 2D heatmap (imshow) must
+    # ship a colorbar (with tick labels, axis label, and units — the
+    # content half is documented, not statically checkable). Flags an
+    # `imshow(...)` call with no `colorbar(...)` call anywhere in the same
+    # function/module scope. category="figure" ⇒ auto-promoted to ERROR in
+    # project-type:research.
+    FM018 = Rule(
+        id="STX-FM018",
+        severity="warning",
+        category="figure",
+        message=(
+            "`imshow(...)` detected with no `colorbar(...)` call in the "
+            "same scope — 2D heatmaps require a colorbar with tick labels, "
+            "an axis label, and units"
+        ),
+        suggestion=(
+            "Add `fig.colorbar(im, ax=ax, label='<quantity> [<units>]')` "
+            "(or `stx.plt.colorbar(...)`) after the `imshow` call, and make "
+            "sure the colorbar keeps its tick labels. If this heatmap "
+            "intentionally has no colorbar, annotate the line with "
+            "`# stx-allow: STX-FM018`."
+        ),
+    )
+
     # ------------------------------------------------------------------
     # FIG: Scientific-figure hygiene rules (FIG001+)
     # FIG001 — multiple subplots that declare different literal axis
@@ -367,6 +426,34 @@ def get_plugin():
     except ImportError:
         pass
 
+    # FM017 six-stat-annotation-completeness checker. Same rule-injection
+    # subclass pattern as _AxisAlignmentChecker above.
+    try:
+        from figrecipe._quality._stat_annotation_fields_checker import (
+            StatAnnotationFieldsChecker,
+        )
+
+        class _StatAnnotationFieldsChecker(StatAnnotationFieldsChecker):  # type: ignore[misc, valid-type]
+            def __init__(self, source_lines, config):
+                super().__init__(source_lines, config, rule=FM017)
+
+        checkers.append(_StatAnnotationFieldsChecker)
+    except ImportError:
+        pass
+
+    # FM018 heatmap-without-colorbar checker. Same rule-injection subclass
+    # pattern as _AxisAlignmentChecker above.
+    try:
+        from figrecipe._quality._heatmap_colorbar_checker import HeatmapColorbarChecker
+
+        class _HeatmapColorbarChecker(HeatmapColorbarChecker):  # type: ignore[misc, valid-type]
+            def __init__(self, source_lines, config):
+                super().__init__(source_lines, config, rule=FM018)
+
+        checkers.append(_HeatmapColorbarChecker)
+    except ImportError:
+        pass
+
     return {
         "rules": [
             FM001,
@@ -381,6 +468,8 @@ def get_plugin():
             FM010,
             FM011,
             FM016,
+            FM017,
+            FM018,
             FIG001,
             P001,
             P002,
