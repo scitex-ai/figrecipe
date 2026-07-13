@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-07-13
+
+### Added
+- **`comma_format(ax, x=, y=)` / `CommaFormatter`** — thousands-separator tick
+  formatter, mirroring the existing `OOMFormatter`/`sci_note` pattern. Exposed
+  as `fr.styles.comma_format` and as an `ax.comma_format(...)` method.
+- **`ax.stx_annotate_n(x, y, n, ...)`** — sample-size annotation helper. Font
+  size comes from the active style, colour defaults to black, and placement
+  reuses figrecipe's existing declutter ring-solver + ink-mask renderer for
+  overlap avoidance (with a *warned*, never silent, fallback to a fixed offset
+  when no clear spot is found).
+- **Six-stat annotation doctrine** documented as a new skill leaf
+  (`27_six-stat-annotation-doctrine.md`): every statistical annotation carries
+  all six of n / CI / method / p / effect / statistic, statistical symbols
+  render in italic, and N (subjects) stays distinct from n (windows/trials).
+  Every 2D heatmap ships a colorbar with tick labels, a label, and units.
+- **Two new soft lint rules** for the above: `STX-FM017` (stats annotation
+  missing several of the six required fields) and `STX-FM018` (`imshow` with no
+  colorbar in scope). Both are conservative (literal strings only) and honour
+  the existing `# stx-allow: STX-<ID>` escape hatch.
+
+### Fixed
+- **`/api/files` no longer 500s when a listed file escapes the project root.**
+  A symlinked `node_modules/@scitex/ui` made scitex-app's `FileSystemBackend`
+  (correctly) raise `ValueError: Path traversal detected`, but the file-tree
+  recipe-detection helpers only caught `(OSError, UnicodeDecodeError,
+  FileNotFoundError)` — so that one unreadable entry propagated out and took
+  down the entire recursive tree. A file the backend refuses to read is now
+  simply "not a recipe" and is skipped.
+- **`imshow` tick labels survive record → save → load → replay.** Two
+  compounding bugs dropped `set_xticks`/`set_xticklabels` on a label-less
+  imshow axis: the recorder serialized the caller's raw `range(...)` arg (which
+  degraded to the literal string `"range(0, 19)"`), and `finalize_special_plots`
+  wiped ticks on any label-less imshow axis with no guard. The recorder now
+  reads tick positions back from the live axis, and the finalizer checks for a
+  `FixedLocator` before clearing.
+- Chat views are imported from scitex-app's **public** `scitex_app.chat` surface
+  instead of the private `_chat` module (scitex-app floor raised to `>=0.3.0`).
+- CI: the in-SIF scratch `TMPDIR` is now unique per workflow run, so a stale
+  directory left by a killed worker can no longer fail the next run's cleanup.
+
 ## [0.30.0] - 2026-07-12
 
 ### Added
