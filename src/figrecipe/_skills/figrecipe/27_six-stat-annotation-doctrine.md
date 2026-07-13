@@ -2,7 +2,7 @@
 description: |
   [TOPIC] Six-stat annotation doctrine + heatmap colorbar requirement
   [DETAILS] Operator-issued reporting doctrine (2026-07-05): every statistical annotation on a figure must carry all six of n / 95% CI / method / p-value / effect size / test statistic, statistical symbols render in italic, and N (subjects) is kept distinct from n (windows/trials/samples). Pairs with the separate heatmap-colorbar requirement — every 2D imshow-style plot must ship a colorbar with tick labels, an axis label, and units. Both are checked (soft, warning-level) by STX-FM017 / STX-FM018 in figrecipe's lint plugin.
-tags: [figrecipe-six-stat-doctrine, figrecipe-stat-annotation, figrecipe-colorbar, figrecipe]
+tags: [figrecipe-six-stat-annotation-doctrine, figrecipe-stat-annotation, figrecipe-colorbar, figrecipe]
 ---
 
 
