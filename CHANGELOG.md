@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-07-14
+
+### Added
+- **`figrecipe.StatResult`** — the display-side port for a completed statistical
+  test, and the first half of the six-stat doctrine that is *executable* rather
+  than merely documented. 0.31.0 shipped the doctrine and a lint for it, but the
+  only way to satisfy it was still to hand-type the mathtext
+  (`text=r"$\it{N}$=12, $\it{n}$=340, ..."`) — tedious, easy to typo, and
+  impossible to verify, since a forgotten field looks exactly like a complete
+  one. `StatResult` builds that string instead:
+
+  ```python
+  result = fr.StatResult(
+      p_value=welch.pvalue, method="Welch's t-test",
+      statistic=welch.statistic, statistic_name="t", dof=welch.df,
+      effect_size=d, effect_name="d", ci=(0.85, 1.16),
+      n=720, n_subjects=12, n_unit="windows", n_subjects_unit="patients",
+  )
+  ax.add_stat_annotation(0, 1, stat=result, stars=True)
+  ```
+
+  figrecipe DISPLAYS statistics; it never computes them. A producer
+  (scitex-stats, scipy, a stored results table) fills the fields — via the
+  constructor or `StatResult.from_mapping(result_dict)`, the adapter seam that
+  accepts the common key spellings and preserves unrecognised keys in `extras`.
+  Neither package imports the other; the only coupling is the field names.
+
+  - `.missing_fields()` names the doctrine fields a result cannot render — the
+    check the STX-FM017 lint structurally cannot do, since it only sees literal
+    strings and skips f-strings.
+  - Rendering an incomplete result **warns** (naming the missing fields) rather
+    than silently emitting a partial annotation; `require_complete=False` opts
+    out when the rest genuinely lives in the caption.
+  - Italic symbols, `N`-vs-`n`, Greek statistics (`chi2` → *χ²*), comma-grouped
+    sample sizes, and Welch's fractional dof (`694.053` → `t(694.1)`) are all
+    handled, so the conventions are automatic instead of remembered.
+  - `stars=True` prepends the significance stars — never as a *substitute* for
+    the p-value, which is always rendered alongside them.
+- **`examples/12_six_stat_annotation.py`** — worked example; every number in the
+  rendered figure is computed, none typed.
+
+### Changed
+- `ax.add_stat_annotation(...)` accepts `stat=`, `stars=`, `sep=` and
+  `precision=`, and defaults to the new `style="six_stat"` when a `stat` is
+  supplied (unchanged `style="stars"` behaviour otherwise). Its recording half
+  moved to `_wrappers/_stat_annotation.py::record_stat_annotation`, beside the
+  drawing code it wraps; a supplied `StatResult` is resolved to plain text
+  before recording, so recipes replay without the producer's result object.
+
 ## [0.31.0] - 2026-07-13
 
 ### Added

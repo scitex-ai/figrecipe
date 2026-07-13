@@ -282,92 +282,17 @@ class RecordingAxesMethods:
             **kwargs,
         )
 
-    def add_stat_annotation(
-        self,
-        x1: float,
-        x2: float,
-        p_value: Optional[float] = None,
-        text: Optional[str] = None,
-        y: Optional[float] = None,
-        style: str = "stars",
-        bracket_height: Optional[float] = None,
-        text_offset: Optional[float] = None,
-        color: Optional[str] = None,
-        linewidth: Optional[float] = None,
-        fontsize: Optional[float] = None,
-        fontweight: Optional[str] = None,
-        id: Optional[str] = None,
-        track: bool = True,
-        **kwargs,
-    ):
+    def add_stat_annotation(self, x1: float, x2: float, **kwargs):
         """Add a statistical comparison annotation (bracket with stars/p-value).
 
-        Parameters
-        ----------
-        x1, x2 : float
-            X positions of the two groups being compared.
-        p_value : float, optional
-            P-value for automatic star conversion.
-        text : str, optional
-            Custom text (overrides p_value formatting).
-        y : float, optional
-            Y position for bracket (auto-calculated if None).
-        style : str
-            "stars", "p_value", "both", or "bracket_only".
+        Pass ``stat=StatResult(...)`` to render the full six-stat doctrine
+        annotation (n, CI, method, p, effect size, test statistic — italic symbols)
+        instead of hand-typing the mathtext; pass ``p_value=`` for stars only.
+        See ``_stat_annotation.record_stat_annotation`` for the full signature.
         """
-        from ._stat_annotation import draw_stat_annotation
+        from ._stat_annotation import record_stat_annotation
 
-        # Draw the annotation
-        artists = draw_stat_annotation(
-            self._ax,
-            x1,
-            x2,
-            y=y,
-            text=text,
-            p_value=p_value,
-            style=style,
-            bracket_height=bracket_height,
-            text_offset=text_offset,
-            color=color,
-            linewidth=linewidth,
-            fontsize=fontsize,
-            fontweight=fontweight,
-            **kwargs,
-        )
-
-        # Record if tracking
-        if self._track and track:
-            call_id = id if id else self._recorder._generate_call_id("stat_annotation")
-            record_kwargs = {
-                "x1": x1,
-                "x2": x2,
-                "p_value": p_value,
-                "text": text,
-                "y": y,
-                "style": style,
-                "bracket_height": bracket_height,
-                "text_offset": text_offset,
-                "color": color,
-                "linewidth": linewidth,
-                "fontsize": fontsize,
-            }
-            record_kwargs.update(kwargs)
-            # Remove None values
-            record_kwargs = {k: v for k, v in record_kwargs.items() if v is not None}
-
-            from .._recorder import CallRecord
-
-            record = CallRecord(
-                id=call_id,
-                function="stat_annotation",
-                args=[],
-                kwargs=record_kwargs,
-                ax_position=self._position,
-            )
-            ax_record = self._recorder.figure_record.get_or_create_axes(*self._position)
-            ax_record.add_decoration(record)
-
-        return artists
+        return record_stat_annotation(self, x1, x2, **kwargs)
 
     def _serialize_transform(self, transform) -> str:
         """Convert matplotlib transform to serializable marker."""
