@@ -174,6 +174,9 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     # ._diagram
     "Diagram": ("._diagram", "Diagram"),
     "StatResult": ("._annotations", "StatResult"),
+    "hints_for": ("._annotations", "hints_for"),
+    "known_figure_types": ("._annotations", "known_figure_types"),
+    "ComparisonGeometry": ("._annotations", "ComparisonGeometry"),
     "_Graphviz": ("._diagram._graphviz.graphviz", "Graphviz"),
     "_Mermaid": ("._diagram._mermaid.mermaid", "Mermaid"),
     # ._graph._presets
@@ -316,6 +319,10 @@ __all__ = [
     "Diagram",
     # Statistics display port (six-stat annotation doctrine)
     "StatResult",
+    # Per-figure-type annotation hints (advisory; never enforced)
+    "hints_for",
+    "known_figure_types",
+    "ComparisonGeometry",
     # Color utilities
     "colors",
     "color",
