@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.34.0"
+version = "0.34.1"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -60,7 +60,7 @@ dev = [
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.1.0",
+    "scitex-ui>=0.6.4",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -84,7 +84,7 @@ seaborn = [
 ]
 scitex = [
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.1.0",
+    "scitex-ui>=0.6.4",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -98,7 +98,7 @@ app = [
     "django>=4.2.0",
     "Pillow>=9.0.0",
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.1.0",
+    "scitex-ui>=0.6.4",
 ]
 desktop = [
     "django>=4.2.0",

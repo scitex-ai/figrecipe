@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.1] - 2026-07-14
+
+### Changed
+- **Adopt scitex-ui's native favicon support; drop figrecipe's interim override.**
+  figrecipe prototyped a `favicon_href` context var and scitex-ui adopted it as
+  the shared contract (scitex-ui#65, released in 0.6.4), where
+  `standalone_shell.html` now renders the `<link rel="icon">` itself, in `<head>`.
+  figrecipe's own `standalone.html` was still emitting that link from its
+  `extra_css` block — written before 0.6.4 existed — which on 0.6.4 produces a
+  **duplicate** `<link rel="icon">` rather than the only one (the parent renders
+  its copy outside the `extra_css` block, so the override never replaced it).
+
+  Removed the override and raised the `scitex-ui` floor `>=0.1.0` → `>=0.6.4`, so
+  the parent template that renders the favicon is guaranteed present. `views.py`
+  already passed `favicon_href` in the render context and is unchanged — the tab
+  icon still brands per `FIGRECIPE_FAVICON_COLOR`.
+
 ## [0.34.0] - 2026-07-14
 
 ### Added
