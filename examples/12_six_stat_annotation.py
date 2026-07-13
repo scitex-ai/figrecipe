@@ -163,10 +163,18 @@ def main() -> int:
     power = np.exp(-((freq[:, None] - 40) ** 2) / 300) * np.exp(
         -((time[None, :] - 0.5) ** 2) / 0.05
     )
-    # pcolormesh, not imshow: the SCITEX style strips ticks and spines from every
-    # imshow -- right for a photo, wrong for a time-by-frequency map whose axes
-    # carry physical meaning, and not overridable (the style is re-applied on save).
-    image = ax.pcolormesh(time, freq, power, cmap="viridis", id="heatmap_c")
+    image = ax.imshow(
+        power,
+        aspect="auto",
+        origin="lower",
+        extent=[time[0], time[-1], freq[0], freq[-1]],
+        cmap="viridis",
+        id="heatmap_c",
+    )
+    # The SCITEX style suppresses axis chrome on imshow (right for a picture, where
+    # ticks are noise). A heatmap's axes carry physical meaning, so tick them back.
+    ax.set_xticks([0.0, 0.5, 1.0])
+    ax.set_yticks([20, 40, 60, 80])
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Frequency [Hz]")
     # Doctrine rule 2: a heatmap needs a colorbar, with a label AND units.
