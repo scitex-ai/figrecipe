@@ -124,10 +124,11 @@ def finalize_special_plots(ax: Axes, style: Dict[str, Any] = None) -> None:
             text.set_fontfamily(font_family)
 
         if not show_axes:
+            # Clear tick LOCATIONS only. set_xticklabels([]) would additionally
+            # pin a NullFormatter on the axis, permanently blanking any tick the
+            # author sets later -- the irreversible-suppression bug.
             ax.set_xticks([])
             ax.set_yticks([])
-            ax.set_xticklabels([])
-            ax.set_yticklabels([])
             ax.set_xlabel("")
             ax.set_ylabel("")
             for spine in ax.spines.values():
@@ -156,12 +157,13 @@ def finalize_special_plots(ax: Axes, style: Dict[str, Any] = None) -> None:
         if not is_specgram:
             show_axes = style.get("imshow_show_axes", False)
             if not show_axes:
+                # Clear tick LOCATIONS only -- set_xticklabels([]) would pin a
+                # NullFormatter, so an author who set ticks after save (or on
+                # replay) would draw blanks with no way to recover them.
                 if not x_is_fixed:
                     ax.set_xticks([])
-                    ax.set_xticklabels([])
                 if not y_is_fixed:
                     ax.set_yticks([])
-                    ax.set_yticklabels([])
                 if not x_is_fixed and not y_is_fixed:
                     for spine in ax.spines.values():
                         spine.set_visible(False)
