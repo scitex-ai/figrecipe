@@ -63,6 +63,7 @@ This package does not ship as a submodule of the `scitex` umbrella.
 * [24_l-shaped-scale-bar](24_l-shaped-scale-bar.md) — L-shaped scale-bar convention for representative signal-trace panels (hide axes; lower-left time + amplitude bars sharing a corner); worked-example leaf for playbook rule 7
 * [25_figure-prep-checklist](25_figure-prep-checklist.md) — pre-render merge-gate checklist + anti-patterns companion to the playbook (21)
 * [27_six-stat-annotation-doctrine](27_six-stat-annotation-doctrine.md) — every stat annotation carries n/CI/method/p/effect/statistic (italic symbols, N-vs-n), and every 2D heatmap ships a labelled colorbar; worked-example leaf for playbook rule 8, checked by STX-FM017/STX-FM018
+* [28_never-silently-discard](28_never-silently-discard.md) — never drop a property the author explicitly set without warning; suppress reversibly (locations, never a formatter) and assert on the RENDERED output, because an object-level assertion is blind to this corruption (it shipped a blank-axis comodulogram to review)
 
 ## At a glance
 
