@@ -45,15 +45,19 @@ def _label_a_dark_panel(facecolor="#1e1e1e"):
 
 
 def test_dark_panel_labels_find_a_clear_spot():
-    # Arrange + Act: a dark figure whose background the raster must recognise.
-    messages = _label_a_dark_panel()
+    # Arrange: a dark figure, whose background the raster must recognise.
+    facecolor = "#1e1e1e"
+    # Act
+    messages = _label_a_dark_panel(facecolor)
     # Assert: nothing fell back onto its point.
     assert not any(_NO_CLEAR_SPOT in m for m in messages)
 
 
 def test_dark_panel_does_not_warn_about_saturation():
-    # Arrange + Act: a recognised dark background yields a mostly-empty raster.
-    messages = _label_a_dark_panel()
+    # Arrange: a recognised dark background yields a mostly-empty raster.
+    facecolor = "#1e1e1e"
+    # Act
+    messages = _label_a_dark_panel(facecolor)
     # Assert
     assert not any(_SATURATED in m for m in messages)
 
@@ -92,7 +96,8 @@ def test_mismatched_label_length_is_rejected():
     # Arrange
     fig, ax = fr.subplots(axes_width_mm=90, axes_height_mm=70)
     try:
-        # Act + Assert
+        # Act
+        # Assert
         with pytest.raises(ValueError, match="equal length"):
             ax.scatter_labels([0, 1], [0, 1], ["only-one"])
     finally:
