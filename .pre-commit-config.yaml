@@ -15,12 +15,37 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: local
-    hooks:
-      - id: pytest-testmon
-        name: pytest-testmon
-        entry: python -m pytest --testmon -x -q --tb=short --ignore=tests/figrecipe/_editor --ignore=tests/figrecipe/test_pixel_perfect.py --ignore=tests/develop/test_audit.py --ignore=tests/figrecipe/_mcp/test__resources.py
-        language: system
-        types: [python]
-        pass_filenames: false
-        stages: [pre-commit]
+  # Incremental testing (pytest-testmon) — REMOVED from the commit path.
+  #
+  # This hook never worked, and could not work:
+  #
+  #   * `pytest-testmon` is not a dependency of figrecipe. It is absent from
+  #     [project.optional-dependencies].dev and is not pulled in transitively
+  #     (scitex-dev does not require it). So in a correctly provisioned env
+  #     (`pip install -e .[dev]`) the hook died instantly with
+  #     `error: unrecognized arguments: --testmon` (exit 4) — it never ran a
+  #     single test. In the agent container it died even earlier, on
+  #     `ModuleNotFoundError: No module named 'matplotlib'` (exit 4), because
+  #     `python` there resolves to the sac venv, not figrecipe's env.
+  #     Every commit staging a .py file was blocked by a hook that had never
+  #     executed a test.
+  #
+  #   * Where testmon *is* installed by hand, a COLD run of the ~2460-test
+  #     suite costs ~2h. A fresh git worktree is always cold, and agents work
+  #     in fresh worktrees, so "cold" is the normal case, not the exception.
+  #     A pre-commit hook must be bounded and fast; a 2460-test suite in the
+  #     commit path is an unbounded stall. Even a perfectly warmed testmon
+  #     cache re-enters that cold path whenever its environment fingerprint
+  #     changes (testmon keys its DB on the FULL installed-distribution set
+  #     plus the exact python micro version), which an unpinned `uv pip
+  #     install -e .` re-resolves on every container boot.
+  #
+  # Full verification lives in CI, where it belongs: the self-hosted
+  # (Spartan CPU) pytest matrix runs the complete suite on py3.11/3.12/3.13
+  # for every push and PR to main/develop
+  # (.github/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml).
+  #
+  # Run the suite locally whenever you want:  pytest -n auto
+  #
+  # scitex-cloud, scitex-code, scitex-hub, scitex-python and scitex_repo all
+  # removed this same hook from their commit paths for the same reason.
