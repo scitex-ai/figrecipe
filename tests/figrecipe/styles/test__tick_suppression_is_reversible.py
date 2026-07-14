@@ -67,7 +67,8 @@ def test_suppressing_explicit_ticks_warns_the_author(heatmap):
     # Arrange: the author explicitly asked for these ticks; the style says hide.
     # Discarding that silently is the defect -- name it.
     heatmap.set_xticks([0, 1])
-    # Act + Assert
+    # Act
+    # Assert
     with pytest.warns(UserWarning, match="tick"):
         apply_imshow_axes_visibility(heatmap, show_axes=False, show_labels=False)
 
