@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Plot-specific style application for figrecipe."""
 
+import warnings
 from typing import Any, Dict
 
 from matplotlib.axes import Axes
@@ -151,10 +152,11 @@ def apply_pie_style(ax: Axes, style: Dict[str, Any]) -> None:
         text.set_fontfamily(font_family)
 
     if not show_axes:
+        # set_xticks([]) alone clears ticks AND labels, reversibly. Adding
+        # set_xticklabels([]) would pin a NullFormatter on the axis and blank
+        # every tick set afterwards -- see apply_imshow_axes_visibility below.
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
         for spine in ax.spines.values():
             spine.set_visible(False)
 
@@ -190,6 +192,7 @@ def apply_imshow_axes_visibility(ax: Axes, show_axes: bool, show_labels: bool) -
         If False, clear the x/y axis labels.
     """
     if not show_axes:
+        _warn_if_discarding_author_ticks(ax)
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
@@ -198,6 +201,37 @@ def apply_imshow_axes_visibility(ax: Axes, show_axes: bool, show_labels: bool) -
     if not show_labels:
         ax.set_xlabel("")
         ax.set_ylabel("")
+
+
+def _warn_if_discarding_author_ticks(ax: Axes) -> None:
+    """Warn before suppression throws away ticks the author explicitly pinned.
+
+    A styler that silently drops what an author asked for produces a figure that
+    is wrong in the picture but right in every object-level assertion -- which is
+    how a heatmap once reached human review with its frequency axis blank. If we
+    are about to discard an explicit choice, say which axis and how to keep it.
+
+    A ``FixedLocator`` is matplotlib's fingerprint of an explicit
+    ``set_xticks(...)``; the default locator is a computed one.
+    """
+    from matplotlib.ticker import FixedLocator
+
+    pinned = [
+        name
+        for name, axis in (("x", ax.xaxis), ("y", ax.yaxis))
+        if isinstance(axis.get_major_locator(), FixedLocator)
+    ]
+    if not pinned:
+        return
+
+    warnings.warn(
+        f"figrecipe: imshow styling is hiding the {'/'.join(pinned)} tick(s) you "
+        "set explicitly, because imshow_show_axes is False. If these axes carry "
+        "physical meaning (a time-by-frequency map), the numbers are the content "
+        "-- keep them with imshow_show_axes=True in your style.",
+        UserWarning,
+        stacklevel=3,
+    )
 
 
 def apply_matrix_style(ax: Axes, style: Dict[str, Any]) -> None:
