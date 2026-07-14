@@ -1,3 +1,10 @@
+---
+description: |
+  [TOPIC] Never silently discard what the author set — suppress reversibly, assert on rendered pixels
+  [DETAILS] Incident doctrine (2026-07-14): a styler that drops a property the author explicitly set, without warning, produces a figure that is wrong in the picture and right in every assertion. `set_xticklabels([])` pins a NullFormatter on the AXIS, so every tick set afterwards renders blank through any handle — and `get_xticks()` keeps returning the author's own values. Three comodulograms shipped to human review with no frequency numbers. Suppress by clearing tick LOCATIONS (reversible) or toggling visibility via tick_params — never install a formatter. Warn when discarding an author-pinned choice. Assert on RENDERED label text, because an object-level assertion is structurally blind to this class of corruption. A silent failure also HIDES whatever is behind it.
+tags: [figrecipe-never-silently-discard, figrecipe-fail-loud, figrecipe-tick-suppression, figrecipe-rendered-assertions, figrecipe]
+---
+
 # Never silently discard what the author set
 
 A styler that drops a property the author explicitly set — without saying so —
