@@ -17,6 +17,11 @@ all?" was being answered by hand. Ask the parser instead.
 
 Only the EMPTY-list form is a trap. ``set_xticklabels(labels)`` with real labels
 is legitimate and common -- categorical heatmap axes need exactly that.
+
+Lives in tests/develop/ next to test_audit.py because it is the same species: a
+conformance gate over the whole source tree, not a unit test of one module. It
+mirrors no src file, so tests/figrecipe/ (which audit PS-204 requires to mirror
+src/figrecipe/ file-for-file) is the wrong home for it.
 """
 
 import ast
