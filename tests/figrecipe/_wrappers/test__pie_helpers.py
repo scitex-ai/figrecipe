@@ -50,24 +50,34 @@ def test_author_ticks_render_after_pie_suppression(pie_ax):
     assert _drawn_xlabels(pie_ax) == ["0", "1"]
 
 
-def test_pie_suppression_leaves_no_null_formatter(pie_ax):
+@pytest.mark.parametrize("axis_name", ["xaxis", "yaxis"])
+def test_pie_suppression_leaves_no_null_formatter(pie_ax, axis_name):
     # Arrange: a pinned NullFormatter is the mechanism -- nothing can undo it.
+    # Both axes are suppressed, so both have to come back clean.
     from matplotlib.ticker import NullFormatter
 
     # Act
     apply_pie_axes_visibility(pie_ax, _SUPPRESS)
     # Assert
-    assert not isinstance(pie_ax.xaxis.get_major_formatter(), NullFormatter)
-    assert not isinstance(pie_ax.yaxis.get_major_formatter(), NullFormatter)
+    formatter = getattr(pie_ax, axis_name).get_major_formatter()
+    assert not isinstance(formatter, NullFormatter)
 
 
-def test_pie_suppression_actually_hides_the_chrome(pie_ax):
+def test_pie_suppression_actually_hides_the_labels(pie_ax):
     # Arrange: the reversibility test above must not be vacuous -- suppression
     # still has to suppress, or "restored" would prove nothing.
     # Act
     apply_pie_axes_visibility(pie_ax, _SUPPRESS)
     # Assert
     assert _drawn_xlabels(pie_ax) == []
+
+
+def test_pie_suppression_actually_hides_the_spines(pie_ax):
+    # Arrange: dropping set_[xy]ticklabels must not cost the spine hiding that
+    # shares this branch.
+    # Act
+    apply_pie_axes_visibility(pie_ax, _SUPPRESS)
+    # Assert
     assert not any(s.get_visible() for s in pie_ax.spines.values())
 
 
