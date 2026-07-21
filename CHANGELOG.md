@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.3] - 2026-07-22
+
+### Fixed
+- **Django-bridge entry now loads `mobile.css` — the hub-embedded editor gets
+  the mobile layout.** `src/styles/mobile.css` (stack `.editor-body` vertically
+  at ≤768px) was imported only by the standalone entry (`main.tsx`), while the
+  bridge entry (`bridge/bridge-init.ts`) — the path scitex-cloud actually mounts
+  the editor through — imported every stylesheet *except* it. On the hub a
+  390px-wide phone therefore rendered the desktop 3-pane layout: text cut
+  mid-word, clipped buttons, the rail overlaying the toolbar. One import line
+  puts the existing stylesheet on the path that executes.
+
 ## [0.34.1] - 2026-07-14
 
 ### Changed
