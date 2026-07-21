@@ -48,7 +48,7 @@ figrecipe --help
 ## Editable install (development)
 
 ```bash
-git clone https://github.com/ywatanabe1989/figrecipe
+git clone https://github.com/scitex-ai/figrecipe
 cd figrecipe
 pip install -e '.[dev,all]'
 ```
