@@ -150,6 +150,18 @@ def apply_style(ax, style=None):
     >>> trace_lw = ps.apply_style(ax)
     >>> ax.plot(x, y, lw=trace_lw)
     """
+    import matplotlib.axes
+
+    # Fail loud at the boundary: a non-Axes first positional (commonly a preset
+    # name passed as `apply_style("SCITEX_STYLE")`) otherwise crashes deep
+    # inside with an opaque `'str' object has no attribute ...` (#160).
+    if not isinstance(ax, matplotlib.axes.Axes):
+        raise TypeError(
+            f"apply_style(ax, style=...): ax must be a matplotlib Axes, "
+            f"got {type(ax).__name__}. If you meant a style preset, pass it "
+            f"as the style argument: apply_style(ax, style=...)."
+        )
+
     from ..styles._internal import apply_style_mm, get_style, to_subplots_kwargs
 
     if style is None:
