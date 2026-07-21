@@ -152,6 +152,10 @@ def apply_style(ax, style=None):
     """
     import matplotlib.axes
 
+    # Unwrap figrecipe's RecordingAxes composition wrapper to the underlying
+    # matplotlib Axes, mirroring the style path in _subplots.py.
+    ax = ax._ax if hasattr(ax, "_ax") else ax
+
     # Fail loud at the boundary: a non-Axes first positional (commonly a preset
     # name passed as `apply_style("SCITEX_STYLE")`) otherwise crashes deep
     # inside with an opaque `'str' object has no attribute ...` (#160).

@@ -47,3 +47,21 @@ def test_apply_style_accepts_a_real_axes():
         assert result > 0
     finally:
         plt.close(fig)
+
+
+def test_apply_style_accepts_figrecipe_wrapped_axes():
+    # Arrange
+    import matplotlib.pyplot as plt
+    import figrecipe as fr
+
+    # fr.subplots() returns a RecordingAxes composition wrapper (not an Axes
+    # subclass); apply_style must unwrap it, not reject it (#160 review).
+    fig, ax = fr.subplots()
+    try:
+        # Act
+        result = fr.apply_style(ax)
+        # Assert
+        assert isinstance(result, float)
+        assert result > 0
+    finally:
+        plt.close("all")
