@@ -30,11 +30,10 @@ Also demonstrates, from the same release line:
 from pathlib import Path
 
 import numpy as np
+import scitex as stx
 from scipy import stats
 
 import figrecipe as fr
-
-OUT = Path(__file__).parent / "12_six_stat_annotation_out"
 
 
 def cohens_d(a: np.ndarray, b: np.ndarray) -> float:
@@ -59,8 +58,12 @@ def cohens_d_ci(d: float, n_a: int, n_b: int, level: float = 0.95) -> tuple:
     return (d - crit * se, d + crit * se)
 
 
-def main() -> int:
-    OUT.mkdir(exist_ok=True)
+@stx.session
+def main(
+    CONFIG=stx.session.INJECTED,
+    logger=stx.session.INJECTED,
+):
+    OUT = Path(CONFIG.SDIR_OUT)
     rng = np.random.default_rng(42)
 
     fig, axes = fr.subplots(1, 3, figsize=(180 / 25.4, 55 / 25.4))
@@ -90,7 +93,7 @@ def main() -> int:
         n_unit="windows",
         n_subjects_unit="patients",
     )
-    print(f"Panel A missing fields: {result.missing_fields()}")  # -> []
+    logger.info(f"Panel A missing fields: {result.missing_fields()}")  # -> []
 
     ax = axes[0]
     means = [control.mean(), treated.mean()]
@@ -182,7 +185,7 @@ def main() -> int:
 
     fig.add_panel_labels(["A", "B", "C"])
     fr.save(fig, OUT / "six_stat_annotation.png", validate=False)
-    print(f"Output: {OUT / 'six_stat_annotation.png'}")
+    logger.info(f"Output: {OUT / 'six_stat_annotation.png'}")
     return 0
 
 
