@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 """Tests for figrecipe's standalone.html shell template.
 
+Lives in tests/develop/ (exempt from the src-mirror rule) because its subject
+is a template asset (src/figrecipe/_django/templates/figrecipe/standalone.html)
+and the scitex-ui shell contract — there is no matching src ``*.py`` module to
+mirror, and the tests deliberately bypass ``views.py`` via ``render_to_string``.
+
 figrecipe prototyped the ``favicon_href`` context var and scitex-ui adopted it as
 the shared contract (0.6.4), where ``standalone_shell.html`` renders the
 ``<link rel="icon">`` itself. figrecipe's own override was removed; these tests

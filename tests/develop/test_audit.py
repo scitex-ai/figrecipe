@@ -5,6 +5,7 @@ after upgrading scitex-dev to refresh any pin in [dev].
 """
 
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -25,10 +26,21 @@ def test_audit_all_for_package_reports_clean():
     # a clean return is the assertion proxy. The §6 MCP<->Python-API
     # parity rule is exempted via `.scitex/dev/config.yaml`
     # (audit.mcp-parity-exempt: true), read by scitex-dev >= 0.12.0.
+    # `path=` anchors the audit on THIS checkout — the tree this test file
+    # lives in. Without it the audit resolves "figrecipe" by a ~/proj/<name>
+    # guess and grades whatever tree sits there; on the self-hosted runner
+    # that was a stale checkout, which both false-failed PRs on a pre-commit
+    # hook deleted in #306 and false-passed real violations in #308. A gate
+    # that grades the wrong tree is worse than no gate (scitex-dev's own
+    # docstring for `path`).
     # timeout override of the generated 120s default: audit-all runs clean in
     # ~55s standalone but exceeds 120s inside the pytest-matrix SIF (coverage +
     # parallel load), flaking every PR. 300s is a realistic cap for a
     # slow-but-clean audit. (scitex-dev owns the write-audit-test default.)
-    audit_all_for_package("figrecipe", timeout=300)
+    audit_all_for_package(
+        "figrecipe",
+        path=Path(__file__).resolve().parents[2],
+        timeout=300,
+    )
     # Assert
     assert True  # `audit_all_for_package` raises on failure
