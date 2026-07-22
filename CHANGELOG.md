@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.4] - 2026-07-22
+
+### Fixed
+- **Pie styling no longer blanks ticks irreversibly — the fifth and last
+  `set_[xy]ticklabels([])` site.** `apply_pie_axes_visibility` pinned a
+  `NullFormatter` on both axes, so any tick an author set after a styled
+  `ax.pie()` rendered blank, through any handle, with no way to undo it — the
+  same defect class that once shipped a heatmap to review with its frequency
+  numbers gone. `set_[xy]ticks([])` alone clears ticks *and* labels, and is
+  reversible. Four prior hand-searches each declared the class eradicated and
+  each missed a site, so this fix ships with a guard rather than a promise:
+  `tests/develop/test_no_null_formatter_traps.py` walks the AST of every
+  shipped module and fails the build on the empty-list form. Real labels stay
+  legal — categorical axes need them.
+- **The CI audit gate now grades the commit under test.** `test_audit.py`
+  called `audit_all_for_package("figrecipe")` without `path=`, so the audit
+  resolved the package by a `~/proj/<name>` guess and graded whatever tree sat
+  there — on the CI runner, a stale checkout. It failed honest PRs over a
+  pre-commit hook that had already been deleted, and passed the eight
+  violations fixed for 0.34.3 while they were still live. The audit is now
+  anchored on the checkout the test file itself lives in, which is
+  scitex-dev's prescribed idiom for exactly this trap.
+
 ## [0.34.3] - 2026-07-22
 
 ### Fixed
