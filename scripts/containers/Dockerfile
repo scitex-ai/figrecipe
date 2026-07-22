@@ -49,5 +49,5 @@ ARG BUILD_DATE
 ARG VCS_REF
 LABEL org.label-schema.build-date=$BUILD_DATE
 LABEL org.label-schema.vcs-ref=$VCS_REF
-LABEL org.label-schema.vcs-url="https://github.com/ywatanabe1989/figrecipe"
+LABEL org.label-schema.vcs-url="https://github.com/scitex-ai/figrecipe"
 LABEL org.label-schema.schema-version="1.0"

@@ -48,7 +48,7 @@ For development:
 
 .. code-block:: bash
 
-    git clone https://github.com/ywatanabe1989/figrecipe.git
+    git clone https://github.com/scitex-ai/figrecipe.git
     cd figrecipe
     pip install -e ".[all,dev]"
 
