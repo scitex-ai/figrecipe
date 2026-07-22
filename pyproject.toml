@@ -130,7 +130,7 @@ mcp = [
     "fastmcp>=2.0",
 ]
 all = [
-    "figrecipe[dev,docs,graph-interactive,mcp]",
+    "figrecipe[desktop,dev,docs,graph-interactive,mcp]",
     "pyyaml>=6.0.0",
     "Pillow>=9.0.0",
     "seaborn>=0.12.0",
