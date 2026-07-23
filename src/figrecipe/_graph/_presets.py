@@ -216,10 +216,20 @@ def unregister_preset(name: str) -> None:
         If preset is a built-in or doesn't exist.
     """
     if name in _PRESETS:
-        raise ValueError(f"Cannot unregister built-in preset '{name}'")
+        raise ValueError(
+            f"Cannot unregister built-in preset '{name}'. Built-ins cannot be "
+            f"removed; use register_preset(name, config, override=True) to "
+            f"replace one."
+        )
 
     if name not in _user_presets:
-        raise ValueError(f"Preset '{name}' does not exist")
+        removable = list(_user_presets.keys())
+        detail = (
+            f"Registered user presets: {', '.join(removable)}"
+            if removable
+            else "No user presets are registered."
+        )
+        raise ValueError(f"Preset '{name}' does not exist. {detail}")
 
     del _user_presets[name]
 
