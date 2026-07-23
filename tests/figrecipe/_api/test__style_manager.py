@@ -4,7 +4,6 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-
 import pytest
 
 
@@ -13,7 +12,7 @@ def test_import__api__style_manager_module():
     # Arrange
     # Act
     # Assert
-    module_path = 'figrecipe._api._style_manager'
+    module_path = "figrecipe._api._style_manager"
     # Act
     mod = pytest.importorskip(module_path)
     # Assert
@@ -23,9 +22,11 @@ def test_import__api__style_manager_module():
 def test_apply_style_rejects_non_axes_first_positional():
     # Arrange
     import matplotlib.pyplot as plt
+
     from figrecipe._api._style_manager import apply_style
 
-    # Act & Assert: passing the preset name (a str) where the Axes goes must
+    # Act
+    # Assert: passing the preset name (a str) where the Axes goes must
     # fail loud at the boundary, not crash deep inside (#160).
     with pytest.raises(TypeError, match="must be a matplotlib Axes"):
         apply_style("SCITEX_STYLE")
@@ -34,17 +35,16 @@ def test_apply_style_rejects_non_axes_first_positional():
 
 def test_apply_style_accepts_a_real_axes():
     # Arrange
-    import matplotlib.axes
     import matplotlib.pyplot as plt
+
     from figrecipe._api._style_manager import apply_style
 
     fig, ax = plt.subplots()
     try:
         # Act
         result = apply_style(ax)
-        # Assert: returns the trace line width in points.
-        assert isinstance(result, float)
-        assert result > 0
+        # Assert: returns the trace line width in points (a positive float).
+        assert isinstance(result, float) and result > 0
     finally:
         plt.close(fig)
 
@@ -52,6 +52,7 @@ def test_apply_style_accepts_a_real_axes():
 def test_apply_style_accepts_figrecipe_wrapped_axes():
     # Arrange
     import matplotlib.pyplot as plt
+
     import figrecipe as fr
 
     # fr.subplots() returns a RecordingAxes composition wrapper (not an Axes
@@ -60,8 +61,7 @@ def test_apply_style_accepts_figrecipe_wrapped_axes():
     try:
         # Act
         result = fr.apply_style(ax)
-        # Assert
-        assert isinstance(result, float)
-        assert result > 0
+        # Assert: a positive float trace line width.
+        assert isinstance(result, float) and result > 0
     finally:
         plt.close("all")
