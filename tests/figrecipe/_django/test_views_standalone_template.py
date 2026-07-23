@@ -7,6 +7,11 @@ the shared contract (0.6.4), where ``standalone_shell.html`` renders the
 ``<link rel="icon">`` itself. figrecipe's own override was removed; these tests
 pin that the favicon still renders — exactly ONCE, not zero times (override
 removed and parent doesn't render it) and not twice (both render it).
+
+Since scitex-ui 0.10.0 the shell brands the tab by DEFAULT: with no
+``favicon_href`` supplied it renders the shared scitex-ui favicon partial
+(``scitex_ui/img/scitex-favicon.svg``) instead of an unbranded tab, so the
+no-favicon pin is "default brand icon exactly once", no longer "no icon link".
 """
 
 import os
@@ -46,12 +51,14 @@ def test_favicon_href_reaches_the_markup(_django_ready):
     assert "data:image/svg+xml" in html
 
 
-def test_no_icon_link_when_no_favicon_supplied(_django_ready):
-    # Arrange: an unbranded tab is the documented default.
+def test_default_favicon_renders_once_when_none_supplied(_django_ready):
+    # Arrange: since scitex-ui 0.10.0 the shell's documented default is the
+    # shared SciTeX brand favicon, rendered by the parent shell exactly once
+    # (a figrecipe override would duplicate it, an unbranded tab would drop it).
     # Act
     html = _render(_django_ready, working_dir="/tmp")
     # Assert
-    assert 'rel="icon"' not in html
+    assert html.count('rel="icon"') == 1
 
 
 def test_app_stylesheet_survives_the_override_removal(_django_ready):
