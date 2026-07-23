@@ -4,7 +4,6 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-
 import pytest
 
 
@@ -13,7 +12,7 @@ def test_import_colors__colors_module():
     # Arrange
     # Act
     # Assert
-    module_path = 'figrecipe.colors._colors'
+    module_path = "figrecipe.colors._colors"
     # Act
     mod = pytest.importorskip(module_path)
     # Assert
@@ -51,8 +50,7 @@ def test_rgb2rgba_appends_alpha():
     # Act
     result = rgb2rgba([255, 0, 0], alpha=0.5)
     # Assert
-    assert len(result) == 4
-    assert result[-1] == 0.5
+    assert len(result) == 4 and result[-1] == 0.5
 
 
 def test_bgr2rgb_reverses_channel_order():
@@ -82,9 +80,8 @@ def test_bgra2rgba_reverses_rgb_and_preserves_alpha():
 
     # Act
     result = bgra2rgba([1, 2, 3, 4])
-    # Assert
-    assert result == [3, 2, 1, 4]
-    assert result[3] == 4
+    # Assert: rgb reversed to [3, 2, 1], alpha (4) preserved in place.
+    assert result == [3, 2, 1, 4] and result[3] == 4
 
 
 def test_bgra2rgba_rgba2bgra_round_trips_preserving_alpha():
@@ -94,9 +91,8 @@ def test_bgra2rgba_rgba2bgra_round_trips_preserving_alpha():
     rgba = [10, 20, 30, 40]
     # Act
     result = bgra2rgba(rgba2bgra(rgba))
-    # Assert
-    assert result == rgba
-    assert result[3] == 40
+    # Assert: round-trip is identity, alpha (40) preserved.
+    assert result == rgba and result[3] == 40
 
 
 def test_rgba2hex_formats_known_value():
