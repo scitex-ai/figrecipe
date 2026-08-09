@@ -60,7 +60,12 @@ dev = [
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.6.4",
+    # 0.14.2 is the version figrecipe's suite is actually VERIFIED against
+    # (2685 passed, 2026-08-09). The old >=0.6.4 predated the components
+    # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
+    # figrecipe/standalone.html extends -- so it declared a version that
+    # cannot serve this package. Declaring only what has been exercised.
+    "scitex-ui>=0.14.2",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -84,7 +89,12 @@ seaborn = [
 ]
 scitex = [
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.6.4",
+    # 0.14.2 is the version figrecipe's suite is actually VERIFIED against
+    # (2685 passed, 2026-08-09). The old >=0.6.4 predated the components
+    # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
+    # figrecipe/standalone.html extends -- so it declared a version that
+    # cannot serve this package. Declaring only what has been exercised.
+    "scitex-ui>=0.14.2",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -98,7 +108,12 @@ app = [
     "django>=4.2.0",
     "Pillow>=9.0.0",
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.6.4",
+    # 0.14.2 is the version figrecipe's suite is actually VERIFIED against
+    # (2685 passed, 2026-08-09). The old >=0.6.4 predated the components
+    # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
+    # figrecipe/standalone.html extends -- so it declared a version that
+    # cannot serve this package. Declaring only what has been exercised.
+    "scitex-ui>=0.14.2",
 ]
 desktop = [
     "django>=4.2.0",
