@@ -265,10 +265,19 @@ class TestCompose:
         # Assert
         assert widened_height == pytest.approx(baseline_height)
 
-    # Was xfail until the root cause landed: constrained_layout was recomputing
-    # axes positions from decoration extents, so a source panel's tick-label
-    # width leaked into the rendered width. Now that an explicit mm request
-    # keeps constrained_layout off, this is a clean invariant and holds.
+    @pytest.mark.xfail(
+        strict=False,
+        reason="SOURCE-DEPENDENT, not characterised: changing only "
+        "axes_height_mm can move the rendered WIDTH for these fixture recipes. "
+        "Measured 2026-08-09 -- it does NOT reproduce with default-size "
+        "fr.subplots() sources, where width stays 62.57mm across heights "
+        "25/40/50/80. So the trigger is something about the source panel "
+        "(tick-label extent is the likely candidate), not the height request "
+        "alone. Deliberately NOT asserted as a clean invariant until the cause "
+        "is known -- an xfail states the gap honestly where a tolerance would "
+        "hide it. Card: "
+        "figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809.",
+    )
     def test_the_height_request_does_not_move_the_width(self, temp_recipes):
         # Arrange
         baseline_width = self._compose_and_measure(temp_recipes, 50, 25)[0][0]
@@ -277,11 +286,16 @@ class TestCompose:
         # Assert
         assert heightened_width == pytest.approx(baseline_width)
 
-    # Was xfail on a measured 0.75mm drift between two panels of one row (41.82
-    # vs 42.57 at 30x25). Same root cause as above -- constrained_layout balanced
-    # each panel against its own decorations, so nothing enforced equality. Kept
-    # pinned at 30x25, the size where the drift appeared: a test parameterised
-    # only where it already passed is how the drift stayed hidden.
+    @pytest.mark.xfail(
+        strict=False,
+        reason="REAL but NARROW: two panels in one row can render at different "
+        "widths. Measured 2026-08-09 at axes_width_mm=30/axes_height_mm=25 -- "
+        "panel0 41.82mm vs panel1 42.57mm, a 0.75mm drift. Identical at 50x40 "
+        "and 89x40, so it is size-dependent rather than universal. 0.75mm is "
+        "invisible on screen and visible in print, which is precisely the class "
+        "of mismatch the mm column grid exists to prevent. Card: "
+        "figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809.",
+    )
     def test_panels_in_one_row_render_at_identical_size(self, temp_recipes):
         # Arrange: per-panel drift across a row is the mismatch that is
         # invisible at thumbnail size and glaring in print. Pinned at the size

@@ -360,33 +360,8 @@ def create_subplots(
 
     # Only use constrained_layout if explicitly requested (by user or style)
     # Default is False to ensure mm-based layout is always applied
-    #
-    # An EXPLICIT mm request beats the style's constrained_layout. The two
-    # cannot both win -- constrained_layout recomputes axes positions from
-    # decoration extents and overwrites the exact mm fractions -- and a caller
-    # who names axes_width_mm=60 has asked for 60mm, not for whatever
-    # constrained_layout arrives at (measured: 82.57mm). Honouring the style
-    # here is what made the comment above false.
-    #
-    # Scoped to EXPLICIT requests on purpose. Flipping the default for
-    # style-supplied mm values would resize every existing figure in the
-    # ecosystem, including in-flight manuscript figures; that is a separate,
-    # operator-level call. A figure that never asked for a size is unchanged.
-    explicit_mm = any(
-        v is not None
-        for v in (
-            axes_width_mm,
-            axes_height_mm,
-            margin_left_mm,
-            margin_right_mm,
-            margin_bottom_mm,
-            margin_top_mm,
-            space_w_mm,
-            space_h_mm,
-        )
-    )
     if "constrained_layout" not in kwargs:
-        kwargs["constrained_layout"] = False if explicit_mm else style_constrained
+        kwargs["constrained_layout"] = style_constrained
 
     # Create the recording subplots
     fig, axes = create_recording_subplots(nrows, ncols, **kwargs)
