@@ -278,6 +278,33 @@ def make_fm_rules(Rule: Any) -> Dict[str, Any]:
         requires="figrecipe",
     )
 
+    # FM012 — raster TILING of rendered panels. A composite assembled by
+    # pasting rendered panel images together loses the mm layout contract and
+    # rescales text per panel, so the figure carries font sizes no style
+    # declared. Narrow by construction: only fires in a module that imports an
+    # imaging library, and only on calls that composite one raster into
+    # another (paste / alpha_composite / hconcat / vconcat). Rendered-panel
+    # RESCALE is FM013, not inferred from a resize call here.
+    # category="figure" ⇒ auto-promoted to ERROR in project-type:research.
+    FM012 = Rule(
+        id="STX-FM012",
+        severity="warning",
+        category="figure",
+        message=(
+            "raster compositing detected — tiling rendered figure panels with "
+            "PIL/cv2 rescales each panel's text independently and discards the "
+            "mm layout contract, so the composite ends up with font sizes no "
+            "style declared"
+        ),
+        suggestion=(
+            "Compose from the recipes instead: `fr.compose(...)` (or `Figz` / "
+            "`align_panels`) tiles panels at 1:1 with no rescale and keeps "
+            "each panel's provenance. If this is assembling image DATA rather "
+            "than rendered figure panels, annotate the line with "
+            "`# stx-allow: STX-FM012`."
+        ),
+    )
+
     return {
         "FM001": FM001,
         "FM002": FM002,
@@ -290,6 +317,7 @@ def make_fm_rules(Rule: Any) -> Dict[str, Any]:
         "FM009": FM009,
         "FM010": FM010,
         "FM011": FM011,
+        "FM012": FM012,
         "FM016": FM016,
         "FM017": FM017,
         "FM018": FM018,

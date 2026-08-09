@@ -4,6 +4,9 @@ Rule families:
 - FM001-FM009  — inch-based matplotlib patterns; suggest mm-based alternatives.
 - FM010-FM011  — figure-method style rules (set_xlabel/set_ylabel/set_title
                  → set_xyt; ax.spines[...].set_visible(False) → hide_spines).
+- FM012        — raster-tiling: PIL/cv2 compositing (paste/hconcat/...) of
+                 rendered figure panels, which rescales text per panel and
+                 drops the mm layout contract (→ fr.compose at 1:1).
 - FM016        — raw-mpl-bypass: raw `plt.subplots`/`plt.figure` figure
                  creation that bypasses figrecipe recording (→ fr.subplots).
 - FM017        — six-stat-annotation-completeness: a stats-shaped annotation
@@ -113,6 +116,11 @@ def get_plugin():
             "figrecipe._quality._missing_caption_checker",
             "MissingCaptionChecker",
             fm["FM019"],
+        ),
+        (
+            "figrecipe._quality._raster_tiling_checker",
+            "RasterTilingChecker",
+            fm["FM012"],
         ),
     ):
         checker = _rule_injecting_checker(module_path, class_name, rule)
