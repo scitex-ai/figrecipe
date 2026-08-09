@@ -314,6 +314,30 @@ def make_fm_rules(Rule: Any) -> Dict[str, Any]:
         ),
     )
 
+    # FM013 — rendered-panel RESCALE. Resizing a rendered panel changes its
+    # text size relative to the page, which is what produces a composite
+    # carrying several font sizes no style declared. Gated on the module ALSO
+    # compositing (see _raster_tiling_checker): resizing an array in order to
+    # PLOT it is ordinary analysis and must stay silent, whereas a resize
+    # inside a script that pastes panels together is panel rescale.
+    # category="figure" ⇒ auto-promoted to ERROR in project-type:research.
+    FM013 = Rule(
+        id="STX-FM013",
+        severity="warning",
+        category="figure",
+        message=(
+            "rendered panel rescaled — this module composites rasters and also "
+            "resizes them, so panel text is being scaled relative to the page "
+            "and the composite will carry font sizes no style declared"
+        ),
+        suggestion=(
+            "Size each panel at write time instead: `fr.subplots(axes_width_mm=..., "
+            "axes_height_mm=...)`, then `fr.compose(...)` tiles them 1:1 with no "
+            "rescale. If this resize is on image DATA rather than a rendered "
+            "panel, annotate the line with `# stx-allow: STX-FM013`."
+        ),
+    )
+
     return {
         "FM001": FM001,
         "FM002": FM002,
@@ -327,6 +351,7 @@ def make_fm_rules(Rule: Any) -> Dict[str, Any]:
         "FM010": FM010,
         "FM011": FM011,
         "FM012": FM012,
+        "FM013": FM013,
         "FM016": FM016,
         "FM017": FM017,
         "FM018": FM018,

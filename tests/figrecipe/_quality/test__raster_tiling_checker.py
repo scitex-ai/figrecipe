@@ -25,6 +25,7 @@ from figrecipe._quality._raster_tiling_checker import (  # noqa: E402
 
 _PLUGIN = get_plugin()
 _FM012 = next(r for r in _PLUGIN["rules"] if r.id == "STX-FM012")
+_FM013 = next(r for r in _PLUGIN["rules"] if r.id == "STX-FM013")
 
 
 def _make_config():
@@ -37,13 +38,19 @@ def _make_config():
 def _run(src: str):
     """Parse *src* and run RasterTilingChecker; return collected issues."""
     tree = ast.parse(src)
-    checker = RasterTilingChecker(src.splitlines(), _make_config(), rule=_FM012)
+    checker = RasterTilingChecker(
+        src.splitlines(), _make_config(), rule=_FM012, rescale_rule=_FM013
+    )
     checker.visit(tree)
     return checker.issues
 
 
 def _fired(issues):
     return any(i.rule.id == "STX-FM012" for i in issues)
+
+
+def _rescale_fired(issues):
+    return any(i.rule.id == "STX-FM013" for i in issues)
 
 
 # ---------------------------------------------------------------------------
@@ -125,14 +132,110 @@ def test_does_not_warn_on_opening_an_image_for_analysis():
     assert not _fired(issues)
 
 
-def test_does_not_warn_on_resize_which_belongs_to_fm013():
-    # Arrange: rendered-panel RESCALE is its own rule; a bare resize must not
-    # be guessed at here — resizing an array to plot it is legitimate.
+def test_does_not_warn_fm012_on_a_bare_resize():
+    # Arrange: a resize is not compositing, so FM012 must stay silent.
     src = "from PIL import Image\nsmall = img.resize((256, 256))\n"
     # Act
     issues = _run(src)
     # Assert
     assert not _fired(issues)
+
+
+# ---------------------------------------------------------------------------
+# FM013 rendered-panel rescale. The GATE is the whole rule: a resize only means
+# panel rescale if this module composites panels at all. Otherwise it is
+# someone scaling an array in order to plot it, which must stay silent.
+# ---------------------------------------------------------------------------
+
+
+def test_fm013_warns_on_resize_in_a_compositing_module():
+    # Arrange: resize + paste together is panel rescale.
+    src = (
+        "from PIL import Image\n"
+        "panel = Image.open('figures/fig02_a.png')\n"
+        "panel = panel.resize((800, 600))\n"
+        "canvas.paste(panel, (0, 0))\n"
+    )
+    # Act
+    issues = _run(src)
+    # Assert
+    assert _rescale_fired(issues)
+
+
+def test_fm013_warns_on_thumbnail_in_a_compositing_module():
+    # Arrange
+    src = (
+        "from PIL import Image\n"
+        "panel.thumbnail((400, 300))\n"
+        "canvas.paste(panel, (0, 0))\n"
+    )
+    # Act
+    issues = _run(src)
+    # Assert
+    assert _rescale_fired(issues)
+
+
+def test_fm013_stays_silent_on_a_resize_with_no_compositing():
+    # Arrange: the load-bearing negative. Scaling an array to plot it is
+    # ordinary analysis and must not be flagged as panel rescale.
+    src = "from PIL import Image\nsmall = Image.open('data/s.tif').resize((256, 256))\n"
+    # Act
+    issues = _run(src)
+    # Assert
+    assert not _rescale_fired(issues)
+
+
+def test_fm013_stays_silent_without_an_imaging_import():
+    # Arrange: `resize` on some unrelated object, alongside a paste.
+    src = "widget.resize(800, 600)\ncanvas.paste(x, (0, 0))\n"
+    # Act
+    issues = _run(src)
+    # Assert
+    assert not _rescale_fired(issues)
+
+
+def test_fm013_flags_the_resize_line_not_the_paste_line():
+    # Arrange
+    src = (
+        "from PIL import Image\n"
+        "panel = panel.resize((800, 600))\n"
+        "canvas.paste(panel, (0, 0))\n"
+    )
+    # Act
+    issues = _run(src)
+    # Assert
+    assert [i.line for i in issues if i.rule.id == "STX-FM013"] == [2]
+
+
+def test_fm013_honours_its_own_opt_out_comment():
+    # Arrange
+    src = (
+        "from PIL import Image\n"
+        "panel = panel.resize((800, 600))  # stx-allow: STX-FM013\n"
+        "canvas.paste(panel, (0, 0))\n"
+    )
+    # Act
+    issues = _run(src)
+    # Assert
+    assert not _rescale_fired(issues)
+
+
+def test_fm013_is_registered_in_the_plugin():
+    # Arrange
+    plugin = get_plugin()
+    # Act
+    ids = [r.id for r in plugin["rules"]]
+    # Assert
+    assert "STX-FM013" in ids
+
+
+def test_fm013_defaults_to_warning_so_the_category_floor_promotes_it():
+    # Arrange
+    expected = "warning"
+    # Act
+    actual = _FM013.severity
+    # Assert
+    assert actual == expected
 
 
 def test_does_not_warn_on_fromarray_for_plotting():

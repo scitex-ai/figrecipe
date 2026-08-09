@@ -22,10 +22,14 @@ author fighting the linter over legitimate image work:
     ``hconcat``, ``vconcat``. These exist to put one raster inside another;
     there is no reason to reach for them while merely loading or plotting
     image DATA.
-  * ``open`` / ``resize`` / ``fromarray`` / ``crop`` are NOT flagged here.
-    Resizing an array to plot it via imshow is ordinary analysis, and
-    rendered-panel RESCALE is its own rule (FM013) rather than a guess made
-    from a resize call in isolation.
+  * ``open`` / ``fromarray`` / ``crop`` are never flagged.
+  * ``resize`` / ``thumbnail`` are FM013 (rendered-panel rescale), and only in
+    a module that ALSO composites. A resize on its own is ordinary analysis —
+    scaling an array in order to plot it — so it must stay silent; a resize in
+    a script that pastes panels together is panel rescale, which is what makes
+    a composite carry text at several sizes. The compositing call is the
+    signal that distinguishes them, which is why both rules live in one pass
+    rather than in two modules that would each need it.
 
 Matched by attribute name only, consistent with the rest of this plugin's
 call-shape heuristics (see ``_heatmap_colorbar_checker`` for the same
@@ -58,7 +62,7 @@ def _scitex_linter_runtime():
 
 
 class RasterTilingChecker(ast.NodeVisitor):
-    """STX-FM012 — flag PIL/cv2 compositing of rendered figure panels."""
+    """STX-FM012 compositing + STX-FM013 rendered-panel rescale, in one pass."""
 
     category = "figure"
 
@@ -67,16 +71,22 @@ class RasterTilingChecker(ast.NodeVisitor):
         {"paste", "alpha_composite", "hconcat", "vconcat"}
     )
 
+    #: Calls that change a raster's size. Only meaningful as a finding when the
+    #: module also composites — see the module docstring.
+    _RESCALE_CALLS = frozenset({"resize", "thumbnail"})
+
     #: Importing one of these is what makes a module a candidate at all.
     _IMAGING_MODULES = frozenset({"PIL", "Image", "cv2", "imageio"})
 
-    def __init__(self, source_lines, config, rule=None):
+    def __init__(self, source_lines, config, rule=None, rescale_rule=None):
         self.source_lines = source_lines
         self.config = config
         self.issues: list = []
-        self._rule = rule  # injected by the plugin loader
+        self._rule = rule  # FM012, injected by the plugin loader
+        self._rescale_rule = rescale_rule  # FM013, optional
         self._imaging_imported = False
         self._candidates: list = []
+        self._rescale_candidates: list = []
 
     # -- helpers --------------------------------------------------------
 
@@ -85,11 +95,11 @@ class RasterTilingChecker(ast.NodeVisitor):
             return self.source_lines[lineno - 1].rstrip()
         return ""
 
-    def _emit(self, node):
+    def _emit(self, node, rule=None):
         Issue, _is_allowed_by_comment = _scitex_linter_runtime()
-        if Issue is None or self._rule is None:
+        rule = rule if rule is not None else self._rule
+        if Issue is None or rule is None:
             return  # scitex-linter not importable; checker is inert
-        rule = self._rule
         if rule.id in self.config.disable:
             return
         line = self._src(node.lineno)
@@ -124,18 +134,29 @@ class RasterTilingChecker(ast.NodeVisitor):
 
     def visit_Call(self, node):
         func = node.func
-        if isinstance(func, ast.Attribute) and func.attr in self._COMPOSITING_CALLS:
-            self._candidates.append(node)
+        if isinstance(func, ast.Attribute):
+            if func.attr in self._COMPOSITING_CALLS:
+                self._candidates.append(node)
+            elif func.attr in self._RESCALE_CALLS:
+                self._rescale_candidates.append(node)
         self.generic_visit(node)
 
     # -- finalize ---------------------------------------------------------
 
     def visit_Module(self, node):
         self.generic_visit(node)
-        # Emit only now: an imaging import below the call still gates it.
-        if self._imaging_imported:
-            for candidate in self._candidates:
-                self._emit(candidate)
+        # Emit only now: an imaging import below the call still gates it, and
+        # FM013 needs to know whether the module composited ANYWHERE, which is
+        # only knowable once the whole module has been walked.
+        if not self._imaging_imported:
+            return
+        for candidate in self._candidates:
+            self._emit(candidate)
+        # A resize is only a rendered-panel rescale if panels are being
+        # composited here at all. Without that, it is ordinary image work.
+        if self._candidates:
+            for candidate in self._rescale_candidates:
+                self._emit(candidate, rule=self._rescale_rule)
 
 
 __all__ = ["RasterTilingChecker"]
