@@ -174,7 +174,7 @@ def compose(
             canvas_size_mm=canvas_size_mm,
             gap_mm=gap_mm,
         )
-        return _compose_mm_based(
+        fig, axes = _compose_mm_based(
             sources_mm,
             computed_canvas,
             dpi,
@@ -185,7 +185,7 @@ def compose(
             **kwargs,
         )
     elif _is_mm_based_sources(sources):
-        return _compose_mm_based(
+        fig, axes = _compose_mm_based(
             sources,
             canvas_size_mm,
             dpi,
@@ -196,7 +196,7 @@ def compose(
             **kwargs,
         )
     else:
-        return _compose_grid_based(
+        fig, axes = _compose_grid_based(
             sources,
             layout,
             panel_labels,
@@ -205,6 +205,15 @@ def compose(
             panel_captions=panel_captions,
             **kwargs,
         )
+
+    # Single exit so every composition mode is checked by one call: an
+    # over-wide composite is not rejected downstream, it is silently shrunk by
+    # \resizebox along with its text. Reading the finished figure's own size
+    # covers all three modes without per-mode width arithmetic.
+    from .._quality._compose_width import check_compose_width
+
+    check_compose_width(fig, dpi=dpi)
+    return fig, axes
 
 
 def _tiled_to_mm_sources(
