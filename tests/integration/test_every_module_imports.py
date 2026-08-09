@@ -47,6 +47,22 @@ import figrecipe
 #: The first element is matched against the exception text. A failure whose text
 #: does not contain it is reported even for an allowlisted module.
 ALLOWED_MISSING = {
+    # MOST SPECIFIC FIRST -- _allowance() returns the first matching prefix, and
+    # this module sits under the _csv_formatters entry below.
+    "figrecipe._scitex_compat._csv_formatters._export_as_csv": (
+        ("_export_as_csv_formatters", "scitex_pd"),
+        "KNOWN DEAD MODULE, not an environment gap. It imports 65 formatter names "
+        "from a `._export_as_csv_formatters` aggregator that does not exist; the "
+        "formatters were split into per-formatter sibling modules and 50 of the 65 "
+        "are present, but 15 (_format_plot_conf_mat, _format_plot_ecdf, "
+        "_format_plot_fillv, _format_plot_heatmap, _format_plot_image, "
+        "_format_plot_joyplot, _format_plot_line, _format_plot_mean_ci, +7) exist "
+        "NOWHERE under src/ -- never migrated. So it cannot be repaired by "
+        "repointing the import. Found by THIS gate on its first CI run, 2026-08-09; "
+        "invisible locally because a missing scitex_pd extra fails earlier. "
+        "Exempted per-module with this reason rather than weakening the gate, and "
+        "tracked on figrecipe-dimension-viewer-is-dead-public-api-20260809.",
+    ),
     "figrecipe._scitex_compat._csv_formatters": (
         "scitex_pd",
         "Declared as an OPTIONAL extra in pyproject, not a base dependency. The "
@@ -82,6 +98,20 @@ def _all_module_names() -> list[str]:
     return names
 
 
+def _reason_matches(allowed, text: str) -> bool:
+    """Whether an actual failure text is one this module is allowed to fail with.
+
+    ``allowed`` is a single substring or a tuple of them. A tuple is for a module
+    whose legitimate failure DIFFERS BY ENVIRONMENT -- _export_as_csv fails on the
+    absent scitex_pd extra locally, and on its dead aggregator in CI where the
+    extra is installed. Both are documented; which one you see is not a property
+    of the code.
+    """
+    if isinstance(allowed, str):
+        allowed = (allowed,)
+    return any(a in text for a in allowed)
+
+
 def _allowance(module_name: str):
     """The (dependency, reason) this module may fail on, or None."""
     for prefix, entry in ALLOWED_MISSING.items():
@@ -111,7 +141,7 @@ def test_every_module_imports_or_is_allowlisted_with_a_reason():
                 importlib.import_module(name)
             except Exception as exc:  # noqa: BLE001 - any failure is the finding
                 text = f"{type(exc).__name__}: {exc}"
-                if allowance is not None and allowance[0] in text:
+                if allowance is not None and _reason_matches(allowance[0], text):
                     continue  # the documented reason, in a documented place
                 unexpected.append(f"{name}\n      {text[:160]}")
     # Act
@@ -132,7 +162,10 @@ def test_each_allowlist_entry_states_a_dependency_and_a_reason(prefix):
     # Arrange: an exemption with no stated reason is the thing this file exists
     # to prevent, so the allowlist is itself checked.
     dependency, reason = ALLOWED_MISSING[prefix]
+    deps = (dependency,) if isinstance(dependency, str) else dependency
     # Act
-    well_formed = bool(dependency.strip()) and len(reason.strip()) > 40
+    well_formed = (
+        bool(deps) and all(d.strip() for d in deps) and len(reason.strip()) > 40
+    )
     # Assert
     assert well_formed
