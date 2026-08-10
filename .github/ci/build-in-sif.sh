@@ -35,11 +35,23 @@ export LC_ALL=C.UTF-8 LANG=C.UTF-8
 # per-version path let a stuck leftover from a prior run block this run's
 # `rm -rf` with "Directory not empty". Suffix with the run id so this run's
 # path can never collide with a stale one; old-path cleanup is best-effort.
+# The run-unique name fixed a collision and created a LEAK: the `rm -rf` below
+# runs at START on the path this run is about to CREATE, so it never removes the
+# PREVIOUS run's directory. See the long note in run-in-sif.sh — 270G of orphaned
+# scratch on scitex-02, 2026-08-09. Same fix here.
 RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
 TMPDIR="/tmp/build-figrecipe-$V-$RUN_TAG"
 export TMPDIR
+trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
+
+# Age-gated sweep of orphans from jobs that never reached the trap. Concurrent
+# legs own minutes-old siblings and must survive, hence age rather than name.
+find /tmp -maxdepth 1 -type d -name 'build-figrecipe-*' \
+    ! -path "$TMPDIR" \
+    -mmin "+${SCRATCH_REAP_MIN_AGE_MIN:-360}" \
+    -exec rm -rf {} + 2>/dev/null || true
 
 # The compute-node $HOME is RO inside the container — point every cache the
 # installer might touch at the writable scratch (else uv/pip die creating

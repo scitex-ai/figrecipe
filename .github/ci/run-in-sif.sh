@@ -40,11 +40,39 @@ export LC_ALL=C.UTF-8 LANG=C.UTF-8
 # collide with any leftover from a previous one; the stale-path cleanup below
 # is now best-effort so a still-stuck prior directory WARNS instead of
 # aborting a run that no longer depends on it.
+# ...and that run-unique naming, which fixed the collision, created a LEAK: the
+# `rm -rf` below runs at START on the path this run is about to CREATE, so it can
+# never remove the PREVIOUS run's directory — every run's ~2G scratch was orphaned
+# by construction. Measured on scitex-02 2026-08-09: 270G of ci-* dirs, root
+# filesystem at 0 bytes, which took down host_exec (could not write its audit log)
+# and killed a test run at 92%. Same defect and same shape as
+# scitex_agent_container PR #938; figrecipe leaks on THREE paths (ci-, build-,
+# publish-), not one. A cleanup keyed to the name it is about to use is a
+# no-op against the thing that accumulates.
 RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
 TMPDIR="/tmp/ci-figrecipe-$V-$RUN_TAG"
 export TMPDIR
+# This leg removes its OWN scratch on the way out, whatever the outcome. bash
+# preserves the script's exit status across an EXIT handler, so a failing suite
+# still fails.
+trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
+
+# Sweep ORPHANS left by legs that never reached the trap — cancelled workflows,
+# OOM kills, SIGKILL, and everything predating this change. Without this the
+# existing backlog still needs a human with sudo, which is exactly how it reached
+# 270G: the only cleanup path was one nobody ran.
+#
+# AGE-GATED, not name-gated, on purpose: a concurrent matrix leg on this runner
+# owns a sibling directory that is MINUTES old and must survive. Name-gating
+# cannot distinguish it from an orphan; age can. The `! -path "$TMPDIR"`
+# exclusion and the project-scoped glob are the other two safety properties —
+# dropping any one of them turns this cleanup into a weapon aimed at a live leg.
+find /tmp -maxdepth 1 -type d -name 'ci-figrecipe-*' \
+    ! -path "$TMPDIR" \
+    -mmin "+${SCRATCH_REAP_MIN_AGE_MIN:-360}" \
+    -exec rm -rf {} + 2>/dev/null || true
 
 # The HPC compute-node $HOME is READ-ONLY inside the container, so uv/pip cannot
 # create their default caches under ~/.cache — point them at the writable
