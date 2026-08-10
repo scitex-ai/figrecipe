@@ -4,8 +4,8 @@
  */
 
 import { useState } from "react";
-import { SelectorNav } from "@scitex/ui/react/app/selector-nav";
-import type { SelectorNavItem } from "@scitex/ui/react/app/selector-nav";
+import { SelectorNav } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
+import type { SelectorNavItem } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryPanel } from "../Gallery/GalleryPanel";
 

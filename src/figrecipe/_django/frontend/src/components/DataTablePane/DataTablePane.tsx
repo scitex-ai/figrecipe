@@ -2,7 +2,7 @@
  * Uses scitex-ui's shared DataTable component (no figrecipe-original table). */
 
 import { useCallback, useRef } from "react";
-import { DataTable } from "@scitex/ui/react/app/data-table/DataTable";
+import { DataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table/DataTable";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";

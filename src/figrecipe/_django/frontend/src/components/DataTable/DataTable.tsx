@@ -5,8 +5,8 @@
  */
 
 import { useCallback, useMemo, useRef } from "react";
-import { DataTable as StxDataTable } from "@scitex/ui/react/app/data-table";
-import type { Dataset } from "@scitex/ui/react/app/data-table";
+import { DataTable as StxDataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
+import type { Dataset } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 
