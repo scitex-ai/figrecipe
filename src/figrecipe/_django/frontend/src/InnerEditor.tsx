@@ -17,8 +17,8 @@ import { Toast } from "./components/common/Toast";
 // Element inspector now provided by scitex-ui (imported in main.tsx)
 import { useEmbeddedMessages } from "./hooks/useEmbeddedMessages";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { usePanelResize } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/usePanelResize";
-import { AlertBanner } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/alert-banner";
+import { usePanelResize } from "@scitex/ui/react/app/usePanelResize";
+import { AlertBanner } from "@scitex/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
