@@ -1,20 +1,92 @@
-"""Smoke import mirror for figrecipe._wrappers._pie_helpers.
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Pie chrome suppression must be REVERSIBLE, and checked on the PIXELS.
 
-Auto-generated subpackage mirror placeholder; replace with real tests
-as the module matures. Satisfies the src<->tests mirror audit rule.
+``apply_pie_axes_visibility`` is the pie twin of the imshow suppressor, and it
+kept the defect two releases longer: ``set_xticklabels([])`` pins a
+``NullFormatter`` on the *axis*, so every tick the author sets afterwards
+renders blank through any handle, with no way to undo it.
+
+The assertions read RENDERED text. ``get_xticks()`` reports the author's own
+values back to them while the picture is empty, which is exactly how a blank
+heatmap once passed both review and a green test suite.
 """
 
+import matplotlib
 
-import pytest
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt  # noqa: E402
+import pytest  # noqa: E402
+
+from figrecipe._wrappers._pie_helpers import (  # noqa: E402
+    apply_pie_axes_visibility,
+)
+
+_SUPPRESS = {"show_axes": False}
 
 
-def test_import__wrappers__pie_helpers_module():
-    # Arrange
-    # Arrange
+def _drawn_xlabels(ax):
+    """The tick label text actually RENDERED -- not what get_xticks() claims."""
+    ax.figure.canvas.draw()
+    return [t.get_text() for t in ax.get_xticklabels() if t.get_visible()]
+
+
+@pytest.fixture
+def pie_ax():
+    fig, ax = plt.subplots()
+    ax.pie([1, 2, 3])
+    yield ax
+    plt.close(fig)
+
+
+def test_author_ticks_render_after_pie_suppression(pie_ax):
+    # Arrange: styling hides the chrome, then the author pins real ticks -- the
+    # order that blanked a comodulogram everywhere else this pattern appeared.
+    apply_pie_axes_visibility(pie_ax, _SUPPRESS)
     # Act
-    # Assert
-    module_path = 'figrecipe._wrappers._pie_helpers'
+    pie_ax.set_xticks([0, 1])
+    # Assert: the NUMBERS are on the page, not merely in get_xticks().
+    assert _drawn_xlabels(pie_ax) == ["0", "1"]
+
+
+@pytest.mark.parametrize("axis_name", ["xaxis", "yaxis"])
+def test_pie_suppression_leaves_no_null_formatter(pie_ax, axis_name):
+    # Arrange: a pinned NullFormatter is the mechanism -- nothing can undo it.
+    # Both axes are suppressed, so both have to come back clean.
+    from matplotlib.ticker import NullFormatter
+
     # Act
-    mod = pytest.importorskip(module_path)
+    apply_pie_axes_visibility(pie_ax, _SUPPRESS)
     # Assert
-    assert mod.__name__ == module_path
+    formatter = getattr(pie_ax, axis_name).get_major_formatter()
+    assert not isinstance(formatter, NullFormatter)
+
+
+def test_pie_suppression_actually_hides_the_labels(pie_ax):
+    # Arrange: the reversibility test above must not be vacuous -- suppression
+    # still has to suppress, or "restored" would prove nothing.
+    # Act
+    apply_pie_axes_visibility(pie_ax, _SUPPRESS)
+    # Assert
+    assert _drawn_xlabels(pie_ax) == []
+
+
+def test_pie_suppression_actually_hides_the_spines(pie_ax):
+    # Arrange: dropping set_[xy]ticklabels must not cost the spine hiding that
+    # shares this branch.
+    # Act
+    apply_pie_axes_visibility(pie_ax, _SUPPRESS)
+    # Assert
+    assert not any(s.get_visible() for s in pie_ax.spines.values())
+
+
+def test_pie_chrome_is_kept_when_show_axes(pie_ax):
+    # Arrange: the flag must still mean something in the other direction.
+    # Act
+    apply_pie_axes_visibility(pie_ax, {"show_axes": True})
+    # Assert
+    assert any(s.get_visible() for s in pie_ax.spines.values())
+
+
+# EOF

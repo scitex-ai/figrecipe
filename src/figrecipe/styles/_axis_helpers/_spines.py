@@ -78,10 +78,14 @@ def hide_spines(
                 ax.yaxis.set_ticks_position("none")
 
         if labels:
+            # tick_params toggles label VISIBILITY; set_xticklabels([]) would
+            # pin a NullFormatter on the axis instead, so a caller who later
+            # set ticks would draw blanks and could never get them back.
+            # show_spines() below restores these with labelbottom=True.
             if target == "bottom":
-                ax.set_xticklabels([])
+                ax.tick_params(labelbottom=False)
             elif target == "left":
-                ax.set_yticklabels([])
+                ax.tick_params(labelleft=False)
 
     return ax
 
@@ -164,15 +168,16 @@ def show_spines(
         elif left and right:
             ax.yaxis.set_ticks_position("both")
 
-    # Restore labels if requested
+    # Restore labels if requested. Re-setting the tick LOCATIONS is not enough
+    # to bring labels back: hide_spines turns label visibility OFF, and only
+    # turning it back ON shows them again. (It used to blank labels with
+    # set_xticklabels([]), which pinned a NullFormatter that no amount of
+    # set_xticks could undo -- so this restore path never actually worked.)
     if labels and restore_defaults:
-        current_xticks = ax.get_xticks()
-        current_yticks = ax.get_yticks()
-
-        if len(current_xticks) > 0 and (bottom or top):
-            ax.set_xticks(current_xticks)
-        if len(current_yticks) > 0 and (left or right):
-            ax.set_yticks(current_yticks)
+        if bottom or top:
+            ax.tick_params(labelbottom=bottom, labeltop=top)
+        if left or right:
+            ax.tick_params(labelleft=left, labelright=right)
 
     return ax
 

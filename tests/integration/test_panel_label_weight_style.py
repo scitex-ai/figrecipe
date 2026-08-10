@@ -17,9 +17,11 @@ from figrecipe.styles._style_loader import load_style  # noqa: E402
 
 
 def test_scitex_style_owns_panel_label_weight():
-    # Arrange / Act: load the SCITEX preset.
-    style = load_style("SCITEX")
-    # Assert: the weight is a real field on the style's fonts block.
+    # Arrange
+    name = "SCITEX"
+    # Act
+    style = load_style(name)
+    # Assert
     assert style.fonts.panel_label_weight == "bold"
 
 

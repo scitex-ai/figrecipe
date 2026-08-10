@@ -20,6 +20,13 @@ from typing import Optional, Sequence
 # display pixels from its point (a label sitting on its point needs no leader).
 _LEADER_MIN_DISP = 14.0
 
+# A panel this covered in ink leaves the solver no free space, so every label
+# would fall back to its point and the declutter would quietly do nothing. Real
+# data ink never fills this much of a panel; a mask this full means the
+# background was misread (or the panel is a full-bleed image), so say so instead
+# of degrading in silence.
+_INK_SATURATED = 0.95
+
 
 class ScatterLabelsMixin:
     """Mixin adding ``scatter_labels`` to ``RecordingAxes``."""
@@ -35,6 +42,9 @@ class ScatterLabelsMixin:
         leader_lines: bool = False,
         clip: bool = True,
         fontsize: Optional[float] = None,
+        step: Optional[float] = None,
+        max_radius: Optional[float] = None,
+        ink_tol: Optional[float] = None,
         id: Optional[str] = None,
         **text_kwargs,
     ):
@@ -48,6 +58,13 @@ class ScatterLabelsMixin:
         ink, not just point centers; ``avoid="points"`` skips the raster.
         ``clip`` keeps labels inside the axes. Any label with no clear spot is
         left at its point and a warning is emitted (never silently dropped).
+
+        ``step``, ``max_radius`` and ``ink_tol`` tune the ring search and are
+        forwarded to ``solve_label_positions``; leaving them None uses that
+        solver's own defaults, so this signature never restates them. A crowded
+        panel previously had no knob short of calling the private solver, while
+        ``stx_annotate_n`` already forwarded two of the three — the asymmetry was
+        arbitrary rather than intended.
         """
         import numpy as np
 
@@ -82,9 +99,13 @@ class ScatterLabelsMixin:
         if avoid == "ink":
             from .._quality._overlap import _render_ink_mask
 
+            # No style dict here, so _render_ink_mask resolves the background
+            # from the figure itself -- without that it assumed white, and a
+            # dark-theme panel rasterized as 100% ink (nowhere to put a label).
             rendered = _render_ink_mask(fig, None)
             if rendered is not None:
                 ink_mask, height = rendered
+                _warn_if_ink_saturated(ink_mask, height, ax, renderer)
 
         obstacles = _legend_obstacles(ax, renderer)
         clip_rect = None
@@ -94,8 +115,21 @@ class ScatterLabelsMixin:
 
         from .._declutter import solve_label_positions
 
+        # Forward only what the caller actually set. Restating the solver's
+        # defaults here would put them in two places, and the next person to tune
+        # `step` would change one and wonder why nothing moved. `_annotate_n`
+        # currently restates 6.0/160.0; this side deliberately does not.
+        solver_kwargs = {
+            name: value
+            for name, value in (
+                ("step", step),
+                ("max_radius", max_radius),
+                ("ink_tol", ink_tol),
+            )
+            if value is not None
+        }
         centers, placed_clear = solve_label_positions(
-            anchors, sizes, ink_mask, height, obstacles, clip_rect
+            anchors, sizes, ink_mask, height, obstacles, clip_rect, **solver_kwargs
         )
 
         inv = ax.transData.inverted()
@@ -132,6 +166,30 @@ class ScatterLabelsMixin:
                 UserWarning,
                 stacklevel=2,
             )
+
+
+def _warn_if_ink_saturated(ink_mask, height, ax, renderer) -> None:
+    """Warn when the ink raster is so full that no label can be placed.
+
+    Measured over the AXES, not the whole canvas: labels are clipped to the
+    axes, so the surrounding figure margins are free space the solver can never
+    use. A full-bleed heatmap saturates its panel while leaving those margins
+    empty, which a canvas-wide mean would score as plenty of room.
+    """
+    from .._quality._overlap_ink import _ink_fraction_in_bbox
+
+    bbox = ax.get_window_extent(renderer=renderer)
+    if _ink_fraction_in_bbox(ink_mask, height, bbox) <= _INK_SATURATED:
+        return
+    warnings.warn(
+        "scatter_labels: the data-ink raster is almost fully saturated, so the "
+        "declutter solver has no free space and every label will stay on its "
+        "point. This usually means the figure background was not recognised "
+        "(a custom background color) or the panel is a full-bleed image; "
+        "declutter cannot help here -- pass avoid='points' to skip the raster.",
+        UserWarning,
+        stacklevel=3,
+    )
 
 
 def _resolve_fontsize(ax) -> float:

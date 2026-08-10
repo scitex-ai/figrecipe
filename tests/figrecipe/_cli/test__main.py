@@ -107,7 +107,7 @@ class TestMainCommand:
         # Act
         # Assert
         result = runner.invoke(main, [])
-        assert "figrecipe start-gui" in result.output
+        assert "figrecipe gui open" in result.output
 
 
 class TestVersionCommand:
@@ -291,9 +291,7 @@ class TestReproduceCommand:
         # Act
         # Assert
         output_path = tmp_path / "output.png"
-        result = runner.invoke(
-            main, ["reproduce", str(sample_recipe), "-o", str(output_path)]
-        )
+        runner.invoke(main, ["reproduce", str(sample_recipe), "-o", str(output_path)])
         assert output_path.exists()
 
     def test_reproduce_basic_part_3(self, runner, sample_recipe, tmp_path):
@@ -480,23 +478,121 @@ class TestFontsCommand:
 
 
 class TestGuiCommand:
-    """Test start-gui command."""
+    """Test the `gui` command group (open/serve/status/stop) and the
+    deprecated `start-gui` alias (audit-cli incident:
+    figrecipe-gui-cli-noun-verb-normalize-20260712)."""
 
-    def test_gui_help_part_1(self, runner):
-        """Test start-gui --help."""
+    def test_gui_group_help_part_1(self, runner):
+        """Test `gui --help`."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "--help"])
+        assert result.exit_code == 0
+
+    def test_gui_group_help_lists_open(self, runner):
+        """Test `gui --help` lists the `open` verb."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "--help"])
+        assert "open" in result.output
+
+    def test_gui_group_help_lists_serve(self, runner):
+        """Test `gui --help` lists the `serve` verb."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "--help"])
+        assert "serve" in result.output
+
+    def test_gui_group_help_lists_status(self, runner):
+        """Test `gui --help` lists the `status` verb."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "--help"])
+        assert "status" in result.output
+
+    def test_gui_group_help_lists_stop(self, runner):
+        """Test `gui --help` lists the `stop` verb."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "--help"])
+        assert "stop" in result.output
+
+    def test_gui_open_help_part_1(self, runner):
+        """Test `gui open --help`."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "open", "--help"])
+        assert result.exit_code == 0
+
+    def test_gui_open_help_part_2(self, runner):
+        """Test `gui open --help` documents SOURCE."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "open", "--help"])
+        assert "SOURCE" in result.output or "source" in result.output.lower()
+
+    def test_gui_serve_help_part_1(self, runner):
+        """Test `gui serve --help`."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "serve", "--help"])
+        assert result.exit_code == 0
+
+    def test_gui_status_help(self, runner):
+        """Test `gui status --help`."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "status", "--help"])
+        assert result.exit_code == 0
+
+    def test_gui_stop_help(self, runner):
+        """Test `gui stop --help`."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["gui", "stop", "--help"])
+        assert result.exit_code == 0
+
+    def test_start_gui_alias_help_part_1(self, runner):
+        """Test deprecated `start-gui --help` still works (hidden but callable)."""
         # Arrange
         # Act
         # Assert
         result = runner.invoke(main, ["start-gui", "--help"])
         assert result.exit_code == 0
 
-    def test_gui_help_part_2(self, runner):
-        """Test start-gui --help."""
+    def test_start_gui_alias_help_part_2(self, runner):
+        """Test deprecated `start-gui --help` still documents SOURCE."""
         # Arrange
         # Act
         # Assert
         result = runner.invoke(main, ["start-gui", "--help"])
         assert "SOURCE" in result.output or "source" in result.output.lower()
+
+    def test_start_gui_alias_hidden_from_top_level_help(self, runner):
+        """Test `start-gui` no longer appears in the top-level help listing."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["--help"])
+        assert "start-gui" not in result.output
+
+    def test_start_gui_alias_warns_deprecated(self, runner):
+        """Test `start-gui` emits a deprecation warning."""
+        # Arrange
+        # Act
+        # Assert
+        result = runner.invoke(main, ["start-gui", "--dry-run"])
+        assert "deprecated" in result.output
 
 
 class TestCropCommand:
@@ -727,7 +823,7 @@ legend: true
         # Act
         # Assert
         output_path = tmp_path / "output.png"
-        result = runner.invoke(main, ["plot", str(sample_spec), "-o", str(output_path)])
+        runner.invoke(main, ["plot", str(sample_spec), "-o", str(output_path)])
         assert output_path.exists()
 
     def test_plot_basic_part_3(self, runner, sample_spec, tmp_path):
@@ -773,7 +869,7 @@ legend: true
         # Act
         # Assert
         output_path = tmp_path / "output.png"
-        result = runner.invoke(
+        runner.invoke(
             main, ["plot", str(sample_spec), "-o", str(output_path), "--save-recipe"]
         )
         assert output_path.exists()
@@ -784,7 +880,7 @@ legend: true
         # Act
         # Assert
         output_path = tmp_path / "output.png"
-        result = runner.invoke(
+        runner.invoke(
             main, ["plot", str(sample_spec), "-o", str(output_path), "--save-recipe"]
         )
         recipe_path = tmp_path / "output.yaml"
@@ -825,7 +921,7 @@ plots:
 """
         )
         output_path = tmp_path / "scatter.png"
-        result = runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
+        runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
         assert output_path.exists()
 
     def test_plot_bar_part_1(self, runner, tmp_path):
@@ -865,7 +961,7 @@ ylabel: "Value"
 """
         )
         output_path = tmp_path / "bar.png"
-        result = runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
+        runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
         assert output_path.exists()
 
     def test_plot_multiple_types_part_1(self, runner, tmp_path):
@@ -917,7 +1013,7 @@ legend: true
 """
         )
         output_path = tmp_path / "multi.png"
-        result = runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
+        runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
         assert output_path.exists()
 
     def test_plot_csv_columns_part_1(self, runner, tmp_path):
@@ -985,7 +1081,7 @@ title: "CSV Column Test"
 """
         )
         output_path = tmp_path / "csv_plot.png"
-        result = runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
+        runner.invoke(main, ["plot", str(spec_path), "-o", str(output_path)])
         assert output_path.exists()
 
     def test_plot_csv_invalid_column_part_1(self, runner, tmp_path):
@@ -1039,6 +1135,7 @@ class TestCLIIntegration:
         # Arrange
         import subprocess
         import sys
+
         # Act
         result = subprocess.run(
             [sys.executable, "-m", "figrecipe", "--help"],
@@ -1053,6 +1150,7 @@ class TestCLIIntegration:
         # Arrange
         import subprocess
         import sys
+
         # Act
         result = subprocess.run(
             [sys.executable, "-m", "figrecipe", "--help"],
@@ -1068,6 +1166,7 @@ class TestCLIIntegration:
         # Act
         # Assert
         import figrecipe as fr
+
         fig, axes = fr.subplots(1, 1)
         axes.plot([1, 2, 3], [1, 4, 9])
         recipe_path = tmp_path / "workflow_test.yaml"
@@ -1081,6 +1180,7 @@ class TestCLIIntegration:
         # Act
         # Assert
         import figrecipe as fr
+
         fig, axes = fr.subplots(1, 1)
         axes.plot([1, 2, 3], [1, 4, 9])
         recipe_path = tmp_path / "workflow_test.yaml"
@@ -1098,13 +1198,12 @@ class TestCLIIntegration:
         # Act
         # Assert
         import figrecipe as fr
+
         fig, axes = fr.subplots(1, 1)
         axes.plot([1, 2, 3], [1, 4, 9])
         recipe_path = tmp_path / "workflow_test.yaml"
         fig.save_recipe(recipe_path)
-        result = runner.invoke(main, ["info", str(recipe_path)])
+        runner.invoke(main, ["info", str(recipe_path)])
         output_path = tmp_path / "reproduced.png"
-        result = runner.invoke(
-            main, ["reproduce", str(recipe_path), "-o", str(output_path)]
-        )
+        runner.invoke(main, ["reproduce", str(recipe_path), "-o", str(output_path)])
         assert output_path.exists()

@@ -9,6 +9,9 @@ This is an internal module. Use the public API instead:
     ax.rotate_labels(x=45)
 """
 
+# Thousands-separator formatting
+from ._comma_format import CommaFormatter, comma_format
+
 # Geometry utilities
 from ._geometry import extend, force_aspect
 
@@ -48,6 +51,9 @@ __all__ = [
     # Scientific notation
     "sci_note",
     "OOMFormatter",
+    # Thousands-separator formatting
+    "comma_format",
+    "CommaFormatter",
     # Geometry
     "force_aspect",
     "extend",

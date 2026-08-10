@@ -22,7 +22,7 @@ Public API:
     Axis Helpers (also available as ax.method() via RecordingAxes):
         - hide_spines, show_spines, toggle_spines
         - rotate_labels, set_n_ticks, map_ticks
-        - sci_note, force_aspect, extend
+        - sci_note, comma_format, force_aspect, extend
 
     Font Utilities:
         - check_font, list_available_fonts
@@ -34,6 +34,8 @@ Public API:
 
 # Style management
 # Axis helper utilities (user-facing)
+from ._axis_helpers import CommaFormatter as CommaFormatter
+from ._axis_helpers import comma_format as comma_format
 from ._axis_helpers import extend as extend
 from ._axis_helpers import force_aspect as force_aspect
 from ._axis_helpers import hide_spines as hide_spines
@@ -82,6 +84,8 @@ __all__ = [
     "set_y_ticks",
     "map_ticks",
     "sci_note",
+    "comma_format",
+    "CommaFormatter",
     "force_aspect",
     "extend",
 ]

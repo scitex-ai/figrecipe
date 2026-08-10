@@ -167,10 +167,16 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     # ._composition._layout_report (machine-readable layout introspection)
     "empty_cells": ("._composition._layout_report", "empty_cells"),
     "layout_report": ("._composition._layout_report", "layout_report"),
+    # ._composition._auto_tile (aspect-ratio bin-packing for tight tiling)
+    "auto_tile_layout": ("._composition._auto_tile", "auto_tile_layout"),
     # ._configure_mpl
     "configure_mpl": ("._configure_mpl", "configure_mpl"),
     # ._diagram
     "Diagram": ("._diagram", "Diagram"),
+    "StatResult": ("._annotations", "StatResult"),
+    "hints_for": ("._annotations", "hints_for"),
+    "known_figure_types": ("._annotations", "known_figure_types"),
+    "ComparisonGeometry": ("._annotations", "ComparisonGeometry"),
     "_Graphviz": ("._diagram._graphviz.graphviz", "Graphviz"),
     "_Mermaid": ("._diagram._mermaid.mermaid", "Mermaid"),
     # ._graph._presets
@@ -246,6 +252,23 @@ def __getattr__(name: str):
         value = importlib.import_module(_MODULE_ALIASES[name], __name__)
         globals()[name] = value
         return value
+
+    # figrecipe is often injected in place of matplotlib.pyplot. It answers to
+    # `subplots`, which convinces a script it holds pyplot, so the next pyplot
+    # call lands here. Say what to use instead rather than "no attribute" —
+    # see ._pyplot_surface for why most of these are NOT proxied.
+    from ._pyplot_surface import pyplot_guidance, pyplot_proxy
+
+    proxied = pyplot_proxy(name)
+    if proxied is not None:
+        globals()[name] = proxied
+        return proxied
+    hint = pyplot_guidance(name)
+    if hint is not None:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}. figrecipe is a "
+            f"partial pyplot substitution: {hint}."
+        )
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -285,6 +308,7 @@ __all__ = [
     "align_smart",
     "empty_cells",
     "layout_report",
+    "auto_tile_layout",
     "gui",
     "crop",
     "info",
@@ -310,6 +334,12 @@ __all__ = [
     "list_presets",
     # Diagram
     "Diagram",
+    # Statistics display port (six-stat annotation doctrine)
+    "StatResult",
+    # Per-figure-type annotation hints (advisory; never enforced)
+    "hints_for",
+    "known_figure_types",
+    "ComparisonGeometry",
     # Color utilities
     "colors",
     "color",

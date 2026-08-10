@@ -81,6 +81,22 @@ _NO_EDITOR_ENDPOINTS = {
 }
 
 
+def _favicon_data_uri(hex_color: str) -> str:
+    """Build a `data:` URI for a plain rounded-square favicon in `hex_color`.
+
+    No image asset needed — generated inline so per-brand favicons (see
+    FIGRECIPE_FAVICON_COLOR below) don't require shipping a new static file
+    per consumer package.
+    """
+    from urllib.parse import quote
+
+    svg = (
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>"
+        f"<rect width='100' height='100' rx='20' fill='{hex_color}'/></svg>"
+    )
+    return f"data:image/svg+xml,{quote(svg)}"
+
+
 def editor_page(request):
     """Serve the React SPA inside the scitex-ui workspace shell."""
     import os
@@ -91,13 +107,22 @@ def editor_page(request):
     try:
         working_dir = os.environ.get("FIGRECIPE_WORKING_DIR", "")
         working_dir_name = Path(working_dir).name if working_dir else "Files"
+        # Consumer packages that alias this same CLI/Django app under their
+        # own console-script (e.g. scitex-plt) can rebrand the page title
+        # and favicon by setting these two env vars before launching the
+        # editor (see figrecipe._cli._main's program-name detection) rather
+        # than forking the template.
+        favicon_color = os.environ.get("FIGRECIPE_FAVICON_COLOR", "")
         html = render_to_string(
             "figrecipe/standalone.html",
             {
                 "app_name": "figrecipe",
-                "app_label": "FigRecipe Editor",
+                "app_label": os.environ.get("FIGRECIPE_APP_LABEL", "FigRecipe Editor"),
                 "working_dir": working_dir,
                 "working_dir_name": working_dir_name,
+                "favicon_href": (
+                    _favicon_data_uri(favicon_color) if favicon_color else ""
+                ),
             },
             request=request,
         )

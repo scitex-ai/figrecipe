@@ -25,11 +25,20 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 _BG_TOL = 18
 
 
-def _parse_bg_color(style: Optional[dict]) -> Tuple[int, int, int]:
-    """Background RGB (0-255) from style ``theme_colors``, fallback white.
+def _parse_bg_color(
+    style: Optional[dict], fig: Optional["Figure"] = None
+) -> Tuple[int, int, int]:
+    """Background RGB (0-255): declared style, else the figure's own face, else white.
 
-    Tries ``axes_bg`` then ``figure_bg``; a transparent/none/missing value
-    falls back to white (the raster canvas is white when bg is transparent).
+    Tries ``theme_colors`` ``axes_bg`` then ``figure_bg``; a transparent/none/
+    missing value falls through. When the style declares nothing, ASK THE
+    FIGURE -- it is the ground truth for what was actually rendered, and a
+    caller without a style dict is exactly the case that used to break: falling
+    straight through to white made every pixel of a dark-theme figure read as
+    ink, saturating the mask to 100% (see ``_render_ink_mask``).
+
+    A fully transparent figure face still rasterizes onto a white canvas, so it
+    keeps the white fallback rather than reporting black.
     """
     import matplotlib.colors as mcolors
 
@@ -48,6 +57,15 @@ def _parse_bg_color(style: Optional[dict]) -> Tuple[int, int, int]:
             return int(round(r * 255)), int(round(g * 255)), int(round(b * 255))
         except (ValueError, TypeError):
             continue
+
+    if fig is not None:
+        try:
+            r, g, b, a = mcolors.to_rgba(fig.get_facecolor())
+        except (ValueError, TypeError):
+            a = 0.0
+        if a > 0:
+            return int(round(r * 255)), int(round(g * 255)), int(round(b * 255))
+
     return 255, 255, 255
 
 
@@ -58,6 +76,10 @@ def _render_ink_mask(fig: "Figure", style: Optional[dict]):
     markers, collections, images, patches) remains. Pixels whose distance
     from the background color exceeds ``_BG_TOL`` are ink. Returns ``None``
     when numpy is unavailable or the canvas cannot rasterize.
+
+    The background color is resolved against ``fig`` as well as ``style``, so a
+    caller that has no style dict still classifies a dark figure correctly
+    instead of calling the whole canvas ink.
     """
     try:
         import numpy as np
@@ -96,7 +118,7 @@ def _render_ink_mask(fig: "Figure", style: Optional[dict]):
     if buf.ndim != 3 or buf.shape[2] < 3:
         return None
     rgb = buf[..., :3].astype(np.int16)
-    bg = np.array(_parse_bg_color(style), dtype=np.int16)
+    bg = np.array(_parse_bg_color(style, fig), dtype=np.int16)
     diff = np.abs(rgb - bg).max(axis=-1)
     ink = diff > _BG_TOL
     return ink, buf.shape[0]

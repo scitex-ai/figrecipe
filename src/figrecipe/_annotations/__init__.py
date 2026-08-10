@@ -39,12 +39,19 @@ Submodules
 """
 
 from ._auto_placement import auto_y_position
+from ._figure_type_hints import (
+    ComparisonGeometry,
+    FigureTypeHint,
+    hints_for,
+    known_figure_types,
+)
 from ._stat_bracket import (
     add_stat_bracket,
     list_stat_brackets,
     remove_stat_bracket,
     update_stat_bracket,
 )
+from ._stat_result import StatResult
 from ._stat_text import add_stat_text, list_stat_texts, remove_stat_text
 
 __all__ = [
@@ -59,6 +66,13 @@ __all__ = [
     "list_stat_texts",
     # Auto-placement
     "auto_y_position",
+    # Display port for a computed test result (six-stat doctrine)
+    "StatResult",
+    # Per-figure-type annotation hints (advisory; never enforced)
+    "ComparisonGeometry",
+    "FigureTypeHint",
+    "hints_for",
+    "known_figure_types",
 ]
 
 # EOF

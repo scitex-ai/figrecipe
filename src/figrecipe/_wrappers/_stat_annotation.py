@@ -227,6 +227,134 @@ def draw_stat_annotation(
     return artists
 
 
+def record_stat_annotation(
+    recording_axes: Any,
+    x1: float,
+    x2: float,
+    p_value: Optional[float] = None,
+    text: Optional[str] = None,
+    y: Optional[float] = None,
+    style: Optional[str] = None,
+    stat: Optional[Any] = None,
+    require_complete: bool = True,
+    sep: str = ", ",
+    precision: int = 3,
+    stars: bool = False,
+    id: Optional[str] = None,
+    track: bool = True,
+    **kwargs,
+) -> List[Any]:
+    """Draw a stat annotation on a ``RecordingAxes`` and record it for replay.
+
+    The recording half of ``RecordingAxes.add_stat_annotation`` — kept here, beside
+    the drawing code it wraps, rather than in ``_axes_methods.py`` where it is only
+    a method by accident of the mixin.
+
+    A supplied ``stat`` (a :class:`figrecipe.StatResult`) is resolved to plain
+    ``text`` + ``p_value`` *before* recording, so the recipe stores the rendered
+    string and replays byte-identically without needing to re-import the producer's
+    result object.
+
+    Parameters
+    ----------
+    recording_axes : RecordingAxes
+        The wrapper whose ``_ax`` is drawn on and whose recorder is updated.
+    stat : StatResult, optional
+        Completed test result. Under the default ``style="six_stat"`` its six
+        doctrine fields are rendered inline with italic symbols.
+    require_complete : bool
+        Warn when ``stat`` is missing any of the six required fields.
+    sep : str
+        Separator between the six fields. Pass ``",\\n"`` to wrap the annotation
+        onto two lines when a panel is too narrow for one. Ignored unless ``stat``
+        is rendering the text.
+    precision : int
+        Decimal places on the p-value before it collapses to ``< 0.001``.
+    stars : bool
+        Prepend the significance stars above the six-stat line.
+    """
+    if style is None:
+        style = "six_stat" if stat is not None else "stars"
+
+    if stat is not None:
+        if p_value is None:
+            p_value = stat.p_value
+        if text is None and style == "six_stat":
+            text = stat.annotation(
+                sep=sep,
+                precision=precision,
+                stars=stars,
+                require_complete=require_complete,
+            )
+
+    draw_kwargs = {
+        key: value
+        for key, value in kwargs.items()
+        if key
+        not in (
+            "bracket_height",
+            "text_offset",
+            "color",
+            "linewidth",
+            "fontsize",
+            "fontweight",
+        )
+    }
+    styling = {
+        key: kwargs[key]
+        for key in (
+            "bracket_height",
+            "text_offset",
+            "color",
+            "linewidth",
+            "fontsize",
+            "fontweight",
+        )
+        if key in kwargs
+    }
+
+    artists = draw_stat_annotation(
+        recording_axes._ax,
+        x1,
+        x2,
+        y=y,
+        text=text,
+        p_value=p_value,
+        style=style,
+        **styling,
+        **draw_kwargs,
+    )
+
+    if recording_axes._track and track:
+        recorder = recording_axes._recorder
+        call_id = id if id else recorder._generate_call_id("stat_annotation")
+        record_kwargs = {
+            "x1": x1,
+            "x2": x2,
+            "p_value": p_value,
+            "text": text,
+            "y": y,
+            "style": style,
+        }
+        record_kwargs.update(styling)
+        record_kwargs.update(draw_kwargs)
+        record_kwargs = {k: v for k, v in record_kwargs.items() if v is not None}
+
+        from .._recorder import CallRecord
+
+        record = CallRecord(
+            id=call_id,
+            function="stat_annotation",
+            args=[],
+            kwargs=record_kwargs,
+            ax_position=recording_axes._position,
+        )
+        ax_record = recorder.figure_record.get_or_create_axes(*recording_axes._position)
+        ax_record.add_decoration(record)
+
+    return artists
+
+
 def calculate_auto_y(
     ax: Axes,
     x1: float,

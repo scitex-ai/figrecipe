@@ -242,6 +242,32 @@ class AxesStyleMixin:
 
         return sci_note(self._ax, axis, scilimits)
 
+    def comma_format(
+        self,
+        x: bool = True,
+        y: bool = False,
+        fformat: str = "{:,.0f}",
+    ):
+        """Format tick labels with thousands-separator commas (e.g. 12,000).
+
+        Parameters
+        ----------
+        x : bool
+            Comma-format the x-axis tick labels. Default: True.
+        y : bool
+            Comma-format the y-axis tick labels. Default: False.
+        fformat : str
+            ``str.format``-style spec per tick value. Default: ``"{:,.0f}"``.
+
+        Examples
+        --------
+        >>> ax.comma_format(x=True)  # "0", "12,000", "24,000"
+        >>> ax.comma_format(x=True, y=True, fformat="{:,.1f}")
+        """
+        from ..styles._axis_helpers import comma_format
+
+        return comma_format(self._ax, x=x, y=y, fformat=fformat)
+
     def force_aspect(self, ratio: float = 1.0):
         """Force aspect ratio.
 

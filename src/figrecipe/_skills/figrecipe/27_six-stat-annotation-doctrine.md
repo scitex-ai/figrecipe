@@ -1,0 +1,197 @@
+---
+description: |
+  [TOPIC] Six-stat annotation doctrine + heatmap colorbar requirement
+  [DETAILS] Operator-issued reporting doctrine (2026-07-05): every statistical annotation on a figure must carry all six of n / 95% CI / method / p-value / effect size / test statistic, statistical symbols render in italic, and N (subjects) is kept distinct from n (windows/trials/samples). Pairs with the separate heatmap-colorbar requirement — every 2D imshow-style plot must ship a colorbar with tick labels, an axis label, and units. Both are checked (soft, warning-level) by STX-FM017 / STX-FM018 in figrecipe's lint plugin.
+tags: [figrecipe-six-stat-annotation-doctrine, figrecipe-stat-annotation, figrecipe-colorbar, figrecipe]
+---
+
+
+# Six-stat Annotation Doctrine + Heatmap Colorbar Requirement
+
+Figure-annotation half of the operator-issued "Statistics Completeness
+Doctrine" (2026-07-05, relayed via NeuroVista, adopted fleet-wide). The
+manuscript/caption/table-authoring half of this doctrine lives in
+`scitex-dev/_skills/scientific/03_reporting_02_statistics-completeness.md`
+(scitex-ai/scitex-dev#290) — read that leaf for the full Results-section /
+stats-table guidance. This leaf covers the figure-annotation surface:
+`ax.add_stat_annotation(...)` (see `_wrappers/_stat_annotation.py`) and any
+`ax.text(...)` / `ax.annotate(...)` used to label a comparison directly on
+a panel, plus the separate heatmap-colorbar requirement.
+
+## Rule 1 — the six required fields
+
+A statistical annotation on a figure (a p-value or effect-size label next
+to a comparison) is **incomplete** unless all six of the following appear
+somewhere the reader can find them — inline in the annotation, in the
+caption, or in an accompanying stats table:
+
+1. **n** — sample size / number of observations in the comparison.
+2. **CI** — confidence interval (typically 95%) around the estimate.
+3. **method** — which statistical test/method was used (e.g. "Welch's
+   t-test", "Wilcoxon signed-rank", "Pearson correlation").
+4. **p** — the p-value (exact value, or `p < 0.001` below display
+   precision) — never a bare significance star with no number behind it.
+5. **effect** — the effect size (Cohen's d, r, eta-squared, odds ratio,
+   ... whichever is conventional for the test used).
+6. **statistic** — the test statistic itself (`t(df)=`, `F(df1,df2)=`,
+   `U=`, `chi2(df)=`, ...).
+
+A p-value alone, or a p-value plus effect size but no CI or no n, is not
+sufficient. If the panel is too crowded for all six inline, push the rest
+to the caption (pairs with `21_figure-prep-playbook.md`) — but they must
+land somewhere in the figure's own text, not only in a separate results
+paragraph the reader has to cross-reference.
+
+### Italic statistical symbols
+
+Statistical symbols (`p`, `t`, `F`, `r`, `U`, `d`, ...) render in **italic**
+in figure text — matplotlib mathtext via `$\it{p}$` (or the `r"$\it{...}$"`
+raw-string form) does this correctly; a plain `"p="` string does not.
+`draw_stat_annotation`'s built-in `style="p_value"` / `style="both"` modes
+already do this (see `_wrappers/_stat_annotation.py::draw_stat_annotation`,
+which emits `$\it{p}$ < 0.001` / `$\it{p}$ = 0.003`) — prefer those modes
+over hand-rolled text so the italic convention is automatic.
+
+### N vs n
+
+Distinguish **N** (number of subjects / patients — capital N) from **n**
+(number of windows / samples / trials *within* a subject — lowercase n)
+as separate, explicitly-subscripted quantities whenever both are
+relevant:
+
+```
+N = 12 patients, n = 340 windows
+```
+
+Collapsing these into a single `n=` when both a subject count and a
+within-subject sample count exist hides the actual unit of statistical
+independence from the reader — a common and serious inferential error in
+per-window / per-trial neuroscience and physiology figures.
+
+### Compliant example — build it, do not type it
+
+Do NOT hand-type the mathtext. Pass a `figrecipe.StatResult` (see
+`_annotations/_stat_result.py`) and let figrecipe render it: the six fields
+are then structurally present or you get a warning naming exactly which are
+missing, and the italic / N-vs-n conventions are applied for you.
+
+```python
+result = fr.StatResult(
+    p_value=pearson.pvalue, method="Pearson correlation",
+    statistic=t_stat, statistic_name="t", dof=338,
+    effect_size=pearson.statistic, effect_name="r", ci=(0.21, 0.60),
+    n=340, n_subjects=12, n_unit="windows", n_subjects_unit="patients",
+)
+ax.add_stat_annotation(0, 1, stat=result, stars=True)
+result.missing_fields()  # -> []  (the check the lint cannot do on an f-string)
+```
+
+`StatResult` is the DISPLAY-side port: figrecipe renders statistics, it never
+computes them. A producer (scitex-stats, scipy, a stored results table) fills
+the fields — via the constructor or `StatResult.from_mapping(result_dict)`,
+the adapter seam — and neither package imports the other. Every number must
+come from a computation, never a keyboard.
+
+Compare to the incomplete, lint-flagged form:
+
+```python
+ax.add_stat_annotation(x1=0, x2=1, text="p=0.03")  # STX-FM017: missing n, CI, method, effect, statistic
+```
+
+Working example: `examples/12_six_stat_annotation.py`.
+
+### Where the comparison goes
+
+`fr.hints_for("<plot type>")` answers where a comparison line belongs and which
+tests are conventional for that plot's data — a bracket spans two categories on
+a bar/box/violin; a scatter has no categories to span, so the statistic is
+written inline; a heatmap marks significant cells instead. It is ADVISORY:
+`methods` is a hint for a human, not a whitelist (whether a test suits a figure
+is a judgement about the *data*), and `None` means the registry has nothing to
+say, never that the figure is wrong.
+
+## Rule 2 — heatmap colorbar requirement
+
+Any 2D heatmap (an `imshow`-style plot of a 2D array — `imshow`, `matshow`,
+`pcolormesh`, ...) MUST have:
+
+- a colorbar,
+- tick labels on that colorbar,
+- an axis label on the colorbar, and
+- units on that axis label.
+
+This is non-negotiable — the same tier as figrecipe's existing axis-label
+and unit requirements elsewhere in this lint plugin. A heatmap with no
+colorbar leaves the reader unable to read any absolute value off the
+image; a colorbar with no label/units leaves them unable to interpret
+what they *can* read.
+
+**The heatmap's OWN axes must stay readable too.** The colorbar says what the
+colors mean; the axes say *where on the map* you are. When they carry a
+physical quantity (a time-by-frequency map, a comodulogram) the numbers on
+them **are the finding** — and three comodulograms once shipped to review
+labelled `(Hz)` with no frequency numbers at all. The colorbar was perfect;
+Rule 2 as written would not have caught it. So:
+
+- a meaningful heatmap axis needs **tick numbers**, not just a title;
+- set `imshow_show_axes=True` (figrecipe hides imshow chrome by default —
+  right for an image, wrong for a map);
+- verify on the **rendered** tick text, never `get_xticks()`, which returns
+  what you asked for even when nothing was drawn. See
+  [28_never-silently-discard](28_never-silently-discard.md).
+
+### Compliant example
+
+```python
+fig, ax = fr.subplots()
+im = ax.imshow(power_2d, cmap="viridis", vmin=0, vmax=1)
+fig.colorbar(im, ax=ax, label="power [a.u.]")  # tick labels on by default
+```
+
+figrecipe's imperative `ax.imshow(...)` does **not** auto-add a colorbar
+(only the declarative YAML/dict plot-spec path does, via
+`_api/_plot_helpers._maybe_add_colorbar`) — a script using the direct
+Python API must add its own `fig.colorbar(...)` call.
+
+## Lint enforcement
+
+Both rules have a soft (warning-level) static check in figrecipe's lint
+plugin (`src/figrecipe/_quality/_linter_plugin.py`), `category="figure"`
+so they auto-promote to error under `project-type: research`:
+
+- **STX-FM017** (`_stat_annotation_fields_checker.py`) — flags a literal
+  annotation string that looks like a stats annotation (contains a
+  p-value marker) but is clearly missing several of the six fields.
+  Heuristic and conservative by design: plain captions with no p-value
+  marker are never flagged, and only literal string constants are
+  inspected (f-strings are skipped, not guessed at).
+- **STX-FM018** (`_heatmap_colorbar_checker.py`) — flags an `imshow(...)`
+  call with no `colorbar(...)` call anywhere in the same function/module
+  scope. It cannot statically verify tick labels / axis label / units —
+  that half of Rule 2 is enforced by review, matching the "doc-only where
+  a linter can't reach" acknowledgement in the sister scitex-dev doctrine.
+- **STX-FM019** (`_missing_caption_checker.py`) — flags a scope that builds a
+  figure and saves it with no caption anywhere in that scope. Every scientific
+  figure needs a caption, not just axis labels. Conservative: a scope that only
+  writes data files is never examined, and a bare `save(...)` only counts when
+  its first argument is *named* like a figure, so `stx.io.save(df, "t.csv")`
+  never fires. Any of `caption=` / `panel_captions=` / `add_figure_caption` /
+  `add_panel_captions` satisfies it.
+
+Opt out per call site with `# stx-allow: STX-FM017` / `# stx-allow:
+STX-FM018` when a partial annotation or colorbar-less heatmap is
+intentional (e.g. significance stars only, with the full stats reported
+in a table elsewhere).
+
+## Cross-references
+
+- `scitex-dev/_skills/scientific/03_reporting_02_statistics-completeness.md`
+  — the manuscript/caption/stats-table half of the six-field doctrine
+  (scitex-ai/scitex-dev#290).
+- `21_figure-prep-playbook.md` — where caption content (including
+  overflow stats) belongs relative to the rest of the figure-prep rules.
+- `_wrappers/_stat_annotation.py` — `draw_stat_annotation` /
+  `ax.add_stat_annotation(...)`, the dedicated annotation helper this
+  doctrine targets.
+- `05_styles.md` — SCITEX style font sizes (annotation text follows the
+  `stat_annotation.fontsize_pt` style key, not a hardcoded `fontsize=`).

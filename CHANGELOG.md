@@ -5,6 +5,335 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.4] - 2026-07-22
+
+### Fixed
+- **Pie styling no longer blanks ticks irreversibly — the fifth and last
+  `set_[xy]ticklabels([])` site.** `apply_pie_axes_visibility` pinned a
+  `NullFormatter` on both axes, so any tick an author set after a styled
+  `ax.pie()` rendered blank, through any handle, with no way to undo it — the
+  same defect class that once shipped a heatmap to review with its frequency
+  numbers gone. `set_[xy]ticks([])` alone clears ticks *and* labels, and is
+  reversible. Four prior hand-searches each declared the class eradicated and
+  each missed a site, so this fix ships with a guard rather than a promise:
+  `tests/develop/test_no_null_formatter_traps.py` walks the AST of every
+  shipped module and fails the build on the empty-list form. Real labels stay
+  legal — categorical axes need them.
+- **The CI audit gate now grades the commit under test.** `test_audit.py`
+  called `audit_all_for_package("figrecipe")` without `path=`, so the audit
+  resolved the package by a `~/proj/<name>` guess and graded whatever tree sat
+  there — on the CI runner, a stale checkout. It failed honest PRs over a
+  pre-commit hook that had already been deleted, and passed the eight
+  violations fixed for 0.34.3 while they were still live. The audit is now
+  anchored on the checkout the test file itself lives in, which is
+  scitex-dev's prescribed idiom for exactly this trap.
+
+## [0.34.3] - 2026-07-22
+
+### Fixed
+- **Django-bridge entry now loads `mobile.css` — the hub-embedded editor gets
+  the mobile layout.** `src/styles/mobile.css` (stack `.editor-body` vertically
+  at ≤768px) was imported only by the standalone entry (`main.tsx`), while the
+  bridge entry (`bridge/bridge-init.ts`) — the path scitex-cloud actually mounts
+  the editor through — imported every stylesheet *except* it. On the hub a
+  390px-wide phone therefore rendered the desktop 3-pane layout: text cut
+  mid-word, clipped buttons, the rail overlaying the toolbar. One import line
+  puts the existing stylesheet on the path that executes.
+
+## [0.34.1] - 2026-07-14
+
+### Changed
+- **Adopt scitex-ui's native favicon support; drop figrecipe's interim override.**
+  figrecipe prototyped a `favicon_href` context var and scitex-ui adopted it as
+  the shared contract (scitex-ui#65, released in 0.6.4), where
+  `standalone_shell.html` now renders the `<link rel="icon">` itself, in `<head>`.
+  figrecipe's own `standalone.html` was still emitting that link from its
+  `extra_css` block — written before 0.6.4 existed — which on 0.6.4 produces a
+  **duplicate** `<link rel="icon">` rather than the only one (the parent renders
+  its copy outside the `extra_css` block, so the override never replaced it).
+
+  Removed the override and raised the `scitex-ui` floor `>=0.1.0` → `>=0.6.4`, so
+  the parent template that renders the favicon is guaranteed present. `views.py`
+  already passed `favicon_href` in the render context and is unchanged — the tab
+  icon still brands per `FIGRECIPE_FAVICON_COLOR`.
+
+## [0.34.0] - 2026-07-14
+
+### Added
+- **`STX-FM019` missing-caption lint** — a figure with no caption forces the
+  reader to reconstruct what they are looking at from the axes alone, and a panel
+  with no caption of its own leaves a hole in the assembled caption when panels
+  are composed. Flags a scope that **builds** a figure and **saves** it with no
+  caption anywhere in that scope.
+
+  Conservative by construction, because the obvious implementation is wrong:
+  naively flagging every `save(...)` would fire on `stx.io.save(df, "table.csv")`,
+  and a table needs no caption. So a scope is only examined when it builds a
+  figure, and only figure-shaped saves count — `savefig(...)`, or `save(fig, ...)`
+  whose first argument is *named* like a figure. Any of `caption=`,
+  `panel_captions=`, `add_figure_caption(...)` or `add_panel_captions(...)`
+  satisfies it. Soft (warning), opt out per call site with
+  `# stx-allow: STX-FM019`.
+
+### Changed
+- **`_quality/_linter_plugin.py` split** — the rule catalogue (a `Rule` literal per
+  rule, which grows every time a rule is added) moved to a new
+  `_quality/_linter_rules.py`; the plugin file stays the orchestrator that wires
+  rules to checkers. Pure extraction: same rules, same call/axes-hint maps, same
+  `get_plugin()` shape, verified against the live plugin surface.
+
+## [0.33.0] - 2026-07-14
+
+### Added
+- **Per-figure-type annotation hints** (`figrecipe.hints_for`) — a small registry
+  answering two questions for a given plot type: *where does a comparison line
+  go*, and *which statistical methods are conventional for the kind of data this
+  plot shows*.
+
+  ```python
+  hint = fr.hints_for("scatter")
+  hint.geometry        # ComparisonGeometry.INLINE_TEXT — a bracket has nothing to span
+  hint.draws_bracket   # False
+  hint.methods         # ["Pearson correlation", "Spearman correlation", ...]
+  ```
+
+  Deliberately a skeleton: five entries, each added because a real figure needed
+  it. It grows an entry at a time as concrete cases turn up and is **not** a
+  pre-populated taxonomy of every plot type.
+
+  Two things it is not:
+  - It does not **compute**. Values still come from a producer via `StatResult`;
+    this only says where to *draw* the comparison and what is conventional.
+  - It does not **enforce**. `methods` is a hint for a human, not a whitelist —
+    whether a test suits a figure is a judgement about the *data* (paired?
+    normal? how many groups?), which the plot type only hints at. `hints_for`
+    returns `None` for an unknown type, meaning "the registry has nothing to
+    say", never "this figure is wrong". Nothing in figrecipe rejects a
+    `StatResult` because of this table.
+
+## [0.32.1] - 2026-07-14
+
+### Fixed
+- **A heatmap no longer loses its tick numbers with no way to get them back.**
+  The SCITEX style suppresses axis chrome on `imshow` — correct for a picture,
+  where ticks are noise, but the same call also draws heatmaps and spectrograms
+  whose x/y axes carry physical meaning (time, frequency) and must stay readable.
+
+  The suppression cleared the ticks with `set_xticks([])` **and**
+  `set_xticklabels([])`. The second call was not merely redundant: it pinned a
+  `NullFormatter` on the axis, so every tick the caller set *afterwards* rendered
+  blank. A `ax.set_xticks([0, 0.5, 1.0])` after the `imshow` therefore produced
+  tick marks with no numbers — silently, with no warning, and with no way to
+  override it. That contradicts the readable-heatmap rule in figrecipe's own
+  six-stat doctrine skill, and it violated the no-silent-fallback rule.
+
+  Suppression now clears tick *locations* only, in both the live wrapper
+  (`apply_imshow_axes_visibility`) and the replay finaliser
+  (`finalize_imshow_axes`), so it stays reversible: a heatmap author who ticks
+  the axes after the `imshow` gets those ticks, live and through
+  save → reproduce. Found while building `examples/12_six_stat_annotation.py`,
+  whose panel C had to route around it.
+
+## [0.32.0] - 2026-07-14
+
+### Added
+- **`figrecipe.StatResult`** — the display-side port for a completed statistical
+  test, and the first half of the six-stat doctrine that is *executable* rather
+  than merely documented. 0.31.0 shipped the doctrine and a lint for it, but the
+  only way to satisfy it was still to hand-type the mathtext
+  (`text=r"$\it{N}$=12, $\it{n}$=340, ..."`) — tedious, easy to typo, and
+  impossible to verify, since a forgotten field looks exactly like a complete
+  one. `StatResult` builds that string instead:
+
+  ```python
+  result = fr.StatResult(
+      p_value=welch.pvalue, method="Welch's t-test",
+      statistic=welch.statistic, statistic_name="t", dof=welch.df,
+      effect_size=d, effect_name="d", ci=(0.85, 1.16),
+      n=720, n_subjects=12, n_unit="windows", n_subjects_unit="patients",
+  )
+  ax.add_stat_annotation(0, 1, stat=result, stars=True)
+  ```
+
+  figrecipe DISPLAYS statistics; it never computes them. A producer
+  (scitex-stats, scipy, a stored results table) fills the fields — via the
+  constructor or `StatResult.from_mapping(result_dict)`, the adapter seam that
+  accepts the common key spellings and preserves unrecognised keys in `extras`.
+  Neither package imports the other; the only coupling is the field names.
+
+  - `.missing_fields()` names the doctrine fields a result cannot render — the
+    check the STX-FM017 lint structurally cannot do, since it only sees literal
+    strings and skips f-strings.
+  - Rendering an incomplete result **warns** (naming the missing fields) rather
+    than silently emitting a partial annotation; `require_complete=False` opts
+    out when the rest genuinely lives in the caption.
+  - Italic symbols, `N`-vs-`n`, Greek statistics (`chi2` → *χ²*), comma-grouped
+    sample sizes, and Welch's fractional dof (`694.053` → `t(694.1)`) are all
+    handled, so the conventions are automatic instead of remembered.
+  - `stars=True` prepends the significance stars — never as a *substitute* for
+    the p-value, which is always rendered alongside them.
+- **`examples/12_six_stat_annotation.py`** — worked example; every number in the
+  rendered figure is computed, none typed.
+
+### Changed
+- `ax.add_stat_annotation(...)` accepts `stat=`, `stars=`, `sep=` and
+  `precision=`, and defaults to the new `style="six_stat"` when a `stat` is
+  supplied (unchanged `style="stars"` behaviour otherwise). Its recording half
+  moved to `_wrappers/_stat_annotation.py::record_stat_annotation`, beside the
+  drawing code it wraps; a supplied `StatResult` is resolved to plain text
+  before recording, so recipes replay without the producer's result object.
+
+## [0.31.0] - 2026-07-13
+
+### Added
+- **`comma_format(ax, x=, y=)` / `CommaFormatter`** — thousands-separator tick
+  formatter, mirroring the existing `OOMFormatter`/`sci_note` pattern. Exposed
+  as `fr.styles.comma_format` and as an `ax.comma_format(...)` method.
+- **`ax.stx_annotate_n(x, y, n, ...)`** — sample-size annotation helper. Font
+  size comes from the active style, colour defaults to black, and placement
+  reuses figrecipe's existing declutter ring-solver + ink-mask renderer for
+  overlap avoidance (with a *warned*, never silent, fallback to a fixed offset
+  when no clear spot is found).
+- **Six-stat annotation doctrine** documented as a new skill leaf
+  (`27_six-stat-annotation-doctrine.md`): every statistical annotation carries
+  all six of n / CI / method / p / effect / statistic, statistical symbols
+  render in italic, and N (subjects) stays distinct from n (windows/trials).
+  Every 2D heatmap ships a colorbar with tick labels, a label, and units.
+- **Two new soft lint rules** for the above: `STX-FM017` (stats annotation
+  missing several of the six required fields) and `STX-FM018` (`imshow` with no
+  colorbar in scope). Both are conservative (literal strings only) and honour
+  the existing `# stx-allow: STX-<ID>` escape hatch.
+
+### Fixed
+- **`/api/files` no longer 500s when a listed file escapes the project root.**
+  A symlinked `node_modules/@scitex/ui` made scitex-app's `FileSystemBackend`
+  (correctly) raise `ValueError: Path traversal detected`, but the file-tree
+  recipe-detection helpers only caught `(OSError, UnicodeDecodeError,
+  FileNotFoundError)` — so that one unreadable entry propagated out and took
+  down the entire recursive tree. A file the backend refuses to read is now
+  simply "not a recipe" and is skipped.
+- **`imshow` tick labels survive record → save → load → replay.** Two
+  compounding bugs dropped `set_xticks`/`set_xticklabels` on a label-less
+  imshow axis: the recorder serialized the caller's raw `range(...)` arg (which
+  degraded to the literal string `"range(0, 19)"`), and `finalize_special_plots`
+  wiped ticks on any label-less imshow axis with no guard. The recorder now
+  reads tick positions back from the live axis, and the finalizer checks for a
+  `FixedLocator` before clearing.
+- Chat views are imported from scitex-app's **public** `scitex_app.chat` surface
+  instead of the private `_chat` module (scitex-app floor raised to `>=0.3.0`).
+- CI: the in-SIF scratch `TMPDIR` is now unique per workflow run, so a stale
+  directory left by a killed worker can no longer fail the next run's cleanup.
+
+## [0.30.0] - 2026-07-12
+
+### Added
+- **`auto_tile_layout(aspects, width_mm, height_mm=None, gap_mm=1.0)`** — bin-packs
+  panels (keyed only by their true aspect ratio) into a tight row-list `layout`
+  ready for `build_tiled_sources`/`fr.compose`. LPT-greedy shelf partition over
+  candidate row-counts, scored against a target `height_mm` when given or to
+  minimize wasted canvas area otherwise. Panels are never stretched/upscaled —
+  `sizes_mm` always preserves each panel's exact input aspect ratio, by
+  construction (shares the row-height formula with `build_tiled_sources`, not a
+  separate implementation). Exported as `fr.auto_tile_layout`.
+- **`gui` command group**: `open`/`serve`/`status`/`stop`, replacing the flat
+  `start-gui` command (kept as a hidden deprecated alias for one cycle).
+  `serve` runs the editor server in the foreground; `open` auto-serves a
+  detached background instance when none is running, then opens the browser;
+  `status`/`stop` work from a fresh shell via a tracked PID/port state file.
+  `gui` is a DefaultGroup — a bare `figrecipe gui [SOURCE]` still resolves to
+  `gui open`, matching the old flat command's ergonomic, alongside the
+  explicit subcommands (required for `scitex-plt`, a console-script alias of
+  this same CLI, which invokes `gui serve` directly).
+- Consumer console-script branding: `scitex-plt`'s GUI now renders its own
+  page title ("SciTeX Plot") and a navy favicon, auto-detected from the
+  invoked program name (no fork needed for future aliased consumers).
+
+### Fixed
+- **`gui` default port changed 5050 → 31296** (figrecipe's reserved slot in
+  the corrected scitex-dev per-package GUI port scheme; 5050 collided live
+  with scitex-writer, both defaulting there). `gui serve` now binds the
+  requested port or fails loud with an actionable message — it never
+  silently drifts to the next free port — and refuses to start a second
+  instance when one is already tracked running.
+
+## [0.29.26] - 2026-07-11
+
+### Fixed
+- **Audit conformance for the 0.29.25 coverage-shim regression test.** The
+  new `tests/integration/test_subprocess_coverage_shim_guard.py` used the
+  `monkeypatch` fixture (forbidden as a mock by PA-306) and had a test
+  with no explicit assertion / AAA markers, tripping PA-306/STX-TQ001/
+  STX-TQ002 (3.11+ CI) and blocking the 0.29.25 release from publishing.
+  Rewritten to avoid mocking entirely: the "coverage not installed"
+  condition is now a REAL environment (a subprocess launched with `-S`,
+  which skips `site` initialization so no site-packages end up on
+  `sys.path`), not a monkeypatched import. (0.29.25's coverage-pth fix
+  is included here — 0.29.25 never published.)
+
+## [0.29.25] - 2026-07-11
+
+### Fixed
+- **Subprocess-coverage `.pth` shim crashed every CLI invocation in venvs without
+  `coverage` installed.** `tests/conftest.py::_ensure_subprocess_coverage_shim()`
+  writes a `.pth` file that starts coverage tracing in child interpreters. Its
+  template had `import os, coverage` at the top level, executed unconditionally
+  by `site.py` on *every* interpreter start in that venv — not just test runs.
+  Any plain command (e.g. `figrecipe --help`) in a venv where `coverage` wasn't
+  installed raised `ModuleNotFoundError` on every invocation, once a prior
+  `pytest` run had dropped the shim into site-packages. `coverage` is now
+  imported only inside the `COVERAGE_PROCESS_START` conditional. Regression
+  test: `tests/integration/test_subprocess_coverage_shim_guard.py`.
+
+## [0.29.24] - 2026-07-11
+
+### Fixed
+- **Audit conformance for the 0.29.23 regression-guard test.** The new
+  `test_small_embedded_array_stays_inline_and_validates` had no explicit
+  `assert` and combined `# Act / Assert` on one line, tripping the
+  STX-TQ001/STX-TQ002 audit rules (3.11+ CI) and blocking the 0.29.23
+  release from publishing. Split into separate `# Act` / `# Assert`
+  markers with an explicit assertion (no `*-not-reproduced*` divergence
+  artifact was written). (0.29.23's serializer fix is included here —
+  0.29.23 never published.)
+
+## [0.29.23] - 2026-07-11
+
+### Fixed
+- **Root-caused the flaky imshow nested/composed round-trip test.** `ax.embed()`
+  materializes the source recipe's array data inline (`load_recipe()` sets
+  `arg["data"] = arr.tolist()` plus `_source_file`), but the save pipeline
+  (`_serializer/_save.py::_process_arrays_for_save` /
+  `_process_arrays_with_symlinks`) only ever walked each axes' top-level
+  `calls`/`decorations` — never the nested `subpanels` list that
+  `ax.embed()`/`ax.inset_axes()` produce. So an embedded source's array data
+  (e.g. a 512x512 RGBA `imshow` icon, ~1M scalars) was never re-filed to
+  CSV/NPZ; it stayed inline on every save, turning `_convert_numpy_types` +
+  `ruamel.yaml.dump` into an O(N) walk over ~1M Python-level scalar nodes —
+  a multi-minute, deterministic hang that CI's per-job timeout (or a loaded
+  runner) intermittently killed, misread as "flaky." Both serializer
+  functions now recurse into `subpanels`; the loader (`_load.py`) resolves
+  the same nested file references back into real array data. A missing
+  source file now falls back to inline data with a loud warning (was
+  previously silent). Re-filing only kicks in above a size floor
+  (`_SUBPANEL_FILE_REF_MIN_ELEMENTS = 256`): a smaller sub-panel array stays
+  inline, because the reproducer's inset/embed replay path
+  (`_reproducer/_replay_insets.py`) resolves a sub-panel's `data` straight
+  from the recipe dict rather than through the file-reference loader, so a
+  filed reference there isn't (yet) something it understands — filing a
+  below-threshold array broke the ordinary small-embed case (a save-time
+  reproducibility-validation failure), caught by a regression test before
+  shipping. Regression tests: `tests/integration/test_embed_subpanel_data_filing.py`.
+
+## [0.29.21] - 2026-07-09
+
+### Fixed
+- **Audit conformance for the 0.29.20 panel-label-weight regression test.** The new
+  `tests/integration/test_panel_label_weight_style.py` combined `# Arrange / Act`
+  on one line, tripping the STX-TQ002 AAA-marker audit rule (which runs only on the
+  3.13 CI SIF) and blocking the 0.29.20 release from publishing. Split into separate
+  `# Arrange` / `# Act` / `# Assert` markers. (0.29.20's panel-label-weight change is
+  included here — 0.29.20 never published.)
+
 ## [0.29.20] - 2026-07-09
 
 ### Changed

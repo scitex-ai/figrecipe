@@ -19,6 +19,7 @@ import "../styles/export-dialog.css";
 import "../styles/feedback.css";
 import "../styles/ribbon.css";
 import "../styles/panel-resizer.css";
+import "../styles/mobile.css";
 
 import {
   mountFigrecipeEditor,

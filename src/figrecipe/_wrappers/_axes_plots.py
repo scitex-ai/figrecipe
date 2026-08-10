@@ -67,7 +67,15 @@ def imshow_plot(
     call_id: Optional[str],
     **kwargs,
 ):
-    """Display image with automatic SCITEX styling."""
+    """Display image with automatic SCITEX styling.
+
+    The style suppresses axis chrome for an ``imshow`` because it is usually a
+    picture, where ticks are noise. The same call also draws heatmaps and
+    spectrograms, whose x/y axes carry physical meaning and must stay readable --
+    those callers restore the axes with a plain ``ax.set_xticks(...)`` /
+    ``set_yticks(...)`` AFTER the imshow, which both the live render and replay
+    honour (see ``apply_imshow_axes_visibility`` and ``finalize_imshow_axes``).
+    """
     from ..styles._internal import get_style
     from ._axes_helpers import inject_clip_on_from_style
 

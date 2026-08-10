@@ -60,7 +60,7 @@ def view_dimensions(fig, ax, show_rulers=True, show_grid=True, output_path=None)
     >>> fig_diag = view_dimensions(fig, ax, output_path='/tmp/dimensions.png')
     >>> plt.show()
     """
-    from ._figure_from_axes_mm import get_dimension_info
+    from ._dimension_info import get_dimension_info
 
     # Get dimension info
     info = get_dimension_info(fig, ax)
@@ -313,7 +313,7 @@ def compare_modes(axes_width_mm=30, axes_height_mm=21, output_path=None):
     >>> fig = compare_modes(30, 21, output_path='/tmp/mode_comparison.png')
     >>> plt.show()
     """
-    from ._figure_from_axes_mm import create_axes_with_size_mm, print_dimension_info
+    from ._dimension_info import create_axes_with_size_mm, print_dimension_info
 
     # Create publication mode
     print("\n📐 PUBLICATION MODE:")
@@ -381,7 +381,7 @@ def compare_modes(axes_width_mm=30, axes_height_mm=21, output_path=None):
 
 
 if __name__ == "__main__":
-    from ._figure_from_axes_mm import create_axes_with_size_mm
+    from ._dimension_info import create_axes_with_size_mm
 
     print("=" * 60)
     print("DIMENSION VIEWER DEMO")

@@ -15,7 +15,7 @@ from ._diagram import diagram as _diagram_cmd
 from ._diff import diff
 from ._extract import extract
 from ._fonts import fonts
-from ._gui import gui
+from ._gui import gui, start_gui
 from ._hitmap import hitmap
 from ._info import info
 from ._mcp import mcp
@@ -32,7 +32,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 # Command categories for organized help display
 COMMAND_CATEGORIES = [
-    ("Figure Creation", ["plot", "reproduce", "compose", "start-gui"]),
+    ("Figure Creation", ["plot", "reproduce", "compose", "gui"]),
     ("Image Processing", ["convert", "crop", "diff", "show-hitmap"]),
     ("Data & Validation", ["extract", "validate", "info"]),
     ("Diagram", ["diagram"]),
@@ -105,6 +105,34 @@ def _print_command_help(cmd, prefix: str, parent_ctx) -> None:
             _print_command_help(sub_cmd, f"{prefix} {sub_name}", sub_ctx)
 
 
+#: Console-script name -> (GUI page title, favicon hex color). Consumer
+#: packages (scitex-plt today; scitex-scholar/etc. potentially later) alias
+#: this same CLI/Django app under their own entry point
+#: (`[project.scripts]` -> `figrecipe._cli:main`, see figrecipe's own
+#: pyproject.toml and scitex-plt's) -- this is the one place that tells
+#: them apart, so branding is set here rather than forked per-consumer.
+_CONSUMER_BRANDING = {
+    "scitex-plt": ("SciTeX Plot", "#001f3f"),  # navy
+}
+
+
+def _apply_consumer_branding(prog_name: str) -> None:
+    """Set FIGRECIPE_APP_LABEL/FIGRECIPE_FAVICON_COLOR for aliased consumers.
+
+    Read by `_django.views.editor_page` when it renders the GUI shell.
+    `setdefault` so an explicit env override (e.g. tests, a future
+    `--title` flag) always wins over this program-name inference.
+    """
+    import os
+
+    branding = _CONSUMER_BRANDING.get(prog_name)
+    if branding is None:
+        return
+    label, favicon_color = branding
+    os.environ.setdefault("FIGRECIPE_APP_LABEL", label)
+    os.environ.setdefault("FIGRECIPE_FAVICON_COLOR", favicon_color)
+
+
 @click.group(
     cls=CategorizedGroup,
     invoke_without_command=True,
@@ -124,7 +152,7 @@ def main(
 ) -> None:
     """FigRecipe - Reproducible, style-editable scientific figures via YAML recipes.
 
-    Use 'figrecipe start-gui' to launch the GUI editor.
+    Use 'figrecipe gui open' to launch the GUI editor.
 
     Config is loaded with the SciTeX precedence chain:
       config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
@@ -132,6 +160,7 @@ def main(
     # Stash --json so subcommands can read it via ctx.obj
     ctx.ensure_object(dict)
     ctx.obj["as_json"] = as_json
+    _apply_consumer_branding(ctx.info_name)
 
     if version:
         click.echo(f"figrecipe {__version__}")
@@ -164,6 +193,7 @@ main.add_command(diff)
 main.add_command(extract)
 main.add_command(fonts)
 main.add_command(gui)
+main.add_command(start_gui)
 main.add_command(hitmap)
 main.add_command(info)
 main.add_command(list_python_apis)

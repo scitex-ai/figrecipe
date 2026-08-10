@@ -25,7 +25,7 @@ Pulls `matplotlib>=3.5`, `numpy>=1.20`, `pandas>=1.3`, `PyYAML`,
 | `imaging` | Pillow-based image processing helpers |
 | `graph` | Mermaid / Graphviz diagram backends |
 | `graph-interactive` | Web-rendered diagram preview |
-| `editor` | GUI editor (`figrecipe gui`) |
+| `editor` | GUI editor (`figrecipe gui open`) |
 | `app` | Workspace-app integration (scitex-cloud) |
 | `desktop` | Native desktop launcher |
 | `mcp` | MCP server (`figrecipe mcp serve`) |
@@ -48,7 +48,7 @@ figrecipe --help
 ## Editable install (development)
 
 ```bash
-git clone https://github.com/ywatanabe1989/figrecipe
+git clone https://github.com/scitex-ai/figrecipe
 cd figrecipe
 pip install -e '.[dev,all]'
 ```

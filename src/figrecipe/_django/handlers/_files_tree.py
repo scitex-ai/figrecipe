@@ -62,6 +62,15 @@ def _find_default_working_dir():
     return Path.cwd()
 
 
+# A file the backend refuses to read is simply "not a recipe" -- never a
+# server error. scitex-app's FileSystemBackend raises ValueError("Path
+# traversal detected") when a listed path resolves outside the root (e.g. a
+# symlinked node_modules/@scitex/ui -> ../../scitex-ui in the figrecipe source
+# tree). Without ValueError here, that single unreadable entry propagated out
+# of the per-file recipe check and 500'd the whole /api/files tree.
+_UNREADABLE = (OSError, UnicodeDecodeError, FileNotFoundError, ValueError)
+
+
 def _is_figrecipe_yaml(path: Path, files_backend=None) -> bool:
     """Check if a YAML file is a figrecipe recipe (has figure: and axes: keys)."""
     try:
@@ -70,7 +79,7 @@ def _is_figrecipe_yaml(path: Path, files_backend=None) -> bool:
         else:
             text = path.read_text(errors="ignore")[:2048]
         return "figure:" in text and "axes:" in text
-    except (OSError, UnicodeDecodeError, FileNotFoundError):
+    except _UNREADABLE:
         return False
 
 
@@ -79,7 +88,7 @@ def _is_figrecipe_yaml_rel(rel_path: str, files_backend) -> bool:
     try:
         text = files_backend.read(rel_path)[:2048]
         return "figure:" in text and "axes:" in text
-    except (OSError, UnicodeDecodeError, FileNotFoundError):
+    except _UNREADABLE:
         return False
 
 

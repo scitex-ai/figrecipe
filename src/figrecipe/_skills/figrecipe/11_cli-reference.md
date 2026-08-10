@@ -61,13 +61,17 @@ Options: `-o/--output` (required), `--layout [horizontal|vertical|grid]`, `--col
 
 ### figrecipe gui
 
-Launch the interactive GUI editor.
+Launch the interactive GUI editor. `gui` is a command group with four
+verbs: `open` (auto-serves a background server if needed, then opens the
+browser), `serve` (foreground server), `status`, and `stop`.
 
 ```bash
-figrecipe gui
-figrecipe gui recipe.yaml
-figrecipe gui recipe.yaml --port 8080
-figrecipe gui recipe.yaml --desktop          # native window (requires figrecipe[desktop])
+figrecipe gui open
+figrecipe gui open recipe.yaml
+figrecipe gui open recipe.yaml --port 8080
+figrecipe gui open recipe.yaml --desktop     # native window (requires figrecipe[desktop])
+figrecipe gui status                         # is a server running? where?
+figrecipe gui stop -y                        # stop the running server
 ```
 
 ## Image Processing

@@ -62,17 +62,22 @@ Compose multiple figures into a single multi-panel figure.
 gui
 ^^^
 
-Launch the interactive GUI editor for figure styling.
+Launch the interactive GUI editor for figure styling. `gui` is a command
+group with four verbs: `open` (auto-serves + opens the browser), `serve`
+(foreground server), `status`, and `stop`.
 
 .. code-block:: bash
 
-   figrecipe gui recipe.yaml
+   figrecipe gui open recipe.yaml
 
-   # Options:
-   #   --port INTEGER       Server port (default: 5050)
+   # Options (gui open / gui serve):
+   #   --port INTEGER       Server port (default: 31296)
    #   --host TEXT          Host address
-   #   --no-browser         Don't open browser automatically
-   #   --desktop            Launch as native desktop window
+   #   --no-browser         Don't open browser automatically (gui open only)
+   #   --desktop            Launch as native desktop window (gui open only)
+
+   figrecipe gui status                  # Is a server running? where?
+   figrecipe gui stop -y                 # Stop the running server
 
 Image Processing
 ----------------

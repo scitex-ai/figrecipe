@@ -15,12 +15,43 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: local
-    hooks:
-      - id: pytest-testmon
-        name: pytest-testmon
-        entry: python -m pytest --testmon -x -q --tb=short --ignore=tests/figrecipe/_editor --ignore=tests/figrecipe/test_pixel_perfect.py --ignore=tests/develop/test_audit.py --ignore=tests/figrecipe/_mcp/test__resources.py
-        language: system
-        types: [python]
-        pass_filenames: false
-        stages: [pre-commit]
+  # Incremental testing (pytest-testmon) — REMOVED from the commit path.
+  #
+  # This hook never worked, and could not work:
+  #
+  #   * `pytest-testmon` is not a dependency of figrecipe. It is absent from
+  #     [project.optional-dependencies].dev and is not pulled in transitively
+  #     (scitex-dev does not require it). So in a correctly provisioned env
+  #     (`pip install -e .[dev]`) the hook died instantly with
+  #     `error: unrecognized arguments: --testmon` (exit 4) — it never ran a
+  #     single test. In the agent container it died even earlier, on
+  #     `ModuleNotFoundError: No module named 'matplotlib'` (exit 4), because
+  #     `python` there resolves to the sac venv, not figrecipe's env.
+  #     Every commit staging a .py file was blocked by a hook that had never
+  #     executed a test.
+  #
+  #   * `language: system` means the entry runs whatever `python` is on the
+  #     ambient PATH, which differs per agent and per container. So the SAME
+  #     hook behaved differently across the fleet: where testmon happened to
+  #     be installed by hand it ran the suite (cold, i.e. slowly); where it
+  #     was not, it blocked the commit instantly. An undeclared dependency
+  #     behind a `language: system` hook is nondeterministic by construction.
+  #     That, not the cache, was the defect.
+  #
+  #   * A cold run is unbounded in the commit path. (Measured here: a
+  #     189-test slice, run cold under testmon on a loaded host, was
+  #     OOM-killed after 17 min without finishing. The full suite is ~2460
+  #     tests. No trustworthy figure exists for a full cold run, and none is
+  #     needed — a suite this size does not belong in a commit hook.)
+  #     A fresh git worktree is always cold, and agents work in fresh
+  #     worktrees, so "cold" is the normal case, not the exception.
+  #
+  # Full verification lives in CI, where it belongs: the self-hosted
+  # (Spartan CPU) pytest matrix runs the complete suite on py3.11/3.12/3.13
+  # for every push and PR to main/develop
+  # (.github/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml).
+  #
+  # Run the suite locally whenever you want:  pytest -n auto
+  #
+  # scitex-cloud, scitex-code, scitex-hub, scitex-python and scitex_repo all
+  # removed this same hook from their commit paths for the same reason.

@@ -32,6 +32,13 @@ Before a figure script is allowed into a publication pipeline:
 - [ ] Signal-trace panels use an L-shaped scale bar (axes hidden,
       magnitudes from `CONFIG.SCALE_BAR.*`) — see
       `24_l-shaped-scale-bar.md`.
+- [ ] Every statistical annotation carries all six of n / CI / method /
+      p / effect / statistic, with symbols in italic and N (subjects)
+      distinguished from n (windows/trials) — see
+      `27_six-stat-annotation-doctrine.md` (STX-FM017).
+- [ ] Every 2D heatmap (`imshow`) has a colorbar with tick labels, an
+      axis label, and units — see `27_six-stat-annotation-doctrine.md`
+      (STX-FM018).
 
 ## Anti-patterns
 
@@ -49,9 +56,16 @@ Before a figure script is allowed into a publication pipeline:
   L-shaped scale bar — redundant and visually noisy. Pick one (use
   the L-bar for representative traces; see playbook rule 7 and
   `24_l-shaped-scale-bar.md`).
+- A stat annotation reading only `p < 0.05` or `*` with no n, CI,
+  method, effect size, or test statistic anywhere in the figure —
+  flagged by STX-FM017 (see `27_six-stat-annotation-doctrine.md`).
+- A heatmap (`ax.imshow(...)`) with no `fig.colorbar(...)` call at
+  all — flagged by STX-FM018 (see `27_six-stat-annotation-doctrine.md`).
 
 ## Cross-references
 
-- `21_figure-prep-playbook.md` — the seven rules these items gate.
+- `21_figure-prep-playbook.md` — the eight rules these items gate.
 - `22_nan-sentinel-on-read.md` — concrete NaN-sentinel handling.
 - `24_l-shaped-scale-bar.md` — L-shaped scale-bar worked example.
+- `27_six-stat-annotation-doctrine.md` — six-stat annotation doctrine +
+  heatmap colorbar requirement worked example.

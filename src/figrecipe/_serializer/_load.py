@@ -142,77 +142,93 @@ def _resolve_data_references(
     if isinstance(data_info, dict) and data_info.get("csv_format") == "single":
         return _resolve_single_csv_references(data, base_dir, data_info)
 
-    # Original behavior: resolve individual file references
-    for ax_key, ax_data in data.get("axes", {}).items():
-        for call_list in [ax_data.get("calls", []), ax_data.get("decorations", [])]:
-            for call in call_list:
-                for arg in call.get("args", []):
-                    data_ref = arg.get("data")
+    # Original behavior: resolve individual file references. Recurses into
+    # ``subpanels`` (``ax.embed()`` / ``ax.inset_axes()`` managed sub-panels):
+    # the save side now files large embedded arrays to CSV/NPZ too (see
+    # ``_serializer/_save.py::_process_arrays_for_save``), so the loader must
+    # resolve those same references back into real array data -- otherwise a
+    # sub-panel's arg would carry the raw filename STRING as its "data" value,
+    # and replay would try to plot a filename.
+    def _resolve_call_list(call_list) -> None:
+        for call in call_list:
+            for arg in call.get("args", []):
+                data_ref = arg.get("data")
 
-                    # Check if it's a file reference
-                    if isinstance(data_ref, str) and (
-                        data_ref.endswith(".npy")
-                        or data_ref.endswith(".npz")
-                        or data_ref.endswith(".csv")
-                    ):
-                        file_path = base_dir / data_ref
-                        if file_path.exists():
-                            # Get dtype from YAML to ensure proper type conversion
-                            dtype = arg.get("dtype")
-                            arr = load_array(file_path, dtype=dtype)
+                # Check if it's a file reference
+                if isinstance(data_ref, str) and (
+                    data_ref.endswith(".npy")
+                    or data_ref.endswith(".npz")
+                    or data_ref.endswith(".csv")
+                ):
+                    file_path = base_dir / data_ref
+                    if file_path.exists():
+                        # Get dtype from YAML to ensure proper type conversion
+                        dtype = arg.get("dtype")
+                        arr = load_array(file_path, dtype=dtype)
 
-                            # Check if this was a list of arrays
-                            if arg.get("_is_array_list"):
-                                # Reconstruct list of arrays from 2D array
-                                n_arrays = arg.get(
-                                    "_n_arrays", arr.shape[1] if arr.ndim > 1 else 1
-                                )
-                                array_lengths = arg.get("_array_lengths")
-
-                                arrays = []
-                                for i in range(n_arrays):
-                                    if arr.ndim > 1:
-                                        col = arr[:, i]
-                                    else:
-                                        col = arr
-
-                                    # Trim to original length (remove NaN padding)
-                                    if array_lengths and i < len(array_lengths):
-                                        col = col[: array_lengths[i]]
-                                        col = col[~np.isnan(col)]
-                                    arrays.append(col)
-
-                                arg["data"] = [a.tolist() for a in arrays]
-                                arg["_loaded_array"] = arrays
-                            elif np.issubdtype(arr.dtype, np.datetime64):
-                                # datetime64.tolist() yields raw nanosecond ints,
-                                # which on re-save would be written INLINE and then
-                                # reload as plain numbers (plotting at ~1.3e18
-                                # instead of as dates) -- a non-idempotent
-                                # save->reproduce->save round-trip. Keep the array
-                                # under _array so re-save re-files it as a CSV (ISO
-                                # strings, dtype preserved), exactly like the first
-                                # save. _loaded_array drives the in-memory replay.
-                                arg["_array"] = arr
-                                arg["_loaded_array"] = arr
-                            else:
-                                arg["data"] = arr.tolist()
-                                arg["_loaded_array"] = arr
-
-                            # Store source file path for symlink support
-                            arg["_source_file"] = str(file_path.resolve())
-                            record_input(file_path)  # clew: data file as input
-                        else:
-                            # Fail loud: a referenced data file that does not
-                            # exist (e.g. a broken/stale compose symlink) must
-                            # NOT silently fall through and leave the path string
-                            # as the arg -- that surfaces later as a cryptic
-                            # "not a valid format string" deep in matplotlib.
-                            raise FileNotFoundError(
-                                f"recipe data file not found: {file_path} "
-                                f"(referenced as '{data_ref}'). Fix the source "
-                                f"data; do not reproduce from a broken recipe."
+                        # Check if this was a list of arrays
+                        if arg.get("_is_array_list"):
+                            # Reconstruct list of arrays from 2D array
+                            n_arrays = arg.get(
+                                "_n_arrays", arr.shape[1] if arr.ndim > 1 else 1
                             )
+                            array_lengths = arg.get("_array_lengths")
+
+                            arrays = []
+                            for i in range(n_arrays):
+                                if arr.ndim > 1:
+                                    col = arr[:, i]
+                                else:
+                                    col = arr
+
+                                # Trim to original length (remove NaN padding)
+                                if array_lengths and i < len(array_lengths):
+                                    col = col[: array_lengths[i]]
+                                    col = col[~np.isnan(col)]
+                                arrays.append(col)
+
+                            arg["data"] = [a.tolist() for a in arrays]
+                            arg["_loaded_array"] = arrays
+                        elif np.issubdtype(arr.dtype, np.datetime64):
+                            # datetime64.tolist() yields raw nanosecond ints,
+                            # which on re-save would be written INLINE and then
+                            # reload as plain numbers (plotting at ~1.3e18
+                            # instead of as dates) -- a non-idempotent
+                            # save->reproduce->save round-trip. Keep the array
+                            # under _array so re-save re-files it as a CSV (ISO
+                            # strings, dtype preserved), exactly like the first
+                            # save. _loaded_array drives the in-memory replay.
+                            arg["_array"] = arr
+                            arg["_loaded_array"] = arr
+                        else:
+                            arg["data"] = arr.tolist()
+                            arg["_loaded_array"] = arr
+
+                        # Store source file path for symlink support
+                        arg["_source_file"] = str(file_path.resolve())
+                        record_input(file_path)  # clew: data file as input
+                    else:
+                        # Fail loud: a referenced data file that does not
+                        # exist (e.g. a broken/stale compose symlink) must
+                        # NOT silently fall through and leave the path string
+                        # as the arg -- that surfaces later as a cryptic
+                        # "not a valid format string" deep in matplotlib.
+                        raise FileNotFoundError(
+                            f"recipe data file not found: {file_path} "
+                            f"(referenced as '{data_ref}'). Fix the source "
+                            f"data; do not reproduce from a broken recipe."
+                        )
+
+    def _resolve_ax_data(ax_data) -> None:
+        _resolve_call_list(ax_data.get("calls", []))
+        _resolve_call_list(ax_data.get("decorations", []))
+        for sp in ax_data.get("subpanels", []) or []:
+            sp_axes = sp.get("axes")
+            if sp_axes is not None:
+                _resolve_ax_data(sp_axes)
+
+    for ax_key, ax_data in data.get("axes", {}).items():
+        _resolve_ax_data(ax_data)
 
     return data
 

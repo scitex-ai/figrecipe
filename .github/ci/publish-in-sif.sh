@@ -49,10 +49,26 @@ echo "=== dist to publish ==="
 ls -l dist
 
 # --- writable scratch (compute-node HOME is RO inside the container) ---
-TMPDIR="/tmp/publish-figrecipe-$V"
+# RUN-UNIQUE (incident 2026-07-12, same fix as run-in-sif.sh/build-in-sif.sh):
+# suffix with the run id so this run's path can never collide with a stuck
+# leftover from a prior run; old-path cleanup is best-effort, not fatal.
+# The run-unique name fixed a collision and created a LEAK: the `rm -rf` below
+# runs at START on the path this run is about to CREATE, so it never removes the
+# PREVIOUS run's directory. See the long note in run-in-sif.sh — 270G of orphaned
+# scratch on scitex-02, 2026-08-09. Same fix here.
+RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
+TMPDIR="/tmp/publish-figrecipe-$V-$RUN_TAG"
 export TMPDIR
-rm -rf "$TMPDIR"
+trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
 mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
+
+# Age-gated sweep of orphans from jobs that never reached the trap. Concurrent
+# legs own minutes-old siblings and must survive, hence age rather than name.
+find /tmp -maxdepth 1 -type d -name 'publish-figrecipe-*' \
+    ! -path "$TMPDIR" \
+    -mmin "+${SCRATCH_REAP_MIN_AGE_MIN:-360}" \
+    -exec rm -rf {} + 2>/dev/null || true
 export UV_CACHE_DIR="$TMPDIR/uv-cache"
 export XDG_CACHE_HOME="$TMPDIR"
 export PIP_CACHE_DIR="$TMPDIR/pip-cache"

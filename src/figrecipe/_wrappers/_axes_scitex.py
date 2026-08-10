@@ -253,6 +253,28 @@ class SciTexMixin:
             self._record_stx_call("stx_scalebar", (x_len, y_len), kwargs, id)
         return result
 
+    def stx_annotate_n(self, x, y, n, *, id=None, track=True, **kwargs):
+        """Annotate a data point with a sample-size label (e.g. "n=340").
+
+        Style-consistent font size (active style's ``annotation_pt``) and
+        color (black by default), with basic overlap avoidance against
+        existing plotted ink / labels. See the underlying ``stx_annotate_n``
+        for the full parameter list (``prefix``, ``suffix``, ``comma``,
+        ``fontsize``, ``color``, ``avoid_overlap``, ``offset_pt``).
+
+        Examples
+        --------
+        >>> ax.stx_annotate_n(1.0, 2.5, 340)  # "n=340"
+        >>> ax.stx_annotate_n(1.0, 2.5, "12 patients", prefix="N")
+        """
+        from .._scitex_compat._annotate_n import stx_annotate_n
+
+        with self._no_record():
+            result = stx_annotate_n(self._ax, x, y, n, **kwargs)
+        if self._track and track:
+            self._record_stx_call("stx_annotate_n", (x, y, n), kwargs, id)
+        return result
+
 
 __all__ = ["SciTexMixin"]
 

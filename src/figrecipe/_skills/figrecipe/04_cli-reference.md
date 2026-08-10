@@ -12,7 +12,7 @@ figrecipe [OPTIONS] COMMAND [ARGS]...
 ```
 
 Reproducible, style-editable scientific figures via YAML recipes.
-Use `figrecipe gui` to launch the GUI editor.
+Use `figrecipe gui open` to launch the GUI editor.
 
 ## Global options
 

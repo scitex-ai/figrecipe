@@ -109,7 +109,7 @@ def _resolve_style(style):
 def gui(
     source: Optional[Union[str, Path]] = None,
     style: Optional[Union[str, Dict[str, Any]]] = None,
-    port: int = 5050,
+    port: int = 31296,
     host: str = "127.0.0.1",
     open_browser: bool = True,
     hot_reload: bool = False,
@@ -125,7 +125,9 @@ def gui(
     style : str or dict, optional
         Style preset name or dict.
     port : int
-        Server port (default: 5050).
+        Server port (default: 31296 — figrecipe's reserved port in the
+        scitex-dev 3129X per-package GUI scheme; see
+        scitex-todo card figrecipe-gui-cli-noun-verb-normalize-20260712).
     host : str
         Host to bind (default: "127.0.0.1").
     open_browser : bool

@@ -16,7 +16,7 @@ Role in SciTeX Ecosystem
 -------------------------
 
 FigRecipe is the **first app built on the SciTeX platform** -- it proves the app pattern
-that other apps follow. It works standalone (``figrecipe gui``) AND embedded in
+that other apps follow. It works standalone (``figrecipe gui open``) AND embedded in
 scitex-cloud. The orchestrator re-exports it as ``scitex.plt``.
 
 .. code-block:: text
@@ -98,7 +98,7 @@ CLI:
     figrecipe reproduce my_plot.yaml -o reproduced.png
 
     # Launch GUI editor
-    figrecipe gui my_plot.yaml
+    figrecipe gui open my_plot.yaml
 
     # Validate reproduction fidelity
     figrecipe validate my_plot.yaml
