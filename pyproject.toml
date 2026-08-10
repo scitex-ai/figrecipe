@@ -60,7 +60,12 @@ dev = [
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.6.4",
+    # 0.14.2 is the version figrecipe's suite is actually VERIFIED against
+    # (2685 passed, 2026-08-09). The old >=0.6.4 predated the components
+    # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
+    # figrecipe/standalone.html extends -- so it declared a version that
+    # cannot serve this package. Declaring only what has been exercised.
+    "scitex-ui>=0.14.2",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -84,7 +89,12 @@ seaborn = [
 ]
 scitex = [
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.6.4",
+    # 0.14.2 is the version figrecipe's suite is actually VERIFIED against
+    # (2685 passed, 2026-08-09). The old >=0.6.4 predated the components
+    # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
+    # figrecipe/standalone.html extends -- so it declared a version that
+    # cannot serve this package. Declaring only what has been exercised.
+    "scitex-ui>=0.14.2",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -98,7 +108,12 @@ app = [
     "django>=4.2.0",
     "Pillow>=9.0.0",
     "scitex-app>=0.3.0",
-    "scitex-ui>=0.6.4",
+    # 0.14.2 is the version figrecipe's suite is actually VERIFIED against
+    # (2685 passed, 2026-08-09). The old >=0.6.4 predated the components
+    # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
+    # figrecipe/standalone.html extends -- so it declared a version that
+    # cannot serve this package. Declaring only what has been exercised.
+    "scitex-ui>=0.14.2",
 ]
 desktop = [
     "django>=4.2.0",
@@ -155,6 +170,35 @@ figure = "figrecipe._quality._linter_plugin:get_plugin"
 
 [tool.scitex_dev]
 mcp_parity_exempt = true
+
+[tool.scitex_dev.audit]
+# PS-168 (workflow-secret-env-prefix) — ONE name, exempted deliberately.
+#
+# `PERSONAL_ACCESS_TOKEN` is not a name figrecipe chose. It is pinned by the
+# third-party CLA action, verified in its source rather than its README
+# (contributor-assistant/github-action@v2.6.1, src/octokit.ts):
+#
+#     const personalAccessToken = process.env.PERSONAL_ACCESS_TOKEN as string
+#
+# That puts it in the same category as the `CODECOV_TOKEN` / `GHCR_PAT` /
+# `NPM_TOKEN` entries already in PS-168's ecosystem default: a token whose
+# name a third party dictates. PS-168 checks the `secrets.<NAME>` reference,
+# and the only PAT secret this repo has is literally named
+# `PERSONAL_ACCESS_TOKEN` (created 2026-03-11; repo secrets are
+# `CLAUDE_CODE_CREDENTIALS_JSON` + `PERSONAL_ACCESS_TOKEN`, org secrets none).
+#
+# Why not just rename the secret to the prefixed form? GitHub secret VALUES
+# are write-only — they cannot be read back — so re-creating this one under
+# `FIGRECIPE_PERSONAL_ACCESS_TOKEN` needs the token value, which only the
+# operator holds. Tracked as the root fix on card
+# figrecipe-cla-pat-secret-name-unprefixed.
+#
+# Why not point the workflow at a prefixed name now? An absent secret
+# interpolates to EMPTY rather than failing, and the action treats '' as
+# absent (`isPersonalAccessTokenPresent`), so a prefixed reference to a
+# secret that does not exist silently re-breaks the CLA gate — the exact
+# bug this branch fixes.
+ps168_secret_exceptions = ["PERSONAL_ACCESS_TOKEN"]
 
 [project.urls]
 Homepage = "https://github.com/scitex-ai/figrecipe"

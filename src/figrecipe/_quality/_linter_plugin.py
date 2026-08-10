@@ -4,6 +4,12 @@ Rule families:
 - FM001-FM009  — inch-based matplotlib patterns; suggest mm-based alternatives.
 - FM010-FM011  — figure-method style rules (set_xlabel/set_ylabel/set_title
                  → set_xyt; ax.spines[...].set_visible(False) → hide_spines).
+- FM012        — raster-tiling: PIL/cv2 compositing (paste/hconcat/...) of
+                 rendered figure panels, which rescales text per panel and
+                 drops the mm layout contract (→ fr.compose at 1:1).
+- FM013        — rendered-panel rescale: resize/thumbnail in a module that also
+                 composites, so panel text is scaled relative to the page.
+                 Same AST pass as FM012 (it needs the compositing signal).
 - FM016        — raw-mpl-bypass: raw `plt.subplots`/`plt.figure` figure
                  creation that bypasses figrecipe recording (→ fr.subplots).
 - FM017        — six-stat-annotation-completeness: a stats-shaped annotation
@@ -34,13 +40,17 @@ from ._linter_checkers import (  # noqa: F401
 from ._linter_rules import make_fig_rules, make_fm_rules, make_plot_rules
 
 
-def _rule_injecting_checker(module_path: str, class_name: str, rule):
+def _rule_injecting_checker(module_path: str, class_name: str, rule, **extra_rules):
     """Subclass a checker so it ships its own rule object.
 
     The plugin loader instantiates checkers with ``(source_lines, config)`` only,
     so each checker that needs a rule gets a thin subclass binding it. Returns
     None when the checker module cannot be imported (figrecipe is installable
     without scitex-linter, and the checkers are inert without it).
+
+    ``extra_rules`` are passed through as keyword arguments, for a checker that
+    emits more than one rule from a single AST pass (e.g. the raster checker's
+    FM012 + FM013, which share an import gate and a compositing signal).
     """
     try:
         import importlib
@@ -51,7 +61,7 @@ def _rule_injecting_checker(module_path: str, class_name: str, rule):
 
     class _Bound(base):  # type: ignore[misc, valid-type]
         def __init__(self, source_lines, config):
-            super().__init__(source_lines, config, rule=rule)
+            super().__init__(source_lines, config, rule=rule, **extra_rules)
 
     _Bound.__name__ = f"_{class_name}"
     return _Bound
@@ -118,6 +128,19 @@ def get_plugin():
         checker = _rule_injecting_checker(module_path, class_name, rule)
         if checker is not None:
             checkers.append(checker)
+
+    # FM012 + FM013 come from ONE AST pass: FM013 (rendered-panel rescale) is
+    # only a finding when the module also composites, so it needs the same
+    # import gate and the same compositing signal FM012 collects. Two checker
+    # modules would duplicate that analysis and let the two drift.
+    raster_checker = _rule_injecting_checker(
+        "figrecipe._quality._raster_tiling_checker",
+        "RasterTilingChecker",
+        fm["FM012"],
+        rescale_rule=fm["FM013"],
+    )
+    if raster_checker is not None:
+        checkers.append(raster_checker)
 
     return {
         "rules": list(fm.values()) + list(fig.values()) + list(plot.values()),

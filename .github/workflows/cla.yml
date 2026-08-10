@@ -58,7 +58,16 @@ jobs:
         uses: contributor-assistant/github-action@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.CLA_PERSONAL_ACCESS_TOKEN }}
+          # NAME THE SECRET THAT EXISTS. `CLA_PERSONAL_ACCESS_TOKEN` is not a
+          # secret on this repo and never has been -- measured 2026-08-06:
+          #   repo secrets : CLAUDE_CODE_CREDENTIALS_JSON, PERSONAL_ACCESS_TOKEN
+          #   org  secrets : none (total_count 0)
+          # An absent secret interpolates to EMPTY rather than failing, so the
+          # action received a blank PAT and the step failed for a reason the
+          # workflow never names. Owner PRs survived it for a while because
+          # `allowlist` short-circuits before the PAT is needed; that masked it
+          # until a PR needed the signature store.
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         with:
           path-to-signatures: "signatures/cla.json"
           path-to-document: "https://github.com/scitex-ai/figrecipe/blob/main/CLA.md"
