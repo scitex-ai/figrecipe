@@ -29,5 +29,31 @@ jobs:
     # outsider can start, on the shared self-hosted runner the callee targets.
     # Neither file shows that on its own: the caller names no runs-on, so the
     # destination lives in the callee. Pass only the secret the callee declares.
+    #
+    # THE TWO SIDES BELOW ARE DIFFERENT NAMESPACES. Left is the callee's
+    # declared parameter (`secrets: GH_PERSONAL_ACCESS_TOKEN: required: true`
+    # in scitex-ai/.github), which the callee maps onto the action's
+    # `PERSONAL_ACCESS_TOKEN` env var. Right must name a secret THIS repo
+    # actually holds. They are not required to match, and here they must not:
+    #
+    #   figrecipe repo secrets : CLAUDE_CODE_CREDENTIALS_JSON,
+    #                            PERSONAL_ACCESS_TOKEN   (measured 2026-08-11)
+    #   scitex-ai org secrets  : none (total_count 0)
+    #
+    # `GH_PERSONAL_ACCESS_TOKEN` has never been a secret on either. It read as
+    # the empty string, `required: true` is satisfied by a provided-but-empty
+    # value, and the action treats '' as absent -- so the CLA gate failed
+    # naming a CLA problem while the real cause was a secret that does not
+    # exist. Nothing in either file ever printed that.
+    #
+    # This was invisible for months because `allowlist: bot*,ywatanabe1989`
+    # short-circuits owner PRs to success BEFORE the PAT is read: the gate
+    # looked healthy for exactly the population that could not exercise it.
+    # Only outside contributors could trip it -- #318/#319/#320/#331 sat red
+    # for weeks with no way to see why.
+    #
+    # develop carries the same fix (#330). Keep BOTH in step: `pull_request_target`
+    # runs the BASE branch's workflow, and every outside PR so far targets main,
+    # so a fix on develop alone reaches none of them.
     secrets:
-      GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+      GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
