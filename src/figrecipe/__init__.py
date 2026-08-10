@@ -252,6 +252,23 @@ def __getattr__(name: str):
         value = importlib.import_module(_MODULE_ALIASES[name], __name__)
         globals()[name] = value
         return value
+
+    # figrecipe is often injected in place of matplotlib.pyplot. It answers to
+    # `subplots`, which convinces a script it holds pyplot, so the next pyplot
+    # call lands here. Say what to use instead rather than "no attribute" —
+    # see ._pyplot_surface for why most of these are NOT proxied.
+    from ._pyplot_surface import pyplot_guidance, pyplot_proxy
+
+    proxied = pyplot_proxy(name)
+    if proxied is not None:
+        globals()[name] = proxied
+        return proxied
+    hint = pyplot_guidance(name)
+    if hint is not None:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}. figrecipe is a "
+            f"partial pyplot substitution: {hint}."
+        )
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
