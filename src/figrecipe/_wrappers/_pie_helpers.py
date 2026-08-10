@@ -53,13 +53,20 @@ def apply_pie_text_style(ax: "Axes", pie_style: dict, style) -> None:
 
 
 def apply_pie_axes_visibility(ax: "Axes", pie_style: dict) -> None:
-    """Apply axes visibility settings for pie chart."""
+    """Apply axes visibility settings for pie chart.
+
+    Mirrors ``styles._plot_styles.apply_pie_style``, which suppresses the same
+    chrome from the style layer. Keep the two in step: this copy kept blanking
+    labels for two releases after that one stopped.
+    """
     show_axes = pie_style.get("show_axes", False)
     if not show_axes:
+        # set_xticks([]) alone clears ticks AND labels, reversibly. Adding
+        # set_xticklabels([]) would pin a NullFormatter on the axis, blanking
+        # every tick the author sets afterwards -- through any handle, with no
+        # way to undo it.
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
         for spine in ax.spines.values():
             spine.set_visible(False)
 
