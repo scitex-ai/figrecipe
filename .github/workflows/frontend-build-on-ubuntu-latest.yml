@@ -1,0 +1,72 @@
+name: frontend-build
+
+# Catches "an unresolvable TS import merges green and takes scitex.ai down".
+#
+# figrecipe's bridge frontend is compiled by scitex-hub at django CONTAINER
+# START, not at hub build time. So a `@scitex/ui/...` path that resolves
+# nowhere is invisible to every existing leg here (audit, pytest-matrix,
+# import-smoke, sphinx all ignore the frontend) and only detonates when a
+# prod container next boots — daphne never binds and the site 503s.
+#
+# That is not hypothetical. #329 shortened 7 imports to "@scitex/ui/react/
+# app/...", merged green, and produced a site-wide scitex.ai outage on
+# 2026-08-11 (fixed by #338 + this PR). The 2026-07-11 pdfjs-dist outage was
+# the same class and produced the same lesson, which was never implemented.
+#
+# The alias contract this leg enforces: "@scitex/ui" resolves to the
+# scitex-ui REPO ROOT — in figrecipe's own vite.config.ts (it strips the
+# /src/scitex_ui/static/scitex_ui suffix) AND in scitex-hub's
+# (resolve(SCITEX_UI_STATIC, "../../../..")). Both agree, so building here
+# with a real scitex-ui checkout reproduces hub's resolution and fails on
+# exactly what hub would fail on.
+#
+# Hosted ubuntu-latest on purpose: the build is ~1 min, so runner speed does
+# not matter, and this must never queue behind the self-hosted pool — a gate
+# that arrives after the merge is the problem it exists to solve.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: frontend-build-on-ubuntu-latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out figrecipe
+        uses: actions/checkout@v4
+        with:
+          path: figrecipe
+
+      # "@scitex/ui" is a file: dependency pointing at the scitex-ui repo root
+      # (package.json: "file:../../../../../scitex-ui"), which resolves to a
+      # SIBLING of this checkout — so npm install cannot run without it.
+      - name: Check out scitex-ui as a sibling
+        uses: actions/checkout@v4
+        with:
+          repository: scitex-ai/scitex-ui
+          ref: develop
+          path: scitex-ui
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend deps
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: npm install --no-audit --no-fund
+
+      # SCITEX_UI_STATIC is the documented override in figrecipe's
+      # vite.config.ts; setting it explicitly skips the python3
+      # `import scitex_ui` discovery path, so this leg does not need a Python
+      # env and cannot silently pick up a DIFFERENT scitex-ui than the one
+      # checked out above.
+      - name: Build (vite) — must resolve every @scitex/ui import
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        env:
+          SCITEX_UI_STATIC: ${{ github.workspace }}/scitex-ui/src/scitex_ui/static/scitex_ui
+        run: npx vite build

@@ -2,7 +2,7 @@
 // Extracted from main.tsx to keep the bootstrap orchestrator under the line
 // limit; main.tsx imports `figrecipeChatAdapter` and wires it into ChatMode.
 
-import type { ChatAdapter } from "@scitex/ui/ts/shell/chat/index.ts";
+import type { ChatAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
 
 export const FIGRECIPE_SYSTEM =
   "You are a helpful AI assistant in the FigRecipe figure editor. " +

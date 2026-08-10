@@ -23,59 +23,59 @@ import "./styles/mobile.css";
 
 // scitex-ui CSS — single bundle import (shell + app + utils)
 // @ts-ignore
-import "@scitex/ui/css/all.css";
+import "@scitex/ui/src/scitex_ui/static/scitex_ui/css/all.css";
 
 // Element inspector — debug overlay (Alt+I to toggle)
 // @ts-ignore
-import "@scitex/ui/ts/utils/element-inspector.ts";
+import "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/utils/element-inspector.ts";
 
 // Context-aware zoom — app-specific panes only (shell panes use vanilla TS zoom)
-import { bootstrapContextZoom } from "@scitex/ui/ts/utils/context-zoom.ts";
+import { bootstrapContextZoom } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/utils/context-zoom.ts";
 
 // Vanilla TS workspace shell — panel resizer initialization
-import "@scitex/ui/ts/shell/workspace-panel-resizer/index.ts";
+import "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-panel-resizer/index.ts";
 
 // Vanilla TS shell terminal — unified factory with adapter pattern
-import { initTerminal } from "@scitex/ui/ts/shell/terminal/index.ts";
-import type { TerminalConnectionAdapter } from "@scitex/ui/ts/shell/terminal/index.ts";
+import { initTerminal } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/terminal/index.ts";
+import type { TerminalConnectionAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/terminal/index.ts";
 
 // Vanilla TS shell file tree — WorkspaceFilesTree (full-featured, adapter-based)
-import { WorkspaceFilesTree } from "@scitex/ui/ts/shell/workspace-files-tree/index.ts";
-import type { FileTreeAdapter } from "@scitex/ui/ts/shell/workspace-files-tree/index.ts";
+import { WorkspaceFilesTree } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree/index.ts";
+import type { FileTreeAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree/index.ts";
 
 // Vanilla TS shell toolbar + keyboard shortcuts
 import {
   ToolbarManager,
   KeyboardShortcuts,
-} from "@scitex/ui/ts/shell/toolbar/index.ts";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/toolbar/index.ts";
 
 // Vanilla TS shell keyboard shortcuts + modal (Alt+A, Alt+T, pane cycling)
 import {
   initKeyboardShortcuts,
   registerShortcuts,
-} from "@scitex/ui/ts/shell/keyboard-shortcuts/index.ts";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/keyboard-shortcuts/index.ts";
 
 // Vanilla TS shell repo monitor — recent file changes (adapter-based polling)
 import {
   initRepoMonitor,
   initMonitorToggle,
-} from "@scitex/ui/ts/shell/repo-monitor/index.ts";
-import type { RepoMonitorAdapter } from "@scitex/ui/ts/shell/repo-monitor/index.ts";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor/index.ts";
+import type { RepoMonitorAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor/index.ts";
 
 // Vanilla TS shell viewer — file viewing (images, PDFs, text)
-import { ViewerManager } from "@scitex/ui/ts/shell/viewer/index.ts";
-import type { ViewerAdapter } from "@scitex/ui/ts/shell/viewer/index.ts";
+import { ViewerManager } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/viewer/index.ts";
+import type { ViewerAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/viewer/index.ts";
 
 // Vanilla TS shell ChatMode — full chat orchestration (scitex-ui)
-import { ChatMode } from "@scitex/ui/ts/shell/chat/index.ts";
+import { ChatMode } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
 import { figrecipeChatAdapter } from "./bootstrap/chatAdapter";
 
 // Vanilla TS shell SessionsPanel — chat session management (scitex-ui)
-import { SessionsPanel } from "@scitex/ui/ts/shell/chat/index.ts";
+import { SessionsPanel } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
 import type {
   SessionAdapter,
   SessionMessage,
-} from "@scitex/ui/ts/shell/chat/index.ts";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
 
 // Mount React InnerEditor into app content area ONLY
 const root = document.getElementById("root");
