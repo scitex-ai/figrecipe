@@ -73,6 +73,34 @@ jobs:
           path-to-document: "https://github.com/scitex-ai/figrecipe/blob/main/CLA.md"
           branch: "cla-signatures"
           allowlist: bot*,ywatanabe1989
+          # THE PHRASE WE ASK FOR MUST BE THE PHRASE THE ACTION ACCEPTS.
+          #
+          # Without this input the action cannot accept ANY comment. From
+          # contributor-assistant/github-action@v2.6.1,
+          # src/pullrequest/signatureComment.ts:
+          #
+          #     if (getCustomPrSignComment() !== "") {
+          #         return getCustomPrSignComment().toLowerCase() === comment
+          #     }
+          #     switch (getUseDcoFlag()) {
+          #         case 'true':  return comment.match(/...hereby sign the dco.../)
+          #         case 'false': return comment.match(/...hereby sign the cla.../)
+          #         default:      return false        <-- we landed here
+          #     }
+          #
+          # We set neither `custom-pr-sign-comment` nor `use-dco-flag`, so both
+          # getters returned "" and the matcher fell through to `default: false`
+          # for every comment from every account. The CLA could not be signed at
+          # all -- a gate that cannot PASS, and it silently blocked every outside
+          # contributor (#318, #319, #320, #331). #318 even carries our apology
+          # for "a sign-off phrase that our own bot didn't accept": that
+          # contributor posted the exact phrase below and it was rejected,
+          # because nothing was configured to accept it.
+          #
+          # KEEP THIS BYTE-IDENTICAL to the phrase in custom-notsigned-prcomment
+          # and in CLA.md. The comparison is exact equality after lower-casing,
+          # NOT a regex -- the trailing period is part of the contract.
+          custom-pr-sign-comment: "I have read and agree to the SciTeX CLA."
           custom-allsigned-prcomment: |
             Thank you for signing the SciTeX CLA. Your contribution can now be reviewed.
           custom-notsigned-prcomment: |
