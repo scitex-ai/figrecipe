@@ -821,6 +821,12 @@ src/*/_docs/
 !/codecov.yml
 # Playwright CLI snapshots
 .playwright-cli/
+# Playwright MCP snapshots — same class of throwaway browser-automation
+# output as .playwright-cli/ above (console logs, page .yml dumps, .png
+# screenshots), written by the MCP server instead of the CLI. Only the
+# -cli spelling was ignored, so every MCP-driven session left the repo
+# dirty and blocked `sac agents relocate` on source_work_committed.
+.playwright-mcp/
 
 .claude/
 .venv/
