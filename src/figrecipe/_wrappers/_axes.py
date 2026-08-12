@@ -176,6 +176,12 @@ class RecordingAxes(
             **kwargs,
         ):
             from ..styles._internal import resolve_colors_in_kwargs
+            from ..styles._style_override_warning import warn_style_overrides
+
+            # Before inject_method_defaults: only kwargs the CALLER actually
+            # passed count as an override. Style-injected defaults must not warn
+            # about themselves.
+            kwargs = warn_style_overrides(method_name, kwargs)
 
             kwargs = resolve_colors_in_kwargs(kwargs)
             kwargs = inject_clip_on_from_style(kwargs, method_name)
