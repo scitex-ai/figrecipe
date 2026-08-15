@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, Optional
 from matplotlib.axes import Axes
 
 from .._recorder import CallRecord
+from ._warnings import ReplayFailureWarning
 
 
 def _resolve_stx_function(method_name: str) -> Optional[Callable]:
@@ -79,7 +80,9 @@ def replay_stx_call(
     except Exception as e:
         import warnings
 
-        warnings.warn(f"Failed to replay {call.function}: {e}")
+        warnings.warn(
+            f"Failed to replay {call.function}: {e}", ReplayFailureWarning
+        )
         return None
 
 
