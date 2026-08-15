@@ -16,6 +16,7 @@ from .._utils._grid import parse_grid_id
 from ._colorbars import _replay_colorbars
 from ._replay_argfix import apply_arg_fixups
 from ._replay_dispatch import find_special_handler
+from ._warnings import ReplayFailureWarning
 
 
 def reproduce(
@@ -371,7 +372,9 @@ def _replay_call(
         # Log warning but continue
         import warnings
 
-        warnings.warn(f"Failed to replay {method_name}: {e}")
+        warnings.warn(
+            f"Failed to replay {method_name}: {e}", ReplayFailureWarning
+        )
         return None
 
 

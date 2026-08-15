@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import pandas as pd
 
 from ._paths import DATA_FILENAME, SPEC_FILENAME, STYLE_FILENAME
+from .._reproducer._warnings import ReplayFailureWarning
 
 
 def load_bundle(
@@ -214,7 +215,9 @@ def _replay_traces(spec, style, data, axes, apply_style):
             try:
                 func(*args, **kwargs)
             except Exception as e:
-                warnings.warn(f"Failed to replay {func_name}: {e}")
+                warnings.warn(
+                    f"Failed to replay {func_name}: {e}", ReplayFailureWarning
+                )
 
         # Replay decorations
         for dec in ax_spec.get("decorations", []):
