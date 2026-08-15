@@ -353,7 +353,30 @@ def _replay_call(
     method = getattr(ax, method_name, None)
 
     if method is None:
-        # Method not found, skip
+        # The recipe asks for a call this figrecipe cannot make. Replaying the
+        # rest and saying nothing produces a figure that is missing whatever
+        # that call drew, while every other signal reports success — the recipe
+        # loaded, no exception, no warning. Only a pixel comparison would
+        # notice, and only if the missing call happened to move enough pixels
+        # to clear the MSE threshold.
+        #
+        # The realistic cause is version drift, not a hand-edited file: a recipe
+        # written by a newer figrecipe (or against a newer matplotlib) replayed
+        # by an older one skips exactly the methods the older one lacks. That
+        # gets more likely the longer a recipe lives, which is the entire point
+        # of recipes.
+        import warnings
+
+        warnings.warn(
+            f"Failed to replay {method_name}: no such method on "
+            f"{type(ax).__name__}. The recipe asks for a call this version "
+            f"cannot make, so the reproduced figure is MISSING whatever it "
+            f"drew. This usually means the recipe was written by a newer "
+            f"figrecipe or matplotlib than the one replaying it — check the "
+            f"versions before trusting the output.",
+            ReplayFailureWarning,
+            stacklevel=2,
+        )
         return None
 
     args, kwargs = _reconstruct_call_args(call, result_cache, coerce_sequences)
