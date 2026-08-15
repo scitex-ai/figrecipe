@@ -18,10 +18,27 @@ name: tests
 # (.scitex/dev/config.yaml) passes without the old apt-get fd-find step.
 # fail-loud: a missing SIF/shim is a HARD error, never a bare-runner fallback.
 #
-# runs-on driven by repo Actions Variable CI_RUNS_ON (the scitex-ci runner
-# pool on the shared Spartan lease); SIF + apptainer paths come from
-# SCITEX_CI_SIF / SCITEX_CI_APPTAINER. Hosted workflows (import-smoke,
+# runs-on driven by repo Actions Variable CI_RUNS_ON; SIF + apptainer paths
+# come from SCITEX_CI_SIF / SCITEX_CI_APPTAINER. Hosted workflows (import-smoke,
 # quality-audit, rtd, publish) stay on ubuntu-latest — untouched.
+#
+# THE FALLBACK IS `ubuntu-latest`, DELIBERATELY, and it does not mean this job
+# works there. It cannot: exec-in-sif.sh needs an apptainer and the CI SIF, and
+# a hosted runner has neither — so an unset CI_RUNS_ON produces a FAST, LOUD
+# failure naming exactly what was missing.
+#
+# That is the point. The fallback used to be `["self-hosted","Linux","X64",
+# "scitex-ci"]`, a label carried ONLY by the Spartan runners. Measured
+# 2026-08-15: all four of those were offline while the four scitex-*-org-cpu
+# machines were up. An unset variable therefore queued the job against a label
+# no online runner served — forever, with no error anywhere, because GitHub
+# queues an unmatchable job rather than rejecting it.
+#
+# So the choice is not "fast vs slow", it is "loud failure vs silent hang", and
+# a silent hang is the one failure mode nobody investigates in time. Do not
+# "fix" this back to a self-hosted label: the variable is where the working
+# destination belongs, and the fallback exists only for when the variable is
+# absent.
 on:
   push:
     branches: [main, develop]
@@ -39,7 +56,7 @@ jobs:
   test:
     # Job name kept verbatim — these are the required status checks on develop.
     name: pytest-matrix-on-ubuntu-py${{ matrix.python-version }}
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     # figrecipe's ~2460-test suite runs ~25-30 min even under xdist on the
     # Spartan CPU node (coverage with concurrency=multiprocessing,thread limits
     # the xdist speedup). 60 min leaves comfortable headroom on a busy node so
