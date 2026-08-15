@@ -45,6 +45,54 @@ def process_args(
     return processed
 
 
+#: Sequence types that are safe to materialise at record time because reading
+#: them does not CONSUME them — iterate twice and you get the same values. They
+#: are not list/tuple, so they miss every array branch below and would otherwise
+#: reach the ``str(value)`` fallback and be recorded as text.
+RE_ITERABLE_SEQUENCES = (range, type({}.keys()), type({}.values()))
+
+
+class UnrecordableArgumentError(TypeError):
+    """An argument cannot be recorded faithfully, and guessing would be worse.
+
+    Raised at RECORD time — the only moment the caller can still fix it — rather
+    than letting the value reach the recipe as text that no replay can undo.
+    """
+
+
+def _refuse_one_shot_iterator(name: str, value: Any) -> None:
+    """Refuse a one-shot iterator instead of silently recording its repr.
+
+    A generator / ``map`` / ``filter`` / ``zip`` cannot be recorded faithfully,
+    and neither available option is acceptable silently:
+
+    - materialising it here would CONSUME it, so the caller's own plot call
+      would receive an exhausted iterator and draw nothing. The recipe would be
+      right and the figure empty — we would have broken the picture to fix its
+      description.
+    - recording ``str(value)`` stores ``<generator object ...>``, which no
+      replay can turn back into data. The figure is drawn but not reproducible,
+      which is the exact failure figrecipe exists to prevent.
+
+    So we stop and say what to do about it. ``list(...)`` at the call site costs
+    the caller one word and makes the argument recordable and re-iterable.
+    """
+    if isinstance(value, (str, bytes, bytearray)):
+        return
+    if hasattr(value, "__len__"):
+        return
+    if not hasattr(value, "__iter__") or not hasattr(value, "__next__"):
+        return
+    raise UnrecordableArgumentError(
+        f"figrecipe cannot record argument {name!r}: it is a one-shot iterator "
+        f"({type(value).__name__}), which can be read only once. Recording it "
+        f"would either consume the data before your plot draws it, or store an "
+        f"unusable placeholder that replay cannot turn back into numbers. "
+        f"Wrap it at the call site — e.g. list({name}) — so the values can be "
+        f"both plotted and recorded."
+    )
+
+
 def _process_single_arg(
     name: str,
     value: Any,
@@ -80,6 +128,24 @@ def _process_single_arg(
                 return _process_ndarray(name, arr, should_store_inline, to_serializable)
         except (ValueError, TypeError):
             pass
+
+    if isinstance(value, RE_ITERABLE_SEQUENCES):
+        # `range` (and friends) reach here as themselves, match none of the
+        # branches above, and would fall to _process_scalar's str() — recorded
+        # as the TEXT "range(0, 10)". Replay then hands matplotlib a string
+        # where a format spec is legal, so `ax.plot(range(10), ys)` cannot be
+        # saved at all. These types are RE-iterable, so materialising them is
+        # free and invisible to the caller; re-dispatch so they take the same
+        # proven path as the equivalent list.
+        return _process_single_arg(
+            name,
+            list(value),
+            should_store_inline,
+            to_serializable,
+            is_serializable_func,
+        )
+
+    _refuse_one_shot_iterator(name, value)
 
     # Scalar or other serializable value
     return _process_scalar(name, value, is_serializable_func)
@@ -178,6 +244,6 @@ def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, An
         return {"name": name, "data": str(value)}
 
 
-__all__ = ["process_args"]
+__all__ = ["RE_ITERABLE_SEQUENCES", "UnrecordableArgumentError", "process_args"]
 
 # EOF
