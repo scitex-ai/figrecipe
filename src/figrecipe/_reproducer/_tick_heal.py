@@ -32,10 +32,28 @@ import warnings
 from typing import Any, Dict, Tuple
 
 from ._replay_action import ReplayArgs
+from ._warnings import ReplayFailureWarning
 
 
 def _warn(message: str) -> None:
-    warnings.warn(message, UserWarning, stacklevel=3)
+    """Report a tick call this replay could not carry out faithfully.
+
+    Categorised as :class:`ReplayFailureWarning` rather than a bare
+    ``UserWarning``, because that is what it is: a recorded call that did not
+    replay as authored. Two things follow, neither of which was possible while
+    it was uncategorised —
+
+    - ``validate_recipe`` quotes replay failures as the CAUSE of a failed
+      reproducibility check, so a dropped tick call now explains the pixel
+      difference it produced instead of leaving the user with an MSE;
+    - ``filterwarnings("error", ReplayFailureWarning)`` makes it fatal for
+      callers who want that, which is the right default in a manuscript
+      pipeline where a silently relabelled axis is worse than a hard stop.
+
+    ``ReplayFailureWarning`` subclasses ``UserWarning``, so anything already
+    filtering or asserting on ``UserWarning`` keeps working unchanged.
+    """
+    warnings.warn(message, ReplayFailureWarning, stacklevel=3)
 
 
 def heal_tick_call(
