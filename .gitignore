@@ -209,10 +209,29 @@ data/*
 **/*.pdf
 **/*.pkl
 **/*.png
-!examples/01_all_plots_out/*.png
-!examples/03_style_anatomy_out/*.png
-!examples/05_csv_workflow_out/*.png
-!examples/06_diagram_out/*.png
+# Example figures we DO publish. These are the images README/docs and the web
+# gallery point at, so they are deliberate artefacts rather than run output.
+#
+# THESE PATHS MUST TRACK THE EXAMPLE NUMBERING. The examples were renumbered at
+# some point and this allow-list was not, so every entry below named a directory
+# that no longer existed:
+#
+#     01_all_plots_out      ->  02_plot_and_reproduce_all_out
+#     03_style_anatomy_out  ->  05_style_anatomy_out
+#     05_csv_workflow_out   ->  07_csv_workflow_out
+#     06_diagram_out        ->  08_diagram_out
+#
+# `**/*.png` above therefore swallowed every example figure, silently, and no
+# example image has been committable since. That is why
+# examples/10b_figrecipe_concept_diagram_fixed_out/figrecipe_concept.png — the
+# concept diagram the README links to — 404s on GitHub (operator, 2026-08-16:
+# 「一番大事なこれがあがってない」). An allow-list that names nothing does not
+# fail; it just quietly allows nothing.
+!examples/02_plot_and_reproduce_all_out/*.png
+!examples/05_style_anatomy_out/*.png
+!examples/07_csv_workflow_out/*.png
+!examples/08_diagram_out/*.png
+!examples/10b_figrecipe_concept_diagram_fixed_out/*.png
 !examples/02_composition_out/gallery.jpg
 !docs/style_granularity.jpg
 !docs/sphinx/_static/*.png
