@@ -271,16 +271,20 @@ def render_box(diagram: "Diagram", ax: Axes, bid: str, box: "BoxSpec") -> None:
     title_color = box.title_color or colors["text"]
     pad = _AESTHETIC_PAD
 
-    # Codeblock with language: override colors from Emacs theme unless explicit
+    # Codeblock with language: take the panel colours from the code theme unless
+    # the caller set them explicitly. `resolve_theme_faces` always returns a
+    # palette — a discovered Emacs theme if there is one, the inlined Zenburn
+    # otherwise — so the panel is dark and the syntax colours are readable on
+    # every machine. Previously this only applied when a theme was FOUND, so a
+    # machine without Emacs got a light panel painted with dark-theme foreground
+    # colours, which is unreadable rather than merely unstyled.
     if box.shape == "codeblock" and box.language and not box.fill_color:
-        from ._codeblock import _find_default_theme, parse_emacs_theme
+        from ._codeblock import resolve_theme_faces
 
-        theme_path = _find_default_theme()
-        if theme_path:
-            faces = parse_emacs_theme(theme_path)
-            fill = faces.get("_bg", fill)
-            if not box.border_color:
-                border = faces.get("_bg_dark", border)
+        faces = resolve_theme_faces()
+        fill = faces.get("_bg", fill)
+        if not box.border_color:
+            border = faces.get("_bg_dark", border)
 
     if box.shape == "cylinder":
         _render_cylinder(ax, pos, fill, border)

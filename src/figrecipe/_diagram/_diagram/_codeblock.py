@@ -118,6 +118,62 @@ def parse_emacs_theme(el_path: str) -> Dict[str, Dict]:
     return faces
 
 
+# Built-in code palette, so a codeblock renders THE SAME EVERYWHERE.
+#
+# `_find_default_theme` below looks for zenburn-theme.el inside the AUTHOR'S
+# Emacs installation, so a diagram's appearance depended on whether the machine
+# doing the rendering happened to have Emacs and that theme:
+#
+#   developer box with Emacs   -> theme found, code coloured
+#   CI / container / anyone    -> no theme, faces == {}, every token drawn in
+#   else's laptop                 the default foreground: present but invisible
+#
+# Measured 2026-08-16: `_find_default_theme()` returns None in the agent
+# container, and the concept diagram generated there was illegible — which is
+# what the operator reported (「ターミナル？の文字見えるようにして欲しい」).
+# Nothing errored. An absent theme just silently produced a worse picture, and a
+# rendered artefact must not depend on ambient machine state like that.
+#
+# DELIBERATELY A LIGHT-BACKGROUND PALETTE. The codeblock panel is drawn LIGHT, so
+# the token colours have to be dark. Zenburn — what the search finds — is a DARK
+# theme: its pale yellows and dusty roses are chosen to sit on #3F3F3F, and on
+# the light panel they are washed out. Matching the palette to the panel that is
+# actually drawn is the fix; repainting the panel to suit the palette is not.
+#
+# No `_bg` / `_bg_dark` keys, on purpose: including them would repaint the panel,
+# and the panel is not what needs changing. Omitting them leaves the existing
+# fill alone, since `faces.get("_bg", fill)` then falls through to `fill`.
+#
+# A discovered .el still wins, so anyone who themes their Emacs keeps that.
+_BUILTIN_LIGHT_FACES: Dict[str, Dict] = {
+    "font-lock-keyword-face": {"color": "#a626a4", "bold": True, "italic": False},
+    "font-lock-string-face": {"color": "#50a14f", "bold": False, "italic": False},
+    "font-lock-comment-face": {"color": "#8a8f98", "bold": False, "italic": True},
+    "font-lock-function-name-face": {"color": "#4078f2", "bold": False, "italic": False},
+    "font-lock-variable-name-face": {"color": "#986801", "bold": False, "italic": False},
+    "font-lock-constant-face": {"color": "#986801", "bold": False, "italic": False},
+    "font-lock-type-face": {"color": "#0184bc", "bold": False, "italic": False},
+    "font-lock-builtin-face": {"color": "#c18401", "bold": False, "italic": False},
+    "_fg": "#1a2a40",  # SciTeX navy for unstyled tokens
+}
+
+
+def resolve_theme_faces() -> Dict[str, Dict]:
+    """Return the code-block face palette, never empty.
+
+    Prefers a zenburn-theme.el discovered on this machine so a user who themes
+    their Emacs sees the same colours in their diagrams; falls back to the
+    inlined palette so everyone else gets a legible code block instead of
+    unstyled text.
+    """
+    theme_path = _find_default_theme()
+    if theme_path:
+        faces = parse_emacs_theme(theme_path)
+        if faces:
+            return faces
+    return _BUILTIN_LIGHT_FACES
+
+
 def _find_default_theme() -> Optional[str]:
     """Find zenburn-theme.el in common Emacs locations."""
     home = Path.home()
@@ -226,9 +282,11 @@ def render_codeblock_text(
         _render_plain(ax, pos, box, fill, left_x, code_top, code_fontsize, line_gap)
         return
 
-    # Parse Emacs theme
-    theme_path = _find_default_theme()
-    faces = parse_emacs_theme(theme_path) if theme_path else {}
+    # Code theme: a discovered Emacs theme, else the inlined palette. Never the
+    # empty dict this used to fall back to — with no faces every token was drawn
+    # in the default foreground on a panel that (for the same reason) stayed
+    # light, so the code was there but effectively invisible.
+    faces = resolve_theme_faces()
 
     # Measure char width
     char_width_mm = _measure_char_width_mm(ax, code_fontsize)
