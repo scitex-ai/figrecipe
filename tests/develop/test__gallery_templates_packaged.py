@@ -229,17 +229,26 @@ def test_assets_are_not_git_ignored(git_ignored_assets):
     )
 
 
-@pytest.fixture(scope="module")
-def source_ref_report() -> dict:
-    """Resolve every recipe's ``data:`` refs against the source tree."""
-    broken: list[str] = []
-    referenced: set[str] = set()
-    for recipe_path in sorted(_ASSET_DIR.glob("*.yaml")):
-        parsed = yaml.safe_load(recipe_path.read_text(encoding="utf-8"))
-        for ref in _iter_data_refs(parsed):
-            referenced.add(ref)
-            if not (_ASSET_DIR / ref).is_file():
-                broken.append(f"{recipe_path.name} -> {ref}")
+def _build_source_ref_report() -> dict:
+    """Resolve every recipe's ``data:`` refs against the source tree.
+
+    The work lives in a plain function so the module-scoped fixture below has a
+    body that only *returns* — a shared fixture that accumulates into its own
+    locals reads as cross-test mutable state even when it is not (STX-TQ004).
+    """
+    pairs = [
+        (recipe_path.name, ref)
+        for recipe_path in sorted(_ASSET_DIR.glob("*.yaml"))
+        for ref in _iter_data_refs(
+            yaml.safe_load(recipe_path.read_text(encoding="utf-8"))
+        )
+    ]
+    referenced = {ref for _, ref in pairs}
+    broken = [
+        f"{recipe_name} -> {ref}"
+        for recipe_name, ref in pairs
+        if not (_ASSET_DIR / ref).is_file()
+    ]
     on_disk = {
         str(p.relative_to(_ASSET_DIR))
         for p in _ASSET_DIR.rglob("*")
@@ -250,6 +259,12 @@ def source_ref_report() -> dict:
         "broken": broken,
         "orphans": sorted(on_disk - referenced),
     }
+
+
+@pytest.fixture(scope="module")
+def source_ref_report() -> dict:
+    """Resolve every recipe's ``data:`` refs against the source tree."""
+    return _build_source_ref_report()
 
 
 def test_source_recipes_actually_declare_data_refs(source_ref_report):
@@ -307,16 +322,22 @@ def test_no_orphaned_source_data_files(source_ref_report):
     assert not orphans, f"data files no recipe references: {orphans}"
 
 
+def _build_source_portability_offenders() -> list[str]:
+    return [
+        f"{rel}: component {component!r} {complaint}"
+        for rel in (
+            path.relative_to(_ASSET_DIR)
+            for path in sorted(p for p in _ASSET_DIR.rglob("*") if p.is_file())
+        )
+        for component in rel.parts
+        for complaint in [_portability_complaint(component)]
+        if complaint
+    ]
+
+
 @pytest.fixture(scope="module")
 def source_portability_offenders() -> list[str]:
-    offenders = []
-    for path in sorted(p for p in _ASSET_DIR.rglob("*") if p.is_file()):
-        rel = path.relative_to(_ASSET_DIR)
-        for component in rel.parts:
-            complaint = _portability_complaint(component)
-            if complaint:
-                offenders.append(f"{rel}: component {component!r} {complaint}")
-    return offenders
+    return _build_source_portability_offenders()
 
 
 def test_every_source_asset_filename_is_portable(source_portability_offenders):
@@ -473,8 +494,7 @@ def test_wheel_contains_every_source_thumbnail(built_dists):
     )
 
 
-@pytest.fixture(scope="module")
-def wheel_ref_report(built_dists) -> dict:
+def _build_wheel_ref_report(wheel: Path) -> dict:
     """Resolve every recipe ref against the WHEEL's own member list.
 
     The predecessor of this guard asserted only `assert data_members` — that at
@@ -482,25 +502,34 @@ def wheel_ref_report(built_dists) -> dict:
     dropped from the build, which is precisely the shape of the bug it was meant
     to catch. So the refs are resolved against the archive itself.
     """
-    with zipfile.ZipFile(built_dists["wheel"]) as zf:
+    with zipfile.ZipFile(wheel) as zf:
         members = {n for n in zf.namelist() if not n.endswith("/")}
         recipes = sorted(
             n for n in members if n.startswith(_WHEEL_PREFIX) and n.endswith(".yaml")
         )
-        broken: list[str] = []
-        checked = 0
-        for recipe_name in recipes:
-            parsed = yaml.safe_load(zf.read(recipe_name).decode("utf-8"))
-            for ref in _iter_data_refs(parsed):
-                checked += 1
-                if _WHEEL_PREFIX + ref not in members:
-                    broken.append(f"{Path(recipe_name).name} -> {ref}")
+        pairs = [
+            (Path(recipe_name).name, ref)
+            for recipe_name in recipes
+            for ref in _iter_data_refs(
+                yaml.safe_load(zf.read(recipe_name).decode("utf-8"))
+            )
+        ]
+    broken = [
+        f"{recipe_name} -> {ref}"
+        for recipe_name, ref in pairs
+        if _WHEEL_PREFIX + ref not in members
+    ]
     return {
-        "wheel": built_dists["wheel"].name,
+        "wheel": wheel.name,
         "recipes": recipes,
-        "checked": checked,
+        "checked": len(pairs),
         "broken": broken,
     }
+
+
+@pytest.fixture(scope="module")
+def wheel_ref_report(built_dists) -> dict:
+    return _build_wheel_ref_report(built_dists["wheel"])
 
 
 def test_wheel_recipes_declare_data_refs(wheel_ref_report):
@@ -536,15 +565,19 @@ def test_wheel_data_refs_all_resolve_inside_the_wheel(wheel_ref_report):
     )
 
 
+def _build_wheel_portability_offenders(wheel: Path) -> list[str]:
+    return [
+        f"{name}: component {component!r} {complaint}"
+        for name in _wheel_asset_members(wheel)
+        for component in _components(name)
+        for complaint in [_portability_complaint(component)]
+        if complaint
+    ]
+
+
 @pytest.fixture(scope="module")
 def wheel_portability_offenders(built_dists) -> list[str]:
-    offenders = []
-    for name in _wheel_asset_members(built_dists["wheel"]):
-        for component in _components(name):
-            complaint = _portability_complaint(component)
-            if complaint:
-                offenders.append(f"{name}: component {component!r} {complaint}")
-    return offenders
+    return _build_wheel_portability_offenders(built_dists["wheel"])
 
 
 def test_wheel_member_names_are_portable(wheel_portability_offenders):
