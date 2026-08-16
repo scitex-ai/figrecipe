@@ -867,3 +867,14 @@ src/*/_docs/
 !.scitex/dev/config.yaml
 !.scitex/dev/cli-audit-dict.yaml
 .worktrees/
+
+# --- Gallery template assets (MUST be tracked; they ship inside the wheel) ---
+# The gallery templates under src/figrecipe/_django/gallery_templates/ are
+# PACKAGE DATA, not scratch output. Broad ignores above (*.csv, *.npz,
+# **/*.csv, **/*.npz) would otherwise swallow every *_data/ payload the
+# recipes reference, which is exactly how the gallery came to ship 18
+# recipes and zero of the data files they load ("Add to canvas" then fails
+# with FileNotFoundError). Negations must be LAST — last matching pattern
+# wins — and must be recursive to reach the *_data/ subdirectories.
+!src/figrecipe/_django/gallery_templates/
+!src/figrecipe/_django/gallery_templates/**

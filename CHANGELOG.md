@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **"Add to canvas" works from an installed wheel — the gallery's recipes now
+  ship with the data they reference.** 0.34.5 fixed where the gallery *looks*
+  for its templates, so the panel is no longer empty; it did not ship the 57
+  CSV/NPZ payloads those 18 recipes load. Every data-backed template therefore
+  listed correctly, showed its thumbnail, and then failed on click:
+  `_serializer/_load.py` joins each `data:` value onto the recipe directory
+  literally (`file_path = base_dir / data_ref`, no globbing anywhere in the load
+  path), so a reference with no file behind it is a guaranteed
+  `FileNotFoundError`, not a maybe. The payloads are now tracked and packaged
+  alongside the recipes, and the `.gitignore` negations are recursive so
+  `**/*.csv` and `**/*.npz` cannot swallow the `*_data/` directories again.
+- **figrecipe is installable on Windows.** One shipped asset was named
+  `stackplot_*ys.csv`. `*` is illegal in an NTFS filename, so a wheel carrying
+  it fails during `pip install` *at extraction* — the package would simply not
+  install, and no amount of Linux CI would notice. The file is now
+  `stackplot_ys.csv` and the recipe's `data:` line points at it. This is a pure
+  rename: the `data:` value is written from the path of the file just created
+  (`_serializer/_save.py`), and the arg's `name: '*ys'` — which is real varargs
+  metadata and is left untouched — is never read when a recipe is replayed.
+  No published artifact ever carried the `*`, since develop shipped no data
+  files at all; this prevents it from becoming one.
+
+### Added
+- Guards for all three failure modes, each observed failing before being
+  trusted: every `data:` reference in every shipped recipe must resolve to a
+  shipped file; every shipped filename must be portable (no Windows-reserved
+  character, control character, or trailing dot/space); and the assertions run
+  against the *built wheel and sdist*, not just the source tree. The wheel check
+  resolves each recipe's references against the archive's own members — the
+  previous "at least one data file is present" form stayed green if 56 of 57
+  were dropped.
+- `available_categories()` is split out of `handle_gallery_available` so asset
+  resolution is testable without a configured Django app registry, and it now
+  logs a warning when the assets are missing or resolve to zero templates.
+  Filtering everything out is not an error, which is why the original defect
+  reached production with a 200 and no log line.
+
+### Changed
+- The packaging guard no longer skips itself when no PEP 517 build frontend is
+  present. It fails, unless `FIGRECIPE_ALLOW_MISSING_BUILD_FRONTEND=1` says the
+  omission is deliberate. These are the only tests that open the real artifact;
+  letting them skip made the packaging gate one that could not fail.
+
 ## [0.34.5] - 2026-08-16
 
 ### Fixed
