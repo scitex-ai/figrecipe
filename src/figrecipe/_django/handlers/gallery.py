@@ -11,9 +11,26 @@ from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
-# Examples live relative to the figrecipe package root
+# Gallery template assets ship INSIDE the package, and are resolved relative to
+# the PACKAGE ROOT — never by climbing out of it.
+#
+# The previous form was:
+#     _EXAMPLES_DIR = _PKG_ROOT.parents[1] / "examples" / "02_plot_and_reproduce_all_out"
+# `_PKG_ROOT.parents[1]` is TWO levels above `figrecipe/`. In a src-layout git
+# checkout that happens to land on the repo root, so the gallery worked for
+# developers. In any INSTALLED deployment it lands somewhere meaningless — for a
+# wheel install it resolved to `<venv>/lib/python3.12/examples/...`, which does
+# not exist — so every template was filtered out and the panel rendered
+# "No templates available for this category". The target was also a gitignored
+# generated-output directory, so even an editable install of a fresh clone had
+# nothing there. Both halves are fixed by shipping the assets as package data
+# and resolving them package-relative.
 _PKG_ROOT = Path(__file__).resolve().parents[2]  # figrecipe/
-_EXAMPLES_DIR = _PKG_ROOT.parents[1] / "examples" / "02_plot_and_reproduce_all_out"
+TEMPLATES_DIR = _PKG_ROOT / "_django" / "gallery_templates"
+
+# Backwards-compatible alias: the old module-level name is still referenced by
+# out-of-tree code and by operators debugging a deployment.
+_EXAMPLES_DIR = TEMPLATES_DIR
 
 # Category → template mapping (template name → display label)
 GALLERY_TEMPLATES = {
@@ -61,19 +78,36 @@ GALLERY_TEMPLATES = {
 
 def _get_thumbnail_b64(name: str) -> str:
     """Read pre-rendered PNG thumbnail as base64 string."""
-    png_path = _EXAMPLES_DIR / f"{name}.png"
+    png_path = TEMPLATES_DIR / f"{name}.png"
     if png_path.exists():
         return base64.b64encode(png_path.read_bytes()).decode("ascii")
     return ""
 
 
-def handle_gallery_available(request, editor):
-    """Return gallery categories with available templates."""
+def available_categories():
+    """Resolve gallery categories against the on-disk template assets.
+
+    Pure — no Django, no request. Returns ``{category: [item, ...]}`` with
+    empty categories dropped, exactly as the API serialises it. Split out of
+    :func:`handle_gallery_available` so the asset resolution that broke in
+    production is testable without a configured Django app registry.
+    """
+    if not TEMPLATES_DIR.is_dir():
+        # Returning {} here is a 200 with an empty body, which is how this
+        # defect stayed silent: nothing in any log said the assets were gone.
+        logger.warning(
+            "Gallery template assets missing: %s does not exist. The Template "
+            "Gallery will render empty. This usually means the package was "
+            "built without its gallery_templates package data.",
+            TEMPLATES_DIR,
+        )
+        return {}
+
     categories = {}
     for cat_key, templates in GALLERY_TEMPLATES.items():
         items = []
         for tmpl in templates:
-            yaml_path = _EXAMPLES_DIR / f"{tmpl['name']}.yaml"
+            yaml_path = TEMPLATES_DIR / f"{tmpl['name']}.yaml"
             if yaml_path.exists():
                 items.append(
                     {
@@ -82,14 +116,27 @@ def handle_gallery_available(request, editor):
                         "icon": tmpl["icon"],
                         "path": str(yaml_path),
                         "has_thumbnail": (
-                            _EXAMPLES_DIR / f"{tmpl['name']}.png"
+                            TEMPLATES_DIR / f"{tmpl['name']}.png"
                         ).exists(),
                     }
                 )
         if items:
             categories[cat_key] = items
 
-    return JsonResponse({"categories": categories})
+    if not categories:
+        logger.warning(
+            "Gallery resolved ZERO templates from %s (%d declared). The "
+            "Template Gallery will render empty.",
+            TEMPLATES_DIR,
+            sum(len(v) for v in GALLERY_TEMPLATES.values()),
+        )
+
+    return categories
+
+
+def handle_gallery_available(request, editor):
+    """Return gallery categories with available templates."""
+    return JsonResponse({"categories": available_categories()})
 
 
 def handle_gallery_thumbnail(request, editor, name: str):
@@ -117,7 +164,7 @@ def handle_gallery_add(request, editor):
     if not template_name:
         return JsonResponse({"error": "No template specified"}, status=400)
 
-    yaml_src = _EXAMPLES_DIR / f"{template_name}.yaml"
+    yaml_src = TEMPLATES_DIR / f"{template_name}.yaml"
     if not yaml_src.exists():
         return JsonResponse(
             {"error": f"Template not found: {template_name}"}, status=404
@@ -138,7 +185,7 @@ def handle_gallery_add(request, editor):
 
     # Copy associated data directory if it exists
     data_dir_name = f"{template_name}_data"
-    data_dir_src = _EXAMPLES_DIR / data_dir_name
+    data_dir_src = TEMPLATES_DIR / data_dir_name
     data_dir_dest = working_dir / data_dir_name
     if data_dir_src.is_dir() and not data_dir_dest.exists():
         shutil.copytree(data_dir_src, data_dir_dest)

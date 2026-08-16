@@ -839,3 +839,21 @@ src/*/_docs/
 !.scitex/dev/config.yaml
 !.scitex/dev/cli-audit-dict.yaml
 .worktrees/
+
+# ---------------------------------------------------------------------------
+# Gallery template assets — SHIPPED PACKAGE DATA, not build output.
+#
+# These are runtime assets of the Django editor's Template Gallery, resolved
+# package-relative at import time. The blanket `*.png` / `*.yaml` / `*.csv` /
+# `*.npz` rules above would swallow them, so git would not track them at all —
+# and an asset that is not in the repo cannot be in a wheel built from a fresh
+# clone. That reproduces exactly the bug this directory exists to fix, one
+# layer down: a gallery that is empty in every installed deployment while
+# working fine on the machine that generated the files.
+#
+# Last matching pattern wins, so these negations must stay at the end.
+# Regenerate with: figrecipe._dev.run_all_demos(..., representative_only=True,
+#                  pixel_perfect=False, save_hitmap=False)
+!src/figrecipe/_django/gallery_templates/
+!src/figrecipe/_django/gallery_templates/**
+

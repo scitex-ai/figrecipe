@@ -216,6 +216,31 @@ exclude = [
     "src/figrecipe/_django/frontend/vite.config.ts",
     "src/figrecipe/_django/frontend/eslint.config.js",
 ]
+# Template Gallery assets are RUNTIME package data, resolved package-relative by
+# figrecipe._django.handlers.gallery. Stating the intent explicitly so the
+# assets do not depend on an implicit default staying put.
+#
+# Measured, not assumed: with `packages` set as above, a build of this tree with
+# BOTH this stanza and the .gitignore negations removed still produced a wheel
+# containing all 93 asset files. So hatchling's VCS-ignore filtering is not what
+# carries these into the wheel here — the `packages` selection is. `artifacts`
+# is the belt to that braces: it keeps the assets in the distribution even if
+# the build ever falls back to default (VCS-ignore-driven) file selection, under
+# which the blanket `*.png` / `*.yaml` / `*.csv` / `*.npz` rules WOULD drop them.
+# The .gitignore negations remain load-bearing for a different reason: without
+# them git does not track the assets at all, so a fresh clone has nothing to
+# build from. tests/develop/test__gallery_templates_packaged.py asserts the
+# built wheel and sdist actually carry these files.
+artifacts = [
+    "src/figrecipe/_django/gallery_templates/**",
+]
+
+[tool.hatch.build.targets.sdist]
+# Same assets in the sdist, so a build-from-source install is not the odd one
+# out. Without this an sdist-based install could reproduce the empty-gallery bug.
+artifacts = [
+    "src/figrecipe/_django/gallery_templates/**",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
