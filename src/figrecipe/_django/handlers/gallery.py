@@ -11,9 +11,28 @@ from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
-# Examples live relative to the figrecipe package root
 _PKG_ROOT = Path(__file__).resolve().parents[2]  # figrecipe/
-_EXAMPLES_DIR = _PKG_ROOT.parents[1] / "examples" / "02_plot_and_reproduce_all_out"
+
+# Gallery templates are PACKAGE DATA, resolved inside the package.
+#
+# This used to read:
+#     _EXAMPLES_DIR = _PKG_ROOT.parents[1] / "examples" / "02_plot_and_reproduce_all_out"
+# which climbs OUT of the package into a repo-relative path. Two things follow,
+# and together they made the gallery empty by construction:
+#   1. In an installed wheel that resolves into site-packages, where no
+#      `examples/` exists — so the gallery was empty in EVERY deployment, not
+#      just occasionally.
+#   2. That directory is generated example OUTPUT (note the `_out` suffix). It
+#      is not committed, so it was absent from a fresh checkout too.
+# `handle_gallery_available` includes a template only if its yaml exists, so all
+# 18 were filtered out and the UI showed "No templates available for this
+# category" — with no error anywhere, because filtering everything out is not a
+# failure, it just looks like having nothing.
+#
+# The assets now ship inside the package (see gallery_templates/), which is what
+# makes them survive `pip install`. Keep them here: a path that leaves the
+# package cannot be relied on once the package is installed rather than checked out.
+_EXAMPLES_DIR = _PKG_ROOT / "_django" / "gallery_templates"
 
 # Category → template mapping (template name → display label)
 GALLERY_TEMPLATES = {

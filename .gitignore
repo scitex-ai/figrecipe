@@ -232,6 +232,15 @@ data/*
 !examples/07_csv_workflow_out/*.png
 !examples/08_diagram_out/*.png
 !examples/10b_figrecipe_concept_diagram_fixed_out/*.png
+
+# Gallery templates are PACKAGE DATA, not run output. They ship inside the wheel
+# so the web gallery has something to show once figrecipe is INSTALLED rather
+# than checked out — see _django/handlers/gallery.py. Both extensions need an
+# explicit exception: `**/*.png` (below) and `*.yaml` (further up) would
+# otherwise drop them, which is the same way the example figures disappeared.
+!src/figrecipe/_django/gallery_templates/*.png
+!src/figrecipe/_django/gallery_templates/*.yaml
+
 !examples/02_composition_out/gallery.jpg
 !docs/style_granularity.jpg
 !docs/sphinx/_static/*.png
