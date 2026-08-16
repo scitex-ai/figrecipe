@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.5] - 2026-08-16
+
+### Fixed
+- **The Template Gallery is populated in an installed deployment instead of
+  empty.** Every install rendered "No templates available for this category" in
+  every category, because `handle_gallery_available` admitted a template only if
+  its recipe yaml existed under `_EXAMPLES_DIR`, and that path was
+  `_PKG_ROOT.parents[1] / "examples" / "02_plot_and_reproduce_all_out"` — a
+  climb *out* of the package into a directory that is generated example output,
+  never committed, and simply absent from site-packages once figrecipe is
+  installed. Filtering everything out is not an error, so nothing was logged and
+  the gallery just looked like it had nothing to offer. The recipes and their
+  thumbnails now ship as package data under
+  `src/figrecipe/_django/gallery_templates/`, `_EXAMPLES_DIR` resolves inside
+  the package root, and the two `.gitignore` allow-list exceptions the assets
+  need are in place so `**/*.png` and `*.yaml` cannot silently drop them again.
+- **Code blocks are legible off the author's machine.** `_find_default_theme`
+  searched for `zenburn-theme.el` inside a local Emacs install; when it was not
+  found — which is the normal case in a container or any other user's
+  environment — `faces` came back empty and every token was drawn in the default
+  foreground on a light panel: present, and invisible. A built-in
+  light-background palette is now the fallback, so a discovered `.el` still wins
+  and everyone else gets a coloured block instead of unstyled text. The
+  fallback is deliberately light-background: Zenburn's pale yellows are chosen
+  to sit on `#3F3F3F`, and washing them onto the light panel that is actually
+  drawn is what prompted this.
+- **Example figures are publishable again — the png allow-list named dead
+  directories.** The `.gitignore` negations after `**/*.png` pointed at
+  `examples/01_all_plots_out`, `03_style_anatomy_out`, `05_csv_workflow_out` and
+  `06_diagram_out`, none of which survived the example renumbering, so the
+  blanket ignore swallowed every example image and the README's figure links
+  404ed on GitHub. An allow-list that names nothing does not fail loudly; it
+  quietly allows nothing. The entries now name the directories that exist, and
+  the concept diagram is committed.
+
 ## [0.34.4] - 2026-07-22
 
 ### Fixed
