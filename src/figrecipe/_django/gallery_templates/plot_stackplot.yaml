@@ -233,7 +233,7 @@ axes:
             data: plot_stackplot_data/stackplot_x.csv
             dtype: int64
           - name: '*ys'
-            data: plot_stackplot_data/stackplot_*ys.csv
+            data: plot_stackplot_data/stackplot_ys.csv
             dtype: float64
           - name: arg2
             data: plot_stackplot_data/stackplot_arg2.csv
