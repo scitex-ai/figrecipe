@@ -1,34 +1,16 @@
 /** Gallery panel — template selector modal.
  * Shows categories + thumbnail grid. Click to add template to canvas.
+ *
+ * Fetching, thumbnails and add-to-canvas live in `useGalleryTemplates`, shared
+ * with GalleryStart (the empty-canvas gallery) so the two cannot drift.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { api } from "../../api/client";
-import { useEditorStore } from "../../store/useEditorStore";
-
-interface GalleryTemplate {
-  name: string;
-  label: string;
-  icon: string;
-  path: string;
-  has_thumbnail: boolean;
-}
-
-interface GalleryData {
-  categories: Record<string, GalleryTemplate[]>;
-}
-
-const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
-  line: { label: "Line", icon: "fa-chart-line" },
-  scatter: { label: "Scatter", icon: "fa-braille" },
-  categorical: { label: "Categorical", icon: "fa-chart-bar" },
-  distribution: { label: "Distribution", icon: "fa-chart-column" },
-  statistical: { label: "Statistical", icon: "fa-square-root-variable" },
-  grid: { label: "Grid", icon: "fa-th" },
-  area: { label: "Area", icon: "fa-chart-area" },
-  contour: { label: "Contour", icon: "fa-layer-group" },
-  special: { label: "Special", icon: "fa-shapes" },
-};
+import { useEffect, useState } from "react";
+import {
+  CATEGORY_LABELS,
+  flattenTemplates,
+  useGalleryTemplates,
+} from "./useGalleryTemplates";
 
 interface Props {
   onClose: () => void;
@@ -36,67 +18,20 @@ interface Props {
 }
 
 export function GalleryPanel({ onClose, initialCategory }: Props) {
-  const [data, setData] = useState<GalleryData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, failed, thumbnails, addTemplate } =
+    useGalleryTemplates();
   const [activeCategory, setActiveCategory] = useState(
     initialCategory || "all",
   );
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-  const { addFigure, showToast } = useEditorStore();
 
-  // Load gallery data
+  // Fall back to "all" when the requested category ships no templates
+  // (e.g. "vector", which declares none) — an empty tab the user did not
+  // choose reads as a broken gallery.
   useEffect(() => {
-    api
-      .get<GalleryData>("api/gallery")
-      .then((d) => {
-        setData(d);
-        // Auto-select first category if initial not found
-        if (initialCategory && !d.categories[initialCategory]) {
-          setActiveCategory("all");
-        }
-      })
-      .catch((e) => {
-        console.error("[Gallery] Failed to load:", e);
-        showToast("Failed to load gallery", "error");
-      })
-      .finally(() => setLoading(false));
-  }, [initialCategory, showToast]);
-
-  // Load thumbnails for visible templates
-  useEffect(() => {
-    if (!data) return;
-    const templates = Object.values(data.categories).flat();
-    for (const tmpl of templates) {
-      if (tmpl.has_thumbnail && !thumbnails[tmpl.name]) {
-        api
-          .get<{ image: string }>(`api/gallery/thumbnail/${tmpl.name}`)
-          .then((d) => {
-            setThumbnails((prev) => ({ ...prev, [tmpl.name]: d.image }));
-          })
-          .catch(() => {
-            /* thumbnail load failure is non-critical */
-          });
-      }
+    if (data && initialCategory && !data.categories[initialCategory]) {
+      setActiveCategory("all");
     }
-  }, [data, thumbnails]);
-
-  const handleAdd = useCallback(
-    async (tmpl: GalleryTemplate) => {
-      try {
-        // Copy template to working dir
-        const result = await api.post<{ recipe_path: string }>(
-          "api/gallery/add",
-          { template: tmpl.name },
-        );
-        // Add the copied recipe to canvas
-        await addFigure(result.recipe_path);
-        onClose();
-      } catch (e) {
-        showToast(`Failed to add template: ${e}`, "error");
-      }
-    },
-    [addFigure, onClose, showToast],
-  );
+  }, [data, initialCategory]);
 
   // Close on Escape
   useEffect(() => {
@@ -107,27 +42,10 @@ export function GalleryPanel({ onClose, initialCategory }: Props) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  // Get filtered templates
-  const getTemplates = (): GalleryTemplate[] => {
-    if (!data) return [];
-    if (activeCategory === "all") {
-      // Deduplicate by name
-      const seen = new Set<string>();
-      const all: GalleryTemplate[] = [];
-      for (const items of Object.values(data.categories)) {
-        for (const item of items) {
-          if (!seen.has(item.name)) {
-            seen.add(item.name);
-            all.push(item);
-          }
-        }
-      }
-      return all;
-    }
-    return data.categories[activeCategory] || [];
-  };
-
-  const templates = getTemplates();
+  const templates =
+    activeCategory === "all"
+      ? flattenTemplates(data)
+      : (data?.categories[activeCategory] ?? []);
   const categoryKeys = data ? Object.keys(data.categories) : [];
 
   return (
@@ -173,6 +91,11 @@ export function GalleryPanel({ onClose, initialCategory }: Props) {
           <div className="gallery-loading">
             <i className="fas fa-spinner fa-spin" /> Loading templates...
           </div>
+        ) : failed ? (
+          <div className="gallery-empty">
+            <i className="fas fa-triangle-exclamation" />
+            Could not load the template gallery
+          </div>
         ) : templates.length === 0 ? (
           <div className="gallery-empty">
             <i className="fas fa-inbox" />
@@ -184,7 +107,11 @@ export function GalleryPanel({ onClose, initialCategory }: Props) {
               <div
                 key={tmpl.name}
                 className="gallery-item"
-                onClick={() => handleAdd(tmpl)}
+                onClick={() => {
+                  void addTemplate(tmpl).then((ok) => {
+                    if (ok) onClose();
+                  });
+                }}
                 title={`Add ${tmpl.label} to canvas`}
               >
                 <div className="gallery-item-thumb">
