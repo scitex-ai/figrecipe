@@ -26,6 +26,15 @@
   --accent-rgb: 124, 92, 191;
   --vis-accent-bg: rgba(124, 92, 191, 0.1);
 
+  /* ── Figure plate ───────────────────────────────────── */
+  /* The constant background a rendered figure sits on. Deliberately NOT a
+   * theme token: the gallery thumbnails are opaque white matplotlib PNGs, so
+   * a plate that follows the theme leaves the image as a lit rectangle torn
+   * out of a dark pane. A journal figure box is white in both themes for the
+   * same reason. It is a variable rather than an inline literal so the whole
+   * app has one place to change if thumbnails ever render transparent. */
+  --figure-plate: #ffffff;
+
   /* ── Status (bridge to theme.css tokens) ─────────────── */
   --status-success-bg: rgba(107, 168, 154, 0.15);
   --status-success-text: var(--status-success);

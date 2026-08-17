@@ -6,6 +6,7 @@
 
 import { useRef, useState, useCallback } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
+import { GalleryStart } from "../Gallery/GalleryStart";
 
 export function FigureViewer() {
   const { placedFigures, selectedFigureId, loading } = useEditorStore();
@@ -55,11 +56,15 @@ export function FigureViewer() {
     setTranslate({ x: 0, y: 0 });
   }, []);
 
+  // Nothing open yet. Showing the shipped examples here rather than an
+  // instruction ("Select a recipe file...") matters because a NEW project has
+  // no recipe file to select — the instruction named something the visitor did
+  // not have, so the first screen of the tool showed neither a figure nor a
+  // way to get one.
   if (!previewImage && !loading) {
     return (
-      <div className="figure-viewer figure-viewer--empty">
-        <i className="fas fa-image" />
-        <p>Select a recipe file to view the figure</p>
+      <div className="figure-viewer figure-viewer--start">
+        <GalleryStart />
       </div>
     );
   }
