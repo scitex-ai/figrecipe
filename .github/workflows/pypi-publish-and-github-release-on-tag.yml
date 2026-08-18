@@ -1,6 +1,21 @@
 name: release
 
-# Tag-driven release pipeline — SELF-HOSTED (Spartan CPU) via the scitex-ci SIF.
+# Tag-driven release pipeline — SELF-HOSTED via the CI SIF, destination set by
+# the repo Actions Variable CI_RUNS_ON.
+#
+# THE FALLBACK IS `ubuntu-latest` AND THAT IS DELIBERATE. It used to be
+# `["self-hosted","Linux","X64","scitex-ci"]` — a label carried only by the
+# Spartan runners, all four of which were measured OFFLINE on 2026-08-15. An
+# unset CI_RUNS_ON therefore queued a RELEASE against a label no online runner
+# served: forever, silently, because GitHub queues an unmatchable job instead of
+# rejecting it.
+#
+# This job cannot actually run on a hosted runner — exec-in-sif.sh requires an
+# apptainer and the CI SIF, and says so as a hard error. So the fallback buys a
+# FAST, LOUD failure instead of a hang. For a release that is the whole
+# difference: a tag push that errors in a minute gets fixed, while a tag push
+# that sits in "queued" looks like a slow queue on exactly the day someone is
+# waiting for the artifact.
 #
 # The intended operator flow is:
 #
@@ -56,7 +71,7 @@ env:
 
 jobs:
   test:
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     strategy:
       fail-fast: false
       matrix:
@@ -86,7 +101,7 @@ jobs:
 
   build:
     needs: test
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -116,7 +131,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     environment:
       name: pypi
       url: https://pypi.org/p/figrecipe
@@ -142,7 +157,7 @@ jobs:
 
   release:
     needs: [build, publish]
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     permissions:
       contents: write
     steps:
@@ -192,7 +207,7 @@ jobs:
     # commit. Branch-protected mains require PR review; this job tries
     # admin-merge but leaves the PR open if that isn't allowed.
     needs: publish
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     permissions:
       contents: write
       pull-requests: write
