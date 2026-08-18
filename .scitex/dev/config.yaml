@@ -125,12 +125,20 @@ audit:
           ~30 scitex-ai repositories and scitex-io's copy is byte-identical
           modulo the package name — so the fix is ONE org-side change letting
           ~30 leaves collapse, not 30 exemptions. Needed inputs:
-          fail_on_warning (or sphinx_opts), python_version, upload_artifact
-          plus an artifact-name output (preferred over a commit-back input, to
-          keep git-push blast radius out of a shared workflow), and fork_guard.
-          REVIEW: when the org-side change lands, or 2026-09-18, whichever is
-          first — a time-box with no date is a permanent exemption with
-          optimistic wording.
+          dependency_group, fail_on_warning (or sphinx_opts), python_version,
+          upload_artifact plus an artifact-name output (preferred over a
+          commit-back input, to keep git-push blast radius out of a shared
+          workflow thirty repos call), and fork_guard. PEER-MEASURED, NOT
+          REPRODUCED HERE — dependency_group comes from scitex-app, whose docs
+          are a PEP 735 dependency GROUP, so the org reusable's `.[docs]` extra
+          resolves to nothing and the job dies at exit 127 on a missing
+          sphinx-build. figrecipe declares docs as an EXTRA
+          (pyproject.toml:137) and installs `pip install -e ".[docs]"`, so that
+          mechanism does NOT bite here; it is named because the ONE org change
+          must cover it, not because figrecipe hit it. The three mechanisms
+          above ARE measured here. REVIEW: when the org-side change lands, or
+          2026-09-18, whichever is first — a time-box with no date is a
+          permanent exemption with optimistic wording.
 
 # audit:
 #   skip:

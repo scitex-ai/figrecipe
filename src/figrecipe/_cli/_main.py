@@ -193,7 +193,6 @@ main.add_command(diff)
 main.add_command(extract)
 main.add_command(fonts)
 main.add_command(gui)
-main.add_command(start_gui)
 main.add_command(hitmap)
 main.add_command(info)
 main.add_command(list_python_apis)
@@ -212,10 +211,43 @@ try:
 except ImportError:
     pass
 
-try:
-    from scitex_dev.cli import skills_click_group
+# audit-cli §13 — self-maintenance commands live under `dev`, not at the top
+# level, so `figrecipe --help` stays a list of things a USER does with figures
+# (doctrine 20_dev-commands.md). The group is defined here rather than in its
+# own module because it holds nothing of figrecipe's own: every member is
+# supplied by scitex-dev.
+@click.group(context_settings=CONTEXT_SETTINGS)
+def dev() -> None:
+    """Self-maintenance commands for figrecipe itself."""
 
-    main.add_command(skills_click_group(package="figrecipe"))
+
+main.add_command(dev)
+
+# NOT registered here: scitex-dev's own `skills_click_group`. It used to be
+# added to `main`, and `_cli/__init__.py` then overwrote the same name with
+# figrecipe's `_skills.skills_group` — so the scitex-dev one had never been
+# reachable. Removing dead code rather than moving it under `dev`, where it
+# would have collided with the real one for the first time. figrecipe's own
+# group is attached to `dev` in `_cli/__init__.py`, beside the alias.
+
+# audit-cli §12/§13 — the canon puts gui-adjacent commands under `gui` and
+# self-maintenance commands under `dev`, so `start-gui` and a top-level
+# `skills` are both off-canon. Neither is deleted: an agent or script that
+# learned the old spelling gets a working forward plus a once-per-shell
+# warning, rather than "no such command" and no hint of where it went.
+# Phase "warn" now, and these disappear in 1.0 alongside the other
+# compatibility shims (figrecipe._linter_plugin and friends).
+try:
+    from scitex_dev.ecosystem import deprecated_alias
+
+    deprecated_alias(
+        main,
+        "start-gui",
+        target=gui.commands["open"],
+        target_name="gui open",
+        remove_in="1.0",
+        phase="warn",
+    )
 except ImportError:
     pass
 
