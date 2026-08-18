@@ -193,6 +193,7 @@ main.add_command(diff)
 main.add_command(extract)
 main.add_command(fonts)
 main.add_command(gui)
+main.add_command(start_gui)
 main.add_command(hitmap)
 main.add_command(info)
 main.add_command(list_python_apis)
@@ -230,26 +231,25 @@ main.add_command(dev)
 # would have collided with the real one for the first time. figrecipe's own
 # group is attached to `dev` in `_cli/__init__.py`, beside the alias.
 
-# audit-cli §12/§13 — the canon puts gui-adjacent commands under `gui` and
-# self-maintenance commands under `dev`, so `start-gui` and a top-level
-# `skills` are both off-canon. Neither is deleted: an agent or script that
-# learned the old spelling gets a working forward plus a once-per-shell
-# warning, rather than "no such command" and no hint of where it went.
-# Phase "warn" now, and these disappear in 1.0 alongside the other
-# compatibility shims (figrecipe._linter_plugin and friends).
-try:
-    from scitex_dev.ecosystem import deprecated_alias
-
-    deprecated_alias(
-        main,
-        "start-gui",
-        target=gui.commands["open"],
-        target_name="gui open",
-        remove_in="1.0",
-        phase="warn",
-    )
-except ImportError:
-    pass
+# §12 IS DELIBERATELY LEFT FIRING, and this is the reasoning rather than an
+# oversight. The rule wants `start-gui` re-registered through
+# `scitex_dev.ecosystem.deprecated_alias()` so the static auditor can see it.
+# Doing that was tried and REVERTED: the generic helper forwards argv to the
+# target and nothing else, while figrecipe's hand-rolled `start_gui` in
+# _gui.py ALSO accepts `--force` (kills whatever holds the port, then sleeps
+# before handing off) and tolerates `-y/--yes` for back-compat. `gui open` has
+# neither option, so the swap turns `start-gui --force` into a usage error and
+# silently drops the port-kill — a functional regression taken to silence a
+# WARN.
+#
+# §12 is WARN-tier and does not gate (measured: audit-all exits 0 with WARN
+# findings present), so the honest trade is to keep the working alias and
+# carry the warning. Reported upstream: the prescribed remedy assumes an alias
+# is a pure forward, and loses behaviour for any alias that accepts options
+# its target does not.
+#
+# `skills` IS moved, in _cli/__init__.py — that one is a pure forward, so the
+# helper costs nothing there.
 
 # audit-cli §1a — wire install-shell-completion + print-shell-completion
 # so `figrecipe <TAB>` works without the user copy-pasting boilerplate.
