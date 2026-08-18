@@ -56,7 +56,12 @@ dev = [
     "pytest-xdist>=3.0.0",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    "scitex-dev>=0.12.2",
+    # >=0.54.0: tests/conftest.py imports scitex_dev.testing.make_pytest_configure.
+    # The floor moves in the SAME commit as the call — a lean install resolving an
+    # older scitex-dev would fail at conftest import, taking the WHOLE suite down,
+    # against a declaration saying the old version is fine. That failure would be
+    # indistinguishable from the guard working correctly.
+    "scitex-dev>=0.54.0",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-app>=0.3.0",

@@ -23,6 +23,7 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import pytest
+from scitex_dev.testing import make_pytest_configure
 
 # ---------------------------------------------------------------------------
 # Subprocess coverage wiring (module-import time — must run before tests).
@@ -40,62 +41,24 @@ os.environ["COVERAGE_FILE"] = str(_PROJECT_ROOT / ".coverage")
 # Import-vantage guard — refuse to grade a tree we are not importing.
 # ---------------------------------------------------------------------------
 #
-# MEASURED FOUR TIMES IN ONE DAY, 2026-08-18, three of them by people who
-# already knew about the trap:
+# The implementation lives in scitex-dev, not here. figrecipe carried a local
+# copy from #362 only because the trap bit twice on 2026-08-18 and waiting for
+# the shared version meant running unprotected in the meantime; that commit said
+# it should collapse to a one-line call, and this is that collapse.
 #
-#   * `audit-all` resolved its sub-auditors from PATH, so a 0.53.0 entry point
-#     ran 0.50.0 checks and reported a clean, self-consistent result identical
-#     to 0.50.0's — nearly published as "the version made no difference".
-#   * `audit-cli --path <tree>` IMPORTS the CLI, so it graded site-packages
-#     rather than the tree it was pointed at.
-#   * scitex-dev ran their suite from a worktree and got 1049 PASSED against
-#     site-packages; only three unrelated failures revealed the wrong vantage
-#     point. A no-op change would have reported a clean green about code the
-#     run never touched.
-#   * this repo: `pytest tests/figrecipe/_cli/` from a worktree returned
-#     `4 passed` while importing the INSTALLED figrecipe 0.34.6. CI, which
-#     puts the checkout on the path, failed on the first run.
+# Keeping both would have been the joke version of this fix: forking a helper
+# whose entire purpose is to stop fifteen repos each writing their own.
 #
-# In every case the wrong answer was WELL-FORMED, SELF-CONSISTENT and
-# CONFIDENT. Nothing warned, because from inside the process there is nothing
-# anomalous about importing an installed package.
+# WHAT IT DOES, so nobody has to go read scitex-dev to know why a run refused:
+# if `figrecipe` resolves outside this checkout, the session raises instead of
+# running. A green is a claim about the code that produced it, and a suite
+# importing site-packages while you are testing a worktree cannot make that
+# claim — it reports a number about somewhere else, well-formed and confident,
+# with nothing in the output to say so.
 #
-# A green is a claim about the code that produced it. If `figrecipe` resolves
-# outside this checkout, the suite cannot make that claim, so it refuses to run
-# rather than produce a number about somewhere else. Knowing about this class
-# demonstrably does not prevent it — hence a mechanical check rather than a
-# note in a contributing guide.
-#
-# Set FIGRECIPE_ALLOW_FOREIGN_IMPORT=1 to test a deliberately installed build
-# (verifying a wheel, say). The opt-out is loud in the log for the same reason
-# the check exists.
-def _assert_tests_import_the_tree_under_test() -> None:
-    import figrecipe
-
-    imported_from = Path(figrecipe.__file__).resolve()
-    if _PROJECT_ROOT in imported_from.parents:
-        return
-    if os.environ.get("FIGRECIPE_ALLOW_FOREIGN_IMPORT"):
-        print(
-            f"\nfigrecipe imported from {imported_from}, OUTSIDE {_PROJECT_ROOT} "
-            f"— allowed by FIGRECIPE_ALLOW_FOREIGN_IMPORT. This run does NOT "
-            f"grade the working tree.\n"
-        )
-        return
-    raise RuntimeError(
-        "tests would grade a DIFFERENT figrecipe than this checkout.\n"
-        f"  tree under test : {_PROJECT_ROOT}\n"
-        f"  figrecipe found : {imported_from}\n"
-        "A pass here would describe code your change never touched.\n"
-        "Fix, in order of preference:\n"
-        f"  1. pip install -e {_PROJECT_ROOT}\n"
-        f"  2. PYTHONPATH={_PROJECT_ROOT / 'src'} pytest ...\n"
-        "  3. FIGRECIPE_ALLOW_FOREIGN_IMPORT=1 — only when testing an "
-        "installed build ON PURPOSE."
-    )
-
-
-_assert_tests_import_the_tree_under_test()
+# Set SCITEX_ALLOW_FOREIGN_IMPORT=1 to test a deliberately installed build; it
+# prints loudly when used.
+pytest_configure = make_pytest_configure("figrecipe", _PROJECT_ROOT)
 
 
 def _ensure_subprocess_coverage_shim(purelib: Path | None = None) -> Path | None:
