@@ -1,15 +1,64 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Gallery handler — serve template categories and thumbnails."""
+"""Gallery handler — serve template categories, thumbnails, and the first figure.
+
+WHY A CLICK USED TO DO NOTHING
+------------------------------
+Clicking a template is TWO requests: ``api/gallery/add`` copies the recipe
+into the workspace, then ``api/switch`` opens it. They disagreed about where
+the workspace IS.
+
+``handle_gallery_add`` resolved ``editor.working_dir or Path.cwd()``. It never
+looked at ``?working_dir=`` (what a multi-tenant host injects per user) and
+never looked at ``FIGRECIPE_WORKING_DIR`` (what ``figrecipe-editor --dir X``
+sets). ``api/switch`` looked at all four. Whenever the server's cwd is not the
+workspace — the hosted editor runs from the Django project root, and the CLI
+runs from wherever it was launched — the template was written to the SERVER's
+directory and the user's workspace stayed empty. Measured on a stock checkout
+with ``FIGRECIPE_WORKING_DIR`` pointed at an empty temp dir:
+
+    AFTER add -> workspace contents : []
+    AFTER add -> server cwd contents: ['plot_plot.yaml', 'plot_plot_data']
+
+That failed in one of two ways, neither of which named the cause:
+  * the server's directory is not writable (a read-only image layer, a
+    root-owned cwd) — ``shutil.copy2`` raises, the dispatcher turns it into a
+    500, and the UI shows "Failed to add template"; or
+  * it IS writable — the copy lands outside the user's workspace, and
+    ``api/switch``'s relative-path fallback then found the server's copy and
+    reported success, moving the session's whole ``working_dir`` onto the
+    server's directory. The figure appeared; the file was never in the
+    project, and on a shared host it was in a directory common to every user.
+
+Both are fixed by routing every workspace read/write through ONE resolver,
+:func:`~._files_tree.resolve_working_dir`, and by copying via the single
+:func:`copy_template_into` used by both the click and the first-figure seed.
+"""
 
 import base64
 import json
 import logging
+import shutil
 from pathlib import Path
 
 from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
+
+
+def _files_tree():
+    """Import the working-dir resolver lazily.
+
+    ``tests/figrecipe/_django/handlers/test_gallery.py`` loads THIS module by
+    file path (``spec_from_file_location``) to exercise asset resolution
+    without a configured Django app registry, and a file-path load has no
+    parent package for a relative import to bind to — so this is an absolute
+    import, deferred to call time. Every caller below runs inside a real
+    request, where the app registry is configured.
+    """
+    from figrecipe._django.handlers import _files_tree as module
+
+    return module
 
 _PKG_ROOT = Path(__file__).resolve().parents[2]  # figrecipe/
 
@@ -153,14 +202,42 @@ def handle_gallery_thumbnail(request, editor, name: str):
     return JsonResponse({"image": f"data:image/png;base64,{b64}"})
 
 
-def handle_gallery_add(request, editor):
-    """Copy a gallery template to working dir and load it.
+def copy_template_into(template_name: str, working_dir) -> str:
+    """Copy ``<template>.yaml`` + ``<template>_data/`` into ``working_dir``.
 
-    This delegates to the existing api/switch handler after copying
-    the template recipe + data to the working directory.
+    Returns the recipe's filename, relative to ``working_dir`` — which is
+    exactly what ``api/switch`` expects as its ``path``.
+
+    Raises ``FileNotFoundError`` when the template does not ship. Copying the
+    data directory is NOT optional: a recipe names its data by a path
+    relative to its own parent, so a recipe copied without its ``_data/``
+    sibling loads and then dies in ``_serializer/_load.py`` — the gallery
+    looks healthy and the click produces nothing.
     """
-    import shutil
+    working_dir = Path(working_dir)
+    yaml_src = TEMPLATES_DIR / f"{template_name}.yaml"
+    if not yaml_src.exists():
+        raise FileNotFoundError(f"Template not found: {template_name}")
 
+    working_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(yaml_src, working_dir / yaml_src.name)
+
+    data_dir_name = f"{template_name}_data"
+    data_dir_src = TEMPLATES_DIR / data_dir_name
+    if data_dir_src.is_dir():
+        shutil.copytree(
+            data_dir_src, working_dir / data_dir_name, dirs_exist_ok=True
+        )
+    return yaml_src.name
+
+
+def handle_gallery_add(request, editor):
+    """Copy a gallery template into the USER's workspace and report its path.
+
+    The frontend then calls ``api/switch`` with the returned ``recipe_path``,
+    so this handler and that one must agree on where the workspace is — see
+    the module docstring for what happened when they did not.
+    """
     try:
         data = json.loads(request.body) if request.body else {}
     except json.JSONDecodeError:
@@ -170,36 +247,85 @@ def handle_gallery_add(request, editor):
     if not template_name:
         return JsonResponse({"error": "No template specified"}, status=400)
 
-    yaml_src = _EXAMPLES_DIR / f"{template_name}.yaml"
-    if not yaml_src.exists():
+    working_dir = _files_tree().resolve_working_dir(request, editor)
+    try:
+        recipe_name = copy_template_into(template_name, working_dir)
+    except FileNotFoundError:
         return JsonResponse(
             {"error": f"Template not found: {template_name}"}, status=404
         )
+    except OSError as exc:
+        # Say WHERE it failed. The old code's PermissionError surfaced as a
+        # bare 500 with no directory in it, which is unactionable when the
+        # directory is the actual defect.
+        logger.exception(
+            "[FigRecipe] could not copy template %s into %s",
+            template_name,
+            working_dir,
+        )
+        return JsonResponse(
+            {"error": f"Could not write template into {working_dir}: {exc}"},
+            status=500,
+        )
 
-    # Determine working directory
-    working_dir = None
-    if editor:
-        working_dir = getattr(editor, "working_dir", None)
-    if not working_dir:
-        working_dir = Path.cwd()
-    else:
-        working_dir = Path(working_dir)
-
-    # Copy YAML recipe
-    dest_yaml = working_dir / yaml_src.name
-    shutil.copy2(yaml_src, dest_yaml)
-
-    # Copy associated data directory if it exists
-    data_dir_name = f"{template_name}_data"
-    data_dir_src = _EXAMPLES_DIR / data_dir_name
-    data_dir_dest = working_dir / data_dir_name
-    if data_dir_src.is_dir() and not data_dir_dest.exists():
-        shutil.copytree(data_dir_src, data_dir_dest)
-
-    # Return the recipe path (relative to working dir) for frontend to call api/switch
     return JsonResponse(
         {
-            "recipe_path": yaml_src.name,
+            "recipe_path": recipe_name,
+            "working_dir": str(working_dir),
             "copied": True,
         }
     )
+
+
+# The figure a brand-new workspace opens on. It is an ordinary shipped recipe
+# (two traces, 48 points, ~1.5 KB of csv), copied in by exactly the same code
+# path a gallery click takes — so the first impression cannot break while the
+# click still works, and vice versa. It is deliberately NOT one of the
+# GALLERY_TEMPLATES entries: it carries real axis labels and a title, so what
+# the visitor lands on reads as a figure someone made rather than a sample of
+# a plot type.
+DEMO_TEMPLATE_NAME = "demo_first_figure"
+
+
+def handle_gallery_demo(request, editor):
+    """Return the recipe an empty workspace should open on, seeding it once.
+
+    The editor used to open on an empty grid over an empty file tree — a tool
+    that shows neither what it makes nor a way to get there. This gives a
+    brand-new visitor a real figure AND the data table behind it on first
+    paint.
+
+    Three outcomes, all HTTP 200 so the caller never has to distinguish an
+    error from a decision:
+      * ``{"recipe_path": "<name>.yaml", "seeded": true}``  — just written.
+      * ``{"recipe_path": "<name>.yaml", "seeded": false}`` — already there
+        (a returning visitor gets their figure back, and re-seeding is never
+        an overwrite of edits they made).
+      * ``{"recipe_path": null, "reason": ...}`` — the workspace already has
+        recipes of its own. A real project must not be littered with a demo,
+        so the caller falls back to the template gallery.
+    """
+    working_dir = _files_tree().resolve_working_dir(request, editor)
+    demo_recipe = working_dir / f"{DEMO_TEMPLATE_NAME}.yaml"
+
+    if demo_recipe.exists():
+        return JsonResponse({"recipe_path": demo_recipe.name, "seeded": False})
+
+    if _files_tree().workspace_has_a_recipe(working_dir):
+        return JsonResponse(
+            {"recipe_path": None, "reason": "workspace already has recipes"}
+        )
+
+    try:
+        recipe_name = copy_template_into(DEMO_TEMPLATE_NAME, working_dir)
+    except (FileNotFoundError, OSError) as exc:
+        # A missing first impression is a disappointment, never an outage:
+        # the caller falls back to the gallery grid.
+        logger.warning(
+            "[FigRecipe] could not seed the demo figure into %s: %s",
+            working_dir,
+            exc,
+        )
+        return JsonResponse({"recipe_path": None, "reason": str(exc)})
+
+    return JsonResponse({"recipe_path": recipe_name, "seeded": True})

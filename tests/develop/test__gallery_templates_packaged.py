@@ -78,6 +78,24 @@ def _source_asset_names(suffix: str) -> list[str]:
     return sorted(p.name for p in _ASSET_DIR.glob(f"*{suffix}"))
 
 
+def _first_figure_name() -> str:
+    """The recipe an empty workspace opens on, read from the handler itself.
+
+    Loaded by file path for the same reason ``tests/.../test_gallery.py``
+    does it: ``handlers/__init__`` imports Django models and needs a
+    configured app registry, while ``gallery.py`` alone does not. Reading the
+    constant instead of repeating the string means renaming the demo cannot
+    leave this guard silently checking a name nothing uses.
+    """
+    import importlib.util
+
+    path = _ASSET_DIR.parent / "handlers" / "gallery.py"
+    spec = importlib.util.spec_from_file_location("figrecipe_gallery_pkg", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.DEMO_TEMPLATE_NAME
+
+
 def _iter_data_refs(recipe: object):
     """Yield every path-shaped ``data:`` value anywhere in a parsed recipe.
 
@@ -186,6 +204,35 @@ def test_source_tree_ships_expected_data_file_count():
         f"expected at least {minimum} recipe data files, found {len(data_files)}. "
         "Recipes without their data cannot be added to the canvas."
     )
+
+
+def test_source_tree_ships_the_first_figure_recipe():
+    """The recipe an empty workspace opens on must exist, by NAME.
+
+    The count guards above pass while shipping 18 OTHER recipes, so losing
+    this one would put the first screen a new visitor sees back to a chooser
+    with no figure on it — which is the whole defect it was added for.
+    """
+    # Arrange
+    name = _first_figure_name()
+
+    # Act
+    recipe = _ASSET_DIR / f"{name}.yaml"
+
+    # Assert
+    assert recipe.is_file(), f"the first-figure recipe is missing: {recipe}"
+
+
+def test_source_tree_ships_the_first_figure_data():
+    # Arrange — without its data the seeded figure dies in the loader, and
+    # the data-table pane it is supposed to fill stays on "No tables".
+    name = _first_figure_name()
+
+    # Act
+    data_files = sorted((_ASSET_DIR / f"{name}_data").glob("*.csv"))
+
+    # Assert
+    assert data_files, f"the first-figure recipe ships no data: {name}_data/"
 
 
 @pytest.fixture(scope="module")
@@ -458,6 +505,34 @@ def test_wheel_contains_gallery_assets(built_dists):
         f"the built wheel {wheel.name} contains NO gallery template assets. "
         "The Template Gallery would be empty in every install from this wheel."
     )
+
+
+def test_wheel_contains_the_first_figure_recipe(built_dists):
+    """A build that drops the first figure ships an editor with no figure."""
+    # Arrange
+    expected = f"{_first_figure_name()}.yaml"
+
+    # Act
+    shipped = {Path(n).name for n in _wheel_asset_members(built_dists["wheel"])}
+
+    # Assert
+    assert expected in shipped, (
+        f"{expected} is not in the built wheel, so an install from it opens "
+        "on an empty canvas again."
+    )
+
+
+def test_wheel_contains_the_first_figure_data(built_dists):
+    # Arrange
+    prefix = f"{_first_figure_name()}_data/"
+
+    # Act
+    shipped = [
+        n for n in _wheel_asset_members(built_dists["wheel"]) if prefix in n
+    ]
+
+    # Assert
+    assert shipped, f"the built wheel carries no {prefix} data files"
 
 
 def test_wheel_contains_every_source_recipe(built_dists):
