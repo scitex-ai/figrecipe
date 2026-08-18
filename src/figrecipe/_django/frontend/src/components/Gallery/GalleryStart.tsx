@@ -11,17 +11,37 @@
  * added there appears here with no second registration.
  */
 
+import { useEffect, useRef, useState } from "react";
 import { useGalleryTemplates, flattenTemplates } from "./useGalleryTemplates";
 
 export function GalleryStart() {
-  const { data, loading, failed, thumbnails, addTemplate } =
+  const { data, loading, failed, thumbnails, addTemplate, openDemoFigure } =
     useGalleryTemplates();
 
-  if (loading) {
+  // Open on a FIGURE, not on a menu.
+  //
+  // A grid of thumbnails is still a chooser: the first screen of a plotting
+  // tool showed no plot, and the data pane next to it read "No tables". So
+  // this asks the server for a demo figure first and only falls back to the
+  // grid when there is none (the workspace already holds the user's own
+  // recipes, or the seed could not be written).
+  //
+  // This component only mounts when the canvas is EMPTY, and the ref makes
+  // it fire once per mount, so it can neither interrupt open work nor loop:
+  // a figure on the canvas unmounts it.
+  const [seeding, setSeeding] = useState(true);
+  const attempted = useRef(false);
+  useEffect(() => {
+    if (attempted.current) return;
+    attempted.current = true;
+    void openDemoFigure().finally(() => setSeeding(false));
+  }, [openDemoFigure]);
+
+  if (loading || seeding) {
     return (
       <div className="gallery-start gallery-start--message">
         <i className="fas fa-spinner fa-spin" />
-        <p>Loading example figures…</p>
+        <p>Preparing a figure…</p>
       </div>
     );
   }

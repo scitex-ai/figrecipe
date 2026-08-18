@@ -92,6 +92,39 @@ def _is_figrecipe_yaml_rel(rel_path: str, files_backend) -> bool:
         return False
 
 
+def workspace_has_a_recipe(working_dir, max_depth: int = 3) -> bool:
+    """True when ``working_dir`` already holds at least one figrecipe recipe.
+
+    Bounded on purpose (depth and file count): this runs on the first paint
+    of the editor to decide whether the workspace is genuinely empty, and a
+    user's project directory can be arbitrarily large. It short-circuits on
+    the first recipe found, so the common case costs one directory read.
+    """
+    import os
+
+    root = Path(working_dir)
+    if not root.is_dir():
+        return False
+    root_depth = len(root.parts)
+    inspected = 0
+    for dirpath, dirnames, filenames in os.walk(root):
+        here = Path(dirpath)
+        if len(here.parts) - root_depth >= max_depth:
+            dirnames[:] = []
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        for name in filenames:
+            if not name.endswith((".yaml", ".yml")) or name.endswith(
+                ".overrides.yaml"
+            ):
+                continue
+            inspected += 1
+            if inspected > 200:
+                return False
+            if _is_figrecipe_yaml(here / name):
+                return True
+    return False
+
+
 def _local_build_tree(files_backend, extensions=None):
     """Fallback tree builder when scitex-app is not installed."""
     tree = []
@@ -100,8 +133,24 @@ def _local_build_tree(files_backend, extensions=None):
     return tree
 
 
-def _get_working_dir_and_backend(request, editor):
-    """Resolve working directory and files backend from request context."""
+def resolve_working_dir(request, editor):
+    """Resolve the workspace directory for a request — ONE implementation.
+
+    Precedence: the live editor's own ``working_dir``, then the caller's
+    ``?working_dir=`` (which a multi-tenant host OVERWRITES server-side per
+    user before the request reaches this package), then
+    ``FIGRECIPE_WORKING_DIR``, then the process cwd.
+
+    Every handler that reads or writes the user's workspace must come
+    through here. ``handle_gallery_add`` used to keep its own private
+    version — ``editor.working_dir or Path.cwd()`` — which consulted
+    NEITHER the query param NOR the env var. In any deployment where the
+    server's cwd is not the workspace (the hosted editor runs from the
+    Django project root; ``figrecipe-editor --dir X`` runs from wherever it
+    was launched) the two disagreed, so clicking a gallery template wrote
+    the recipe into the SERVER's directory while ``api/switch`` looked for
+    it in the USER's. See the module docstring in ``handlers/gallery.py``.
+    """
     working_dir = getattr(editor, "working_dir", None) if editor else None
     wd_param = request.GET.get("working_dir")
     if wd_param:
@@ -110,6 +159,12 @@ def _get_working_dir_and_backend(request, editor):
             working_dir = wd_path
     if working_dir is None:
         working_dir = _find_default_working_dir()
+    return Path(working_dir)
+
+
+def _get_working_dir_and_backend(request, editor):
+    """Resolve working directory and files backend from request context."""
+    working_dir = resolve_working_dir(request, editor)
 
     files_backend = editor.files if editor else None
     if files_backend is None:

@@ -19,6 +19,8 @@ from ._files_tree import (  # noqa: E402
     _is_figrecipe_yaml,
     _is_figrecipe_yaml_rel,
     _local_build_tree,
+    resolve_working_dir,
+    workspace_has_a_recipe,
 )
 from .core import _dpi_from_request  # noqa: E402
 
@@ -29,6 +31,8 @@ __all__ = [
     "_is_figrecipe_yaml",
     "_is_figrecipe_yaml_rel",
     "_local_build_tree",
+    "resolve_working_dir",
+    "workspace_has_a_recipe",
 ]
 
 
@@ -104,17 +108,18 @@ def handle_api_switch(request, editor):
         return JsonResponse({"error": "No file path provided"}, status=400)
 
     # Resolve working_dir — use editor's if available, else default
-    working_dir = getattr(editor, "working_dir", None) if editor else None
-    wd_param = request.GET.get("working_dir")
-    if wd_param:
-        wd_path = Path(wd_param)
-        if wd_path.is_dir():
-            working_dir = wd_path
-    if working_dir is None:
-        working_dir = _find_default_working_dir()
+    working_dir = resolve_working_dir(request, editor)
     full_path = working_dir / file_path
-    if not full_path.exists():
-        # Try as absolute path
+    if not full_path.exists() and Path(file_path).is_absolute():
+        # An absolute path is a deliberate, fully-qualified request; keep it.
+        #
+        # The fallback used to accept ANY path, which meant a RELATIVE name
+        # that missed in the workspace was re-tried against the process cwd.
+        # That is what hid the gallery bug above: "add" wrote plot_plot.yaml
+        # into the server's cwd, the workspace lookup missed, and this line
+        # silently found the server's copy — reporting success while moving
+        # the whole session's working_dir to the server's directory. A file
+        # that is not in the workspace must 404, loudly.
         full_path = Path(file_path)
     if not full_path.exists():
         return JsonResponse({"error": f"File not found: {file_path}"}, status=404)
