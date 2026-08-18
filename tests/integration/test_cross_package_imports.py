@@ -11,10 +11,12 @@ in its source tree. Two outcomes:
 - Module installed BUT import fails (e.g. internal rename like
   `scitex_io._load_cache` -> `scitex_io._loading._load_cache`) ->
   test FAILS loudly.
-- Module NOT installed (peer standalone absent in the CI env) ->
-  test is SKIPPED via `pytest.importorskip`. The umbrella's CI
-  (which installs every peer) catches cross-package renames.
+- ROOT distribution NOT installed (peer standalone absent in a lean
+  env) -> test is SKIPPED. The skip is decided on the root package
+  ONLY, never on the full dotted path -- see the test body.
 """
+
+import importlib
 
 import pytest
 
@@ -31,8 +33,8 @@ CROSS_PACKAGE_IMPORTS = [
     "scitex_dev.cli",
     "scitex_dev.linter._fm_checker",
     "scitex_dev.linter._rules._base",
+    "scitex_dev.ecosystem",
     "scitex_dev.linter.checker",
-    "scitex_dev.skills",
     "scitex_logging",
     "scitex_pd",
     "scitex_types",
@@ -44,9 +46,18 @@ CROSS_PACKAGE_IMPORTS = [
 @pytest.mark.parametrize("module_name", CROSS_PACKAGE_IMPORTS)
 def test_declared_cross_package_dependency_imports(module_name):
     """Importing figrecipe's declared cross-package dependency must succeed."""
-    # Arrange
-    name = module_name
-    # Act
-    mod = pytest.importorskip(name)
+    # Arrange — skip on the ROOT distribution only. `importorskip` given the
+    # full dotted path cannot distinguish "peer not installed" from "peer
+    # installed, submodule renamed", and answers SKIP to both. That is not
+    # hypothetical: `scitex_dev.skills` moved to `scitex_dev.ecosystem` and this
+    # gate reported a skip while src/figrecipe/_mcp/server.py still imported the
+    # old path, so figrecipe's skills_list/skills_get MCP tools raised
+    # ModuleNotFoundError on every call and the gate stayed green.
+    pytest.importorskip(module_name.split(".")[0])
+
+    # Act — hard-import the FULL path. The root is present, so a failure here is
+    # a real breakage rather than a legitimately absent optional peer.
+    mod = importlib.import_module(module_name)
+
     # Assert
-    assert mod.__name__ == name
+    assert mod.__name__ == module_name

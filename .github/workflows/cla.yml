@@ -1,17 +1,9 @@
 name: CLA Assistant
 
-# Two trigger paths:
-#   1. PRs from contributors           → CLAssistant action checks signature.
-#                                         allowlist already short-circuits to
-#                                         success for `bot*` and the repo
-#                                         owner, so owner PRs land instantly.
-#   2. Direct pushes / tag pushes      → owner-bypass job posts a synthetic
-#      by the repo owner                  `CLAssistant=success` status on the
-#                                         SHA so the release pipeline's
-#                                         sync-main step (a direct ref PATCH)
-#                                         doesn't get rejected by main's
-#                                         branch-protection rule that requires
-#                                         CLAssistant. Operator-direct: 2026-06-04.
+# Org-level reusable-workflow caller (scitex-ai/.github; fleet CI
+# unification wave 2). Triggers/permissions preserved verbatim from the
+# prior local file; the job bodies live org-side so they cannot drift
+# per-repo.
 
 on:
   issue_comment:
@@ -29,80 +21,39 @@ permissions:
   statuses: write
 
 jobs:
-  owner-bypass:
-    # Fires only for direct pushes by the repo owner. PR events keep
-    # going through the full CLAssistant action below.
-    if: github.event_name == 'push' && github.actor == 'ywatanabe1989'
-    runs-on: ubuntu-latest
-    permissions:
-      statuses: write
-    steps:
-      - name: Mark CLAssistant=success on this SHA (owner-allowlisted direct push)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          gh api "repos/${REPO}/statuses/${SHA}" \
-            -f state=success \
-            -f context=CLAssistant \
-            -f description="Owner-triggered direct push (CLA bypass per repo allowlist)"
-
-  CLAssistant:
-    # PR / comment path — unchanged from the pre-2026-06-04 workflow.
-    if: github.event_name != 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: CLA Assistant
-        uses: contributor-assistant/github-action@v2.6.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NAME THE SECRET THAT EXISTS. `CLA_PERSONAL_ACCESS_TOKEN` is not a
-          # secret on this repo and never has been -- measured 2026-08-06:
-          #   repo secrets : CLAUDE_CODE_CREDENTIALS_JSON, PERSONAL_ACCESS_TOKEN
-          #   org  secrets : none (total_count 0)
-          # An absent secret interpolates to EMPTY rather than failing, so the
-          # action received a blank PAT and the step failed for a reason the
-          # workflow never names. Owner PRs survived it for a while because
-          # `allowlist` short-circuits before the PAT is needed; that masked it
-          # until a PR needed the signature store.
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        with:
-          path-to-signatures: "signatures/cla.json"
-          path-to-document: "https://github.com/scitex-ai/figrecipe/blob/main/CLA.md"
-          branch: "cla-signatures"
-          allowlist: bot*,ywatanabe1989
-          # THE PHRASE WE ASK FOR MUST BE THE PHRASE THE ACTION ACCEPTS.
-          #
-          # Without this input the action cannot accept ANY comment. From
-          # contributor-assistant/github-action@v2.6.1,
-          # src/pullrequest/signatureComment.ts:
-          #
-          #     if (getCustomPrSignComment() !== "") {
-          #         return getCustomPrSignComment().toLowerCase() === comment
-          #     }
-          #     switch (getUseDcoFlag()) {
-          #         case 'true':  return comment.match(/...hereby sign the dco.../)
-          #         case 'false': return comment.match(/...hereby sign the cla.../)
-          #         default:      return false        <-- we landed here
-          #     }
-          #
-          # We set neither `custom-pr-sign-comment` nor `use-dco-flag`, so both
-          # getters returned "" and the matcher fell through to `default: false`
-          # for every comment from every account. The CLA could not be signed at
-          # all -- a gate that cannot PASS, and it silently blocked every outside
-          # contributor (#318, #319, #320, #331). #318 even carries our apology
-          # for "a sign-off phrase that our own bot didn't accept": that
-          # contributor posted the exact phrase below and it was rejected,
-          # because nothing was configured to accept it.
-          #
-          # KEEP THIS BYTE-IDENTICAL to the phrase in custom-notsigned-prcomment
-          # and in CLA.md. The comparison is exact equality after lower-casing,
-          # NOT a regex -- the trailing period is part of the contract.
-          custom-pr-sign-comment: "I have read and agree to the SciTeX CLA."
-          custom-allsigned-prcomment: |
-            Thank you for signing the SciTeX CLA. Your contribution can now be reviewed.
-          custom-notsigned-prcomment: |
-            Please sign the [SciTeX CLA](https://github.com/scitex-ai/figrecipe/blob/main/CLA.md) before your contribution can be merged.
-            Comment `I have read and agree to the SciTeX CLA.` to sign.
+  call:
+    uses: scitex-ai/.github/.github/workflows/cla.yml@main
+    # NAMED SECRET, not `inherit`. This caller runs on `issue_comment` and
+    # `pull_request_target` -- both unauthenticated on a public repo -- and
+    # `secrets: inherit` forwards EVERY secret this repo holds into a job an
+    # outsider can start, on the shared self-hosted runner the callee targets.
+    # Neither file shows that on its own: the caller names no runs-on, so the
+    # destination lives in the callee. Pass only the secret the callee declares.
+    #
+    # THE TWO SIDES BELOW ARE DIFFERENT NAMESPACES. Left is the callee's
+    # declared parameter (`secrets: GH_PERSONAL_ACCESS_TOKEN: required: true`
+    # in scitex-ai/.github), which the callee maps onto the action's
+    # `PERSONAL_ACCESS_TOKEN` env var. Right must name a secret THIS repo
+    # actually holds. They are not required to match, and here they must not:
+    #
+    #   figrecipe repo secrets : CLAUDE_CODE_CREDENTIALS_JSON,
+    #                            PERSONAL_ACCESS_TOKEN   (measured 2026-08-11)
+    #   scitex-ai org secrets  : none (total_count 0)
+    #
+    # `GH_PERSONAL_ACCESS_TOKEN` has never been a secret on either. It read as
+    # the empty string, `required: true` is satisfied by a provided-but-empty
+    # value, and the action treats '' as absent -- so the CLA gate failed
+    # naming a CLA problem while the real cause was a secret that does not
+    # exist. Nothing in either file ever printed that.
+    #
+    # This was invisible for months because `allowlist: bot*,ywatanabe1989`
+    # short-circuits owner PRs to success BEFORE the PAT is read: the gate
+    # looked healthy for exactly the population that could not exercise it.
+    # Only outside contributors could trip it -- #318/#319/#320/#331 sat red
+    # for weeks with no way to see why.
+    #
+    # develop carries the same fix (#330). Keep BOTH in step: `pull_request_target`
+    # runs the BASE branch's workflow, and every outside PR so far targets main,
+    # so a fix on develop alone reaches none of them.
+    secrets:
+      GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
