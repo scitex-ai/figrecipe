@@ -56,6 +56,7 @@ from .files import (
 from .gallery import (
     handle_gallery_add,
     handle_gallery_available,
+    handle_gallery_demo,
     handle_gallery_thumbnail,
 )
 from .image import (
@@ -170,6 +171,7 @@ HANDLERS = {
     # Gallery
     "api/gallery":                  handle_gallery_available,
     "api/gallery/add":              handle_gallery_add,
+    "api/gallery/demo":             handle_gallery_demo,
 
     # Compose
     "api/compose":                  handle_compose_save,
@@ -190,6 +192,7 @@ __all__ = [
     "HANDLERS",
     "handle_single_call",
     "handle_download_fig",
+    "handle_gallery_demo",
     "handle_gallery_thumbnail",
     "handle_compose_export",
 ]

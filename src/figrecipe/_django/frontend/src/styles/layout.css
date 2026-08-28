@@ -65,16 +65,15 @@
   position: relative;
 }
 
-.figure-viewer--empty {
-  flex-direction: column;
-  gap: 12px;
-  color: var(--vis-text-muted);
-  font-size: 13px;
-}
-
-.figure-viewer--empty i {
-  font-size: 32px;
-  opacity: 0.3;
+/* Nothing open yet: the pane holds the start gallery, which scrolls and fills
+ * the width. The old centred-label rules are gone with the label they styled
+ * (`figure-viewer--empty`) — centring a grid vertically strands it below the
+ * fold on a short viewport. */
+.figure-viewer--start {
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .figure-viewer img {

@@ -75,6 +75,7 @@ _NO_EDITOR_ENDPOINTS = {
     "api/switch",
     "api/gallery",
     "api/gallery/add",
+    "api/gallery/demo",
     "api/compose",
     "api/chat/stream",
     "api/chat/sessions/",

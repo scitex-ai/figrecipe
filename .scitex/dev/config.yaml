@@ -19,6 +19,127 @@ audit:
   # fast path rather than silently degrading. Read by scitex-dev >= 0.12.1.
   require-fd: true
 
+  # PS-231 §1 workflow-duplication — FOUR reasoned exemptions, one per file.
+  #
+  # The operator's ruling is that a fleet-wide red is the INTENDED outcome and
+  # duplicates get burned down, with ONE carve-out: "unless leaf package's
+  # version is really unique to the leaf". These four are that carve-out, each
+  # established by reading the org reusable's declared workflow_call surface
+  # against what the leaf actually does — not by finding conversion
+  # inconvenient. cla.yml was NOT exempted: it converted, in this same branch.
+  #
+  # `line: 0` because a duplicated workflow is a whole FILE, not a line; the
+  # rule's own site key is the repo-relative path with line 0.
+  #
+  # THIS BLOCK IS READ ONLY FROM HERE. PS-231 does not read pyproject.toml,
+  # and an entry written under [tool.scitex_dev.audit] is ignored SILENTLY
+  # while the rule keeps firing at E.
+  exemptions:
+    PS-231:
+      - path: .github/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml
+        line: 0
+        reason: >-
+          Not a copy — a structurally different implementation the org
+          reusable's two knobs (runs_on, CODECOV_TOKEN) cannot express. The org
+          job installs on the BARE RUNNER (uv venv --seed; uv pip install -e
+          .[all,dev]; pytest -n auto); this leaf's whole body is
+          `bash .github/ci/exec-in-sif.sh run-in-sif.sh <py>`, which apptainer
+          execs a prebuilt ci-cpu.sif. Three independent blockers, each fatal
+          alone. (1) NO SIF PATH: the reusable has no container/exec-wrapper
+          input and no env passthrough, so SCITEX_CI_APPTAINER and
+          SCITEX_CI_SIF cannot reach it; converting deletes the container
+          isolation PR #218 migrated TO after bare-runner installs failed at
+          steps=0 on self-hosted nodes (no Python tool cache, no apt for fd,
+          read-only HOME). (2) TIMEOUT: org hardcodes timeout-minutes 30 with
+          no input; this leaf carries 60 because ~2460 tests under coverage
+          concurrency=[multiprocessing,thread] caps the xdist speedup and the
+          old 30-minute cap cancelled the run at 96%. (3) MATPLOTLIB FONT-CACHE
+          RACE: run-in-sif.sh pins MPLCONFIGDIR per leg and warms the font
+          cache ONCE, single-process, before xdist forks; without it workers
+          race to build fontlist-*.json, a partial cache changes the chosen
+          font, and figrecipe's reproducibility tests (render the same recipe
+          twice and compare) fail on max-channel-diff 255. Revisit if the org
+          reusable grows container-exec and timeout inputs.
+      - path: .github/workflows/import-smoke-on-ubuntu-py3-12.yml
+        line: 0
+        reason: >-
+          The leaf's unique capability is running import-smoke for
+          FORK-AUTHORED PRs at all, which the org reusable is committed never
+          to do. scitex-ai/.github ships tests/test_fork_guard.py, which
+          selects guarded jobs BEHAVIOURALLY (import-smoke.yml:import-smoke is
+          in the selected set) and asserts the guard predicate by EXACT STRING
+          EQUALITY, so adding an allow-fork input turns that test red by
+          construction — the change is not merely absent, it is test-pinned
+          against. Two operator mandates make fork refusal POLICY rather than
+          oversight: 2026-07-14 PS-169 "never use GitHub-hosted runners, no
+          exceptions", and 2026-07-30 "external people using university
+          resources is unacceptable" — so a fork PR is REFUSED before
+          checkout, not re-routed. figrecipe cannot adopt that: MAIN requires
+          the import-smoke-on-ubuntu-py3-12 context and every outside PR so far
+          (#318/#319/#320/#331/#344) targets main. Revisit only if the operator
+          reverses the fork mandate.
+      - path: .github/workflows/quality-audit-on-ubuntu-latest.yml
+        line: 0
+        reason: >-
+          TIME-BOXED, and the blocker is branch protection rather than
+          capability. Converting renames the published status context from
+          `audit` to `audit / audit`: this leaf declares `jobs: audit:` with no
+          `name:`, so the context is the bare job id, while the org callee
+          hard-codes `name: audit` — and a caller can neither suppress the
+          reusable-workflow prefix nor rename the callee's job. `audit` is a
+          REQUIRED context on BOTH develop and main, so a straight conversion
+          leaves every PR blocked on a check no workflow can ever publish
+          again, fixable only by a repo-admin protection edit. That is strictly
+          worse than the finding it clears. The sanctioned route is the staged
+          migration (add the caller ALONGSIDE the legacy workflow; read the
+          check names GitHub actually publishes from a throwaway PR; update the
+          required contexts while BOTH sets still publish; then delete the
+          legacy file), so no required context is ever unpublished. Two
+          secondary blockers must also clear: the org reusable declares only
+          runs_on and scitex_dev_version, so this leaf's `--new-only` ratchet
+          (with fetch-depth 0 and a show-ref guard) and its `require-fd: true`
+          contract above are inexpressible. REVIEW: when the staged migration
+          runs, or when PR #355 lands and removes the --new-only dependency,
+          whichever is first.
+      - path: .github/workflows/rtd-sphinx-build-on-ubuntu-latest.yml
+        line: 0
+        reason: >-
+          TIME-BOXED, held jointly with scitex-scholar, whose identical file is
+          exempted on the same terms — this is one fleet position, not two
+          local conveniences. The org reusable is BUILD-ONLY (inputs runs_on,
+          docs_dir, required; no secrets); this leaf is BUILD + PUBLISH. It
+          vendors docs/sphinx/_build/html into src/figrecipe/_sphinx_html and
+          commits it back (91 such commits), and that bundle is NOT a build
+          artifact: hatch packages src/figrecipe wholesale, so _sphinx_html/**
+          SHIPS INSIDE THE WHEEL. The reusable has no contents:write, checks
+          out at fetch-depth 1, and exposes no vendor-dir, commit-back,
+          artifact-upload or outputs surface — so a bare `uses:` conversion
+          would SILENTLY FREEZE the in-wheel documentation at its 2026-06-19
+          state: green CI, stale docs reaching users, nothing saying so. Two
+          further blockers: `sphinx-build -W` on pull_request (the org build
+          never passes -W and has no fail_on_warning/sphinx_opts input, so
+          conversion weakens the PR docs gate) and Python 3.11 (org hardcodes
+          uv venv --python 3.12; 3.11 is what .readthedocs.yaml pins, so today
+          CI and RTD build on one interpreter). This is NOT a leaf
+          peculiarity — the identical vendor-and-commit step appears across
+          ~30 scitex-ai repositories and scitex-io's copy is byte-identical
+          modulo the package name — so the fix is ONE org-side change letting
+          ~30 leaves collapse, not 30 exemptions. Needed inputs:
+          dependency_group, fail_on_warning (or sphinx_opts), python_version,
+          upload_artifact plus an artifact-name output (preferred over a
+          commit-back input, to keep git-push blast radius out of a shared
+          workflow thirty repos call), and fork_guard. PEER-MEASURED, NOT
+          REPRODUCED HERE — dependency_group comes from scitex-app, whose docs
+          are a PEP 735 dependency GROUP, so the org reusable's `.[docs]` extra
+          resolves to nothing and the job dies at exit 127 on a missing
+          sphinx-build. figrecipe declares docs as an EXTRA
+          (pyproject.toml:137) and installs `pip install -e ".[docs]"`, so that
+          mechanism does NOT bite here; it is named because the ONE org change
+          must cover it, not because figrecipe hit it. The three mechanisms
+          above ARE measured here. REVIEW: when the org-side change lands, or
+          2026-09-18, whichever is first — a time-box with no date is a
+          permanent exemption with optimistic wording.
+
 # audit:
 #   skip:
 #     - PS-108
