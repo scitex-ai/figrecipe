@@ -874,3 +874,6 @@ src/*/_docs/
 # wins — and must be recursive to reach the *_data/ subdirectories.
 !src/figrecipe/_django/gallery_templates/
 !src/figrecipe/_django/gallery_templates/**
+
+### Sphinx build cache (intermediate doctrees, never served)
+.doctrees/
