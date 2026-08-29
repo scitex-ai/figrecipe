@@ -55,15 +55,11 @@ TEMPLATES = [
     },
 ]
 
-# SQLite database for chat sessions (stored alongside temp files)
-_DB_DIR = Path(tempfile.gettempdir()) / "figrecipe_editor"
-_DB_DIR.mkdir(parents=True, exist_ok=True)
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": str(_DB_DIR / "db.sqlite3"),
-    }
-}
+# No DATABASES entry: this app declares no models and issues no ORM queries,
+# so there is nothing to store. Django treats an unset DATABASES as the dummy
+# backend and skips the unapplied-migration check, which is exactly what the
+# standalone editor wants. The peer launcher (scitex_app._standalone) already
+# configures Django the same way.
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
