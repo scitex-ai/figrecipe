@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://badge.fury.io/py/figrecipe"><img src="https://badge.fury.io/py/figrecipe.svg" alt="PyPI version"></a>
   <a href="https://figrecipe.readthedocs.io/"><img src="https://readthedocs.org/projects/figrecipe/badge/?version=latest" alt="Documentation"></a>
-  <a href="https://github.com/scitex-ai/figrecipe/actions/workflows/test.yml"><img src="https://github.com/scitex-ai/figrecipe/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/scitex-ai/figrecipe/actions/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml"><img src="https://github.com/scitex-ai/figrecipe/actions/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml/badge.svg" alt="Tests"></a>
   <a href="https://codecov.io/gh/scitex-ai/figrecipe"><img src="https://img.shields.io/codecov/c/github/scitex-ai/figrecipe" alt="coverage"></a>
   <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
 </p>
