@@ -34,28 +34,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # --new-only stages `develop` via `git worktree add --detach`;
-          # the full history + a local `develop` ref are needed for that
-          # to work. fetch-depth=0 pulls the full history; the explicit
-          # fetch step below materialises a local `develop` branch from
-          # origin/develop so worktree-add can resolve the ref.
+          # Full history is no longer needed for a --new-only diff (that flag
+          # is gone — see the audit step), but it is kept deliberately rather
+          # than pruned in the same change: narrowing checkout depth affects
+          # the version check and any tag-reading step, and that is a separate
+          # question from grandfathering. Change it on its own evidence.
           fetch-depth: 0
-
-      - name: Ensure local develop ref exists (for --new-only diff)
-        run: |
-          # --new-only stages develop via `git worktree add --detach`, which
-          # needs a local `develop` ref. On push-to-develop, actions/checkout
-          # already created and checked out the develop branch, so both
-          # `git fetch origin develop:develop` ("refusing to fetch into the
-          # checked-out branch") and `git branch -f develop ...` ("cannot force
-          # update the checked-out branch") exit 128. Only materialise the ref
-          # when it is missing — PR events check out a detached merge commit,
-          # so develop does not exist locally there and must be created.
-          if git show-ref --verify --quiet refs/heads/develop; then
-            echo "Local develop ref already exists ($(git rev-parse --short develop)); nothing to do."
-          else
-            git fetch origin develop && git branch develop FETCH_HEAD
-          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -84,10 +68,34 @@ jobs:
           sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
           fd --version
 
-      - name: Run scitex-dev ecosystem audit-all (new-only ratchet)
-        # `--new-only` compares HEAD's violations to develop's (default `--since`)
-        # and only fails on NET-NEW findings. Pre-existing baseline debt
-        # (e.g. PA-306 / PA-307 across the test tree) is grandfathered so a
-        # PR is judged on what IT changed, not on the repo's accumulated debt.
-        # Drop the flag once the baseline has been burned down.
-        run: scitex-dev ecosystem audit-all figrecipe --new-only --no-version-check
+      - name: Run scitex-dev ecosystem audit-all (self-audit, own code)
+        # NO --new-only AND NO --no-version-check, deliberately.
+        #
+        # This gate ran `--new-only --no-version-check` until 2026-08-16.
+        # Both flags are named in the constitution §2 as the worked example
+        # of a gate that cannot fail.
+        #
+        # What each one cost:
+        #   --new-only          reports only violations newer than the base
+        #                       ref, so anything already broken is
+        #                       grandfathered permanently and invisibly.
+        #                       "Drop the flag once the baseline has been
+        #                       burned down" — the line this replaces — is a
+        #                       comment, and a comment is not a mechanism.
+        #                       Nothing measured the baseline, so nothing
+        #                       ever triggered the drop.
+        #   --no-version-check  suppresses the version-drift check outright.
+        #
+        # The removal is safe HERE and that was measured, not assumed:
+        # `scitex-dev ecosystem audit-all figrecipe` (0.50.0, no flags) exits
+        # 0 on this tree — 0 errors, 327 warnings. Warnings do not fail the
+        # gate, so this repo's burndown is empty and the flags were hiding
+        # nothing. That is specific to figrecipe: the same measurement puts
+        # scitex-cards at 48 unmasked errors and scitex-writer at exit 1.
+        #
+        # If this gate goes red later, fix the finding or exempt it per file
+        # with a written reason in `.scitex/dev/config.yaml` — reviewable,
+        # greppable, individually retirable. An exemption is a decision
+        # someone made and signed; --new-only is a decision nobody made
+        # about violations nobody enumerated.
+        run: scitex-dev ecosystem audit-all figrecipe
