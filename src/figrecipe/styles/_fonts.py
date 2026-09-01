@@ -15,7 +15,7 @@ __all__ = [
 
 import os
 import warnings
-from typing import List
+from typing import List, Optional
 
 # Guaranteed-present fallback chain after the preferred font. DejaVu Sans ships
 # with matplotlib, so it is always resolvable even on font-less CI/Docker boxes.
@@ -132,6 +132,44 @@ def check_font(font_family: str, fallback: str = "DejaVu Sans") -> str:
     return "DejaVu Sans"
 
 
+#: 日本語グリフを持つフォントの候補。先頭から最初に見つかったものを使う。
+_CJK_CANDIDATES = (
+    "IPAexGothic",
+    "Noto Sans CJK JP",
+    "Noto Sans JP",
+    "Source Han Sans JP",
+    "TakaoPGothic",
+    "IPAGothic",
+    "VL PGothic",
+)
+
+
+def cjk_font() -> Optional[str]:
+    """Return the first available CJK-capable family, or None.
+
+    Latin faces such as Arial carry no CJK glyphs, so a figure whose labels
+    are Japanese renders as tofu unless a CJK face is offered alongside.
+    """
+    available = set(list_available_fonts())
+    for candidate in _CJK_CANDIDATES:
+        if candidate in available:
+            return candidate
+    return None
+
+
+def font_family_chain(preferred: str) -> List[str]:
+    """Return ``[preferred, <cjk fallback>]`` for per-glyph fallback.
+
+    matplotlib falls back glyph-by-glyph only when the family is a LIST;
+    pinning a single family defeats it.
+    """
+    chain = [check_font(preferred)]
+    cjk = cjk_font()
+    if cjk and cjk not in chain:
+        chain.append(cjk)
+    return chain
+
+
 def font_is_available(font_family: str) -> bool:
     """Return True if matplotlib's font manager resolves *font_family* exactly.
 
@@ -156,7 +194,9 @@ def font_is_available(font_family: str) -> bool:
 def ensure_font_family(preferred: str = "Arial") -> bool:
     """Pin *preferred* as the figure font, with a loud DejaVu Sans fallback.
 
-    Sets matplotlib's ``font.family = ['sans-serif']`` and puts *preferred*
+    Sets ``font.family = ['sans-serif', <cjk>]`` -- the CJK face is appended
+    so matplotlib falls back GLYPH BY GLYPH for Japanese/Chinese text, which a
+    single pinned family cannot do -- and puts *preferred*
     first in ``font.sans-serif`` followed by a guaranteed-present fallback
     chain (DejaVu Sans ships with matplotlib). Registers Arial from system
     font dirs first so a freshly-installed Arial is picked up.
@@ -190,7 +230,18 @@ def ensure_font_family(preferred: str = "Arial") -> bool:
         if name not in chain:
             chain.append(name)
 
-    mpl.rcParams["font.family"] = ["sans-serif"]
+    # font.family をリストにすると matplotlib がグリフ単位でフォールバックする。
+    # generic を先頭に置き、CJK を後ろに足す。凡例など apply_style が触らない
+    # テキストも含めて日本語が出るようになる。
+    _cjk = cjk_font()
+    _fam = ["sans-serif"]
+    if _cjk:
+        _fam.append(_cjk)
+    mpl.rcParams["font.family"] = _fam
+    # CJK グリフは Latin フォントに無い。チェーン末尾に CJK フォントを足して
+    # matplotlib のグリフ単位フォールバックに拾わせる（豆腐を防ぐ）。
+    if _cjk and _cjk not in chain:
+        chain = list(chain) + [_cjk]
     mpl.rcParams["font.sans-serif"] = chain
 
     available = font_is_available(preferred)
