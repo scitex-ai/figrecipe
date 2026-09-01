@@ -282,3 +282,49 @@ def _warn_font_fallback(preferred: str, fallback: str) -> None:
         get_logger().warning(msg)
     except Exception:  # logger is best-effort; the warnings.warn already fired
         pass
+
+
+def has_cjk(text: str) -> bool:
+    """True if *text* contains a CJK/kana codepoint."""
+    for ch in text:
+        o = ord(ch)
+        if (
+            0x3040 <= o <= 0x30FF  # hiragana / katakana
+            or 0x3400 <= o <= 0x4DBF  # CJK ext A
+            or 0x4E00 <= o <= 0x9FFF  # CJK unified
+            or 0xF900 <= o <= 0xFAFF  # compatibility
+            or 0xFF66 <= o <= 0xFF9D  # halfwidth kana
+        ):
+            return True
+    return False
+
+
+def warn_if_cjk_without_font(fig) -> bool:
+    """Warn ONCE if *fig* carries CJK text but no CJK font is installed.
+
+    Without this the figure renders every Japanese glyph as a blank box and
+    nothing says so -- the failure is silent and only visible by eye.
+    Returns True if the warning fired.
+    """
+    if cjk_font() is not None:
+        return False
+    try:
+        import matplotlib.text as _mtext
+
+        texts = [t for t in fig.findobj(_mtext.Text) if t.get_text()]
+    except Exception:
+        return False
+    if not any(has_cjk(t.get_text()) for t in texts):
+        return False
+    if "cjk-missing" in _FALLBACK_WARNED:
+        return False
+    _FALLBACK_WARNED.add("cjk-missing")
+    warnings.warn(
+        "figrecipe: this figure contains Japanese/CJK text but NO CJK font is "
+        "installed, so those glyphs will render as blank boxes. Install one of: "
+        + ", ".join(_CJK_CANDIDATES[:3])
+        + " (e.g. `apt install fonts-ipaexfont`), then delete ~/.cache/matplotlib.",
+        UserWarning,
+        stacklevel=2,
+    )
+    return True

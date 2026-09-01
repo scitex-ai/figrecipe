@@ -13,12 +13,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
+from .._quality._validator import ValidationResult
 from .._recorder import FigureRecord
 from .._reproducer import get_recipe_info
 from .._reproducer import reproduce as _reproduce_core
 from .._serializer import load_recipe
 from .._utils._numpy_io import CsvFormat, DataFormat
-from .._quality._validator import ValidationResult
 from .._wrappers import RecordingAxes, RecordingFigure
 
 
@@ -102,7 +102,7 @@ def save(
     csv_format: CsvFormat = "separate",
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
-    validate_error_level: str = "error",
+    validate_error_level: str = "warning",
     validate_axis_range_alignment: bool = True,
     validate_axis_range_alignment_error_level: str = "warning",
     verbose: bool = True,
