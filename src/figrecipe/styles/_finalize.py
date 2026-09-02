@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from matplotlib.axes import Axes
 
-from ._fonts import check_font
+from ._fonts import check_font, font_family_chain
 
 
 def finalize_ticks(ax: Axes) -> None:
@@ -112,7 +112,11 @@ def finalize_special_plots(ax: Axes, style: Dict[str, Any] = None) -> None:
     if has_pie:
         show_axes = style.get("pie_show_axes", False)
         text_pt = style.get("pie_text_pt", 6)
-        font_family = check_font(style.get("font_family", "Arial"))
+        # 円グラフだけが全テキストの family を1つに固定していたため、
+        # rcParams 側のフォールバック鎖が捨てられ、日本語が豆腐になっていた。
+        # matplotlib はグリフ単位で鎖をたどるので、鎖のまま渡す。
+        # (operator 報告 2026-09-02: 円グラフのテキストだけが表示されない)
+        font_family = font_family_chain(check_font(style.get("font_family", "Arial")))
 
         for text in ax.texts:
             transform = text.get_transform()
