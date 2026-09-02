@@ -163,4 +163,60 @@ def test_positive_control_debug_on_leaks_the_exception_name(_bad_host_debug_on):
     assert b"DisallowedHost" in body
 
 
+# ── ALLOWED_HOSTS: loopback literal plus what SCITEX_ALLOWED_HOSTS contributes ─
+#
+# The launcher writes that variable from the bound host BEFORE django.setup()
+# (``_allowed_hosts.apply_bound_host``); settings.py reads it once, at import.
+# Same module-reload isolation as the DEBUG tests above.
+
+_HOSTS_ENV = "SCITEX_ALLOWED_HOSTS"
+_LOOPBACK_LITERAL = ["127.0.0.1", "localhost", "0.0.0.0"]
+
+
+def _reload_settings_with_hosts_env(value):
+    import figrecipe._django.settings as settings_module
+
+    saved = os.environ.get(_HOSTS_ENV)
+    if value is None:
+        os.environ.pop(_HOSTS_ENV, None)
+    else:
+        os.environ[_HOSTS_ENV] = value
+    try:
+        return list(importlib.reload(settings_module).ALLOWED_HOSTS)
+    finally:
+        if saved is None:
+            os.environ.pop(_HOSTS_ENV, None)
+        else:
+            os.environ[_HOSTS_ENV] = saved
+        importlib.reload(settings_module)
+
+
+def test_allowed_hosts_is_the_loopback_literal_when_env_unset(_django_ready):
+    # Arrange
+    value = None
+    # Act
+    hosts = _reload_settings_with_hosts_env(value)
+    # Assert
+    assert hosts == _LOOPBACK_LITERAL
+
+
+def test_allowed_hosts_appends_every_env_contributed_name(_django_ready):
+    # Arrange
+    value = "192.168.11.173, scitex-compute-03"
+    # Act
+    hosts = _reload_settings_with_hosts_env(value)
+    # Assert
+    assert hosts == _LOOPBACK_LITERAL + ["192.168.11.173", "scitex-compute-03"]
+
+
+def test_allowed_hosts_does_not_duplicate_loopback_from_env(_django_ready):
+    """Control: an env value that repeats the literal adds nothing."""
+    # Arrange
+    value = "localhost,127.0.0.1"
+    # Act
+    hosts = _reload_settings_with_hosts_env(value)
+    # Assert
+    assert hosts == _LOOPBACK_LITERAL
+
+
 # EOF
