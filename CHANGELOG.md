@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Standalone editor: `DEBUG` now defaults OFF.** With the old default of
+  `"true"`, `figrecipe gui serve --host 0.0.0.0` answered a request from any
+  non-loopback address with Django's technical 400 page -- 70,205 bytes of
+  traceback and settings -- to whoever sent it (measured 2026-09-02 against
+  0.34.6 from PyPI). The standalone server is the one figrecipe surface that
+  faces a network, so the safe value is the default; `DJANGO_DEBUG=true` opts
+  back in for development. Django's dev server stops serving `/static/` the
+  moment DEBUG is off, so the flip ships with its second half: a standalone-only
+  root URLconf (`_django/urls_standalone.py`) that keeps serving the editor's
+  own assets. `urls.py`, the module host applications `include()`, is unchanged.
+
 ## [0.34.6] - 2026-08-16
 
 ### Fixed
