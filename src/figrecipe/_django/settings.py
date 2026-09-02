@@ -16,7 +16,14 @@ SECRET_KEY = os.environ.get(
     "figrecipe-standalone-dev-key-not-for-production",
 )
 
-DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
+# Off unless asked for. With DEBUG on, a request from any non-loopback host
+# was answered with Django's technical 400 page -- 70,205 bytes of traceback and
+# settings -- to whoever sent it (measured 2026-09-02 against 0.34.6). A
+# standalone server is the one figrecipe surface that faces a network, so the
+# default must be the safe one; ``DJANGO_DEBUG=true`` opts back in for
+# development. The GUI's own assets keep being served with DEBUG off -- see
+# ``urls_standalone.py`` for why that needs its own route.
+DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0"]
 
@@ -40,7 +47,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
-ROOT_URLCONF = "figrecipe._django.urls"
+# The STANDALONE root URLconf, not ``urls.py``: ``urls.py`` is the module a host
+# application ``include()``s under its own prefix (``_django/__init__.py``), and
+# the static route standalone needs must not ride along into a host.
+ROOT_URLCONF = "figrecipe._django.urls_standalone"
 
 TEMPLATES = [
     {
