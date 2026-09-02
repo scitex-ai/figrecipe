@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Standalone settings default DEBUG off, and the editor still gets its assets.
+"""Standalone settings default DEBUG off, and a bad-Host 400 stays a plain page.
 
 Measured 2026-09-02 against 0.34.6 from PyPI: ``figrecipe gui serve --host
 0.0.0.0`` answered a request from the container's non-loopback address with
 Django's technical 400 page -- 70,205 bytes, traceback and settings included --
-because ``DEBUG`` defaulted to ``"true"``. The fix is two-sided, and so is this
-file: the default flips, AND the GUI's own assets stay served, because Django's
-dev server stops serving ``/static/`` the moment DEBUG is off.
+because ``DEBUG`` defaulted to ``"true"``. The standalone server is the one
+figrecipe surface that faces a network, so the safe value is the default and
+``DJANGO_DEBUG=true`` opts back in.
 
 Every negative assertion here has a positive control beside it, so a test that
-cannot fail is not mistaken for one that passed.
+cannot fail is not mistaken for one that passed. The other half of the fix --
+assets still served with DEBUG off -- is pinned in ``test_urls_standalone.py``.
 """
 
 import importlib
@@ -21,9 +22,6 @@ import pytest
 
 _ENV = "DJANGO_DEBUG"
 _FOREIGN_HOST = "attacker.example.com"
-_OWN_HOST = "127.0.0.1"
-_SHIPPED_ASSET = "/static/figrecipe/assets/index.js"
-_MISSING_ASSET = "/static/figrecipe/assets/does-not-exist.js"
 
 
 @pytest.fixture(scope="module")
@@ -163,60 +161,6 @@ def test_positive_control_debug_on_leaks_the_exception_name(_bad_host_debug_on):
     body = response.content
     # Assert
     assert b"DisallowedHost" in body
-
-
-# ── the second-order effect: assets with DEBUG off ───────────────────────────
-
-
-def _asset_status_with_debug_off(path):
-    from django.test import Client, override_settings
-
-    with override_settings(DEBUG=False):
-        return Client().get(path, HTTP_HOST=_OWN_HOST).status_code
-
-
-def test_shipped_asset_is_served_with_debug_off(_django_ready):
-    # Arrange
-    path = _SHIPPED_ASSET
-    # Act
-    status = _asset_status_with_debug_off(path)
-    # Assert
-    assert status == 200
-
-
-def test_control_missing_asset_is_404_with_debug_off(_django_ready):
-    """Control: the route discriminates, so the 200 above is not
-    'everything is 200'."""
-    # Arrange
-    path = _MISSING_ASSET
-    # Act
-    status = _asset_status_with_debug_off(path)
-    # Assert
-    assert status == 404
-
-
-# ── the splice: the app's own routes stay at the root, un-namespaced ─────────
-
-
-def test_editor_route_name_is_still_unnamespaced(_django_ready):
-    # Arrange
-    from django.urls import reverse
-
-    # Act
-    url = reverse("editor")
-    # Assert
-    assert url == "/"
-
-
-def test_editor_page_still_serves_with_debug_off(_django_ready):
-    # Arrange
-    from django.test import Client, override_settings
-
-    # Act
-    with override_settings(DEBUG=False):
-        status = Client().get("/", HTTP_HOST=_OWN_HOST).status_code
-    # Assert
-    assert status == 200
 
 
 # EOF
