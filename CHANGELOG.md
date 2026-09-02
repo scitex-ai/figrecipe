@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Standalone editor answers from a real address when bound to one.**
+  `figrecipe gui serve --host 0.0.0.0` bound every interface and then answered
+  400 to every non-loopback caller, because `ALLOWED_HOSTS` was a hardcoded
+  loopback literal and `"0.0.0.0"` never matches a real interface address in
+  a Host header (measured 2026-09-02). The launcher now contributes what the
+  bind implies -- loopback: nothing; a concrete address: itself; `0.0.0.0`:
+  the hostname plus every interface's IPv4, read from the interfaces
+  (`SIOCGIFADDR`), not from name resolution, which inside a container does not
+  return the LAN address -- into `SCITEX_ALLOWED_HOSTS` before Django
+  configures, and `settings.py` appends that variable to the literal. Never
+  widened to `"*"`. The derivation is a verbatim copy of scitex-scholar's
+  (PR #137) so the three apps carry one function until it lands in scitex-app.
+
 ### Changed
 - **Standalone editor: `DEBUG` now defaults OFF.** With the old default of
   `"true"`, `figrecipe gui serve --host 0.0.0.0` answered a request from any

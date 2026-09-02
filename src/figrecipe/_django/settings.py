@@ -25,7 +25,17 @@ SECRET_KEY = os.environ.get(
 # ``urls_standalone.py`` for why that needs its own route.
 DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0"]
+# Loopback, plus whatever the launcher says the bind implies. ``gui()`` writes
+# SCITEX_ALLOWED_HOSTS from ``_allowed_hosts.apply_bound_host`` BEFORE
+# django.setup(): binding to an address is the statement that you intend to be
+# reached on it, and "0.0.0.0" in this list never matches a real interface
+# address in a Host header (measured 2026-09-02: `--host 0.0.0.0` answered 400
+# to every non-loopback caller). Read once here, at import -- hence the order.
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0"] + [
+    _h.strip()
+    for _h in os.environ.get("SCITEX_ALLOWED_HOSTS", "").split(",")
+    if _h.strip() and _h.strip() not in ("127.0.0.1", "localhost", "0.0.0.0")
+]
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",

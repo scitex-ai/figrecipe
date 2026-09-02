@@ -152,6 +152,15 @@ def gui(
 
     os.environ["FIGRECIPE_WORKING_DIR"] = wd
 
+    # What this bind implies for ALLOWED_HOSTS -- BEFORE django.setup() on either
+    # path below, because settings.py reads the variable once, at import. Both
+    # paths (scitex-app's run_standalone and the bare fallback) configure Django
+    # from figrecipe's own settings.py, so this is the one place that reaches
+    # both. Without it `--host 0.0.0.0` answers 400 to every non-loopback caller.
+    from figrecipe._django._allowed_hosts import apply_bound_host
+
+    apply_bound_host(host, os.environ)
+
     # Extra env for recipe source
     extra_env = {}
     if source:
