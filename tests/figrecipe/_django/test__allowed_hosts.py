@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""apply_bound_host: figrecipe's wiring around scitex-app's _hosts_to_allow.
+"""apply_bound_host: figrecipe's wiring around scitex-app's hosts_to_allow.
 
 The derivation's own tests (loopback -> nothing, concrete -> itself, 0.0.0.0 ->
 this machine's interface addresses by an independent route, never "*") live
