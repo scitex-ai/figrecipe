@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (PR #137) so the three apps carry one function until it lands in scitex-app.
 
 ### Changed
+- **`_django/_allowed_hosts.py` imports the bind derivation from scitex-app
+  instead of carrying a copy.** The verbatim block landed in scitex-app 0.10.1
+  (scitex-app #105); figrecipe now requires `scitex-app>=0.10.1` and keeps only
+  its own wiring (`apply_bound_host`, `SCITEX_ALLOWED_HOSTS`). Behaviour is
+  unchanged; the duplication the 2026-09-02 fixes accepted as temporary is over.
 - **Standalone editor: `DEBUG` now defaults OFF.** With the old default of
   `"true"`, `figrecipe gui serve --host 0.0.0.0` answered a request from any
   non-loopback address with Django's technical 400 page -- 70,205 bytes of
