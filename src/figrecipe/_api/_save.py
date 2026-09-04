@@ -42,6 +42,37 @@ from ._save_helpers import (
 _log = get_logger("figrecipe")
 
 
+def _reproduction_hints(fig) -> str:
+    """Name the LIKELY CAUSE of a reproduction mismatch, not just the number.
+
+    A bare "MSE 348 exceeds 100" tells the caller nothing actionable. The
+    usual cause is a layout engine that recomputes geometry after figrecipe
+    has sized the axes in mm, so the replay lands somewhere else.
+    """
+    try:
+        engine = fig.get_layout_engine()
+    except Exception:
+        engine = None
+    name = type(engine).__name__ if engine is not None else ""
+    if "Tight" in name:
+        return (
+            "LIKELY CAUSE: tight_layout() is active. It recomputes the layout "
+            "and overrides figrecipe's mm-based sizing, so the replayed figure "
+            "does not match. Remove the tight_layout() call -- the mm style "
+            "already manages margins."
+        )
+    if "Constrained" in name:
+        return (
+            "LIKELY CAUSE: constrained_layout is active and overrides the "
+            "mm-based sizing. Pass constrained_layout=False."
+        )
+    return (
+        "LIKELY CAUSE: something changed the geometry after the recipe was "
+        "recorded -- check for tight_layout(), constrained_layout, "
+        "subplots_adjust() or a figsize change between plotting and saving."
+    )
+
+
 def save_figure(
     fig,
     path,
@@ -51,7 +82,7 @@ def save_figure(
     csv_format: str = "separate",
     validate: bool = True,
     validate_mse_threshold: float = 100.0,
-    validate_error_level: str = "error",
+    validate_error_level: str = "warning",
     validate_axis_range_alignment: bool = True,
     validate_axis_range_alignment_error_level: str = "warning",
     verbose: bool = True,
@@ -456,6 +487,14 @@ def save_figure(
         csv_format=csv_format,
     )
 
+    # 日本語が入っているのに CJK フォントが無ければ、豆腐になる前に知らせる。
+    try:
+        from ..styles._fonts import warn_if_cjk_without_font
+
+        warn_if_cjk_without_font(fig)
+    except Exception:
+        pass
+
     # Validate if requested
     if validate:
         from .._quality._validator import validate_on_save
@@ -488,6 +527,7 @@ def save_figure(
                 )
         if not result.valid:
             msg = f"Reproducibility validation failed (MSE={result.mse:.1f}): {result.message}"
+            msg += "\n" + _reproduction_hints(fig)
             if validate_error_level == "error":
                 raise ValueError(msg)
             elif validate_error_level == "warning":

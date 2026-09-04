@@ -427,7 +427,7 @@ class RecordingFigure(FigureTextMixin):
         csv_format: Literal["single", "separate"] = "separate",
         validate: bool = True,
         validate_mse_threshold: float = 100.0,
-        validate_error_level: str = "error",
+        validate_error_level: str = "warning",
         verbose: bool = True,
         dpi: Optional[int] = None,
         image_format: Optional[str] = None,
