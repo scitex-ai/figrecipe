@@ -20,7 +20,12 @@ from matplotlib.axes import Axes
 
 from .._utils._units import mm_to_pt
 from ._finalize import finalize_special_plots, finalize_ticks
-from ._fonts import check_font, ensure_font_family, list_available_fonts
+from ._fonts import (
+    check_font,
+    ensure_font_family,
+    font_family_chain,
+    list_available_fonts,
+)
 from ._plot_styles import (
     apply_barplot_style,
     apply_boxplot_style,
@@ -248,7 +253,9 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     # mpl text inherits it, and emit the single loud figrecipe warning if the
     # requested font is missing (no silent fallback). Deduped to once/session.
     ensure_font_family(requested_font)
-    font_family = check_font(requested_font)
+    # 単一 family だと matplotlib のグリフ単位フォールバックが効かない。
+    # 日本語ラベルを豆腐にしないため CJK フォントを併記する。
+    font_family = font_family_chain(requested_font)
 
     ax.xaxis.label.set_fontsize(axis_fs)
     ax.xaxis.label.set_fontfamily(font_family)

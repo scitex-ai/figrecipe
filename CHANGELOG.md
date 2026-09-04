@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Japanese (and Chinese/Korean) labels no longer render as blank boxes.**
+  `font.family` was a single Latin family, which defeats matplotlib's
+  per-glyph fallback, so every CJK glyph became tofu (the operator's pie-chart
+  report of 2026-09-02). The family is now a LIST -- the requested face first,
+  a CJK-capable face appended -- on every path that sets fonts: the global
+  style, brand style, per-plot styles, pie/finalize, and the editor's
+  re-render (which had kept a bare string and brought the tofu back on
+  re-render). The CJK face is found among Linux, macOS and Windows system
+  families, or named with `FIGRECIPE_CJK_FONT`; when a figure carries CJK
+  text and no CJK face is usable, `save()` warns once, naming the fix.
+  Requires `matplotlib>=3.6` (list families fall back per glyph from 3.6).
+  Rebuilt from LLEmacs's #367 part 1 with the review fixes; #367's default
+  change to `validate_error_level` is deliberately NOT included.
 - **Standalone editor answers from a real address when bound to one.**
   `figrecipe gui serve --host 0.0.0.0` bound every interface and then answered
   400 to every non-loopback caller, because `ALLOWED_HOSTS` was a hardcoded

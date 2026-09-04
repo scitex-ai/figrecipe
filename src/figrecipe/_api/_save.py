@@ -456,6 +456,12 @@ def save_figure(
         csv_format=csv_format,
     )
 
+    # Say so BEFORE anyone opens the file: CJK text with no CJK-capable font
+    # renders as blank boxes, and nothing else in the pipeline notices.
+    from ..styles._fonts import warn_if_cjk_without_font
+
+    warn_if_cjk_without_font(fig.fig if hasattr(fig, "fig") else fig)
+
     # Validate if requested
     if validate:
         from .._quality._validator import validate_on_save
