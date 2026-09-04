@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """What a ``--host`` bind contributes to ALLOWED_HOSTS -- figrecipe's wiring.
 
-The derivation (``_hosts_to_allow``) is scitex-app's, imported below; this
+The derivation (``hosts_to_allow``) is scitex-app's, imported below; this
 module only carries what is figrecipe-specific: the env var settings.py reads,
 and the merge that writes it before Django configures.
 
@@ -18,10 +18,9 @@ contributes what it implies.
 # released 2026-09-02): loopback -> nothing, a concrete address -> itself,
 # 0.0.0.0 -> hostname + every interface's IPv4 read from the interfaces, never
 # from name resolution. Until that release this file carried scholar's block
-# verbatim; the copy is gone, this import is what runs. ``_standalone`` is a
-# PRIVATE module -- scitex-app has offered a public re-export in their next
-# minor; switch this line to it when it exists.
-from scitex_app._standalone import _hosts_to_allow
+# verbatim; the copy is gone, this import is what runs. ``hosts_to_allow`` is
+# scitex-app's PUBLIC name for it (0.11.0, declared in its ``__all__``).
+from scitex_app import hosts_to_allow
 
 # ── figrecipe's wiring ────────────────────────────────────────────────────────
 
@@ -44,7 +43,7 @@ def apply_bound_host(host: str, environ) -> list[str]:
     address -- and nothing is duplicated. Must run BEFORE django.setup(),
     because settings.py reads the variable once, at import.
     """
-    contributed = _hosts_to_allow(host)
+    contributed = hosts_to_allow(host)
     hosts = [h.strip() for h in environ.get(ENV_VAR, "").split(",") if h.strip()]
     for h in contributed:
         if h not in hosts:
@@ -54,6 +53,6 @@ def apply_bound_host(host: str, environ) -> list[str]:
     return hosts
 
 
-__all__ = ["ENV_VAR", "_hosts_to_allow", "apply_bound_host"]
+__all__ = ["ENV_VAR", "apply_bound_host", "hosts_to_allow"]
 
 # EOF
