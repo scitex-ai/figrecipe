@@ -193,14 +193,13 @@ def render_with_overrides(
 
     # Set global font family via rcParams to catch any text matplotlib creates
     if overrides:
-        import matplotlib as mpl
-
-        from ..styles._fonts import check_font
+        from ..styles._fonts import ensure_font_family
 
         font_fam = overrides.get("fonts_family", overrides.get("font_family"))
         if font_fam:
-            mpl.rcParams["font.family"] = "sans-serif"
-            mpl.rcParams["font.sans-serif"] = [check_font(font_fam)]
+            # A LIST family (generic + CJK face), exactly as at save time: a
+            # bare string here re-introduced tofu on editor re-render.
+            ensure_font_family(font_fam)
 
     # Apply overrides directly to existing figure
     # Skip style overrides for diagram figures — diagrams have their own

@@ -52,7 +52,7 @@ def apply_brand_style(brand: str) -> bool:
 
         from ._configure_mpl import configure_mpl
         from .styles import load_style
-        from .styles._fonts import register_arial_fonts
+        from .styles._fonts import cjk_font, register_arial_fonts
 
         # 1. Load the SCITEX preset into the global style cache so that
         #    figrecipe.subplots() and configure_mpl() resolve its values.
@@ -62,26 +62,36 @@ def apply_brand_style(brand: str) -> bool:
             pass
 
         # 2. Register Arial (publication default) and pin the font family.
+        #
+        #    font.family is set as a LIST, never a bare string. matplotlib falls
+        #    back per GLYPH along that chain, so Latin text still renders in
+        #    Arial while a CJK glyph finds a font that actually has it. Pinning
+        #    the bare string "Arial" silently discards the CJK entry that
+        #    ensure_font_family() put there, and there is no error -- the glyph
+        #    just renders as an empty box.
+        #
+        #    Measured 2026-09-02 on a real document (SOHO 入居申請の根拠資料):
+        #    1140 "missing from font(s) Arial" warnings, every Japanese label a
+        #    tofu box, while the ASCII percentages beside them were correct.
+        #    The CJK font was installed and found the whole time; this line
+        #    threw it away.
         arial_ok = register_arial_fonts()
         if arial_ok:
-            mpl.rcParams["font.family"] = "Arial"
-            mpl.rcParams["font.sans-serif"] = [
-                "Arial",
-                "Helvetica",
-                "DejaVu Sans",
-                "Liberation Sans",
-            ]
+            family = ["Arial"]
+            sans = ["Arial", "Helvetica", "DejaVu Sans", "Liberation Sans"]
         else:
-            mpl.rcParams["font.family"] = "sans-serif"
-            mpl.rcParams["font.sans-serif"] = [
-                "Helvetica",
-                "DejaVu Sans",
-                "Liberation Sans",
-                "sans-serif",
-            ]
+            family = ["sans-serif"]
+            sans = ["Helvetica", "DejaVu Sans", "Liberation Sans", "sans-serif"]
             import logging
 
             logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+
+        cjk = cjk_font()
+        if cjk:
+            family.append(cjk)
+            sans.append(cjk)
+        mpl.rcParams["font.family"] = family
+        mpl.rcParams["font.sans-serif"] = sans
 
         # 3. Push the bulk of the rcParams + colour cycle via figrecipe's own
         #    global configurer (autolayout=True matches the scitex original).
