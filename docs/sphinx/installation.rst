@@ -56,6 +56,6 @@ Requirements
 ------------
 
 - Python 3.10+
-- matplotlib >= 3.5
+- matplotlib >= 3.6
 - numpy
 - PyYAML

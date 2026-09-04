@@ -13,7 +13,7 @@ tags: [figrecipe-installation]
 pip install figrecipe
 ```
 
-Pulls `matplotlib>=3.5`, `numpy>=1.20`, `pandas>=1.3`, `PyYAML`,
+Pulls `matplotlib>=3.6`, `numpy>=1.20`, `pandas>=1.3`, `PyYAML`,
 `ruamel.yaml`, `scipy>=1.7`, `click`, `rich`, `scitex-app`,
 `scitex-linter`, and `scitex` (umbrella, for `stx.io`).
 
