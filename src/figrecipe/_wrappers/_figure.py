@@ -182,22 +182,25 @@ class RecordingFigure(FigureTextMixin):
             pass
         return default
 
-    def _get_resolved_font_family(self) -> Optional[str]:
-        """Resolve the actual font family the active style pins.
+    def _get_resolved_font_family(self) -> Optional[List[str]]:
+        """Resolve the font family LIST the active style pins on the body.
 
-        Returns the installed family the style applier uses for the body
-        elements (the requested font, e.g. ``Arial``, or its available
-        fallback) so the auto panel labels render in the SAME face. ``None``
+        Returns the same chain the style applier gives the axis labels, ticks
+        and title -- the requested font (or its available fallback) followed
+        by the CJK face when one exists -- so the auto panel labels render in
+        the SAME faces, glyph for glyph. A bare string here was the one path
+        left that could not fall back for CJK, and it made the panel labels
+        disagree with the body whenever a CJK face was installed. ``None``
         when nothing can be resolved.
         """
         try:
-            from ..styles._fonts import check_font
+            from ..styles._fonts import font_family_chain
             from ..styles._style_loader import _STYLE_CACHE
 
             requested = "Arial"
             if _STYLE_CACHE is not None:
                 requested = getattr(_STYLE_CACHE, "font_family", None) or requested
-            return check_font(requested)
+            return font_family_chain(requested)
         except Exception:
             return None
 
