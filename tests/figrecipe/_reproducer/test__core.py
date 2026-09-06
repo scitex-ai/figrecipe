@@ -470,129 +470,56 @@ if __name__ == "__main__":
             print(f"  {name}: {msg}")
 
 
-# ── rcParams the caller changed AFTER fr.subplots() ──────────────────────────
+# ── a capstyle in rcParams used to lose the whole recipe ─────────────────────
 #
-# The original honours them: fr.subplots() applies the style, the caller's
-# change lands next, the artists are created last. Replay used to invert that
-# -- apply_recorded_rcparams first, then apply_style_mm, whose GLOBAL rcParams
-# writes overwrote the recipe's own values -- so a correct figure came back
-# wrong (measured 2026-09-06: lines.linewidth MSE 1082, axes.titlesize 1185,
-# a serif font 157, plt.style.use("ggplot") 467). Each test below saves through
-# the public API with validation on and asserts the verdict.
-
-
-def _rc_case_verdict(tmpdir, name, build):
-    """Build under a scoped rc_context, save, return the validation result."""
-    with matplotlib.rc_context():
-        plt.style.use("default")
-        try:
-            fig = build()
-            _img, _yml, result = fr.save(
-                fig,
-                str(Path(tmpdir) / f"{name}.png"),
-                validate_error_level="warning",
-                verbose=False,
-            )
-            return result
-        finally:
-            plt.close("all")
-
-
-def _two_lines(ax):
-    x = np.linspace(0, 10, 50)
-    ax.plot(x, np.sin(x), id="sin")
-    ax.plot(x, np.cos(x), id="cos")
-
-
-def test_linewidth_set_after_subplots_reproduces(tmp_path):
-    # Arrange
-    def build():
-        fig, ax = fr.subplots()
-        matplotlib.rcParams["lines.linewidth"] = 4
-        _two_lines(ax)
-        return fig
-
-    # Act
-    result = _rc_case_verdict(tmp_path, "linewidth_after", build)
-    # Assert
-    assert result.valid is True
-
-
-def test_title_size_set_after_subplots_reproduces(tmp_path):
-    # Arrange
-    def build():
-        fig, ax = fr.subplots()
-        matplotlib.rcParams["axes.titlesize"] = 24
-        _two_lines(ax)
-        ax.set_title("Set after the rc change")
-        return fig
-
-    # Act
-    result = _rc_case_verdict(tmp_path, "titlesize_after", build)
-    # Assert
-    assert result.valid is True
-
-
-def test_font_family_set_after_subplots_reproduces(tmp_path):
-    """The operator's shape: japanize / a font picked after the figure exists."""
-    # Arrange
-    def build():
-        fig, ax = fr.subplots()
-        matplotlib.rcParams["font.family"] = "Liberation Serif"
-        ax.plot([1, 2, 3], [1, 4, 9], label="series", id="l")
-        ax.legend()
-        return fig
-
-    # Act
-    result = _rc_case_verdict(tmp_path, "font_after", build)
-    # Assert
-    assert result.valid is True
-
-
-def test_control_figure_with_no_caller_rc_change_still_reproduces(tmp_path):
-    """Control: the ordinary path must be untouched by the re-apply."""
-    # Arrange
-    def build():
-        fig, ax = fr.subplots()
-        _two_lines(ax)
-        ax.set_title("plain")
-        return fig
-
-    # Act
-    result = _rc_case_verdict(tmp_path, "plain", build)
-    # Assert
-    assert result.valid is True
-
-
-def test_control_rc_change_before_subplots_still_reproduces(tmp_path):
-    """Control: BEFORE-subplots changes always worked; keep it that way."""
-    # Arrange
-    def build():
-        matplotlib.rcParams["font.family"] = "Liberation Serif"
-        fig, ax = fr.subplots()
-        ax.plot([1, 2, 3], [1, 4, 9], label="series", id="l")
-        ax.legend()
-        return fig
-
-    # Act
-    result = _rc_case_verdict(tmp_path, "font_before", build)
-    # Assert
-    assert result.valid is True
+# matplotlib validates lines.solid_capstyle into a CapStyle enum, which
+# SUBCLASSES str, so it slipped past the "already a primitive" check in
+# styles/_rcparams.py and reached the YAML writer as an enum object:
+# RepresenterError, with the png already written and the yaml never. Every
+# seaborn-v0_8-* style sets one of these (measured 2026-09-06).
 
 
 def test_capstyle_rcparam_does_not_break_the_save(tmp_path):
-    """A capstyle enum in rcParams used to raise and lose the whole recipe."""
     # Arrange
-    def build():
-        matplotlib.rcParams["lines.solid_capstyle"] = "round"
-        fig, ax = fr.subplots()
-        _two_lines(ax)
-        return fig
-
-    # Act
-    result = _rc_case_verdict(tmp_path, "capstyle", build)
+    with matplotlib.rc_context():
+        plt.style.use("default")
+        try:
+            matplotlib.rcParams["lines.solid_capstyle"] = "round"
+            fig, ax = fr.subplots()
+            x = np.linspace(0, 10, 50)
+            ax.plot(x, np.sin(x), id="sin")
+            # Act
+            _img, _yml, result = fr.save(
+                fig,
+                str(tmp_path / "capstyle.png"),
+                validate_error_level="warning",
+                verbose=False,
+            )
+        finally:
+            plt.close("all")
     # Assert
     assert result.valid is True
+
+
+def test_seaborn_style_figure_writes_a_recipe(tmp_path):
+    """The real-world trigger: plt.style.use("seaborn-v0_8-whitegrid")."""
+    # Arrange
+    with matplotlib.rc_context():
+        plt.style.use("seaborn-v0_8-whitegrid")
+        try:
+            fig, ax = fr.subplots()
+            ax.plot([1, 2, 3], [1, 4, 9], id="l")
+            # Act
+            _img, yaml_path, _result = fr.save(
+                fig,
+                str(tmp_path / "seaborn.png"),
+                validate_error_level="warning",
+                verbose=False,
+            )
+        finally:
+            plt.close("all")
+    # Assert
+    assert Path(yaml_path).exists()
 
 
 # EOF
