@@ -197,6 +197,19 @@ def _reproduce_grid(
             for col in range(ncols):
                 apply_style_mm(axes_2d[row, col], record.style)
 
+        # apply_style_mm writes GLOBAL rcParams (lines.linewidth, axes.titlesize,
+        # the font family, ...), so it overwrites the recipe's own captured
+        # rcParams, which reproduce() applied before this grid was built. In the
+        # ORIGINAL the order is the other way round -- subplots() applies the
+        # style, THEN the caller may set an rcParam, and the artists are created
+        # last -- so a caller who set e.g. font.family after fr.subplots() got it
+        # in the png and lost it on replay (a correct figure failing validation).
+        # record.rcparams is captured at save time, i.e. it already holds
+        # whatever actually rendered: re-apply it so it has the final word.
+        from ..styles._rcparams import apply_recorded_rcparams
+
+        apply_recorded_rcparams(record.rcparams or {})
+
     # Result cache for resolving references (e.g., clabel needs ContourSet from contour)
     result_cache: Dict[str, Any] = {}
 

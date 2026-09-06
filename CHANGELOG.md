@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **An rcParam the caller set AFTER `fr.subplots()` was lost on replay, so a
+  correct figure failed reproducibility validation.** `reproduce()` applied the
+  recipe's recorded rcParams first, then the curated style block re-applied
+  itself and overwrote them (`apply_style_mm` writes global rcParams:
+  `lines.linewidth`, `axes.titlesize`, the font family, ...). That is the
+  inverse of the original order, where the style runs at `fr.subplots()`, the
+  caller's change lands next, and the artists are created last. Measured on
+  2026-09-06: `lines.linewidth=4` came back at MSE 1082, `axes.titlesize=24` at
+  1185, a serif font at 157, `plt.style.use("ggplot")` at 467 -- all on figures
+  that were visibly correct. This is also why a Japanese font selected after the
+  figure was created (`japanize_matplotlib`, `IPAexGothic`) rendered in the png
+  but not in the replay. The recorded rcParams, captured at save time, now have
+  the final word; all of those reproduce at MSE 0.00.
+- **`fr.save` crashed on any figure whose rcParams held a capstyle or joinstyle**
+  -- every `seaborn-v0_8-*` style sets one, as does
+  `rcParams["lines.solid_capstyle"] = "round"`. matplotlib's `CapStyle` and
+  `JoinStyle` subclass `str`, so they passed the "already a primitive" check and
+  reached the YAML writer as enum objects: `RepresenterError: cannot represent an
+  object: <CapStyle.round: 'round'>`. The png was written before the crash and
+  the recipe never was, so the figure was silently left without one.
 - **Japanese (and Chinese/Korean) labels no longer render as blank boxes.**
   `font.family` was a single Latin family, which defeats matplotlib's
   per-glyph fallback, so every CJK glyph became tofu (the operator's pie-chart
