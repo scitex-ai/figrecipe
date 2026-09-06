@@ -81,3 +81,70 @@ class TestProcessScalarNumpyCoercion:
         out = _process_scalar("s", value, _is_native)
         # Assert
         assert out["data"] == "label"
+
+
+# ── _process_single_arg: date lists are DATA, not text ───────────────────────
+#
+# A one-point date series ``[np.datetime64("2026-08-08")]`` was recorded as the
+# TEXT "[np.datetime64('2026-08-08')]" because only numeric dtype kinds took
+# the array path; replay could not convert it to axis units and a correct
+# figure failed validation (2026-09-04). Real helpers, no patching.
+
+
+def _process(value):
+    import datetime as _dt  # noqa: F401  (documents what the lists hold)
+
+    from figrecipe._recorder._utils import _process_single_arg
+    from figrecipe._utils._numpy_io import should_store_inline, to_serializable
+
+    return _process_single_arg(
+        "x", value, should_store_inline, to_serializable, _is_native
+    )
+
+
+def test_datetime64_list_is_recorded_with_a_datetime_dtype():
+    # Arrange
+    value = [np.datetime64("2026-08-08")]
+    # Act
+    out = _process(value)
+    # Assert
+    assert str(out.get("dtype", "")).startswith("datetime64")
+
+
+def test_datetime64_list_is_not_recorded_as_repr_text():
+    # Arrange
+    value = [np.datetime64("2026-08-08")]
+    # Act
+    out = _process(value)
+    # Assert
+    assert "np.datetime64" not in str(out.get("data"))
+
+
+def test_python_date_list_is_recorded_with_a_datetime_dtype():
+    # Arrange
+    import datetime as _dt
+
+    value = [_dt.date(2026, 8, 8), _dt.date(2026, 8, 9)]
+    # Act
+    out = _process(value)
+    # Assert
+    assert str(out.get("dtype", "")).startswith("datetime64")
+
+
+def test_control_numeric_list_still_takes_the_array_path():
+    # Arrange
+    value = [1, 2, 3]
+    # Act
+    out = _process(value)
+    # Assert
+    assert str(out.get("dtype", "")).startswith("int")
+
+
+def test_control_string_list_does_not_get_a_datetime_dtype():
+    """Control: a list of labels is not data and must not be coerced."""
+    # Arrange
+    value = ["a", "b"]
+    # Act
+    out = _process(value)
+    # Assert
+    assert not str(out.get("dtype", "")).startswith("datetime64")

@@ -93,6 +93,23 @@ def _refuse_one_shot_iterator(name: str, value: Any) -> None:
     )
 
 
+def _all_datetime_like(value) -> bool:
+    """True if every element is a date/datetime (stdlib, pandas or numpy).
+
+    ``np.asarray`` gives such a list ``object`` dtype, which hides that it is a
+    date series; converting explicitly to ``datetime64[ns]`` keeps it data.
+    """
+    import datetime as _dt
+
+    for item in value:
+        if isinstance(item, (np.datetime64, _dt.date, _dt.datetime)):
+            continue
+        if type(item).__name__ == "Timestamp":  # pandas, without importing it
+            continue
+        return False
+    return True
+
+
 def _process_single_arg(
     name: str,
     value: Any,
@@ -121,10 +138,20 @@ def _process_single_arg(
         return _process_array_list(name, value, to_serializable)
 
     if isinstance(value, (list, tuple)) and len(value) > 0:
-        # Check if it's a list of numbers that can be converted to array
+        # A list of numbers -- or of dates -- is data and takes the array path.
+        # "M"/"m" (datetime64/timedelta64) were missing here, so a one-point
+        # date series like ``[np.datetime64("2026-08-08")]`` fell through to
+        # the str() fallback and was recorded as the TEXT
+        # "[np.datetime64('2026-08-08')]"; replay then failed with "Failed to
+        # convert value(s) to axis units" and the figure did not reproduce
+        # (measured 2026-09-04; the 58-point array on the same axes replayed
+        # fine because ndarrays never took this branch).
         try:
             arr = np.asarray(value)
-            if arr.dtype.kind in ("i", "f", "u", "b"):  # numeric types
+            if arr.dtype.kind in ("i", "f", "u", "b", "M", "m"):
+                return _process_ndarray(name, arr, should_store_inline, to_serializable)
+            if arr.dtype.kind == "O" and _all_datetime_like(value):
+                arr = np.asarray(value, dtype="datetime64[ns]")
                 return _process_ndarray(name, arr, should_store_inline, to_serializable)
         except (ValueError, TypeError):
             pass
