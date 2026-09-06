@@ -17,9 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the ENGINE value..."}`, putting a Django settings diagnostic in the browser.
   The handlers now check for a usable database and answer `501` with a message
   about the feature instead: chat history is not available in the standalone
-  editor. Where a real database is configured -- the hosted editor -- the same
-  endpoints are untouched and keep working. Reported by scitex-app from a
-  reading of the source; confirmed here by running it.
+  editor. Only the three SESSION endpoints are gated -- streaming a reply needs
+  no database, and `POST /api/chat/stream` returns 200 and streams without one.
+  Where a real database is configured -- the hosted editor -- all of them are
+  untouched and keep working. Reported by scitex-app from a reading of the
+  source; confirmed here by running it.
 - **`fr.save` crashed on any figure whose rcParams held a capstyle or joinstyle**
   -- every `seaborn-v0_8-*` style sets one, as does
   `rcParams["lines.solid_capstyle"] = "round"`. matplotlib's `CapStyle` and

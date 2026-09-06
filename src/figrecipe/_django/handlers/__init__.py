@@ -130,9 +130,16 @@ def _chat_unavailable(request):
 
 
 def handle_api_chat_stream(request, editor):
-    """Wrapper: chat handler ignores editor."""
-    if not _database_is_configured():
-        return _chat_unavailable(request)
+    """Wrapper: chat handler ignores editor.
+
+    DELIBERATELY NOT GATED. Streaming a reply needs no database: measured on
+    develop d90cea4 with no DATABASES configured, POST here returns 200 and
+    streams, and fails only on a missing API key. Only the three SESSION
+    handlers below query the ORM. Gating this one as well would have turned a
+    working endpoint into a 501 -- predicted by scitex-app from the import
+    chain (_django.py -> ._sse, ._stream: zero ORM references) and confirmed by
+    running it.
+    """
     return _raw_chat_stream(request)
 
 

@@ -88,14 +88,28 @@ def test_response_body_carries_no_django_internals(client, leak):
     assert leak not in body
 
 
-def test_chat_stream_post_is_also_guarded(client):
-    """The POST path -- a GET only ever proved the method guard, not the ORM."""
+def test_chat_stream_is_NOT_gated(client):
+    """The control against an over-broad gate: streaming needs no database.
+
+    The first version of this fix guarded all four chat handlers, which turned
+    a working endpoint into a 501. Measured on develop with no DATABASES
+    configured: POST here with a prompt returns 200 and streams, failing only
+    on a missing API key. scitex-app predicted it from the import chain
+    (_chat/_django.py -> ._sse, ._stream carry zero ORM references) and the
+    measurement agreed. Only the SESSION handlers touch the ORM.
+
+    A gate is supposed to disable what cannot work, not what it sits next to.
+    """
     # Arrange
+    import json
+
     path = "/api/chat/stream"
     # Act
-    response = client.post(path, data={"message": "hi"})
+    response = client.post(
+        path, data=json.dumps({}), content_type="application/json"
+    )
     # Assert
-    assert response.status_code == 501
+    assert response.status_code != 501
 
 
 def test_the_message_names_the_feature_not_the_mechanism(client):
