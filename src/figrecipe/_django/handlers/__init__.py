@@ -5,14 +5,6 @@
 Exports HANDLERS dict for the catch-all dispatcher.
 """
 
-# Chat: single source of truth from scitex-app (no figrecipe-specific fallback).
-# `scitex_app.chat` is a lazily-exposed package attribute (PEP 562
-# `__getattr__`), not a real importable submodule -- `from scitex_app.chat
-# import X` raises ModuleNotFoundError since that form requires the import
-# system to resolve `scitex_app.chat` as an actual submodule. `from
-# scitex_app import chat` works: it falls back to attribute lookup on the
-# already-imported `scitex_app` package.
-from scitex_app import chat as _chat
 
 from .annotation import (
     handle_get_captions,
@@ -28,6 +20,14 @@ from .axis import (
     handle_update_axis_type,
     handle_update_label,
     handle_update_legend_position,
+)
+from .chat import (  # noqa: F401
+    _chat_unavailable,
+    _database_is_configured,
+    handle_api_chat_stream,
+    handle_api_session_detail,
+    handle_api_session_list,
+    handle_api_session_messages,
 )
 from .compose import handle_compose_save
 from .core import handle_hitmap, handle_ping, handle_preview, handle_update
@@ -80,32 +80,6 @@ from .style import (
     handle_style,
     handle_switch_theme,
 )
-
-_raw_chat_stream = _chat.chat_stream_view
-_raw_session_detail = _chat.session_detail_view
-_raw_session_list = _chat.session_list_view
-_raw_session_messages = _chat.session_messages_view
-
-
-def handle_api_chat_stream(request, editor):
-    """Wrapper: chat handler ignores editor."""
-    return _raw_chat_stream(request)
-
-
-def handle_api_session_list(request, editor):
-    """Wrapper: session list/create — ignores editor."""
-    return _raw_session_list(request)
-
-
-def handle_api_session_detail(request, editor, session_id):
-    """Wrapper: session get/patch/delete — ignores editor."""
-    return _raw_session_detail(request, session_id)
-
-
-def handle_api_session_messages(request, editor, session_id):
-    """Wrapper: session messages get/add — ignores editor."""
-    return _raw_session_messages(request, session_id)
-
 
 # fmt: off
 HANDLERS = {
