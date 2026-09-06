@@ -158,4 +158,49 @@ def test_the_gate_fires_on_the_dummy_backend():
     assert configured is False
 
 
+# ── the OTHER router: views.py prefix-matches and imports the wrappers ───────
+#
+# api/chat/sessions/ reaches handle_api_session_list through the HANDLERS
+# registry. The parameterized URLs do NOT: views.py prefix-matches
+# "api/chat/sessions/" and imports handle_api_session_detail and
+# handle_api_session_messages directly, so two of the three ORM-touching
+# handlers are reachable only that way (reported by scitex-app, 2026-09-06).
+#
+# They are covered because the check lives in the handler FUNCTIONS, which is
+# what views.py imports -- not in the registry dict. That is a property of the
+# import, not a guarantee: if views.py ever imports the raw scitex_app views
+# instead of these wrappers, the coverage disappears silently. These tests are
+# here to make that failure loud.
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/chat/sessions/1/",
+        "/api/chat/sessions/1/messages/",
+        "/api/chat/sessions/1/messages",
+    ],
+)
+def test_the_prefix_matched_routes_are_guarded_too(client, path):
+    # Arrange
+    expected = 501
+    # Act
+    response = client.get(path)
+    # Assert
+    assert response.status_code == expected
+
+
+@pytest.mark.parametrize(
+    "path", ["/api/chat/sessions/1/", "/api/chat/sessions/1/messages/"]
+)
+def test_the_prefix_matched_routes_leak_no_internals(client, path):
+    """views.py's catch-all returns str(e) verbatim -- so never reach it."""
+    # Arrange
+    forbidden = ("ImproperlyConfigured", "ENGINE", "DATABASES")
+    # Act
+    body = client.get(path).content.decode("utf-8", "replace")
+    # Assert
+    assert not [k for k in forbidden if k in body]
+
+
 # EOF
