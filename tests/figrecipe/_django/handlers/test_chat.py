@@ -42,7 +42,7 @@ def client():
 
 def test_import__django_handlers_module():
     # Arrange
-    module_path = "figrecipe._django.handlers"
+    module_path = "figrecipe._django.handlers.chat"
     # Act
     mod = pytest.importorskip(module_path)
     # Assert
@@ -129,7 +129,7 @@ def test_the_gate_stands_down_when_a_database_is_configured():
     # Arrange
     from django.test import override_settings
 
-    from figrecipe._django.handlers import _database_is_configured
+    from figrecipe._django.handlers.chat import _database_is_configured
 
     real_db = {
         "default": {
@@ -148,7 +148,7 @@ def test_the_gate_fires_on_the_dummy_backend():
     # Arrange
     from django.test import override_settings
 
-    from figrecipe._django.handlers import _database_is_configured
+    from figrecipe._django.handlers.chat import _database_is_configured
 
     dummy = {"default": {"ENGINE": "django.db.backends.dummy"}}
     # Act
