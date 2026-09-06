@@ -75,11 +75,24 @@ TEMPLATES = [
     },
 ]
 
-# No DATABASES entry: this app declares no models and issues no ORM queries,
-# so there is nothing to store. Django treats an unset DATABASES as the dummy
-# backend and skips the unapplied-migration check, which is exactly what the
-# standalone editor wants. The peer launcher (scitex_app._standalone) already
-# configures Django the same way.
+# No DATABASES entry: Django then uses the dummy backend, which raises on any
+# query, and skips the unapplied-migration check -- which is what the standalone
+# editor wants, because figrecipe stores nothing of its own.
+#
+# BUT NOTE WHAT ELSE IS INSTALLED. INSTALLED_APPS above registers
+# ScitexAppChatConfig (scitex_app._chat), whose ChatSession/ChatMessage views
+# DO issue ORM queries, and the handler registry routes api/chat/* to them. On
+# 2026-09-06 that combination answered 500 on every call to
+# /api/chat/sessions/, with the Django settings diagnostic in the response
+# body. This comment previously read "this app declares no models and issues no
+# ORM queries, so there is nothing to store" -- true of figrecipe's own app,
+# false of this settings module, and standing right next to the wiring that
+# contradicted it.
+#
+# The handlers now check for a usable database and answer 501 here instead
+# (see _django/handlers/__init__.py::_database_is_configured). The app stays
+# registered so the models remain importable on the shared handler path; a host
+# that embeds these handlers with a real database keeps the working feature.
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

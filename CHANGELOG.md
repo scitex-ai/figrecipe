@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **The standalone editor's chat endpoints returned 500 on every call.** The
+  editor runs with no `DATABASES` entry -- Django's dummy backend -- because
+  figrecipe stores nothing of its own, but `INSTALLED_APPS` registers
+  scitex-app's chat models and the handler registry routes `api/chat/*` to
+  views that issue real ORM queries. `GET /api/chat/sessions/` answered
+  `500 {"error": "settings.DATABASES is improperly configured. Please supply
+  the ENGINE value..."}`, putting a Django settings diagnostic in the browser.
+  The handlers now check for a usable database and answer `501` with a message
+  about the feature instead: chat history is not available in the standalone
+  editor. Where a real database is configured -- the hosted editor -- the same
+  endpoints are untouched and keep working. Reported by scitex-app from a
+  reading of the source; confirmed here by running it.
 - **`fr.save` crashed on any figure whose rcParams held a capstyle or joinstyle**
   -- every `seaborn-v0_8-*` style sets one, as does
   `rcParams["lines.solid_capstyle"] = "round"`. matplotlib's `CapStyle` and
