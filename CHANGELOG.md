@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **`fr.save` crashed on any figure whose rcParams held a capstyle or joinstyle**
+  -- every `seaborn-v0_8-*` style sets one, as does
+  `rcParams["lines.solid_capstyle"] = "round"`. matplotlib's `CapStyle` and
+  `JoinStyle` subclass `str`, so they passed the "already a primitive" check and
+  reached the YAML writer as enum objects: `RepresenterError: cannot represent an
+  object: <CapStyle.round: 'round'>`. The png was written before the crash and
+  the recipe never was, so the figure was silently left without one.
 - **Two recipe gaps that made correct figures fail reproducibility
   validation.** A one-point date series (`ax.plot([np.datetime64(...)], [y])`)
   was recorded as the text `"[np.datetime64('2026-08-08')]"` because the
