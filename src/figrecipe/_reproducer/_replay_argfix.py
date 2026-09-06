@@ -15,6 +15,45 @@ from typing import Any, Dict, List, Tuple
 
 from ._replay_action import ReplayArgs
 
+#: kwargs whose value may be a matplotlib dash spec ``(offset, (on, off, ...))``.
+_DASH_KWARGS = ("linestyle", "ls", "dashes")
+
+
+def _normalise_dash_spec(value: Any) -> Any:
+    """Turn a YAML-round-tripped dash spec back into the tuple matplotlib takes.
+
+    matplotlib accepts ``ls=(0, (6, 4))`` -- an offset and an on/off sequence,
+    the documented way to write a custom dash pattern. A recipe stores it as
+    ``[0, [6, 4]]`` because YAML has no tuples, and matplotlib rejects the
+    list form ("Unrecognized linestyle: [0, [6, 4]]"), so the line replayed
+    solid and the figure failed reproducibility validation (measured
+    2026-09-02 by scitex-business, reproduced 2026-09-04: MSE 240 on a
+    correct figure). Only the two-element ``[number, sequence]`` shape is
+    touched; strings ("--"), flat sequences and everything else pass through.
+    """
+    if (
+        isinstance(value, (list, tuple))
+        and len(value) == 2
+        and isinstance(value[0], (int, float))
+        and not isinstance(value[0], bool)
+        and isinstance(value[1], (list, tuple))
+    ):
+        return (value[0], tuple(value[1]))
+    return value
+
+
+def _normalise_dash_patterns(
+    method_name: str, args: List[Any], kwargs: Dict[str, Any]
+) -> Tuple[List[Any], Dict[str, Any]]:
+    """Apply :func:`_normalise_dash_spec` wherever a dash spec can travel."""
+    kwargs = {
+        k: (_normalise_dash_spec(v) if k in _DASH_KWARGS else v)
+        for k, v in kwargs.items()
+    }
+    if method_name in ("set_linestyle", "set_dashes") and args:
+        args = [_normalise_dash_spec(args[0]), *args[1:]]
+    return args, kwargs
+
 
 def _coerce_axis_values(
     method_name: str, args: List[Any], kwargs: Dict[str, Any]
@@ -74,6 +113,7 @@ def apply_arg_fixups(
     only reading ``args``/``kwargs``.
     """
     args, kwargs = _coerce_axis_values(method_name, args, kwargs)
+    args, kwargs = _normalise_dash_patterns(method_name, args, kwargs)
 
     # Axis scale (set_xscale / set_yscale) replays as a generic decoration; warn
     # loudly on an unsupported scale name instead of degrading silently to linear.

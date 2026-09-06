@@ -28,6 +28,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reached the YAML writer as enum objects: `RepresenterError: cannot represent an
   object: <CapStyle.round: 'round'>`. The png was written before the crash and
   the recipe never was, so the figure was silently left without one.
+- **Two recipe gaps that made correct figures fail reproducibility
+  validation.** A one-point date series (`ax.plot([np.datetime64(...)], [y])`)
+  was recorded as the text `"[np.datetime64('2026-08-08')]"` because the
+  recorder promoted lists to arrays only for numeric dtypes; replay then
+  failed with "Failed to convert value(s) to axis units" and the figure did
+  not reproduce (MSE 284 on a correct figure). Date lists now take the array
+  path like any other data. A custom dash pattern `ls=(0, (6, 4))` came back
+  from YAML as `[0, [6, 4]]`, which matplotlib rejects, so the line replayed
+  solid (MSE 240). Replay now restores the tuple before the call. Both were
+  hit in a real document build on 2026-09-02 and had been read as a
+  constrained_layout false positive; measured, validation was right and the
+  recipes were incomplete.
 - **Japanese (and Chinese/Korean) labels no longer render as blank boxes.**
   `font.family` was a single Latin family, which defeats matplotlib's
   per-glyph fallback, so every CJK glyph became tofu (the operator's pie-chart
