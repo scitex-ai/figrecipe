@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **A partial `style=` dict silently discarded every key you did not pass.**
+  `fr.subplots(style={"font_family": ...})` replaced the whole style rather
+  than overriding one key, and the keys left out did not fall back to the
+  loaded style -- they fell back to literals hardcoded inside
+  `apply_style_mm`, which differ from it. So a partial dict produced a third
+  configuration that was neither the style nor matplotlib: measured in real
+  work (2026-09-02), `axes.labelsize` moved from 7.0 to 8.0, and `style={}`
+  reverted the spines too. No warning, no error. A dict is now merged over the
+  resolved style, which is what callers were doing by hand with
+  `{**fr.SCITEX_STYLE, ...}`; a style OBJECT is complete and still replaces.
 - **The standalone editor's chat endpoints returned 500 on every call.** The
   editor runs with no `DATABASES` entry -- Django's dummy backend -- because
   figrecipe stores nothing of its own, but `INSTALLED_APPS` registers
