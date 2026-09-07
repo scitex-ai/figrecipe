@@ -240,11 +240,23 @@ def _apply_style_to_axes(
 
     if style is not None:
         should_apply_style = True
-        style_dict = (
-            style.to_subplots_kwargs()
-            if hasattr(style, "to_subplots_kwargs")
-            else style
-        )
+        if hasattr(style, "to_subplots_kwargs"):
+            # A style OBJECT is already complete -- it carries every key.
+            style_dict = style.to_subplots_kwargs()
+        else:
+            # A DICT is an OVERRIDE, not a replacement. Taking it whole meant
+            # every key the caller did not pass fell through to the literal
+            # defaults inside apply_style_mm, which are NOT the loaded style's
+            # values -- so a partial dict produced a third configuration that
+            # was neither the style nor matplotlib. Measured 2026-09-02 in real
+            # work: style={"font_family": ...} silently moved axes.labelsize
+            # from 7.0 to 8.0, and style={} reverted the spines as well.
+            # Callers were working around it with {**fr.SCITEX_STYLE, ...};
+            # that is what this does, so nobody has to know to do it.
+            base = (
+                to_subplots_kwargs(global_style) if global_style is not None else {}
+            )
+            style_dict = {**(base or {}), **style}
     elif apply_style_mm and global_style is not None:
         style_dict = to_subplots_kwargs(global_style)
         if style_dict and style_dict.get("axes_thickness_mm") is not None:
