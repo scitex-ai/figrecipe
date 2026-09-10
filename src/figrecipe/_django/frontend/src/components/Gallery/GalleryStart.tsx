@@ -13,10 +13,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useGalleryTemplates, flattenTemplates } from "./useGalleryTemplates";
+import { visibleStartTemplates } from "./visibleStartTemplates";
 
 export function GalleryStart() {
   const { data, loading, failed, thumbnails, addTemplate, openDemoFigure } =
     useGalleryTemplates();
+  // TODO 131 — reduce the number of options shown at once. This fallback only
+  // renders when no figure is on the canvas (the plot-type rail is ALWAYS
+  // present beside it), so dumping all ~18 template tiles here puts two
+  // parallel "which plot?" choosers side by side on one screen. The tiles are
+  // kept one click away behind a disclosure instead of all shown at once; the
+  // rail remains the persistent primary entry.
+  const [examplesExpanded, setExamplesExpanded] = useState(false);
 
   // Open on a FIGURE, not on a menu.
   //
@@ -85,26 +93,39 @@ export function GalleryStart() {
         </p>
       </div>
 
-      <div className="gallery-start-grid">
-        {templates.map((tmpl) => (
-          <button
-            key={tmpl.name}
-            type="button"
-            className="gallery-start-item"
-            onClick={() => addTemplate(tmpl)}
-            title={`Open the ${tmpl.label} example`}
-          >
-            <span className="gallery-start-thumb">
-              {thumbnails[tmpl.name] ? (
-                <img src={thumbnails[tmpl.name]} alt={tmpl.label} />
-              ) : (
-                <i className={`fas ${tmpl.icon} gallery-icon-placeholder`} />
-              )}
-            </span>
-            <span className="gallery-start-label">{tmpl.label}</span>
-          </button>
-        ))}
-      </div>
+      {examplesExpanded ? (
+        <div className="gallery-start-grid">
+          {visibleStartTemplates(templates, examplesExpanded).map((tmpl) => (
+            <button
+              key={tmpl.name}
+              type="button"
+              className="gallery-start-item"
+              onClick={() => addTemplate(tmpl)}
+              title={`Open the ${tmpl.label} example`}
+            >
+              <span className="gallery-start-thumb">
+                {thumbnails[tmpl.name] ? (
+                  <img src={thumbnails[tmpl.name]} alt={tmpl.label} />
+                ) : (
+                  <i className={`fas ${tmpl.icon} gallery-icon-placeholder`} />
+                )}
+              </span>
+              <span className="gallery-start-label">{tmpl.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="gallery-start-expand"
+          onClick={() => setExamplesExpanded(true)}
+          title="Show example figures"
+          aria-expanded={false}
+        >
+          <i className="fas fa-images" />
+          Show {templates.length} examples
+        </button>
+      )}
     </div>
   );
 }
