@@ -1,6 +1,12 @@
 /** Vertical plot-type selector nav — fixed width, never collapses.
  * Uses the shared SelectorNav from scitex-ui.
  * Sits between DataTable and FigureViewer panes, matching scitex-cloud app selector pattern.
+ *
+ * TODO 129 — "reach the target plot in one operation": a family that ships
+ * exactly one template (scatter, statistical/errorbar, contour) adds that
+ * template the moment its rail item is selected, instead of opening a gallery
+ * that only holds a single tile. Families with several templates (or none, or
+ * data still loading) fall back to opening the gallery, exactly as before.
  */
 
 import { useState } from "react";
@@ -8,6 +14,8 @@ import { SelectorNav } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app
 import type { SelectorNavItem } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryPanel } from "../Gallery/GalleryPanel";
+import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
+import { singleFamilyTemplate } from "../Gallery/singleFamilyTemplate";
 
 const PLOT_TYPES: SelectorNavItem[] = [
   { id: "line", icon: "fas fa-chart-line", label: "Line" },
@@ -26,8 +34,16 @@ export function PlotTypeNav() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryCategory, setGalleryCategory] = useState<string | undefined>();
   const { placedFigures } = useEditorStore();
+  const { data, addTemplate } = useGalleryTemplates();
 
-  const openGallery = (id: string) => {
+  const selectFamily = (id: string) => {
+    // One operation: a single-template family adds its plot directly.
+    const sole = singleFamilyTemplate(data, id);
+    if (sole) {
+      void addTemplate(sole);
+      return;
+    }
+    // Otherwise open the gallery for that family (multiple/none/not-yet-loaded).
     setGalleryCategory(id);
     setGalleryOpen(true);
   };
@@ -37,7 +53,7 @@ export function PlotTypeNav() {
       <SelectorNav
         items={PLOT_TYPES}
         activeId={galleryCategory ?? null}
-        onSelect={openGallery}
+        onSelect={selectFamily}
         indicator="left"
         style={{ width: 56, minWidth: 56, maxWidth: 56 }}
         footer={
