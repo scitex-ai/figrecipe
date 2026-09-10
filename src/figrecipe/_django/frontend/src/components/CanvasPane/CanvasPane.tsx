@@ -8,11 +8,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 
-interface CanvasPaneProps {
-  onHeaderDoubleClick?: () => void;
-}
-
-export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
+export function CanvasPane() {
   const {
     placedFigures,
     selectedFigureId,
@@ -30,21 +26,31 @@ export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
 
-  // Figure label: selected figure name or count
+  // Figure label: selected figure name or count. When the canvas holds no
+  // figures the label used to be the bare token "No figures" with no
+  // explanation — say what it means and how to get out of it.
   const selectedFig = placedFigures.find((f) => f.id === selectedFigureId);
   const figLabel = selectedFig
     ? (selectedFig.path.split("/").pop() ?? "figure")
     : placedFigures.length > 0
       ? `${placedFigures.length} figure${placedFigures.length > 1 ? "s" : ""}`
-      : "No figures";
+      : "No figures yet";
+  const figLabelTitle =
+    placedFigures.length === 0
+      ? "No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree."
+      : undefined;
 
   return (
     <>
       {/* Pane header with figure dropdown + toolbar actions */}
-      <div className="pane-header" onDoubleClick={onHeaderDoubleClick}>
+      <div className="pane-header">
         {/* Figure dropdown */}
         <div className="figure-dropdown-container">
-          <button className="figure-dropdown-toggle" type="button">
+          <button
+            className="figure-dropdown-toggle"
+            type="button"
+            title={figLabelTitle}
+          >
             <i className="fas fa-paint-brush" />
             <span className="figure-dropdown-label">{figLabel}</span>
             <i className="fas fa-chevron-down" />
