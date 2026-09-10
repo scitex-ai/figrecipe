@@ -180,7 +180,8 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
               }
             >
               <DataTablePane
-                onHeaderDoubleClick={dataPanel.headerProps.onDoubleClick}
+                onToggleCollapse={dataPanel.toggleCollapse}
+                collapsed={dataPanel.collapsed}
               />
             </aside>
 
@@ -198,20 +199,34 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
               className={`split-pane split-pane-center${centerCollapsed ? " collapsed" : ""}`}
             >
               {centerCollapsed ? (
-                <div className="pane-header" onDoubleClick={toggleCenter}>
+                <div className="pane-header">
                   <span className="panel-title">
                     <i className="fas fa-image" />
                     Viewer
                   </span>
+                  <button
+                    className="pane-header-btn panel-toggle-btn"
+                    type="button"
+                    onClick={toggleCenter}
+                    title="Expand figure viewer"
+                    aria-label="Expand figure viewer"
+                  >
+                    <i className="fas fa-chevron-up" />
+                  </button>
                 </div>
               ) : (
                 <>
-                  <div
-                    className="pane-header pane-header--minimal"
-                    onDoubleClick={toggleCenter}
-                    title="Double-click to collapse"
-                  >
+                  <div className="pane-header pane-header--minimal">
                     <i className="fas fa-image" style={{ opacity: 0.5 }} />
+                    <button
+                      className="pane-header-btn panel-toggle-btn"
+                      type="button"
+                      onClick={toggleCenter}
+                      title="Collapse figure viewer"
+                      aria-label="Collapse figure viewer"
+                    >
+                      <i className="fas fa-chevron-down" />
+                    </button>
                   </div>
                   <FigureViewer />
                 </>
@@ -228,23 +243,37 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
               className={`split-pane split-pane-center${centerCollapsed ? " collapsed" : ""}`}
             >
               {centerCollapsed ? (
-                <div className="pane-header" onDoubleClick={toggleCenter}>
+                <div className="pane-header">
                   <span className="panel-title">
                     <i className="fas fa-object-group" />
                     Canvas
                   </span>
+                  <button
+                    className="pane-header-btn panel-toggle-btn"
+                    type="button"
+                    onClick={toggleCenter}
+                    title="Expand canvas"
+                    aria-label="Expand canvas"
+                  >
+                    <i className="fas fa-chevron-up" />
+                  </button>
                 </div>
               ) : (
                 <>
-                  <div
-                    className="pane-header pane-header--minimal"
-                    onDoubleClick={toggleCenter}
-                    title="Double-click to collapse"
-                  >
+                  <div className="pane-header pane-header--minimal">
                     <i
                       className="fas fa-object-group"
                       style={{ opacity: 0.5 }}
                     />
+                    <button
+                      className="pane-header-btn panel-toggle-btn"
+                      type="button"
+                      onClick={toggleCenter}
+                      title="Collapse canvas"
+                      aria-label="Collapse canvas"
+                    >
+                      <i className="fas fa-chevron-down" />
+                    </button>
                   </div>
                   <CanvasPane />
                 </>
@@ -267,7 +296,8 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
             }
           >
             <PropertiesPane
-              onHeaderDoubleClick={rightPanel.headerProps.onDoubleClick}
+              onToggleCollapse={rightPanel.toggleCollapse}
+              collapsed={rightPanel.collapsed}
             />
           </aside>
         </div>

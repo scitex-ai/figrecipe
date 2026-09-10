@@ -8,10 +8,11 @@ import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";
 
 interface DataTablePaneProps {
-  onHeaderDoubleClick?: () => void;
+  onToggleCollapse?: () => void;
+  collapsed?: boolean;
 }
 
-export function DataTablePane({ onHeaderDoubleClick }: DataTablePaneProps) {
+export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProps) {
   const {
     datatableTabs,
     activeTabId,
@@ -99,7 +100,23 @@ export function DataTablePane({ onHeaderDoubleClick }: DataTablePaneProps) {
   return (
     <>
       {/* vis_app .pane-header */}
-      <div className="pane-header" onDoubleClick={onHeaderDoubleClick}>
+      <div className="pane-header">
+        {/* Explicit collapse/expand control — a visible button, not a
+            double-click gesture. Left panel: chevron points out when
+            expanded (collapse), in when collapsed (expand). */}
+        <button
+          className="pane-header-btn panel-toggle-btn"
+          type="button"
+          onClick={onToggleCollapse}
+          title={collapsed ? "Expand data table" : "Collapse data table"}
+          aria-label={collapsed ? "Expand data table" : "Collapse data table"}
+        >
+          <i
+            className={`fas ${
+              collapsed ? "fa-chevron-right" : "fa-chevron-left"
+            }`}
+          />
+        </button>
         {/* Data dropdown */}
         <div className="data-dropdown-container">
           <button className="data-dropdown-toggle" type="button">

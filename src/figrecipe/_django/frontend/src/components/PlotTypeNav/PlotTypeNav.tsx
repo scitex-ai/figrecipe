@@ -23,21 +23,15 @@ const PLOT_TYPES: SelectorNavItem[] = [
 ];
 
 export function PlotTypeNav() {
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryCategory, setGalleryCategory] = useState<string | undefined>();
   const { placedFigures } = useEditorStore();
-
-  const openGallery = (id: string) => {
-    setGalleryCategory(id);
-    setGalleryOpen(true);
-  };
+  const [openFamily, setOpenFamily] = useState<string | null>(null);
 
   return (
     <>
       <SelectorNav
         items={PLOT_TYPES}
-        activeId={galleryCategory ?? null}
-        onSelect={openGallery}
+        activeId={openFamily}
+        onSelect={setOpenFamily}
         indicator="left"
         style={{ width: 56, minWidth: 56, maxWidth: 56 }}
         footer={
@@ -45,11 +39,8 @@ export function PlotTypeNav() {
         }
       />
 
-      {galleryOpen && (
-        <GalleryPanel
-          onClose={() => setGalleryOpen(false)}
-          initialCategory={galleryCategory}
-        />
+      {openFamily && (
+        <GalleryPanel family={openFamily} onClose={() => setOpenFamily(null)} />
       )}
     </>
   );
