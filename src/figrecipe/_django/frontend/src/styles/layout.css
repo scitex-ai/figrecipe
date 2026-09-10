@@ -23,6 +23,25 @@
   flex-shrink: 0;
 }
 
+/* figrecipe's app-local project selector (TODO 145/147) — pushed to the right
+   of the Plot/Canvas tab row so the tabs keep their existing layout. */
+.project-scope-selector {
+  margin-left: auto;
+  align-self: center;
+  max-width: 260px;
+}
+.project-scope-selector .stx-app-project-selector__trigger {
+  max-width: 100%;
+  height: 28px;
+  font-size: 12px;
+}
+.project-scope-selector .stx-app-project-selector__current,
+.project-scope-selector .stx-app-project-selector__placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .inner-editor__tab {
   display: flex;
   align-items: center;
