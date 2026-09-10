@@ -209,6 +209,36 @@
   color: var(--text-secondary);
 }
 
+/* TODO 131 — the fallback's "show examples" disclosure. Collapsed, the
+   empty canvas shows this single button (and the plot-type rail), not all 18
+   tiles; clicking it reveals the grid below. */
+.gallery-start-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+.gallery-start-expand:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  background: var(--bg-hover, rgba(255, 255, 255, 0.04));
+}
+.gallery-start-expand i {
+  font-size: 15px;
+}
+
 .gallery-start-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
