@@ -95,6 +95,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   moment DEBUG is off, so the flip ships with its second half: a standalone-only
   root URLconf (`_django/urls_standalone.py`) that keeps serving the editor's
   own assets. `urls.py`, the module host applications `include()`, is unchanged.
+- **Editor: plot-type selection is now direct.** Picking a family in the rail
+  (Line, Scatter, ...) opened a template gallery that still showed an "All" tab
+  plus a second row of family tabs, so you re-chose the family you had just
+  picked. The gallery now shows only the chosen family (`GalleryPanel` takes a
+  required `family`); the redundant tabs and the fall-back-to-"all" are gone.
+  A family that ships exactly one template (scatter, errorbar, contour) adds
+  that plot the moment its rail item is selected — reaching the target plot in
+  one operation instead of two. The decision is a pure, unit-tested helper
+  (`Gallery/singleFamilyTemplate.ts`).
+- **Editor: panes collapse by a visible button, not a hidden double-click.**
+  Every pane header (data table, details, figure viewer, canvas) relied on
+  double-clicking the header to collapse — a gesture-only control discoverable
+  only by trial. Collapse is now an explicit `.panel-toggle-btn` chevron button
+  (chevron direction follows scitex-ui's `axis.ts` convention; the CSS already
+  anticipated this button). `usePanelResize` no longer exposes the double-click
+  path. The remaining double-click handlers in the editor are content features
+  (ruler add/remove axis, caption/panel-letter edit, figure-viewer zoom reset),
+  not the collapse gesture.
+- **Editor: the empty-canvas label now says what it means.** The figure
+  dropdown's bare "No figures" token is "No figures yet" with a tooltip naming
+  the cause and the next action (add from the plot-type gallery or open a
+  recipe from the file tree).
+- **Editor: the app now remembers its own last project.** figrecipe persists
+  the working directory it last opened under a namespaced `figrecipe-last-project`
+  localStorage key — the same app-local convention as `figrecipe-app-tab` and
+  `figrecipe-session` — so the preference is stored yet kept separate from the
+  hub's global "Current Project" state, which figrecipe does not own. The memory
+  layer is a pure, environment-defensive module (`store/lastProjectMemory.ts`)
+  wired into `loadFiles`, the single point where figrecipe resolves its working
+  project. (Auto-restoring the remembered directory on launch is deliberately
+  not included — it would change launch behavior with multi-tenant/stale-dir
+  safety implications and is left to a product decision.)
 
 ## [0.34.6] - 2026-08-16
 
