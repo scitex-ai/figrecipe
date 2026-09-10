@@ -24,6 +24,7 @@ import type {
 import { createFigureActions } from "./figureActions";
 import { createPersistActions } from "./persistActions";
 import { createSyncActions } from "./syncActions";
+import { rememberLastProject } from "./lastProjectMemory";
 
 interface ZoomControls {
   zoomIn: () => void;
@@ -335,10 +336,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   loadFiles: async () => {
     try {
       const data = await api.get<FilesResponse>("api/files");
+      const workingDir = data.working_dir ?? null;
+      // TODO 142/149: remember the project FigRecipe just opened as an
+      // app-local preference, kept separate from the hub's global
+      // "Current Project" state (namespaced localStorage key).
+      rememberLastProject(workingDir);
       set({
         files: data.tree,
         currentFile: data.current_file,
-        workingDir: data.working_dir ?? null,
+        workingDir,
       });
     } catch (e) {
       console.error("[Editor] Failed to load files:", e);
