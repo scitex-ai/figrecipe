@@ -1,7 +1,27 @@
 /* Plot Type Nav — figrecipe-specific overrides.
  * Base styles come from scitex-ui's shared selector-nav.css.
- * Only the count badge is app-specific.
+ * Only the count badge and the rail wrapper + hover preview are app-specific.
  */
+
+/* Wrapper for the fixed-width rail; position:relative anchors the hover
+   preview. width:56 matches the SelectorNav so the plot tab row layout is
+   unchanged. */
+.plot-type-nav {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 56px;
+  min-width: 56px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.plot-type-nav__rail {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 56px;
+}
 
 .plot-type-nav__count {
   font-size: 10px;
@@ -10,4 +30,49 @@
   background: var(--vis-bg-tertiary, rgba(110, 118, 129, 0.1));
   padding: 2px 8px;
   border-radius: 10px;
+}
+
+/* TODO 130 — read-only hover preview of the pointed family's examples.
+   Sits just right of the rail, vertically centered. pointer-events:none so it
+   never intercepts the rail's own hover/click (hovering the panel itself keeps
+   the rail item hovered). */
+.plot-type-nav__hover {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  min-width: 148px;
+  max-width: 220px;
+  padding: 8px 10px;
+  background: var(--vis-bg-elevated, #1c2128);
+  border: 1px solid var(--vis-border, #30363d);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.plot-type-nav__hover-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vis-text-primary, #e6edf3);
+  margin-bottom: 4px;
+  text-transform: capitalize;
+}
+
+.plot-type-nav__hover-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--vis-text-secondary, #c9d1d9);
+}
+
+@media (max-width: 768px) {
+  /* On narrow screens the panel would overflow the viewport; keep it but cap
+     its width and anchor from the left edge so it stays readable. */
+  .plot-type-nav__hover {
+    max-width: 180px;
+  }
 }
