@@ -12,6 +12,7 @@ import { DataTablePane } from "./components/DataTablePane/DataTablePane";
 import { FigureViewer } from "./components/FigureViewer/FigureViewer";
 import { PlotTypeNav } from "./components/PlotTypeNav/PlotTypeNav";
 import { PropertiesPane } from "./components/PropertiesPane/PropertiesPane";
+import { ProjectScopeSelector } from "./components/ProjectScopeSelector";
 import { Spinner } from "./components/common/Spinner";
 import { Toast } from "./components/common/Toast";
 // Element inspector now provided by scitex-ui (imported in main.tsx)
@@ -165,6 +166,9 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
         >
           <i className="fas fa-object-group" /> Canvas
         </button>
+        {/* figrecipe's own project scope (TODO 145/147) — app-local, separate
+            from the hub's global Current Project. Right-aligned in the tab row. */}
+        <ProjectScopeSelector />
       </div>
 
       {/* ── Tab Content ─────────────────────────────── */}
