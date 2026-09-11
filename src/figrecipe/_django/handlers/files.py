@@ -4,6 +4,7 @@
 
 import json
 import logging
+import time
 from pathlib import Path
 
 from django.http import FileResponse, JsonResponse
@@ -170,7 +171,15 @@ def handle_api_switch(request, editor):
 
 
 def handle_api_new(request, editor):
-    """Create a new blank figure file."""
+    """Create a new blank figure file.
+
+    Works with no recipe loaded (``editor is None``): the create endpoint itself
+    must not require an editor, since a first-run user has none yet. In that
+    case we resolve the workspace the same way every other no-editor handler
+    does (``_get_working_dir_and_backend``) and bootstrap an ``EditorState`` for
+    it, so the new figure lands in the user's working directory — not the
+    server's cwd — and the browser can immediately edit it.
+    """
     from figrecipe import reproduce, save, subplots
     from figrecipe._editor._helpers import render_with_overrides
 
@@ -178,8 +187,17 @@ def handle_api_new(request, editor):
         fig, ax = subplots()
         ax.set_title("New Figure")
 
-        working_dir = getattr(editor, "working_dir", Path.cwd())
-        files = editor.files
+        working_dir, files = _get_working_dir_and_backend(request, editor)
+
+        if editor is None:
+            from ..services import EditorState, _editor_cache
+
+            session_key = f"figrecipe_new_{working_dir}"
+            cached = _editor_cache.get(session_key)
+            editor = cached[0] if cached else EditorState(working_dir=working_dir)
+            if not cached:
+                _editor_cache[session_key] = (editor, time.time())
+
         counter = 1
         while True:
             rel_path = f"new_figure_{counter:03d}.yaml"
@@ -193,6 +211,7 @@ def handle_api_new(request, editor):
 
         editor.fig = reproduced_fig
         editor.recipe_path = file_path
+        editor.working_dir = working_dir
         editor._hitmap_generated = False
         editor._color_map = {}
         editor._overrides = None  # reset overrides; lazy rebuild from style
@@ -215,6 +234,7 @@ def handle_api_new(request, editor):
                 "img_size": {"width": size[0], "height": size[1]},
                 "file": str(file_path.relative_to(working_dir)),
                 "file_name": file_path.stem,
+                "working_dir": str(working_dir),
             }
         )
     except Exception as e:
