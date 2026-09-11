@@ -17,6 +17,9 @@ halves:
      a loaded figure, and opens the ExportDialog. (The repo has no React/DOM
      runner; the frontend is gated by the vite build, so the wiring is pinned
      by source contract, matching test_files_api_switch_reload.py.)
+
+Each test makes a single assertion (STX-TQ007): the checks are collected in
+Arrange/Act and folded into one Assert.
 """
 
 import os
@@ -60,15 +63,18 @@ class TestDownloadFig:
         editor = _editor_with_recipe()
         # Act
         resp = handle_download_fig(RequestFactory().get("download/png"), editor, "png")
-        # Assert
-        assert resp.status_code == 200
-        assert resp["Content-Type"] == "image/png"
+        problems = []
+        if resp.status_code != 200:
+            problems.append(f"status={resp.status_code}")
+        if resp["Content-Type"] != "image/png":
+            problems.append(f"content-type={resp['Content-Type']}")
         body = resp.content
-        assert len(body) > 1000 and body[:8] == b"\x89PNG\r\n\x1a\n", (
-            f"png body not a real PNG image ({len(body)} bytes)"
-        )
+        if not (len(body) > 1000 and body[:8] == b"\x89PNG\r\n\x1a\n"):
+            problems.append(f"body not a real PNG ({len(body)} bytes)")
+        # Assert
+        assert problems == [], "png download failed: " + "; ".join(problems)
 
-    def test_download_svg_renders_svg(self, _django_ready):
+    def test_download_svg_renders_svg_document(self, _django_ready):
         # Arrange
         from django.test import RequestFactory
 
@@ -77,12 +83,17 @@ class TestDownloadFig:
         editor = _editor_with_recipe()
         # Act
         resp = handle_download_fig(RequestFactory().get("download/svg"), editor, "svg")
+        problems = []
+        if resp.status_code != 200:
+            problems.append(f"status={resp.status_code}")
+        if resp["Content-Type"] != "image/svg+xml":
+            problems.append(f"content-type={resp['Content-Type']}")
+        if b"<svg" not in resp.content[:200]:
+            problems.append("body does not start with <svg")
         # Assert
-        assert resp.status_code == 200
-        assert resp["Content-Type"] == "image/svg+xml"
-        assert b"<svg" in resp.content[:200]
+        assert problems == [], "svg download failed: " + "; ".join(problems)
 
-    def test_download_rejects_unknown_format(self, _django_ready):
+    def test_download_rejects_an_unknown_format(self, _django_ready):
         # Arrange
         from django.test import RequestFactory
 
@@ -94,11 +105,11 @@ class TestDownloadFig:
             RequestFactory().get("download/bmp"), editor, "bmp"
         )
         # Assert
-        assert resp.status_code == 400
+        assert resp.status_code == 400, f"bmp download should 400, got {resp.status_code}"
 
 
 class TestPlotTabExportSurface:
-    def test_figure_viewer_exposes_export_control(self, _django_ready):
+    def test_figure_viewer_exposes_the_export_control(self, _django_ready):
         # Arrange -- read the component source by path (importing the frontend
         # is a build concern, not a Python one).
         src = (
@@ -117,4 +128,7 @@ class TestPlotTabExportSurface:
             "gated on a loaded figure": "previewImage && (" in src,
         }
         # Assert
-        assert all(contract.values()), f"FigureViewer export surface incomplete: {contract}"
+        assert all(contract.values()), (
+            "FigureViewer export surface incomplete: "
+            + "; ".join(k for k, ok in contract.items() if not ok)
+        )
