@@ -2,16 +2,24 @@
  *
  * Used in the Plot tab to show the matplotlib figure preview.
  * The Canvas tab uses CanvasPane instead (for composition layout).
+ *
+ * TODO 130 / standalone item #4 — "nothing saves an image": the backend export
+ * endpoints (download/<fmt>, api/compose/export/<fmt>) and the ExportDialog
+ * have existed since the ribbon work, but the Plot tab — where a first-run user
+ * opens a recipe — had NO control to reach them; export was only on the Canvas
+ * tab. A figure now exposes the same ExportDialog directly here.
  */
 
 import { useRef, useState, useCallback } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryStart } from "../Gallery/GalleryStart";
+import { ExportDialog } from "../ExportDialog/ExportDialog";
 
 export function FigureViewer() {
   const { placedFigures, selectedFigureId, loading } = useEditorStore();
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [exportOpen, setExportOpen] = useState(false);
   const dragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
 
@@ -94,6 +102,25 @@ export function FigureViewer() {
           }}
         />
       )}
+
+      {/* Save/export control on the Plot-tab figure surface (standalone item #4).
+          Reuses the same ExportDialog the Canvas tab uses; the dialog picks the
+          right endpoint (compose export when figures are placed, single-figure
+          download otherwise). */}
+      {previewImage && (
+        <button
+          className="figure-viewer__export"
+          type="button"
+          title="Export figure (PNG / SVG / PDF)"
+          aria-label="Export figure"
+          onClick={() => setExportOpen(true)}
+        >
+          <i className="fas fa-download" />
+          <span>Export</span>
+        </button>
+      )}
+
+      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
     </div>
   );
 }

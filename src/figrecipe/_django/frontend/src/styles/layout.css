@@ -99,6 +99,39 @@
   transition: none;
 }
 
+/* Save/export control on the Plot-tab figure surface (standalone item #4).
+ * Absolutely positioned over the figure so it never disturbs the centred
+ * preview or the start-gallery layout; appears only when a figure is shown. */
+.figure-viewer__export {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--vis-border, #30363d);
+  border-radius: 6px;
+  background: var(--vis-bg-secondary, #21262d);
+  color: var(--vis-text-primary, #e6edf3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+.figure-viewer__export:hover {
+  border-color: var(--accent-primary);
+  color: #fff;
+  background: var(--vis-bg-tertiary, rgba(255, 255, 255, 0.06));
+}
+.figure-viewer__export i {
+  font-size: 12px;
+}
+
 .editor-body {
   display: flex;
   flex: 1;
