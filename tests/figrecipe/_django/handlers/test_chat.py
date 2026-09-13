@@ -20,9 +20,24 @@ all the others perfectly, and would silently break the hosted editor, where
 these same handlers run against a real database.
 """
 
+import os
+
 import pytest
 
-pytest.importorskip("django")
+django = pytest.importorskip("django")
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _django_ready():
+    # These tests drive Django's test Client / override_settings, which need a
+    # populated app registry. Call django.setup() here — idempotent (a no-op if
+    # a sibling test in the same xdist worker already set it up) — so this file
+    # is self-sufficient regardless of which worker it lands on. Relying on a
+    # co-located file to have set up Django is an order-dependency: under
+    # `pytest -n N --dist load` the distribution shifts whenever a new test
+    # file is added, and this module then runs on a worker that never set up.
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "figrecipe._django.settings")
+    django.setup()
 
 
 @pytest.fixture

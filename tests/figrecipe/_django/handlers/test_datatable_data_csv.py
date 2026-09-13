@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""`/datatables/data` must return rows for a CSV-backed recipe.
+"""/datatables/data must return rows for a CSV-backed recipe.
 
 Card figrecipe-standalone-readiness-measured-blockers-20260902, item #3. A
 recipe whose plot args reference CSVs (``data: plot_plot_data/sin_x.csv``)
@@ -12,7 +12,9 @@ columns were registered with no data. The fix extracts the ``data`` payload
 first.
 
 This drives the real handler against the gallery's own CSV-backed recipe so the
-regression is pinned to the exact shape the record has after `reproduce`.
+regression is pinned to the exact shape the record has after `reproduce`. Each
+test makes a single assertion (STX-TQ007): checks are collected and folded
+into one.
 """
 
 import json
@@ -58,16 +60,25 @@ class TestDatatableDataCsvBacked:
         editor = EditorState(fig=fig)
         # Act
         payload = _datatable_data(editor)
-        # Assert -- columns are present AND rows are not (the old bug was
+        problems = []
+        if payload["source"] != "record":
+            problems.append(f"source={payload['source']!r}")
+        if payload["columns"] != ["sin_x", "sin_y", "cos_x", "cos_y"]:
+            problems.append(f"columns={payload['columns']}")
+        if len(payload["data"]) != 100:
+            problems.append(f"rows={len(payload['data'])} (expected 100)")
+        else:
+            first = payload["data"][0]
+            # The first row is the sin/cos at x=0: sin(0)=0, cos(0)=1.
+            if abs(first["sin_x"]) > 1e-9:
+                problems.append(f"sin_x[0]={first['sin_x']}")
+            if abs(first["sin_y"]) > 1e-9:
+                problems.append(f"sin_y[0]={first['sin_y']}")
+            if abs(first["cos_y"] - 1.0) > 1e-9:
+                problems.append(f"cos_y[0]={first['cos_y']}")
+        # Assert -- columns present AND rows populated (the old bug was
         # columns registered, data empty).
-        assert payload["source"] == "record"
-        assert payload["columns"] == ["sin_x", "sin_y", "cos_x", "cos_y"]
-        assert len(payload["data"]) == 100
-        # The first row is the sin/cos at x=0: sin(0)=0, cos(0)=1.
-        first = payload["data"][0]
-        assert first["sin_x"] == pytest.approx(0.0)
-        assert first["sin_y"] == pytest.approx(0.0)
-        assert first["cos_y"] == pytest.approx(1.0)
+        assert problems == [], "CSV-backed datatable empty/wrong: " + "; ".join(problems)
 
     def test_inline_list_recipe_still_returns_rows(self, _django_ready):
         # Arrange -- a figure whose args are inline Python lists (no CSV); the
@@ -77,11 +88,16 @@ class TestDatatableDataCsvBacked:
         editor = EditorState(fig=fig)
         # Act
         payload = _datatable_data(editor)
-        # Assert -- exactly three rows, the plot's x column populated.
-        assert payload["source"] == "record"
+        problems = []
+        if payload["source"] != "record":
+            problems.append(f"source={payload['source']!r}")
+        if len(payload["data"]) != 3:
+            problems.append(f"rows={len(payload['data'])} (expected 3)")
         x_cols = [c for c in payload["columns"] if c.endswith("_x")]
-        assert len(payload["data"]) == 3
-        assert any(k in payload["data"][0] for k in x_cols)
+        if not x_cols or not any(k in payload["data"][0] for k in x_cols):
+            problems.append(f"no _x column populated: {payload['columns']}")
+        # Assert -- exactly three rows, the plot's x column populated.
+        assert problems == [], "inline datatable regressed: " + "; ".join(problems)
 
     def test_empty_figure_returns_empty(self, _django_ready):
         # Arrange -- a figure with no recorded data to show.
@@ -89,6 +105,10 @@ class TestDatatableDataCsvBacked:
         editor = EditorState(fig=fig)
         # Act
         payload = _datatable_data(editor)
+        problems = []
+        if payload["columns"] != []:
+            problems.append(f"columns={payload['columns']}")
+        if payload["data"] != []:
+            problems.append(f"data={len(payload['data'])} rows")
         # Assert -- no columns, no rows, not an error.
-        assert payload["columns"] == []
-        assert payload["data"] == []
+        assert problems == [], "empty figure should show empty table: " + "; ".join(problems)
