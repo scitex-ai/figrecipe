@@ -57,6 +57,33 @@ from ._gui_click import _DefaultGroup, _kill_port, _port_holder, _port_is_free
 DEFAULT_PORT = _gui_runtime.DEFAULT_PORT
 
 
+def _ensure():
+    """Return the graphical editor callable, or say exactly how to get its deps.
+
+    `figrecipe gui` needs the [editor] extra (django, Pillow), which are not in the
+    bare `pip install figrecipe`. Probe `import django` directly, because
+    `figrecipe.gui` is the public API *function* (see `__init__`'s lazy
+    `__getattr__`), not a module: importing it succeeds even with the editor
+    extra missing, and the `import django` only fires later, inside
+    `_editor.gui()` at the actual server start. Without this probe that
+    `ModuleNotFoundError` is swallowed by the caller's `except Exception` and the
+    user is left with a bare `Editor failed: No module named 'django'` and no fix.
+    The README Quickstart already says `pip install figrecipe[editor]`, so this
+    points there instead of the bare traceback.
+    """
+    try:
+        import django  # noqa: F401  -- the editor's hard dep, absent from the extra-less install
+    except ImportError as e:
+        raise click.ClickException(
+            "The graphical editor needs optional dependencies that are not installed.\n\n"
+            "  pip install 'figrecipe[editor]'\n\n"
+            "then try again."
+        ) from e
+    from .. import gui as fr_gui
+
+    return fr_gui
+
+
 def _resolve_source(
     source: Optional[str],
 ) -> Tuple[Optional[Path], Optional[Path]]:
@@ -164,7 +191,7 @@ def gui_serve(source, port, host, dry_run, as_json):
 
     import os
 
-    from .. import gui as fr_gui
+    fr_gui = _ensure()
 
     _gui_runtime.write_state(
         os.getpid(),
@@ -265,7 +292,7 @@ def gui_open(source, port, host, no_browser, desktop, dry_run, as_json):
     if desktop:
         # Desktop mode is synchronous/blocking by nature (its own window),
         # not a backgroundable server — run it directly, no state file.
-        from .. import gui as fr_gui
+        fr_gui = _ensure()
 
         try:
             fr_gui(
@@ -282,6 +309,14 @@ def gui_open(source, port, host, no_browser, desktop, dry_run, as_json):
 
     current = _gui_runtime.status()
     if not current.get("running"):
+        # Probe the [editor] extra here, not just on the serve/desktop paths:
+        # a bare `figrecipe gui` resolves to `gui open` and auto-serves a
+        # subprocess. Without the probe, an extra-less install waits ~30s for
+        # that subprocess (which cannot import django) and then only points at
+        # its log. Raising before `_autoserve` makes the friendly message
+        # appear immediately. (A server already running implies django is
+        # present, so we skip the probe in that case.)
+        _ensure()
         current = _autoserve(source, port, host)
         if not current.get("running"):
             click.echo(

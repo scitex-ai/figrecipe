@@ -73,6 +73,7 @@ _NO_EDITOR_ENDPOINTS = {
     "api/tree",
     "api/files",
     "api/switch",
+    "api/new",
     "api/gallery",
     "api/gallery/add",
     "api/gallery/demo",

@@ -20,6 +20,37 @@ def handle_datatable_data(request, editor):
     columns = []
     data_rows = []
 
+    def _values(value):
+        """Reduce a recorded plot argument to a JSON-safe list.
+
+        A recorded arg is not the bare array: it is a mapping. Two shapes
+        occur, depending on whether the figure is live (in memory) or was
+        `reproduce`d from a recipe:
+          - inline / reproduced-CSV: ``{"name", "data": <list>, "dtype"}``
+          - file-backed live:        ``{"name", "data": "__FILE__", "dtype",
+            "_array": <ndarray>}``  (the values sit in ``_array`` until saved)
+        Passing the whole mapping to `to_json_serializable` returns the mapping
+        itself, so the caller's `isinstance(list)` check silently fails and the
+        row is never built — columns registered, data empty. Pull the payload:
+        ``_array`` when present (the live case), else ``data``; skip the
+        ``"__FILE__"`` sentinel, which carries no values of its own.
+        """
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            payload = value.get("_array")
+            if payload is None:
+                payload = value.get("data")
+            if payload is None:
+                return None
+            # The "__FILE__" sentinel is a string and carries no values of its
+            # own (the real data lives in _array, handled above); compare it
+            # as a string only so an ndarray payload never hits `==`.
+            if isinstance(payload, str) and payload == "__FILE__":
+                return None
+            value = payload
+        return to_json_serializable(value)
+
     for ax_key, ax_record in record.axes.items():
         for call in getattr(ax_record, "calls", []):
             kwargs = getattr(call, "kwargs", {})
@@ -37,8 +68,8 @@ def handle_datatable_data(request, editor):
                 y_col = f"{call_id}_y"
                 if x_col not in columns:
                     columns.extend([x_col, y_col])
-                x_list = to_json_serializable(x_data)
-                y_list = to_json_serializable(y_data)
+                x_list = _values(x_data)
+                y_list = _values(y_data)
                 if isinstance(x_list, list) and isinstance(y_list, list):
                     for i, (xv, yv) in enumerate(zip(x_list, y_list)):
                         while len(data_rows) <= i:

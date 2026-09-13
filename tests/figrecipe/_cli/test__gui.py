@@ -13,6 +13,7 @@ tests never touch a real running server on the host.
 
 import json
 import os
+import sys
 
 import pytest
 from click.testing import CliRunner
@@ -407,3 +408,70 @@ class TestGuiConsumerBranding:
         runner.invoke(main, args, prog_name="scitex-plt")
         # Assert
         assert os.environ.get("FIGRECIPE_APP_LABEL") == "Custom Title"
+
+
+class TestGuiMissingEditorExtra:
+    """Bare `pip install figrecipe` lacks the [editor] extra; `figrecipe gui`
+    must say how to install it instead of `No module named 'django'`."""
+
+    @pytest.fixture
+    def _block_django(self):
+        # Force `import django` to fail exactly as it does in an extra-less
+        # install, so this is hermetic whether or not the [editor] extra is
+        # present in the environment the suite runs in. (A `None` entry in
+        # sys.modules makes `import django` raise ImportError.) Manual
+        # save/restore: no mock fixture, and the state is always undone.
+        _absent = object()
+        saved = sys.modules.get("django", _absent)
+        # A None entry in sys.modules makes `import django` raise ImportError.
+        sys.modules["django"] = None  # type: ignore[assignment]
+        yield
+        if saved is _absent:
+            sys.modules.pop("django", None)
+        else:
+            sys.modules["django"] = saved  # type: ignore[assignment]
+
+    def test_serve_names_pip(self, runner, _block_django):
+        # Arrange
+        del _block_django  # active via fixture
+        # Act
+        r = runner.invoke(main, ["gui", "serve", "--port", "31999"])
+        # Assert
+        assert "pip install" in r.output, f"missing pip guidance: {r.output}"
+
+    def test_serve_names_editor_extra(self, runner, _block_django):
+        # Arrange
+        del _block_django
+        # Act
+        r = runner.invoke(main, ["gui", "serve", "--port", "31999"])
+        # Assert
+        assert "figrecipe[editor]" in r.output, f"missing extra name: {r.output}"
+
+    def test_serve_message_not_masked_by_editor_failed(self, runner, _block_django):
+        # Arrange -- regression: before the probe moved ahead of the caller's
+        # generic `except Exception`, the missing-extra ImportError was
+        # swallowed and the user saw the bare, unhelpful `Editor failed: ...`.
+        del _block_django
+        # Act
+        r = runner.invoke(main, ["gui", "serve", "--port", "31999"])
+        # Assert
+        assert "Editor failed" not in r.output, f"friendly message masked: {r.output}"
+
+    def test_open_auto_serve_path_is_gated_too(self, runner, _block_django, isolated_state):
+        # Arrange -- a bare `figrecipe gui` resolves to `gui open` and
+        # auto-serves a subprocess. The probe must fire BEFORE `_autoserve`, so
+        # an extra-less install gets the friendly message immediately instead
+        # of waiting ~30s for a subprocess that cannot import django.
+        del _block_django
+        # Act -- `gui open` (non-desktop, non-dry-run) with no server running
+        # takes exactly that path.
+        r = runner.invoke(main, ["gui", "open", "--port", "31998", "--no-browser"])
+        problems = []
+        if "pip install" not in r.output:
+            problems.append("no pip guidance")
+        if "figrecipe[editor]" not in r.output:
+            problems.append("no extra name")
+        if "Editor failed" in r.output:
+            problems.append("masked by generic error")
+        # Assert
+        assert problems == [], f"auto-serve path not gated: {problems} | {r.output}"
