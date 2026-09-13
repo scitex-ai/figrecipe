@@ -99,4 +99,17 @@
     padding: 4px 8px;
     font-size: 11px;
   }
+
+  /* ── Figure export control: icon-only on mobile ─────────
+     At ≤768px the figure fills the viewport, so the labelled
+     "⬇ Export" pill (added in PR #381) overlaps the figure's
+     title. Drop the label — the title/aria attributes already
+     name the action; keep the icon tappable. */
+  .figure-viewer__export {
+    padding: 5px;
+    gap: 0;
+  }
+  .figure-viewer__export span {
+    display: none;
+  }
 }
