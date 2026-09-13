@@ -148,3 +148,48 @@ def test_control_string_list_does_not_get_a_datetime_dtype():
     out = _process(value)
     # Assert
     assert not str(out.get("dtype", "")).startswith("datetime64")
+
+
+# ── _process_array_list: ragged (jagged) lists record the STORED dtype ─────
+#
+# A jagged list of int arrays (e.g. boxplot/violinplot data of unequal length)
+# is NaN-padded to a float64 block before it hits the CSV, but the recorder
+# used to record the ORIGINAL int64 dtype. The load then did
+# np.array([...with a "nan" cell...], dtype="int64") and CRASHED. Recording the
+# actual stored (stacked) dtype is the writer/reader one-truth fix.
+# (card figrecipe-csv-roundtrip-writer-reader-asymmetry #4)
+
+
+def _process_array_list(value):
+    from figrecipe._recorder._utils import _process_array_list as _pal
+    from figrecipe._utils._numpy_io import to_serializable
+
+    return _pal("x", value, to_serializable)
+
+
+def test_jagged_int_array_list_records_the_stored_float_dtype():
+    # Arrange: unequal-length int arrays (ragged -> NaN-padded to float64).
+    value = [np.array([1, 2, 3]), np.array([4, 5])]
+    # Act
+    out = _process_array_list(value)
+    # Assert: the recorded dtype matches what is actually stored (float64),
+    # not the original int64 -- this is what lets the load not crash.
+    assert out["dtype"] == str(out["_array"].dtype)
+
+
+def test_jagged_int_array_list_stored_dtype_is_float64():
+    # Arrange: unequal-length int arrays.
+    value = [np.array([1, 2, 3]), np.array([4, 5])]
+    # Act
+    out = _process_array_list(value)
+    # Assert: padding promotes the stored block to float64 (the dtype the CSV holds).
+    assert out["_array"].dtype == np.dtype("float64")
+
+
+def test_equal_length_int_array_list_still_records_int_dtype():
+    # Arrange: equal-length int arrays (no padding needed).
+    value = [np.array([1, 2]), np.array([3, 4])]
+    # Act
+    out = _process_array_list(value)
+    # Assert: no padding -> stored dtype stays int, recorded dtype agrees (no-op).
+    assert out["dtype"] == str(out["_array"].dtype)

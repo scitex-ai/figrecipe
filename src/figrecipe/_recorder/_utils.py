@@ -236,8 +236,12 @@ def _process_array_list(
             "_is_array_list": True,
         }
 
-    dtypes = [str(arr.dtype) for arr in value]
-    dtype_str = dtypes[0] if len(set(dtypes)) == 1 else dtypes
+    # Record the ACTUAL stored dtype (stacked's), not the original per-array
+    # dtype: a jagged int array is NaN-padded to float64 BEFORE it hits the CSV,
+    # so recording the original int64 made load_array crash on the "nan" cells.
+    # For equal-length arrays stacked keeps the input dtype, so this is a no-op
+    # there. (card figrecipe-csv-roundtrip-writer-reader-asymmetry #4)
+    dtype_str = str(stacked.dtype)
 
     # Mark for file storage (same pattern as single arrays)
     return {
