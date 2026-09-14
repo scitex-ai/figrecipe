@@ -34,9 +34,36 @@
     border-bottom: 1px solid var(--vis-border, #30363d);
   }
 
+  /* Preview first: the figure is what a phone user opened the editor for. */
   .split-pane-center {
+    order: -1;
     min-width: 100% !important;
     min-height: 150px;
+  }
+
+  /* ── Plot-type rail: horizontal strip ─────────────────────
+     Stacked as a column the rail is ~530px tall and pushes the
+     preview below the viewport, under the hub's site dock (D15). */
+  .plot-type-nav,
+  .plot-type-nav__rail,
+  .plot-type-nav .stx-app-selector-nav,
+  .plot-type-nav .stx-app-selector-nav__items {
+    flex-direction: row;
+    /* !important beats PlotTypeNav's inline 56px width. */
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .plot-type-nav {
+    flex: 0 0 auto;
+  }
+
+  .plot-type-nav .stx-app-selector-nav__item {
+    flex: 0 0 auto;
+    padding: 6px 10px;
   }
 
   /* ── Collapsed panes: horizontal header bar (not vertical strip) ── */
