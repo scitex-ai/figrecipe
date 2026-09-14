@@ -1,22 +1,28 @@
 /** App-local project selector — figrecipe's consumption of the shared
- * scitex-ui ProjectSelector primitive (TODO 145 / 147).
+ * scitex-ui app-scope contract (operator ledger #48, #140-149).
  *
- * The SDK component owns the PATTERN (the dropdown, the change event, the
- * vocabulary). figrecipe owns the DATA: which projects this app knows about
- * (its current working dir + its app-local recent-projects memory) and what to
- * do when the user picks one. The data is namespaced figrecipe-* state, NOT the
- * hub's global "Current Project", so figrecipe controls "which project to
- * target" independently of a forced global UI state.
+ * figrecipe declares `"scope": "project"` in its manifest; the scitex-app host
+ * stamps `<meta name="stx-app-scope" content="project">` into the embedded
+ * workspace page. This component consumes the SDK gate
+ * (`mountProjectSelectorByScope` from `@scitex/ui/.../ts/shell`) instead of
+ * forking the selector: it renders the app-local project picker ONLY when the
+ * page is project-scoped, and renders nothing on user-scoped or standalone
+ * pages (no marker -> the SDK returns null). The no-header-switcher ruling
+ * holds structurally — the selector never reaches the global header.
  *
- * On selection it re-targets the API client (setWorkingDir), records the
- * project in the app-local recent memory, and reloads the editor for it.
+ * The SDK owns the PATTERN (the dropdown, the change event, the vocabulary,
+ * the scope gate). figrecipe owns the DATA: which projects this app knows
+ * about (its current working dir + its app-local recent-projects memory) and
+ * what to do when the user picks one. That data is namespaced figrecipe-*
+ * state, NOT the hub's global "Current Project", so figrecipe controls
+ * "which project to target" independently of a forced global UI state.
  */
 
 import { useEffect, useRef } from "react";
 import {
-  ProjectSelector,
+  mountProjectSelectorByScope,
   PROJECT_SELECTOR_CHANGE,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/app/project-selector";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell";
 import { setWorkingDir } from "../api/client";
 import { useEditorStore } from "../store/useEditorStore";
 import { buildProjectOptions } from "../store/projectOptions";
@@ -31,8 +37,11 @@ export function ProjectScopeSelector() {
   const { workingDir, loadFiles, loadPreview, loadDatatable, loadHitmap } =
     useEditorStore();
 
-  // (Re)build the selector whenever the current project or the recent list
-  // changes. The SDK component is imperative, so we recreate it in place.
+  // (Re)mount the scope-gated selector whenever the current project or the
+  // recent list changes. The SDK is imperative and self-contained: it reads
+  // the page's stx-app-scope marker and either mounts the shared
+  // ProjectSelector into our container (project-scoped) or returns null
+  // (user-scoped / standalone — nothing rendered, no global switcher).
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -45,16 +54,16 @@ export function ProjectScopeSelector() {
     const host = document.createElement("div");
     el.appendChild(host);
 
-    let selector: ProjectSelector | null = null;
-    try {
-      selector = new ProjectSelector({
-        container: host,
-        projects: options,
-        current: currentId,
-        placeholder: "Select project",
-      });
-    } catch {
-      // The SDK component throws if its container is missing; nothing to show.
+    const selector = mountProjectSelectorByScope({
+      container: host,
+      projects: options,
+      current: currentId,
+      placeholder: "Select project",
+    });
+    if (!selector) {
+      // Not project-scoped (standalone / user-scoped host): the contract says
+      // render nothing. No listener, no selector to destroy.
+      host.remove();
       return;
     }
 
@@ -71,12 +80,14 @@ export function ProjectScopeSelector() {
       void loadHitmap();
       void loadDatatable();
     };
+    // The SDK dispatches PROJECT_SELECTOR_CHANGE on its own container (the
+    // host we supplied), so the listener lives on the host, not the selector.
     host.addEventListener(PROJECT_SELECTOR_CHANGE, onChange);
 
     return () => {
       host.removeEventListener(PROJECT_SELECTOR_CHANGE, onChange);
       try {
-        selector?.destroy();
+        selector.destroy();
       } catch {
         /* ignore */
       }

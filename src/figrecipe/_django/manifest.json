@@ -24,6 +24,7 @@
   "standalone_port": 5050,
   "frontend_type": "react",
   "embedded_package": true,
+  "scope": "project",
   "bridge": {
     "entry": "src/bridge/bridge-init.ts",
     "source_root": "src"
