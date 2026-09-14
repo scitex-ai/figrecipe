@@ -35,7 +35,7 @@ def django_ready():
 def _editor_html(language):
     from django.test import Client
 
-    client = Client()
+    client = Client(HTTP_HOST="localhost")
     client.cookies["django_language"] = language
     return client.get("/").content.decode()
 
