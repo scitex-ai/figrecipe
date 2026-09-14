@@ -3,6 +3,7 @@
 // limit; main.tsx imports `figrecipeChatAdapter` and wires it into ChatMode.
 
 import type { ChatAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
+import { csrfToken } from "../api/client";
 
 export const FIGRECIPE_SYSTEM =
   "You are a helpful AI assistant in the FigRecipe figure editor. " +
@@ -12,7 +13,7 @@ export const figrecipeChatAdapter: ChatAdapter = {
   async streamChat(message, _context, images) {
     return fetch("api/chat/stream", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({
         prompt: message,
         history: [],

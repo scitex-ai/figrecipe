@@ -37,6 +37,7 @@
 
 .properties-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 8px 12px;
   background: var(--vis-bg-tertiary);
