@@ -4,6 +4,21 @@ let _base = import.meta.env.VITE_API_BASE || "";
 let _workingDir: string | null = null;
 let _recipe: string | null = null;
 
+/**
+ * The Django CSRF token, read from the `csrftoken` cookie.
+ *
+ * The hub mounts figrecipe behind Django's CSRF check and does NOT csrf_exempt
+ * the mount (scitex-hub, 2026-09-14), so every non-GET API call must send it.
+ * Without it, POST/PATCH/DELETE from the editor (e.g. api/gallery/demo) get a
+ * 403 "Forbidden" — the live-audit demo-open failure. Django sets the cookie
+ * via its CSRF middleware; this reads it (same-origin, so JS may). Returns ""
+ * when absent (standalone / no cookie) — harmless on a CSRF-exempt host.
+ */
+export function csrfToken(): string {
+  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
 /** Set the API base URL at runtime (used by FigrecipeEditor when embedded). */
 export function setApiBase(base: string) {
   _base = base.replace(/\/+$/, ""); // strip trailing slashes
@@ -41,10 +56,17 @@ function buildUrl(endpoint: string): string {
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = buildUrl(endpoint);
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
+  const method = (options?.method || "GET").toUpperCase();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options?.headers as Record<string, string>) || {}),
+  };
+  // Django CSRF: every mutating (non-GET/HEAD) call must carry the token, or the
+  // hub returns 403. GET is exempt.
+  if (method !== "GET" && method !== "HEAD") {
+    headers["X-CSRFToken"] = csrfToken();
+  }
+  const res = await fetch(url, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `API error: ${res.status}`);
@@ -74,7 +96,7 @@ export const api = {
     const url = buildUrl(endpoint);
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: data ? JSON.stringify(data) : undefined,
     });
     if (!res.ok) throw new Error(`Export failed: ${res.status}`);

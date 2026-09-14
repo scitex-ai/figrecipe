@@ -9,6 +9,7 @@ import ReactDOM from "react-dom/client";
 // React app content (Plot/Canvas editor — NOT shell)
 import { InnerEditor } from "./InnerEditor";
 import { useEditorStore } from "./store/useEditorStore";
+import { csrfToken } from "./api/client";
 
 // Styles (app-specific)
 import "./styles/app-variables.css";
@@ -308,7 +309,7 @@ const figrecipeSessionAdapter: SessionAdapter = {
   async createSession(title?: string) {
     const resp = await fetch("api/chat/sessions/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ title: title || "New Chat" }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -317,13 +318,14 @@ const figrecipeSessionAdapter: SessionAdapter = {
   async deleteSession(sessionId: number) {
     const resp = await fetch(`api/chat/sessions/${sessionId}/`, {
       method: "DELETE",
+      headers: { "X-CSRFToken": csrfToken() },
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   },
   async addMessage(sessionId: number, role: string, content: string) {
     const resp = await fetch(`api/chat/sessions/${sessionId}/messages/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ role, content }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -331,7 +333,7 @@ const figrecipeSessionAdapter: SessionAdapter = {
   async renameSession(sessionId: number, title: string) {
     const resp = await fetch(`api/chat/sessions/${sessionId}/`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ title }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);

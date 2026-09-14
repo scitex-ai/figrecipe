@@ -7,6 +7,7 @@
 
 import { onEvent } from "./EventBus";
 import { switchRecipeFile } from "./MountPoint";
+import { csrfToken } from "../api/client";
 
 /** Cleanup functions for event subscriptions. */
 const cleanups: Array<() => void> = [];
@@ -116,7 +117,7 @@ export async function runStatAndRenderBracket(
 }> {
   const statResp = await fetch("/apps/figrecipe/figrecipe/stats/run", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
     body: JSON.stringify({ test_name: testName, groups }),
   });
   const { result, annotation } = await statResp.json();
@@ -125,7 +126,7 @@ export async function runStatAndRenderBracket(
     "/apps/figrecipe/figrecipe/stats/add_bracket",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({
         annotation,
         ax_index: axIndex,
