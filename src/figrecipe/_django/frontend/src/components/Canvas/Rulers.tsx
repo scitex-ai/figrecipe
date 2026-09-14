@@ -8,6 +8,7 @@
 
 import { useMemo } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export const RULER_SIZE = 60;
 const COLUMN_WIDTH_MM = 90; // 90mm = 1 column (journal standard)
@@ -41,13 +42,13 @@ function generateHorizontalRulerMm(
 
   // 0mm tick
   svg += `<line x1="0" y1="40" x2="0" y2="${rulerHeight}" stroke="${majorColor}" stroke-width="1.5"/>`;
-  svg += `<text x="3" y="35" text-anchor="start" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>0mm (click to toggle inch)</title>0mm</text>`;
+  svg += `<text x="3" y="35" text-anchor="start" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>${interpolate(gettext("%s (click to toggle inch)"), ["0mm"])}</title>0mm</text>`;
 
   for (let mm = 1; mm <= maxMm; mm++) {
     const x = mmToPx(mm);
     if (mm % 10 === 0) {
       svg += `<line x1="${x}" y1="40" x2="${x}" y2="${rulerHeight}" stroke="${majorColor}" stroke-width="1.5"/>`;
-      svg += `<text x="${x}" y="35" text-anchor="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>${mm}mm (click to toggle inch)</title>${mm}mm</text>`;
+      svg += `<text x="${x}" y="35" text-anchor="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>${interpolate(gettext("%s (click to toggle inch)"), [mm + "mm"])}</title>${mm}mm</text>`;
     } else if (mm % 5 === 0) {
       svg += `<line x1="${x}" y1="48" x2="${x}" y2="${rulerHeight}" stroke="${majorColor}" stroke-width="1"/>`;
     } else {
@@ -57,10 +58,10 @@ function generateHorizontalRulerMm(
 
   // Column width markers (vis_app: 0.5, 1.0, 1.5, 2.0 col)
   const colMarkers = [
-    { mm: COLUMN_WIDTH_MM * 0.5, label: "0.5 col" },
-    { mm: COLUMN_WIDTH_MM * 1.0, label: "1.0 col" },
-    { mm: COLUMN_WIDTH_MM * 1.5, label: "1.5 col" },
-    { mm: COLUMN_WIDTH_MM * 2.0, label: "2.0 col" },
+    { mm: COLUMN_WIDTH_MM * 0.5, label: interpolate(gettext("%s col"), ["0.5"]) },
+    { mm: COLUMN_WIDTH_MM * 1.0, label: interpolate(gettext("%s col"), ["1.0"]) },
+    { mm: COLUMN_WIDTH_MM * 1.5, label: interpolate(gettext("%s col"), ["1.5"]) },
+    { mm: COLUMN_WIDTH_MM * 2.0, label: interpolate(gettext("%s col"), ["2.0"]) },
   ];
   colMarkers.forEach(({ mm, label }) => {
     const x = mmToPx(mm);
@@ -89,9 +90,9 @@ function generateHorizontalRulerInch(
     const x = inchToPx(inch);
     svg += `<line x1="${x}" y1="40" x2="${x}" y2="${rulerHeight}" stroke="${majorColor}" stroke-width="1.5"/>`;
     if (inch === 0) {
-      svg += `<text x="3" y="35" text-anchor="start" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>0" (click to toggle mm)</title>0"</text>`;
+      svg += `<text x="3" y="35" text-anchor="start" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>${interpolate(gettext("%s (click to toggle mm)"), ['0"'])}</title>0"</text>`;
     } else {
-      svg += `<text x="${x}" y="35" text-anchor="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>${inch}" (click to toggle mm)</title>${inch}"</text>`;
+      svg += `<text x="${x}" y="35" text-anchor="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer"><title>${interpolate(gettext("%s (click to toggle mm)"), [inch + '"'])}</title>${inch}"</text>`;
     }
   }
 
@@ -118,10 +119,10 @@ function generateHorizontalRulerInch(
 
   // Column markers in inch
   const colMarkersInch = [
-    { inch: (COLUMN_WIDTH_MM * 0.5) / 25.4, label: "0.5 col" },
-    { inch: (COLUMN_WIDTH_MM * 1.0) / 25.4, label: "1.0 col" },
-    { inch: (COLUMN_WIDTH_MM * 1.5) / 25.4, label: "1.5 col" },
-    { inch: (COLUMN_WIDTH_MM * 2.0) / 25.4, label: "2.0 col" },
+    { inch: (COLUMN_WIDTH_MM * 0.5) / 25.4, label: interpolate(gettext("%s col"), ["0.5"]) },
+    { inch: (COLUMN_WIDTH_MM * 1.0) / 25.4, label: interpolate(gettext("%s col"), ["1.0"]) },
+    { inch: (COLUMN_WIDTH_MM * 1.5) / 25.4, label: interpolate(gettext("%s col"), ["1.5"]) },
+    { inch: (COLUMN_WIDTH_MM * 2.0) / 25.4, label: interpolate(gettext("%s col"), ["2.0"]) },
   ];
   colMarkersInch.forEach(({ inch, label }) => {
     const x = inchToPx(inch);
@@ -148,13 +149,13 @@ function generateVerticalRulerMm(
 
   // 0mm tick
   svg += `<line x1="40" y1="0" x2="${rulerWidth}" y2="0" stroke="${majorColor}" stroke-width="1.5"/>`;
-  svg += `<text x="30" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, 8)"><title>0mm (click to toggle inch)</title>0mm</text>`;
+  svg += `<text x="30" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, 8)"><title>${interpolate(gettext("%s (click to toggle inch)"), ["0mm"])}</title>0mm</text>`;
 
   for (let mm = 1; mm <= maxMm; mm++) {
     const y = mmToPx(mm);
     if (mm % 10 === 0) {
       svg += `<line x1="40" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${majorColor}" stroke-width="1.5"/>`;
-      svg += `<text x="30" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, ${y})"><title>${mm}mm (click to toggle inch)</title>${mm}mm</text>`;
+      svg += `<text x="30" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, ${y})"><title>${interpolate(gettext("%s (click to toggle inch)"), [mm + "mm"])}</title>${mm}mm</text>`;
     } else if (mm % 5 === 0) {
       svg += `<line x1="48" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${majorColor}" stroke-width="1"/>`;
     } else {
@@ -181,9 +182,9 @@ function generateVerticalRulerInch(
     const y = inchToPx(inch);
     svg += `<line x1="40" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${majorColor}" stroke-width="1.5"/>`;
     if (inch === 0) {
-      svg += `<text x="30" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, 8)"><title>0" (click to toggle mm)</title>0"</text>`;
+      svg += `<text x="30" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, 8)"><title>${interpolate(gettext("%s (click to toggle mm)"), ['0"'])}</title>0"</text>`;
     } else {
-      svg += `<text x="30" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, ${y})"><title>${inch}" (click to toggle mm)</title>${inch}"</text>`;
+      svg += `<text x="30" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, ${y})"><title>${interpolate(gettext("%s (click to toggle mm)"), [inch + '"'])}</title>${inch}"</text>`;
     }
   }
 

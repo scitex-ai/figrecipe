@@ -5,6 +5,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
+import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface LegendInfo {
   has_legend: boolean;
@@ -13,17 +14,17 @@ interface LegendInfo {
 }
 
 const LEGEND_LOCATIONS = [
-  { label: "Best", value: "best" },
-  { label: "Upper Right", value: "upper right" },
-  { label: "Upper Left", value: "upper left" },
-  { label: "Lower Left", value: "lower left" },
-  { label: "Lower Right", value: "lower right" },
-  { label: "Right", value: "right" },
-  { label: "Center Left", value: "center left" },
-  { label: "Center Right", value: "center right" },
-  { label: "Lower Center", value: "lower center" },
-  { label: "Upper Center", value: "upper center" },
-  { label: "Center", value: "center" },
+  { label: gettext_noop("Best"), value: "best" },
+  { label: gettext_noop("Upper Right"), value: "upper right" },
+  { label: gettext_noop("Upper Left"), value: "upper left" },
+  { label: gettext_noop("Lower Left"), value: "lower left" },
+  { label: gettext_noop("Lower Right"), value: "lower right" },
+  { label: gettext_noop("Right"), value: "right" },
+  { label: gettext_noop("Center Left"), value: "center left" },
+  { label: gettext_noop("Center Right"), value: "center right" },
+  { label: gettext_noop("Lower Center"), value: "lower center" },
+  { label: gettext_noop("Upper Center"), value: "upper center" },
+  { label: gettext_noop("Center"), value: "center" },
 ];
 
 export function LegendSection({ axIndex }: { axIndex: number }) {
@@ -46,7 +47,7 @@ export function LegendSection({ axIndex }: { axIndex: number }) {
         });
         loadPreview();
       } catch (e) {
-        showToast(`Legend update failed: ${e}`, "error");
+        showToast(interpolate(gettext("Legend update failed: %s"), [e]), "error");
       }
     },
     [axIndex, loadPreview, showToast],
@@ -55,20 +56,20 @@ export function LegendSection({ axIndex }: { axIndex: number }) {
   if (!info?.has_legend) return null;
 
   return (
-    <PropSection title="Legend" defaultOpen={false}>
+    <PropSection title={gettext("Legend")} defaultOpen={false}>
       <PropRow
-        label="Visible"
+        label={gettext("Visible")}
         value={info.visible}
         editable
         type="checkbox"
         onChange={(v) => updateLegend({ visible: v })}
       />
       <PropRow
-        label="Location"
+        label={gettext("Location")}
         value={info.loc}
         editable
         type="select"
-        options={LEGEND_LOCATIONS}
+        options={LEGEND_LOCATIONS.map((option) => ({ ...option, label: gettext(option.label) }))}
         onChange={(v) => updateLegend({ loc: v })}
       />
     </PropSection>

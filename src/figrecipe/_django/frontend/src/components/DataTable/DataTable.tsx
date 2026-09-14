@@ -9,6 +9,7 @@ import { DataTable as StxDataTable } from "@scitex/ui/src/scitex_ui/static/scite
 import type { Dataset } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function DataTable() {
   const { datatableTabs, activeTabId, showToast, loadDatatable } =
@@ -43,7 +44,7 @@ export function DataTable() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      showToast(`Export failed: ${e}`, "error");
+      showToast(interpolate(gettext("Export failed: %s"), [e]), "error");
     }
   }, [showToast]);
 
@@ -54,10 +55,10 @@ export function DataTable() {
         const ext = file.name.split(".").pop()?.toLowerCase();
         const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
         await api.post("datatable/import", { content, format });
-        showToast("Imported data", "success");
+        showToast(gettext("Imported data"), "success");
         loadDatatable();
       } catch (e) {
-        showToast(`Import failed: ${e}`, "error");
+        showToast(interpolate(gettext("Import failed: %s"), [e]), "error");
       }
     },
     [showToast, loadDatatable],
@@ -66,19 +67,19 @@ export function DataTable() {
   return (
     <div className="datatable-panel">
       <div className="datatable-panel__header">
-        <h3>Data</h3>
+        <h3>{gettext("Data")}</h3>
         <div className="datatable-panel__actions">
           <button
             className="pane-header-btn"
             onClick={() => fileInputRef.current?.click()}
-            title="Import CSV"
+            title={gettext("Import CSV")}
           >
             <i className="fas fa-upload" />
           </button>
           <button
             className="pane-header-btn"
             onClick={handleExportCsv}
-            title="Export CSV"
+            title={gettext("Export CSV")}
             disabled={tabs.length === 0}
           >
             <i className="fas fa-download" />
@@ -99,9 +100,9 @@ export function DataTable() {
 
       {tabs.length === 0 ? (
         <div className="datatable-panel__empty">
-          <p>No data available</p>
+          <p>{gettext("No data available")}</p>
           <p className="datatable-panel__hint">
-            Plot data will appear here when a figure is loaded
+            {gettext("Plot data will appear here when a figure is loaded")}
           </p>
         </div>
       ) : (

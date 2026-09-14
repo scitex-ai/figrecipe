@@ -6,6 +6,7 @@ import type {
   PreviewResponse,
   StyleOverrides,
 } from "../types/editor";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type Get = () => {
   placedFigures: PlacedFigure[];
@@ -68,10 +69,10 @@ export function createPersistActions(set: Set, get: Get) {
         } else {
           set({ currentTheme: theme });
         }
-        get().showToast(`Theme: ${theme}`, "success");
+        get().showToast(interpolate(gettext("Theme: %s"), [theme]), "success");
       } catch (e) {
         console.error("[Editor] Failed to switch theme:", e);
-        get().showToast(`Error: ${e}`, "error");
+        get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
         set({ loading: false });
       }
@@ -99,7 +100,7 @@ export function createPersistActions(set: Set, get: Get) {
         }
       } catch (e) {
         console.error("[Editor] Failed to update:", e);
-        get().showToast(`Error: ${e}`, "error");
+        get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
         set({ loading: false });
       }
@@ -110,10 +111,10 @@ export function createPersistActions(set: Set, get: Get) {
       if (placedFigures.length === 0) {
         try {
           await api.post("save", { overrides: get().overrides });
-          get().showToast("Saved", "success");
+          get().showToast(gettext("Saved"), "success");
         } catch (e) {
           console.error("[Editor] Failed to save:", e);
-          get().showToast(`Error: ${e}`, "error");
+          get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
         }
         return;
       }
@@ -124,10 +125,10 @@ export function createPersistActions(set: Set, get: Get) {
           "api/compose",
           { ...payload, filename: "composed" },
         );
-        get().showToast(`Composed → ${result.path}`, "success");
+        get().showToast(interpolate(gettext("Composed → %s"), [result.path]), "success");
       } catch (e) {
         console.error("[Editor] Failed to compose:", e);
-        get().showToast(`Error: ${e}`, "error");
+        get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
         set({ loading: false });
       }
@@ -158,10 +159,10 @@ export function createPersistActions(set: Set, get: Get) {
               }) as never,
           );
         }
-        get().showToast("Restored to original", "success");
+        get().showToast(gettext("Restored to original"), "success");
       } catch (e) {
         console.error("[Editor] Failed to restore:", e);
-        get().showToast(`Error: ${e}`, "error");
+        get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
         set({ loading: false });
       }

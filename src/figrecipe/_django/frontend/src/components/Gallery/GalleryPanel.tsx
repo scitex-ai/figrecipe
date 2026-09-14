@@ -10,6 +10,7 @@
 
 import { useEffect } from "react";
 import { CATEGORY_LABELS, useGalleryTemplates } from "./useGalleryTemplates";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface Props {
   onClose: () => void;
@@ -24,7 +25,7 @@ export function GalleryPanel({ onClose, family }: Props) {
   // A family that ships no templates (e.g. "vector" declares none) says so
   // instead of rendering an empty grid that reads as a broken gallery.
   const familyTemplates = data?.categories[family] ?? [];
-  const familyLabel = CATEGORY_LABELS[family]?.label ?? family;
+  const familyLabel = gettext(CATEGORY_LABELS[family]?.label ?? family);
 
   // Close on Escape
   useEffect(() => {
@@ -42,9 +43,9 @@ export function GalleryPanel({ onClose, family }: Props) {
         <div className="gallery-header">
           <h3>
             <i className={`fas ${CATEGORY_LABELS[family]?.icon ?? "fa-shapes"}`} />{" "}
-            {familyLabel} templates
+            {interpolate(gettext("%s templates"), [familyLabel])}
           </h3>
-          <button className="gallery-close" onClick={onClose} type="button">
+          <button className="gallery-close" onClick={onClose} type="button" aria-label={gettext("Close")}>
             <i className="fas fa-times" />
           </button>
         </div>
@@ -52,17 +53,17 @@ export function GalleryPanel({ onClose, family }: Props) {
         {/* Content */}
         {loading ? (
           <div className="gallery-loading">
-            <i className="fas fa-spinner fa-spin" /> Loading templates...
+            <i className="fas fa-spinner fa-spin" /> {gettext("Loading templates…")}
           </div>
         ) : failed ? (
           <div className="gallery-empty">
             <i className="fas fa-triangle-exclamation" />
-            Could not load the template gallery
+            {gettext("Could not load the template gallery")}
           </div>
         ) : familyTemplates.length === 0 ? (
           <div className="gallery-empty">
             <i className="fas fa-inbox" />
-            No {familyLabel.toLowerCase()} templates are available in this install
+            {interpolate(gettext("No %s templates are available in this install"), [familyLabel])}
           </div>
         ) : (
           <div className="gallery-grid">
@@ -75,7 +76,7 @@ export function GalleryPanel({ onClose, family }: Props) {
                     if (ok) onClose();
                   });
                 }}
-                title={`Add ${tmpl.label} to canvas`}
+                title={interpolate(gettext("Add %s to canvas"), [tmpl.label])}
               >
                 <div className="gallery-item-thumb">
                   {thumbnails[tmpl.name] ? (

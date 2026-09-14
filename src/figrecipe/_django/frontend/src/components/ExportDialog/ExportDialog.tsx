@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { buildExportPayload } from "../../store/persistActions";
 import { useEditorStore } from "../../store/useEditorStore";
+import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface Props {
   onClose: () => void;
@@ -14,10 +15,10 @@ const FORMATS = [
     id: "png",
     label: "PNG",
     icon: "fas fa-file-image",
-    hint: "Raster (300 DPI)",
+    hint: gettext_noop("Raster (300 DPI)"),
   },
-  { id: "svg", label: "SVG", icon: "fas fa-file-code", hint: "Vector" },
-  { id: "pdf", label: "PDF", icon: "fas fa-file-pdf", hint: "Print-ready" },
+  { id: "svg", label: "SVG", icon: "fas fa-file-code", hint: gettext_noop("Vector") },
+  { id: "pdf", label: "PDF", icon: "fas fa-file-pdf", hint: gettext_noop("Print-ready") },
 ];
 
 export function ExportDialog({ onClose }: Props) {
@@ -58,10 +59,10 @@ export function ExportDialog({ onClose }: Props) {
       a.download = `${filename}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast(`Exported ${filename}.${format}`, "success");
+      showToast(interpolate(gettext("Exported %s"), [filename + "." + format]), "success");
       onClose();
     } catch (e) {
-      showToast(`Export failed: ${e}`, "error");
+      showToast(interpolate(gettext("Export failed: %s"), [e]), "error");
     } finally {
       setExporting(false);
     }
@@ -80,16 +81,16 @@ export function ExportDialog({ onClose }: Props) {
       <div className="export-dialog" onMouseDown={(e) => e.stopPropagation()}>
         <div className="gallery-header">
           <h3>
-            <i className="fas fa-download" /> Export Figure
+            <i className="fas fa-download" /> {gettext("Export Figure")}
           </h3>
-          <button className="gallery-close" onClick={onClose} type="button">
+          <button className="gallery-close" onClick={onClose} type="button" aria-label={gettext("Close")}>
             <i className="fas fa-times" />
           </button>
         </div>
 
         <div className="export-body">
           <label className="export-field">
-            <span className="export-label">Filename</span>
+            <span className="export-label">{gettext("Filename")}</span>
             <input
               type="text"
               className="export-input"
@@ -100,7 +101,7 @@ export function ExportDialog({ onClose }: Props) {
           </label>
 
           <div className="export-field">
-            <span className="export-label">Format</span>
+            <span className="export-label">{gettext("Format")}</span>
             <div className="export-formats">
               {FORMATS.map((fmt) => (
                 <button
@@ -111,7 +112,7 @@ export function ExportDialog({ onClose }: Props) {
                 >
                   <i className={fmt.icon} />
                   <span className="export-format-label">{fmt.label}</span>
-                  <span className="export-format-hint">{fmt.hint}</span>
+                  <span className="export-format-hint">{gettext(fmt.hint)}</span>
                 </button>
               ))}
             </div>
@@ -120,7 +121,7 @@ export function ExportDialog({ onClose }: Props) {
 
         <div className="export-footer">
           <button className="export-cancel-btn" onClick={onClose} type="button">
-            Cancel
+            {gettext("Cancel")}
           </button>
           <button
             className="export-confirm-btn"
@@ -130,11 +131,11 @@ export function ExportDialog({ onClose }: Props) {
           >
             {exporting ? (
               <>
-                <i className="fas fa-spinner fa-spin" /> Exporting...
+                <i className="fas fa-spinner fa-spin" /> {gettext("Exporting…")}
               </>
             ) : (
               <>
-                <i className="fas fa-download" /> Export {format.toUpperCase()}
+                <i className="fas fa-download" /> {interpolate(gettext("Export %s"), [format.toUpperCase()])}
               </>
             )}
           </button>

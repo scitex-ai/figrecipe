@@ -11,6 +11,7 @@ import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type TabId = "current" | "preset" | "layout" | "view";
 
@@ -39,7 +40,7 @@ export function Properties() {
         await api.post("update_call", { call_id: callId, param, value });
         refreshAfterMutation();
       } catch (e) {
-        showToast(`Update failed: ${e}`, "error");
+        showToast(interpolate(gettext("Update failed: %s"), [e]), "error");
       }
     },
     [showToast, refreshAfterMutation],
@@ -60,11 +61,11 @@ export function Properties() {
       ) : (
         <div className="selected-item-info">
           <div className="selected-item-header">
-            <i className="fas fa-info-circle" style={{ opacity: 0.5 }} /> No
-            selection
+            <i className="fas fa-info-circle" style={{ opacity: 0.5 }} />{" "}
+            {gettext("No selection")}
           </div>
           <div className="selected-item-label">
-            Select an item from the tree to view properties
+            {gettext("Select an item from the tree to view properties")}
           </div>
         </div>
       )}
@@ -76,28 +77,28 @@ export function Properties() {
           onClick={() => setActiveTab("current")}
           type="button"
         >
-          <i className="fas fa-edit" /> Current
+          <i className="fas fa-edit" /> {gettext("Current")}
         </button>
         <button
           className={`properties-tab${activeTab === "preset" ? " active" : ""}`}
           onClick={() => setActiveTab("preset")}
           type="button"
         >
-          <i className="fas fa-palette" /> Preset
+          <i className="fas fa-palette" /> {gettext("Preset")}
         </button>
         <button
           className={`properties-tab${activeTab === "layout" ? " active" : ""}`}
           onClick={() => setActiveTab("layout")}
           type="button"
         >
-          <i className="fas fa-th-large" /> Layout
+          <i className="fas fa-th-large" /> {gettext("Layout")}
         </button>
         <button
           className={`properties-tab${activeTab === "view" ? " active" : ""}`}
           onClick={() => setActiveTab("view")}
           type="button"
         >
-          <i className="fas fa-eye" /> View
+          <i className="fas fa-eye" /> {gettext("View")}
         </button>
       </div>
 
@@ -113,7 +114,7 @@ export function Properties() {
 
                 {/* Style — from matched call kwargs */}
                 {matchedCall && Object.keys(matchedCall.kwargs).length > 0 && (
-                  <PropSection title="Style">
+                  <PropSection title={gettext("Style")}>
                     {Object.entries(matchedCall.kwargs).map(([key, val]) => {
                       if (val === null || val === undefined) return null;
                       const isColor =
@@ -149,7 +150,7 @@ export function Properties() {
                 {axIndex !== undefined && <StatsOverlay axIndex={axIndex} />}
 
                 {calls.length > 0 && (
-                  <PropSection title="Traces" defaultOpen={false}>
+                  <PropSection title={gettext("Traces")} defaultOpen={false}>
                     {calls.map((c) => (
                       <div key={c.call_id} className="trace-item">
                         <span className="trace-label">
@@ -165,14 +166,14 @@ export function Properties() {
         )}
 
         {activeTab === "preset" && selectedElement && (
-          <PropSection title="Element Info">
-            <PropRow label="ID" value={selectedElement} />
-            <PropRow label="Type" value={selectedBbox?.type ?? "unknown"} />
+          <PropSection title={gettext("Element Info")}>
+            <PropRow label={gettext("ID")} value={selectedElement} />
+            <PropRow label={gettext("Type")} value={selectedBbox?.type ?? gettext("unknown")} />
             {selectedBbox?.call_id && (
-              <PropRow label="Call ID" value={selectedBbox.call_id} />
+              <PropRow label={gettext("Call ID")} value={selectedBbox.call_id} />
             )}
             {axIndex !== undefined && (
-              <PropRow label="Panel" value={`Axes ${axIndex}`} />
+              <PropRow label={gettext("Panel")} value={interpolate(gettext("Axes %s"), [axIndex])} />
             )}
           </PropSection>
         )}
@@ -201,143 +202,143 @@ function LayoutTab() {
 
   return (
     <>
-      <PropSection title="Figure Align">
+      <PropSection title={gettext("Figure Align")}>
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
-            title="Align left"
+            title={gettext("Align left")}
             onClick={() => alignFigures("left")}
           >
-            <i className="fas fa-align-left" /> Left
+            <i className="fas fa-align-left" /> {gettext("Left")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Align right"
+            title={gettext("Align right")}
             onClick={() => alignFigures("right")}
           >
-            <i className="fas fa-align-right" /> Right
+            <i className="fas fa-align-right" /> {gettext("Right")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Align top"
+            title={gettext("Align top")}
             onClick={() => alignFigures("top")}
           >
-            <i className="fas fa-arrow-up" /> Top
+            <i className="fas fa-arrow-up" /> {gettext("Top")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Align bottom"
+            title={gettext("Align bottom")}
             onClick={() => alignFigures("bottom")}
           >
-            <i className="fas fa-arrow-down" /> Bottom
+            <i className="fas fa-arrow-down" /> {gettext("Bottom")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Center horizontal"
+            title={gettext("Center horizontal")}
             onClick={() => alignFigures("center-h")}
           >
-            <i className="fas fa-arrows-alt-h" /> Ctr H
+            <i className="fas fa-arrows-alt-h" /> {gettext("Ctr H")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Center vertical"
+            title={gettext("Center vertical")}
             onClick={() => alignFigures("center-v")}
           >
-            <i className="fas fa-arrows-alt-v" /> Ctr V
+            <i className="fas fa-arrows-alt-v" /> {gettext("Ctr V")}
           </button>
         </div>
       </PropSection>
 
-      <PropSection title="Axes Align">
+      <PropSection title={gettext("Axes Align")}>
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
             onClick={() => alignFigures("axes-left")}
           >
-            <i className="fas fa-align-left" /> Ax Left
+            <i className="fas fa-align-left" /> {gettext("Ax Left")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={() => alignFigures("axes-right")}
           >
-            <i className="fas fa-align-right" /> Ax Right
+            <i className="fas fa-align-right" /> {gettext("Ax Right")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={() => alignFigures("axes-top")}
           >
-            <i className="fas fa-arrow-up" /> Ax Top
+            <i className="fas fa-arrow-up" /> {gettext("Ax Top")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={() => alignFigures("axes-bottom")}
           >
-            <i className="fas fa-arrow-down" /> Ax Bot
+            <i className="fas fa-arrow-down" /> {gettext("Ax Bot")}
           </button>
         </div>
       </PropSection>
 
-      <PropSection title="Distribute">
+      <PropSection title={gettext("Distribute")}>
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
             onClick={() => distributeFigures("horizontal")}
           >
-            <i className="fas fa-grip-lines-vertical" /> Horizontal
+            <i className="fas fa-grip-lines-vertical" /> {gettext("Horizontal")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={() => distributeFigures("vertical")}
           >
-            <i className="fas fa-grip-lines" /> Vertical
+            <i className="fas fa-grip-lines" /> {gettext("Vertical")}
           </button>
         </div>
       </PropSection>
 
-      <PropSection title="Panels">
+      <PropSection title={gettext("Panels")}>
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
-            title="Reorder panel letters by position"
+            title={gettext("Reorder panel letters by position")}
             onClick={reorderPanelLetters}
           >
-            <i className="fas fa-sort-alpha-down" /> Reorder
+            <i className="fas fa-sort-alpha-down" /> {gettext("Reorder")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Group all figures"
+            title={gettext("Group all figures")}
             disabled={placedFigures.length < 2}
             onClick={() => {
               const ids = placedFigures.map((f) => f.id);
               if (ids.length >= 2) groupFigures(ids);
             }}
           >
-            <i className="fas fa-object-group" /> Group
+            <i className="fas fa-object-group" /> {gettext("Group")}
           </button>
           <button
             className="details-btn"
             type="button"
-            title="Ungroup selected"
+            title={gettext("Ungroup selected")}
             disabled={!selectedFig?.groupId}
             onClick={() => {
               if (selectedFig?.groupId) ungroupFigures(selectedFig.groupId);
             }}
           >
-            <i className="fas fa-object-ungroup" /> Ungroup
+            <i className="fas fa-object-ungroup" /> {gettext("Ungroup")}
           </button>
         </div>
       </PropSection>
@@ -367,9 +368,9 @@ function ViewTab() {
 
   return (
     <>
-      <PropSection title="Theme">
+      <PropSection title={gettext("Theme")}>
         <div className="property-group" style={{ marginBottom: 12 }}>
-          <label className="property-label">Matplotlib Theme</label>
+          <label className="property-label">{gettext("Matplotlib Theme")}</label>
           <select
             className="property-select"
             value={currentTheme}
@@ -389,59 +390,59 @@ function ViewTab() {
             onClick={() => setDarkMode(!darkMode)}
           >
             <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} />
-            {darkMode ? "Dark" : "Light"}
+            {darkMode ? gettext("Dark") : gettext("Light")}
           </button>
         </div>
       </PropSection>
 
-      <PropSection title="Zoom">
+      <PropSection title={gettext("Zoom")}>
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomOut}
           >
-            <i className="fas fa-search-minus" /> Out
+            <i className="fas fa-search-minus" /> {gettext("Out")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomToFit}
           >
-            <i className="fas fa-compress-arrows-alt" /> Fit
+            <i className="fas fa-compress-arrows-alt" /> {gettext("Fit")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomIn}
           >
-            <i className="fas fa-search-plus" /> In
+            <i className="fas fa-search-plus" /> {gettext("In")}
           </button>
           <button
             className="details-btn"
             type="button"
             onClick={zoomControls?.resetView}
           >
-            <i className="fas fa-undo-alt" /> Reset
+            <i className="fas fa-undo-alt" /> {gettext("Reset")}
           </button>
         </div>
       </PropSection>
 
-      <PropSection title="Guides">
+      <PropSection title={gettext("Guides")}>
         <div className="details-btn-grid">
           <button
             className={`details-btn${snapEnabled ? " details-btn--active" : ""}`}
             type="button"
             onClick={toggleSnap}
           >
-            <i className="fas fa-magnet" /> Snap {snapEnabled ? "ON" : "OFF"}
+            <i className="fas fa-magnet" /> {snapEnabled ? gettext("Snap ON") : gettext("Snap OFF")}
           </button>
           <button
             className={`details-btn${showRulers ? " details-btn--active" : ""}`}
             type="button"
             onClick={toggleRulers}
           >
-            <i className="fas fa-ruler-combined" /> Rulers
+            <i className="fas fa-ruler-combined" /> {gettext("Rulers")}
           </button>
           <button
             className="details-btn"
@@ -455,7 +456,7 @@ function ViewTab() {
             type="button"
             onClick={toggleHitmap}
           >
-            <i className="fas fa-bullseye" /> Hitmap
+            <i className="fas fa-bullseye" /> {gettext("Hitmap")}
           </button>
         </div>
       </PropSection>

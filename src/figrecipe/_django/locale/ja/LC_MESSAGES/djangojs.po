@@ -1,0 +1,1129 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: figrecipe VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-14 21:24+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: Japanese\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Plot"
+msgstr "プロット"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Canvas"
+msgstr "キャンバス"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Viewer"
+msgstr "ビューワー"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Expand figure viewer"
+msgstr "図のビューワーを展開"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Collapse figure viewer"
+msgstr "図のビューワーを折りたたむ"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Expand canvas"
+msgstr "キャンバスを展開"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Collapse canvas"
+msgstr "キャンバスを折りたたむ"
+
+#: frontend/src/api/client.ts
+#, javascript-format, python-format
+msgid "API error: %s"
+msgstr "API エラー: %s"
+
+#: frontend/src/api/client.ts frontend/src/components/Toolbar/Toolbar.tsx
+#, javascript-format, python-format
+msgid "Download failed: %s"
+msgstr "ダウンロードに失敗しました: %s"
+
+#: frontend/src/api/client.ts
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+#: frontend/src/components/DataTable/DataTable.tsx
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+#, javascript-format, python-format
+msgid "Export failed: %s"
+msgstr "エクスポートに失敗しました: %s"
+
+#: frontend/src/bridge/WorkspaceIntegration.ts
+#, javascript-format, python-format
+msgid "Property %s updated"
+msgstr "プロパティ %s を更新しました"
+
+#: frontend/src/bridge/WorkspaceIntegration.ts
+#, javascript-format, python-format
+msgid "Data: %s columns, %s rows"
+msgstr "データ: %s 列、%s 行"
+
+#: frontend/src/bridge/WorkspaceIntegration.ts
+#, javascript-format, python-format
+msgid "Stat bracket added: %s"
+msgstr "統計ブラケットを追加しました: %s"
+
+#: frontend/src/components/Canvas/Canvas.tsx
+msgid "No figure loaded"
+msgstr "図が読み込まれていません"
+
+#: frontend/src/components/Canvas/Canvas.tsx
+msgid "Select a file from the browser or create a new figure"
+msgstr "ファイルブラウザからファイルを選ぶか、新しい図を作成してください"
+
+#: frontend/src/components/Canvas/CaptionOverlay.tsx
+msgid "Caption save failed"
+msgstr "キャプションを保存できませんでした"
+
+#: frontend/src/components/Canvas/LegendDragOverlay.tsx
+msgid "Drag to move legend"
+msgstr "ドラッグして凡例を移動"
+
+#: frontend/src/components/Canvas/PanelLetterOverlay.tsx
+msgid "Drag to move, double-click to edit"
+msgstr "ドラッグで移動、ダブルクリックで編集"
+
+#: frontend/src/components/Canvas/Rulers.tsx
+#, javascript-format, python-format
+msgid "%s (click to toggle inch)"
+msgstr "%s（クリックでインチに切り替え）"
+
+#: frontend/src/components/Canvas/Rulers.tsx
+#, javascript-format, python-format
+msgid "%s col"
+msgstr "%s 段"
+
+#: frontend/src/components/Canvas/Rulers.tsx
+#, javascript-format, python-format
+msgid "%s (click to toggle mm)"
+msgstr "%s（クリックで mm に切り替え）"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "figure"
+msgstr "図"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#, javascript-format, python-format
+msgid "%s figure"
+msgid_plural "%s figures"
+msgstr[0] "%s 個の図"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "No figures yet"
+msgstr "図はまだありません"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree."
+msgstr "キャンバスにはまだ図がありません。プロットの種類のギャラリーから追加するか、ファイルツリーからレシピを開いてください。"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Undo (Ctrl+Z)"
+msgstr "元に戻す (Ctrl+Z)"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Redo (Ctrl+Shift+Z)"
+msgstr "やり直す (Ctrl+Shift+Z)"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Snap: ON"
+msgstr "スナップ: オン"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Snap: OFF"
+msgstr "スナップ: オフ"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Toggle rulers"
+msgstr "ルーラーの表示を切り替え"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Zoom to fit"
+msgstr "全体を表示"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Toggle hit regions (debug)"
+msgstr "ヒット領域の表示を切り替え（デバッグ）"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Save (Ctrl+S)"
+msgstr "保存 (Ctrl+S)"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Restore original"
+msgstr "元の状態に戻す"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Export (PNG/SVG/PDF)"
+msgstr "エクスポート (PNG/SVG/PDF)"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Switch to light mode"
+msgstr "ライトモードに切り替え"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Switch to dark mode"
+msgstr "ダークモードに切り替え"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Copy"
+msgstr "コピー"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Paste"
+msgstr "貼り付け"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Delete"
+msgstr "削除"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Duplicate"
+msgstr "複製"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Bring to Front"
+msgstr "最前面へ移動"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Send to Back"
+msgstr "最背面へ移動"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Align"
+msgstr "整列"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Align Left"
+msgstr "左揃え"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Align Right"
+msgstr "右揃え"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Align Top"
+msgstr "上揃え"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Align Bottom"
+msgstr "下揃え"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Group All"
+msgstr "すべてグループ化"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ungroup"
+msgstr "グループ解除"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+#: frontend/src/components/FigureViewer/FigureViewer.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Export"
+msgstr "エクスポート"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Export PNG"
+msgstr "PNG をエクスポート"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Export SVG"
+msgstr "SVG をエクスポート"
+
+#: frontend/src/components/ContextMenu/ContextMenu.tsx
+msgid "Export PDF"
+msgstr "PDF をエクスポート"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Imported data"
+msgstr "データをインポートしました"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Import failed: %s"
+msgstr "インポートに失敗しました: %s"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+#: frontend/src/store/useEditorStore.ts
+msgid "Data"
+msgstr "データ"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+msgid "Import CSV"
+msgstr "CSV をインポート"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Export CSV"
+msgstr "CSV をエクスポート"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+msgid "No data available"
+msgstr "データがありません"
+
+#: frontend/src/components/DataTable/DataTable.tsx
+msgid "Plot data will appear here when a figure is loaded"
+msgstr "図を読み込むとプロットのデータがここに表示されます"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Expand data table"
+msgstr "データテーブルを展開"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Collapse data table"
+msgstr "データテーブルを折りたたむ"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "%s table"
+msgid_plural "%s tables"
+msgstr[0] "%s 個のテーブル"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "No tables"
+msgstr "テーブルなし"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Import data"
+msgstr "データをインポート"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "WIP"
+msgstr "開発中"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Sort (WIP)"
+msgstr "並べ替え（開発中）"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Filter (WIP)"
+msgstr "フィルター（開発中）"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Keyboard shortcuts"
+msgstr "キーボードショートカット"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Table"
+msgstr "テーブル"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Close tab and remove figure"
+msgstr "タブを閉じて図を削除"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Raster (300 DPI)"
+msgstr "ラスター (300 DPI)"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Vector"
+msgstr "ベクトル"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Print-ready"
+msgstr "印刷向け"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+#, javascript-format, python-format
+msgid "Exported %s"
+msgstr "%s をエクスポートしました"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Export Figure"
+msgstr "図をエクスポート"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+#: frontend/src/components/Gallery/GalleryPanel.tsx
+msgid "Close"
+msgstr "閉じる"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Filename"
+msgstr "ファイル名"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Format"
+msgstr "形式"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+msgid "Exporting…"
+msgstr "エクスポート中…"
+
+#: frontend/src/components/ExportDialog/ExportDialog.tsx
+#, javascript-format, python-format
+msgid "Export %s"
+msgstr "%s でエクスポート"
+
+#: frontend/src/components/FigureViewer/FigureViewer.tsx
+msgid "Figure preview"
+msgstr "図のプレビュー"
+
+#: frontend/src/components/FigureViewer/FigureViewer.tsx
+msgid "Export figure (PNG / SVG / PDF)"
+msgstr "図をエクスポート (PNG / SVG / PDF)"
+
+#: frontend/src/components/FigureViewer/FigureViewer.tsx
+msgid "Export figure"
+msgstr "図をエクスポート"
+
+#: frontend/src/components/Gallery/GalleryPanel.tsx
+#, javascript-format, python-format
+msgid "%s templates"
+msgstr "%s のテンプレート"
+
+#: frontend/src/components/Gallery/GalleryPanel.tsx
+msgid "Loading templates…"
+msgstr "テンプレートを読み込み中…"
+
+#: frontend/src/components/Gallery/GalleryPanel.tsx
+msgid "Could not load the template gallery"
+msgstr "テンプレートギャラリーを読み込めませんでした"
+
+#: frontend/src/components/Gallery/GalleryPanel.tsx
+#, javascript-format, python-format
+msgid "No %s templates are available in this install"
+msgstr "この環境には %s のテンプレートがありません"
+
+#: frontend/src/components/Gallery/GalleryPanel.tsx
+#, javascript-format, python-format
+msgid "Add %s to canvas"
+msgstr "%s をキャンバスに追加"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "Preparing a figure…"
+msgstr "図を準備しています…"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "Could not load the example gallery."
+msgstr "サンプルギャラリーを読み込めませんでした。"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "Select a recipe file from the tree to view its figure."
+msgstr "ツリーからレシピファイルを選ぶと図が表示されます。"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "No example figures are available in this install."
+msgstr "この環境にはサンプルの図がありません。"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "Start from an example"
+msgstr "サンプルから始める"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "Click a figure to open its recipe — then edit the data, the style and the layout, and export it publication-ready."
+msgstr "図をクリックするとレシピが開きます。データ、スタイル、レイアウトを編集して、論文品質でエクスポートできます。"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+#, javascript-format, python-format
+msgid "Open the %s example"
+msgstr "%s のサンプルを開く"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "Show example figures"
+msgstr "サンプルの図を表示"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+#, javascript-format, python-format
+msgid "Show %s example"
+msgid_plural "Show %s examples"
+msgstr[0] "サンプルを %s 件表示"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Line"
+msgstr "折れ線"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Scatter"
+msgstr "散布図"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+msgid "Categorical"
+msgstr "カテゴリ"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+msgid "Distribution"
+msgstr "分布"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+msgid "Statistical"
+msgstr "統計"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Grid"
+msgstr "グリッド"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Area"
+msgstr "面"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Contour"
+msgstr "等高線"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Special"
+msgstr "特殊"
+
+#: frontend/src/components/Gallery/useGalleryTemplates.ts
+#, javascript-format, python-format
+msgid "Failed to add template: %s"
+msgstr "テンプレートを追加できませんでした: %s"
+
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Bar"
+msgstr "棒"
+
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Dist"
+msgstr "分布"
+
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+msgid "Stats"
+msgstr "統計"
+
+#: frontend/src/components/PlotTypeNav/PlotTypeNav.tsx
+#, javascript-format, python-format
+msgid "%s examples"
+msgstr "%s のサンプル"
+
+#: frontend/src/components/ProjectScopeSelector.tsx
+msgid "Select project"
+msgstr "プロジェクトを選択"
+
+#: frontend/src/components/Properties/AxesPositionSection.tsx
+#, javascript-format, python-format
+msgid "Position update failed: %s"
+msgstr "位置の更新に失敗しました: %s"
+
+#: frontend/src/components/Properties/AxesPositionSection.tsx
+msgid "Position (mm)"
+msgstr "位置 (mm)"
+
+#: frontend/src/components/Properties/AxesPositionSection.tsx
+msgid "W"
+msgstr "幅"
+
+#: frontend/src/components/Properties/AxesPositionSection.tsx
+msgid "H"
+msgstr "高さ"
+
+#: frontend/src/components/Properties/LabelsSection.tsx
+#, javascript-format, python-format
+msgid "Label update failed: %s"
+msgstr "ラベルの更新に失敗しました: %s"
+
+#: frontend/src/components/Properties/LabelsSection.tsx
+msgid "Labels"
+msgstr "ラベル"
+
+#: frontend/src/components/Properties/LabelsSection.tsx
+msgid "Title"
+msgstr "タイトル"
+
+#: frontend/src/components/Properties/LabelsSection.tsx
+msgid "X Label"
+msgstr "X 軸ラベル"
+
+#: frontend/src/components/Properties/LabelsSection.tsx
+msgid "Y Label"
+msgstr "Y 軸ラベル"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Best"
+msgstr "自動"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Upper Right"
+msgstr "右上"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Upper Left"
+msgstr "左上"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Lower Left"
+msgstr "左下"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Lower Right"
+msgstr "右下"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Right"
+msgstr "右"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Center Left"
+msgstr "左中央"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Center Right"
+msgstr "右中央"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Lower Center"
+msgstr "下中央"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Upper Center"
+msgstr "上中央"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Center"
+msgstr "中央"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+#, javascript-format, python-format
+msgid "Legend update failed: %s"
+msgstr "凡例の更新に失敗しました: %s"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Legend"
+msgstr "凡例"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Visible"
+msgstr "表示"
+
+#: frontend/src/components/Properties/LegendSection.tsx
+msgid "Location"
+msgstr "位置"
+
+#: frontend/src/components/Properties/Properties.tsx
+#, javascript-format, python-format
+msgid "Update failed: %s"
+msgstr "更新に失敗しました: %s"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "No selection"
+msgstr "未選択"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Select an item from the tree to view properties"
+msgstr "ツリーから項目を選ぶとプロパティが表示されます"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Current"
+msgstr "現在"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Preset"
+msgstr "プリセット"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Layout"
+msgstr "レイアウト"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "View"
+msgstr "表示"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Style"
+msgstr "スタイル"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Traces"
+msgstr "トレース"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Element Info"
+msgstr "要素の情報"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "ID"
+msgstr "ID"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Type"
+msgstr "種類"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "unknown"
+msgstr "不明"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Call ID"
+msgstr "呼び出し ID"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Panel"
+msgstr "パネル"
+
+#: frontend/src/components/Properties/Properties.tsx
+#, javascript-format, python-format
+msgid "Axes %s"
+msgstr "軸 %s"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Figure Align"
+msgstr "図の整列"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Align left"
+msgstr "左揃え"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Left"
+msgstr "左"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Align right"
+msgstr "右揃え"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Align top"
+msgstr "上揃え"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Top"
+msgstr "上"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Align bottom"
+msgstr "下揃え"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Bottom"
+msgstr "下"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Center horizontal"
+msgstr "水平方向に中央揃え"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ctr H"
+msgstr "水平中央"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Center vertical"
+msgstr "垂直方向に中央揃え"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ctr V"
+msgstr "垂直中央"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Axes Align"
+msgstr "軸の整列"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ax Left"
+msgstr "軸 左"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ax Right"
+msgstr "軸 右"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ax Top"
+msgstr "軸 上"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ax Bot"
+msgstr "軸 下"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Distribute"
+msgstr "等間隔に配置"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Horizontal"
+msgstr "水平"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Vertical"
+msgstr "垂直"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Panels"
+msgstr "パネル"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Reorder panel letters by position"
+msgstr "位置に合わせてパネル記号を並べ替え"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Reorder"
+msgstr "並べ替え"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Group all figures"
+msgstr "すべての図をグループ化"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Group"
+msgstr "グループ化"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Ungroup selected"
+msgstr "選択をグループ解除"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Theme"
+msgstr "テーマ"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Matplotlib Theme"
+msgstr "Matplotlib テーマ"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Dark"
+msgstr "ダーク"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Light"
+msgstr "ライト"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Zoom"
+msgstr "ズーム"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Out"
+msgstr "縮小"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Fit"
+msgstr "全体表示"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "In"
+msgstr "拡大"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Reset"
+msgstr "リセット"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Guides"
+msgstr "ガイド"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Snap ON"
+msgstr "スナップ オン"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Snap OFF"
+msgstr "スナップ オフ"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Rulers"
+msgstr "ルーラー"
+
+#: frontend/src/components/Properties/Properties.tsx
+#: frontend/src/components/Ribbon/Ribbon.tsx
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Hitmap"
+msgstr "ヒットマップ"
+
+#: frontend/src/components/PropertiesPane/PropertiesPane.tsx
+msgid "Expand details"
+msgstr "詳細を展開"
+
+#: frontend/src/components/PropertiesPane/PropertiesPane.tsx
+msgid "Collapse details"
+msgstr "詳細を折りたたむ"
+
+#: frontend/src/components/PropertiesPane/PropertiesPane.tsx
+msgid "Details"
+msgstr "詳細"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Home"
+msgstr "ホーム"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "File"
+msgstr "ファイル"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Save"
+msgstr "保存"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Compose canvas figures and save (Ctrl+S)"
+msgstr "キャンバスの図を合成して保存 (Ctrl+S)"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Restore"
+msgstr "元に戻す"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Compose and export as PNG/SVG/PDF"
+msgstr "合成して PNG/SVG/PDF でエクスポート"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx frontend/src/main.tsx
+msgid "Undo"
+msgstr "元に戻す"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx frontend/src/main.tsx
+msgid "Redo"
+msgstr "やり直す"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Clipboard"
+msgstr "クリップボード"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Copy (Ctrl+C)"
+msgstr "コピー (Ctrl+C)"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Paste (Ctrl+V)"
+msgstr "貼り付け (Ctrl+V)"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Delete (Del)"
+msgstr "削除 (Del)"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Horiz"
+msgstr "水平"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Vert"
+msgstr "垂直"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Reorder panel letters by position (top-left → bottom-right)"
+msgstr "位置に合わせてパネル記号を並べ替え（左上 → 右下）"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Group all figures (Ctrl+G)"
+msgstr "すべての図をグループ化 (Ctrl+G)"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Ungroup selected figure's group"
+msgstr "選択した図のグループを解除"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Snap"
+msgstr "スナップ"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+#, javascript-format, python-format
+msgid "Unit: %s (click to toggle)"
+msgstr "単位: %s（クリックで切り替え）"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Appearance"
+msgstr "外観"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Debug"
+msgstr "デバッグ"
+
+#: frontend/src/components/Ribbon/Ribbon.tsx
+msgid "Toggle hit regions"
+msgstr "ヒット領域の表示を切り替え"
+
+#: frontend/src/components/StatsOverlay/StatsOverlay.tsx
+msgid "Bracket added"
+msgstr "ブラケットを追加しました"
+
+#: frontend/src/components/StatsOverlay/StatsOverlay.tsx
+msgid "Statistics"
+msgstr "統計"
+
+#: frontend/src/components/StatsOverlay/StatsOverlay.tsx
+msgid "Add significance bracket"
+msgstr "有意差ブラケットを追加"
+
+#: frontend/src/components/StatsOverlay/StatsOverlay.tsx
+msgid "No brackets on this panel"
+msgstr "このパネルにブラケットはありません"
+
+#: frontend/src/components/StatsOverlay/StatsOverlay.tsx
+msgid "Remove bracket"
+msgstr "ブラケットを削除"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Zoom out"
+msgstr "縮小"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Fit to screen"
+msgstr "画面に合わせる"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Zoom in"
+msgstr "拡大"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+#, javascript-format, python-format
+msgid "Ruler unit: %s (click to toggle)"
+msgstr "ルーラーの単位: %s（クリックで切り替え）"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "inch"
+msgstr "インチ"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Show hitmap areas (debug)"
+msgstr "ヒットマップ領域を表示（デバッグ）"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Save overrides (Ctrl+S)"
+msgstr "変更を保存 (Ctrl+S)"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Restore original (Ctrl+Z)"
+msgstr "元の状態に戻す (Ctrl+Z)"
+
+#: frontend/src/components/Toolbar/Toolbar.tsx
+msgid "Download"
+msgstr "ダウンロード"
+
+#: frontend/src/main.tsx
+msgid "Figure Editor"
+msgstr "図エディタ"
+
+#: frontend/src/main.tsx
+msgid "Delete selected"
+msgstr "選択項目を削除"
+
+#: frontend/src/main.tsx
+msgid "New Chat"
+msgstr "新しいチャット"
+
+#: frontend/src/main.tsx
+msgid "App Skills"
+msgstr "アプリのスキル"
+
+#: frontend/src/main.tsx
+msgid "active"
+msgstr "有効"
+
+#: frontend/src/main.tsx
+msgid "Interactive figure editor — plt_*"
+msgstr "インタラクティブな図エディタ — plt_*"
+
+#: frontend/src/store/figureActions.ts
+#, javascript-format, python-format
+msgid "Already on canvas: %s"
+msgstr "すでにキャンバスにあります: %s"
+
+#: frontend/src/store/figureActions.ts
+#, javascript-format, python-format
+msgid "Added: %s"
+msgstr "追加しました: %s"
+
+#: frontend/src/store/figureActions.ts frontend/src/store/persistActions.ts
+#, javascript-format, python-format
+msgid "Error: %s"
+msgstr "エラー: %s"
+
+#: frontend/src/store/persistActions.ts
+#, javascript-format, python-format
+msgid "Theme: %s"
+msgstr "テーマ: %s"
+
+#: frontend/src/store/persistActions.ts
+msgid "Saved"
+msgstr "保存しました"
+
+#: frontend/src/store/persistActions.ts
+#, javascript-format, python-format
+msgid "Composed → %s"
+msgstr "合成しました → %s"
+
+#: frontend/src/store/persistActions.ts
+msgid "Restored to original"
+msgstr "元の状態に戻しました"
+
+#: frontend/src/store/syncActions.ts
+#, javascript-format, python-format
+msgid "Add bracket failed: %s"
+msgstr "ブラケットを追加できませんでした: %s"
+
+#: frontend/src/store/syncActions.ts
+#, javascript-format, python-format
+msgid "Remove bracket failed: %s"
+msgstr "ブラケットを削除できませんでした: %s"
+
+#: frontend/src/store/syncActions.ts
+#, javascript-format, python-format
+msgid "Move legend failed: %s"
+msgstr "凡例を移動できませんでした: %s"
+
+#: frontend/src/store/useEditorStore.ts
+msgid "Failed to load preview"
+msgstr "プレビューを読み込めませんでした"
+

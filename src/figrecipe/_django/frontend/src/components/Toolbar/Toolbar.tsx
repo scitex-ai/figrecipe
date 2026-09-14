@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function Toolbar() {
   const {
@@ -80,7 +81,7 @@ export function Toolbar() {
         a.click();
         URL.revokeObjectURL(url);
       } catch (e) {
-        showToast(`Download failed: ${e}`, "error");
+        showToast(interpolate(gettext("Download failed: %s"), [e]), "error");
       }
     },
     [showToast],
@@ -111,21 +112,21 @@ export function Toolbar() {
           <button
             className="toolbar__btn"
             onClick={zoomControls?.zoomOut}
-            title="Zoom out"
+            title={gettext("Zoom out")}
           >
             -
           </button>
           <button
             className="toolbar__btn"
             onClick={zoomControls?.zoomToFit}
-            title="Fit to screen"
+            title={gettext("Fit to screen")}
           >
-            Fit
+            {gettext("Fit")}
           </button>
           <button
             className="toolbar__btn"
             onClick={zoomControls?.zoomIn}
-            title="Zoom in"
+            title={gettext("Zoom in")}
           >
             +
           </button>
@@ -137,23 +138,23 @@ export function Toolbar() {
             checked={darkMode}
             onChange={(e) => setDarkMode(e.target.checked)}
           />
-          <span>Dark</span>
+          <span>{gettext("Dark")}</span>
         </label>
 
         <button
           className="toolbar__btn"
           onClick={toggleRulerUnit}
-          title={`Ruler unit: ${rulerUnit} (click to toggle)`}
+          title={interpolate(gettext("Ruler unit: %s (click to toggle)"), [rulerUnit])}
         >
-          {rulerUnit === "mm" ? "mm" : "inch"}
+          {rulerUnit === "mm" ? "mm" : gettext("inch")}
         </button>
 
         <button
           className={`toolbar__btn${showHitmap ? " toolbar__btn--active" : ""}`}
           onClick={toggleHitmap}
-          title="Show hitmap areas (debug)"
+          title={gettext("Show hitmap areas (debug)")}
         >
-          Hitmap
+          {gettext("Hitmap")}
         </button>
       </div>
 
@@ -161,16 +162,16 @@ export function Toolbar() {
         <button
           className="toolbar__btn"
           onClick={save}
-          title="Save overrides (Ctrl+S)"
+          title={gettext("Save overrides (Ctrl+S)")}
         >
-          Save
+          {gettext("Save")}
         </button>
         <button
           className="toolbar__btn"
           onClick={restore}
-          title="Restore original (Ctrl+Z)"
+          title={gettext("Restore original (Ctrl+Z)")}
         >
-          Restore
+          {gettext("Restore")}
         </button>
 
         {/* Download dropdown */}
@@ -178,9 +179,9 @@ export function Toolbar() {
           <button
             className="toolbar__btn"
             onClick={() => setDownloadOpen(!downloadOpen)}
-            title="Download"
+            title={gettext("Download")}
           >
-            Download
+            {gettext("Download")}
           </button>
           <div className={`dropdown-menu ${downloadOpen ? "open" : ""}`}>
             <button

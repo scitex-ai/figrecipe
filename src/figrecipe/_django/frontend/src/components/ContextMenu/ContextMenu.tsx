@@ -5,6 +5,7 @@
 import { useCallback } from "react";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface Props {
   x: number;
@@ -93,7 +94,7 @@ export function ContextMenu({ x, y, figureId, onClose }: Props) {
         a.click();
         URL.revokeObjectURL(url);
       } catch (e) {
-        showToast(`Export failed: ${e}`, "error");
+        showToast(interpolate(gettext("Export failed: %s"), [e]), "error");
       }
     },
     [showToast, onClose],
@@ -118,27 +119,27 @@ export function ContextMenu({ x, y, figureId, onClose }: Props) {
       {/* Clipboard */}
       <Item
         icon="fas fa-copy"
-        label="Copy"
+        label={gettext("Copy")}
         shortcut="Ctrl+C"
         disabled={!hasFigure}
         onClick={handleCopy}
       />
       <Item
         icon="fas fa-paste"
-        label="Paste"
+        label={gettext("Paste")}
         shortcut="Ctrl+V"
         onClick={handlePaste}
       />
       <Item
         icon="fas fa-trash-alt"
-        label="Delete"
+        label={gettext("Delete")}
         shortcut="Del"
         disabled={!hasFigure}
         onClick={handleDelete}
       />
       <Item
         icon="fas fa-clone"
-        label="Duplicate"
+        label={gettext("Duplicate")}
         shortcut="Ctrl+D"
         disabled={!hasFigure}
         onClick={handleDuplicate}
@@ -149,13 +150,13 @@ export function ContextMenu({ x, y, figureId, onClose }: Props) {
       {/* Layer ordering */}
       <Item
         icon="fas fa-layer-group"
-        label="Bring to Front"
+        label={gettext("Bring to Front")}
         disabled={!hasFigure}
         onClick={handleBringToFront}
       />
       <Item
         icon="fas fa-layer-group"
-        label="Send to Back"
+        label={gettext("Send to Back")}
         disabled={!hasFigure}
         onClick={handleSendToBack}
       />
@@ -163,28 +164,28 @@ export function ContextMenu({ x, y, figureId, onClose }: Props) {
       <div className="context-menu-divider" />
 
       {/* Alignment */}
-      <div className="context-menu-label">Align</div>
+      <div className="context-menu-label">{gettext("Align")}</div>
       <Item
         icon="fas fa-align-left"
-        label="Align Left"
+        label={gettext("Align Left")}
         disabled={!hasMultiple}
         onClick={() => handleAlign("left")}
       />
       <Item
         icon="fas fa-align-right"
-        label="Align Right"
+        label={gettext("Align Right")}
         disabled={!hasMultiple}
         onClick={() => handleAlign("right")}
       />
       <Item
         icon="fas fa-arrow-up"
-        label="Align Top"
+        label={gettext("Align Top")}
         disabled={!hasMultiple}
         onClick={() => handleAlign("top")}
       />
       <Item
         icon="fas fa-arrow-down"
-        label="Align Bottom"
+        label={gettext("Align Bottom")}
         disabled={!hasMultiple}
         onClick={() => handleAlign("bottom")}
       />
@@ -194,13 +195,13 @@ export function ContextMenu({ x, y, figureId, onClose }: Props) {
       {/* Group */}
       <Item
         icon="fas fa-object-group"
-        label="Group All"
+        label={gettext("Group All")}
         disabled={!hasMultiple}
         onClick={handleGroup}
       />
       <Item
         icon="fas fa-object-ungroup"
-        label="Ungroup"
+        label={gettext("Ungroup")}
         disabled={!figure?.groupId}
         onClick={handleUngroup}
       />
@@ -208,20 +209,20 @@ export function ContextMenu({ x, y, figureId, onClose }: Props) {
       <div className="context-menu-divider" />
 
       {/* Export */}
-      <div className="context-menu-label">Export</div>
+      <div className="context-menu-label">{gettext("Export")}</div>
       <Item
         icon="fas fa-file-image"
-        label="Export PNG"
+        label={gettext("Export PNG")}
         onClick={() => handleExport("png")}
       />
       <Item
         icon="fas fa-file-code"
-        label="Export SVG"
+        label={gettext("Export SVG")}
         onClick={() => handleExport("svg")}
       />
       <Item
         icon="fas fa-file-pdf"
-        label="Export PDF"
+        label={gettext("Export PDF")}
         onClick={() => handleExport("pdf")}
       />
     </div>

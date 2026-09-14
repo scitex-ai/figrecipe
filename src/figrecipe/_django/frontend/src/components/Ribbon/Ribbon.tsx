@@ -9,6 +9,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { RibbonButton } from "./RibbonButton";
 import { RibbonGroup } from "./RibbonGroup";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type TabId = "home" | "layout" | "style" | "view";
 
@@ -22,28 +23,28 @@ export function Ribbon() {
         <Tab
           id="home"
           icon="fas fa-home"
-          label="Home"
+          label={gettext("Home")}
           active={activeTab}
           onClick={setActiveTab}
         />
         <Tab
           id="layout"
           icon="fas fa-th-large"
-          label="Layout"
+          label={gettext("Layout")}
           active={activeTab}
           onClick={setActiveTab}
         />
         <Tab
           id="style"
           icon="fas fa-palette"
-          label="Style"
+          label={gettext("Style")}
           active={activeTab}
           onClick={setActiveTab}
         />
         <Tab
           id="view"
           icon="fas fa-eye"
-          label="View"
+          label={gettext("View")}
           active={activeTab}
           onClick={setActiveTab}
         />
@@ -103,64 +104,64 @@ function HomePanel({ active }: { active: boolean }) {
 
   return (
     <div className={`ribbon-panel${active ? " active" : ""}`}>
-      <RibbonGroup label="File">
+      <RibbonGroup label={gettext("File")}>
         <RibbonButton
           icon="fas fa-save"
-          label="Save"
+          label={gettext("Save")}
           onClick={save}
-          title="Compose canvas figures and save (Ctrl+S)"
+          title={gettext("Compose canvas figures and save (Ctrl+S)")}
         />
         <RibbonButton
           icon="fas fa-undo"
-          label="Restore"
+          label={gettext("Restore")}
           onClick={restore}
-          title="Restore original"
+          title={gettext("Restore original")}
         />
         <RibbonButton
           icon="fas fa-download"
-          label="Export"
+          label={gettext("Export")}
           onClick={() => setExportOpen(true)}
-          title="Compose and export as PNG/SVG/PDF"
+          title={gettext("Compose and export as PNG/SVG/PDF")}
         />
         {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
       </RibbonGroup>
 
-      <RibbonGroup label="Undo">
+      <RibbonGroup label={gettext("Undo")}>
         <RibbonButton
           icon="fas fa-undo"
-          label="Undo"
+          label={gettext("Undo")}
           onClick={undo}
-          title="Undo (Ctrl+Z)"
+          title={gettext("Undo (Ctrl+Z)")}
         />
         <RibbonButton
           icon="fas fa-redo"
-          label="Redo"
+          label={gettext("Redo")}
           onClick={redo}
-          title="Redo (Ctrl+Shift+Z)"
+          title={gettext("Redo (Ctrl+Shift+Z)")}
         />
       </RibbonGroup>
 
-      <RibbonGroup label="Clipboard" separator={false}>
+      <RibbonGroup label={gettext("Clipboard")} separator={false}>
         <RibbonButton
           icon="fas fa-copy"
-          label="Copy"
+          label={gettext("Copy")}
           onClick={copyFigure}
           disabled={!selectedFigureId}
-          title="Copy (Ctrl+C)"
+          title={gettext("Copy (Ctrl+C)")}
         />
         <RibbonButton
           icon="fas fa-paste"
-          label="Paste"
+          label={gettext("Paste")}
           onClick={pasteFigure}
           disabled={!clipboard}
-          title="Paste (Ctrl+V)"
+          title={gettext("Paste (Ctrl+V)")}
         />
         <RibbonButton
           icon="fas fa-trash-alt"
-          label="Delete"
+          label={gettext("Delete")}
           onClick={() => selectedFigureId && removeFigure(selectedFigureId)}
           disabled={!selectedFigureId}
-          title="Delete (Del)"
+          title={gettext("Delete (Del)")}
         />
       </RibbonGroup>
     </div>
@@ -188,95 +189,95 @@ function LayoutPanel({ active }: { active: boolean }) {
 
   return (
     <div className={`ribbon-panel${active ? " active" : ""}`}>
-      <RibbonGroup label="Figure Align">
+      <RibbonGroup label={gettext("Figure Align")}>
         <RibbonButton
           icon="fas fa-align-left"
-          label="Left"
+          label={gettext("Left")}
           onClick={() => alignFigures("left")}
         />
         <RibbonButton
           icon="fas fa-align-right"
-          label="Right"
+          label={gettext("Right")}
           onClick={() => alignFigures("right")}
         />
         <RibbonButton
           icon="fas fa-arrow-up"
-          label="Top"
+          label={gettext("Top")}
           onClick={() => alignFigures("top")}
         />
         <RibbonButton
           icon="fas fa-arrow-down"
-          label="Bottom"
+          label={gettext("Bottom")}
           onClick={() => alignFigures("bottom")}
         />
         <RibbonButton
           icon="fas fa-arrows-alt-h"
-          label="Ctr H"
+          label={gettext("Ctr H")}
           onClick={() => alignFigures("center-h")}
         />
         <RibbonButton
           icon="fas fa-arrows-alt-v"
-          label="Ctr V"
+          label={gettext("Ctr V")}
           onClick={() => alignFigures("center-v")}
         />
       </RibbonGroup>
 
-      <RibbonGroup label="Axes Align">
+      <RibbonGroup label={gettext("Axes Align")}>
         <RibbonButton
           icon="fas fa-align-left"
-          label="Ax Left"
+          label={gettext("Ax Left")}
           onClick={() => alignFigures("axes-left")}
         />
         <RibbonButton
           icon="fas fa-align-right"
-          label="Ax Right"
+          label={gettext("Ax Right")}
           onClick={() => alignFigures("axes-right")}
         />
         <RibbonButton
           icon="fas fa-arrow-up"
-          label="Ax Top"
+          label={gettext("Ax Top")}
           onClick={() => alignFigures("axes-top")}
         />
         <RibbonButton
           icon="fas fa-arrow-down"
-          label="Ax Bot"
+          label={gettext("Ax Bot")}
           onClick={() => alignFigures("axes-bottom")}
         />
       </RibbonGroup>
 
-      <RibbonGroup label="Distribute">
+      <RibbonGroup label={gettext("Distribute")}>
         <RibbonButton
           icon="fas fa-grip-lines-vertical"
-          label="Horiz"
+          label={gettext("Horiz")}
           onClick={() => distributeFigures("horizontal")}
         />
         <RibbonButton
           icon="fas fa-grip-lines"
-          label="Vert"
+          label={gettext("Vert")}
           onClick={() => distributeFigures("vertical")}
         />
       </RibbonGroup>
 
-      <RibbonGroup label="Panels">
+      <RibbonGroup label={gettext("Panels")}>
         <RibbonButton
           icon="fas fa-sort-alpha-down"
-          label="Reorder"
+          label={gettext("Reorder")}
           onClick={reorderPanelLetters}
-          title="Reorder panel letters by position (top-left → bottom-right)"
+          title={gettext("Reorder panel letters by position (top-left → bottom-right)")}
         />
         <RibbonButton
           icon="fas fa-object-group"
-          label="Group"
+          label={gettext("Group")}
           onClick={() => {
             const ids = placedFigures.map((f) => f.id);
             if (ids.length >= 2) groupFigures(ids);
           }}
           disabled={placedFigures.length < 2}
-          title="Group all figures (Ctrl+G)"
+          title={gettext("Group all figures (Ctrl+G)")}
         />
         <RibbonButton
           icon="fas fa-object-ungroup"
-          label="Ungroup"
+          label={gettext("Ungroup")}
           onClick={() => {
             const sel = placedFigures.find((f) => f.id === selectedFigureId);
             if (sel?.groupId) ungroupFigures(sel.groupId);
@@ -285,21 +286,21 @@ function LayoutPanel({ active }: { active: boolean }) {
             !selectedFigureId ||
             !placedFigures.find((f) => f.id === selectedFigureId)?.groupId
           }
-          title="Ungroup selected figure's group"
+          title={gettext("Ungroup selected figure's group")}
         />
       </RibbonGroup>
 
-      <RibbonGroup label="Guides" separator={false}>
+      <RibbonGroup label={gettext("Guides")} separator={false}>
         <RibbonButton
           icon="fas fa-magnet"
-          label="Snap"
+          label={gettext("Snap")}
           onClick={toggleSnap}
           active={snapEnabled}
-          title={`Snap: ${snapEnabled ? "ON" : "OFF"}`}
+          title={snapEnabled ? gettext("Snap: ON") : gettext("Snap: OFF")}
         />
         <RibbonButton
           icon="fas fa-ruler-combined"
-          label="Rulers"
+          label={gettext("Rulers")}
           onClick={toggleRulers}
           active={showRulers}
         />
@@ -307,7 +308,7 @@ function LayoutPanel({ active }: { active: boolean }) {
           icon="fas fa-ruler"
           label={rulerUnit}
           onClick={toggleRulerUnit}
-          title={`Unit: ${rulerUnit} (click to toggle)`}
+          title={interpolate(gettext("Unit: %s (click to toggle)"), [rulerUnit])}
         />
       </RibbonGroup>
     </div>
@@ -322,7 +323,7 @@ function StylePanel({ active }: { active: boolean }) {
 
   return (
     <div className={`ribbon-panel${active ? " active" : ""}`}>
-      <RibbonGroup label="Theme">
+      <RibbonGroup label={gettext("Theme")}>
         <select
           className="ribbon-select"
           value={currentTheme}
@@ -336,13 +337,13 @@ function StylePanel({ active }: { active: boolean }) {
         </select>
       </RibbonGroup>
 
-      <RibbonGroup label="Appearance" separator={false}>
+      <RibbonGroup label={gettext("Appearance")} separator={false}>
         <RibbonButton
           icon={darkMode ? "fas fa-moon" : "fas fa-sun"}
-          label={darkMode ? "Dark" : "Light"}
+          label={darkMode ? gettext("Dark") : gettext("Light")}
           onClick={() => setDarkMode(!darkMode)}
           active={darkMode}
-          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          title={darkMode ? gettext("Switch to light mode") : gettext("Switch to dark mode")}
         />
       </RibbonGroup>
     </div>
@@ -356,36 +357,36 @@ function ViewPanel({ active }: { active: boolean }) {
 
   return (
     <div className={`ribbon-panel${active ? " active" : ""}`}>
-      <RibbonGroup label="Zoom">
+      <RibbonGroup label={gettext("Zoom")}>
         <RibbonButton
           icon="fas fa-search-minus"
-          label="Out"
+          label={gettext("Out")}
           onClick={zoomControls?.zoomOut}
         />
         <RibbonButton
           icon="fas fa-compress-arrows-alt"
-          label="Fit"
+          label={gettext("Fit")}
           onClick={zoomControls?.zoomToFit}
         />
         <RibbonButton
           icon="fas fa-search-plus"
-          label="In"
+          label={gettext("In")}
           onClick={zoomControls?.zoomIn}
         />
         <RibbonButton
           icon="fas fa-undo-alt"
-          label="Reset"
+          label={gettext("Reset")}
           onClick={zoomControls?.resetView}
         />
       </RibbonGroup>
 
-      <RibbonGroup label="Debug" separator={false}>
+      <RibbonGroup label={gettext("Debug")} separator={false}>
         <RibbonButton
           icon="fas fa-bullseye"
-          label="Hitmap"
+          label={gettext("Hitmap")}
           onClick={toggleHitmap}
           active={showHitmap}
-          title="Toggle hit regions"
+          title={gettext("Toggle hit regions")}
         />
       </RibbonGroup>
     </div>

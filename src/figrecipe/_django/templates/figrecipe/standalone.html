@@ -1,5 +1,5 @@
 {% extends "scitex_ui/standalone_shell.html" %}
-{% load static %}
+{% load static scitex_i18n %}
 {% block extra_css %}
     <link rel="stylesheet"
           crossorigin
@@ -11,6 +11,7 @@
          data-app-name="figrecipe"></div>
 {% endblock %}
 {% block extra_js %}
+    {% scitex_js_catalog "figrecipe._django" %}
     <script type="module"
             crossorigin
             src="{% static 'figrecipe/assets/index.js' %}"></script>
