@@ -242,6 +242,27 @@ def save_figure(
 
         run_overlap_check(fig, style=style_dict)
 
+    # Refresh the record's figsize/dpi from the LIVE figure before anything
+    # serializes or renders. The record is seeded from fig.get_size_inches()
+    # at creation (_subplots), so for a figure that never resizes this is
+    # byte-identical to the creation-time values -- but
+    # fig.set_size_inches(...) (delegated to the matplotlib figure, not
+    # recorded as a call) would otherwise leave the recipe holding the
+    # ORIGINAL size while the saved PNG has the NEW one, and the replay is
+    # built at record.figsize (_reproducer) -> size mismatch, validation has
+    # nothing to compare. Same save-time-capture pattern as record.rcparams.
+    # The mm-composed aspect path (_composition/_tile.py::_source_aspect) reads
+    # record.figsize only as a FALLBACK after content_size_mm, and the saved
+    # figure's true aspect IS the live figsize, so the refresh is safe and more
+    # correct there. (card figrecipe-set-size-inches-after-subplots-size-
+    # mismatch-20260906)
+    _w, _h = (float(v) for v in fig.fig.get_size_inches())
+    if (_w, _h) != (float(fig.record.figsize[0]), float(fig.record.figsize[1])):
+        fig.record.figsize = (_w, _h)
+    _live_dpi = int(fig.fig.get_dpi())
+    if _live_dpi != int(fig.record.dpi):
+        fig.record.dpi = _live_dpi
+
     # Check for .fig.zip (multi-panel Figz bundle) or .plt.zip (single-plot Pltz bundle)
     suffixes = [s.lower() for s in path.suffixes]
     if suffixes[-2:] == [".fig", ".zip"]:
