@@ -209,3 +209,130 @@
   padding: 8px;
   font-style: italic;
 }
+
+/* ── Plot from columns ───────────────────────────────── */
+
+.plot-from-columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  padding: 8px;
+  border-bottom: 1px solid var(--vis-border);
+  background: var(--vis-bg-secondary);
+}
+
+.plot-from-columns__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.plot-from-columns__legend {
+  padding: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vis-text-muted);
+}
+
+.plot-from-columns__kinds,
+.plot-from-columns__ys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.plot-from-columns__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-btn-border);
+  border-radius: 15px;
+  background: var(--color-btn-bg);
+  color: var(--vis-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.plot-from-columns__chip:hover {
+  background: var(--color-btn-hover-bg);
+}
+
+.plot-from-columns__chip.active {
+  border-color: var(--accent-primary);
+  background: var(--vis-accent-bg);
+  color: var(--vis-text-primary);
+  font-weight: 500;
+}
+
+.plot-from-columns__select {
+  min-height: 30px;
+  max-width: 180px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-btn-border);
+  border-radius: var(--radius);
+  background: var(--vis-bg-primary);
+  color: var(--vis-text-primary);
+  font-size: 12px;
+}
+
+.plot-from-columns__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--color-cta);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.plot-from-columns__submit:hover:not(:disabled) {
+  background: var(--color-cta-hover);
+}
+
+.plot-from-columns__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .plot-from-columns {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .plot-from-columns__legend {
+    font-size: 12px;
+  }
+
+  .plot-from-columns__chip,
+  .plot-from-columns__select,
+  .plot-from-columns__submit {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .plot-from-columns__chip {
+    min-width: 44px;
+    border-radius: 22px;
+  }
+
+  .plot-from-columns__select {
+    max-width: none;
+    width: 100%;
+  }
+}

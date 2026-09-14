@@ -28,14 +28,19 @@ def _table_response(names, rows, source):
 
 
 def handle_datatable_data(request, editor):
+    return _table_response(*_current_table(editor))
+
+
+def _current_table(editor):
+    """The table the Data pane shows, as ``(names, rows, source)``."""
     from figrecipe._editor._helpers import to_json_serializable
 
     imported = getattr(editor, "imported_table", None)
     if imported:
-        return _table_response(imported["names"], imported["rows"], "import")
+        return imported["names"], imported["rows"], "import"
 
     if not hasattr(editor.fig, "record") or not editor.fig.record:
-        return _table_response([], [], "empty")
+        return [], [], "empty"
 
     record = editor.fig.record
     columns = []
@@ -99,18 +104,47 @@ def handle_datatable_data(request, editor):
                         data_rows[i][y_col] = yv
 
     rows = [[row.get(col) for col in columns] for row in data_rows]
-    return _table_response(columns, rows, "record")
+    return columns, rows, "record"
+
+
+def _columns_from_table(editor, wanted):
+    names, rows, _ = _current_table(editor)
+    return {
+        name: [row[i] for row in rows if i < len(row) and row[i] not in (None, "")]
+        for i, name in enumerate(names)
+        if name in wanted
+    }
+
+
+def _first_empty_axis(rec_axes):
+    """A blank panel is filled in place rather than squeezed beside a new one."""
+    for i, ax in enumerate(rec_axes):
+        if not ax.has_data():
+            return i
+    return None
 
 
 def handle_datatable_plot(request, editor):
-    """Plot from datatable column selections."""
+    """Plot from datatable column selections.
+
+    With an ``x`` key, ``columns`` are the Y columns and ``x`` names the X
+    column (``null`` plots against the row number); without it X is guessed by
+    column name. ``data`` may be omitted, in which case the values come from
+    the table the Data pane is showing.
+    """
     from figrecipe._editor._helpers import render_with_overrides
 
     from .core import _regen_hitmap
 
     data = json.loads(request.body) if request.body else {}
-    plot_data = data.get("data", {})
+    x_column = data.get("x")
     columns = data.get("columns", [])
+    x_mode = "guess"
+    if "x" in data:
+        x_mode = "first" if x_column else "index"
+    if x_column and columns:
+        columns = [x_column] + [c for c in columns if c != x_column]
+    plot_data = data.get("data") or _columns_from_table(editor, columns)
     plot_type = data.get("plot_type", "line")
     target_axis = data.get("target_axis")
 
@@ -127,6 +161,8 @@ def handle_datatable_plot(request, editor):
         fig = editor.fig
         rec_axes = fig.flat
         axes = fig.get_axes()
+        if target_axis is None:
+            target_axis = _first_empty_axis(rec_axes)
 
         if target_axis is not None and target_axis < len(rec_axes):
             ax = rec_axes[target_axis]
@@ -158,7 +194,7 @@ def handle_datatable_plot(request, editor):
         from figrecipe._editor._datatable_plot_handlers import dispatch_plot
 
         try:
-            dispatch_plot(ax, plot_type, plot_data, columns)
+            dispatch_plot(ax, plot_type, plot_data, columns, x_mode=x_mode)
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
 

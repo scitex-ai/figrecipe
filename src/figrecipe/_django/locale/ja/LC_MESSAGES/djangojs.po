@@ -1127,3 +1127,39 @@ msgstr "凡例を移動できませんでした: %s"
 msgid "Failed to load preview"
 msgstr "プレビューを読み込めませんでした"
 
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Histogram"
+msgstr "ヒストグラム"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Box"
+msgstr "箱ひげ図"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "X column"
+msgstr "X列"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Row number"
+msgstr "行番号"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Y columns"
+msgstr "Y列"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Plot type"
+msgstr "プロットの種類"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Plotting…"
+msgstr "プロット中…"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Plotted %s"
+msgstr "%s をプロットしました"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+msgid "Plot failed: %s"
+msgstr "プロットに失敗しました: %s"
