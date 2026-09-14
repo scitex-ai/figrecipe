@@ -63,12 +63,13 @@ class TestDatatableDataCsvBacked:
         problems = []
         if payload["source"] != "record":
             problems.append(f"source={payload['source']!r}")
-        if payload["columns"] != ["sin_x", "sin_y", "cos_x", "cos_y"]:
-            problems.append(f"columns={payload['columns']}")
-        if len(payload["data"]) != 100:
-            problems.append(f"rows={len(payload['data'])} (expected 100)")
+        names = [c["name"] for c in payload["columns"]]
+        if names != ["sin_x", "sin_y", "cos_x", "cos_y"]:
+            problems.append(f"columns={names}")
+        if len(payload["rows"]) != 100:
+            problems.append(f"rows={len(payload['rows'])} (expected 100)")
         else:
-            first = payload["data"][0]
+            first = dict(zip(names, payload["rows"][0]))
             # The first row is the sin/cos at x=0: sin(0)=0, cos(0)=1.
             if abs(first["sin_x"]) > 1e-9:
                 problems.append(f"sin_x[0]={first['sin_x']}")
@@ -91,11 +92,13 @@ class TestDatatableDataCsvBacked:
         problems = []
         if payload["source"] != "record":
             problems.append(f"source={payload['source']!r}")
-        if len(payload["data"]) != 3:
-            problems.append(f"rows={len(payload['data'])} (expected 3)")
-        x_cols = [c for c in payload["columns"] if c.endswith("_x")]
-        if not x_cols or not any(k in payload["data"][0] for k in x_cols):
-            problems.append(f"no _x column populated: {payload['columns']}")
+        if len(payload["rows"]) != 3:
+            problems.append(f"rows={len(payload['rows'])} (expected 3)")
+        names = [c["name"] for c in payload["columns"]]
+        first = dict(zip(names, payload["rows"][0])) if payload["rows"] else {}
+        x_cols = [n for n in names if n.endswith("_x")]
+        if not x_cols or all(first.get(k) is None for k in x_cols):
+            problems.append(f"no _x column populated: {names}")
         # Assert -- exactly three rows, the plot's x column populated.
         assert problems == [], "inline datatable regressed: " + "; ".join(problems)
 
@@ -108,7 +111,7 @@ class TestDatatableDataCsvBacked:
         problems = []
         if payload["columns"] != []:
             problems.append(f"columns={payload['columns']}")
-        if payload["data"] != []:
-            problems.append(f"data={len(payload['data'])} rows")
+        if payload["rows"] != []:
+            problems.append(f"rows={len(payload['rows'])}")
         # Assert -- no columns, no rows, not an error.
         assert problems == [], "empty figure should show empty table: " + "; ".join(problems)
