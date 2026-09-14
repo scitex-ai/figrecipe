@@ -76,6 +76,16 @@ dev = [
     "scitex-stats",
     "scitex-types",
     "django>=4.2.0",
+    # Django's default TIME_ZONE is "America/Chicago", resolved via zoneinfo at
+    # settings-load time in the _django test fixtures (test.Client /
+    # override_settings). zoneinfo falls back to the tzdata package when the
+    # runner image has no system /usr/share/zoneinfo entry for that zone --
+    # the py3.11 CI leg failed deterministically with
+    # "ModuleNotFoundError: No module named 'tzdata'" at setup of
+    # test_settings.py for exactly this reason (py3.12/3.13 bake the system
+    # zone). Declaring it makes the Django test suite self-contained across
+    # runners instead of depending on which zones the image happens to carry.
+    "tzdata>=2024.1",
     "playwright>=1.40.0",
     "pytesseract>=0.3.0",
     "fastmcp>=2.0",
