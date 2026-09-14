@@ -15,6 +15,7 @@ import { PlacedFigure } from "./PlacedFigure";
 import { HorizontalRuler, VerticalRuler } from "./Rulers";
 import { SnapGuides } from "./SnapGuides";
 import { useZoomPan } from "./useZoomPan";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 // ── Main Canvas ──────────────────────────────────────────────
 export function Canvas() {
@@ -209,9 +210,9 @@ export function Canvas() {
         >
           {placedFigures.length === 0 ? (
             <div className="canvas-empty">
-              <p>No figure loaded</p>
+              <p>{gettext("No figure loaded")}</p>
               <p className="canvas-empty__hint">
-                Select a file from the browser or create a new figure
+                {gettext("Select a file from the browser or create a new figure")}
               </p>
             </div>
           ) : (

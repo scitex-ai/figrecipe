@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
+import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export interface GalleryTemplate {
   name: string;
@@ -29,15 +30,15 @@ export interface GalleryData {
 
 export const CATEGORY_LABELS: Record<string, { label: string; icon: string }> =
   {
-    line: { label: "Line", icon: "fa-chart-line" },
-    scatter: { label: "Scatter", icon: "fa-braille" },
-    categorical: { label: "Categorical", icon: "fa-chart-bar" },
-    distribution: { label: "Distribution", icon: "fa-chart-column" },
-    statistical: { label: "Statistical", icon: "fa-square-root-variable" },
-    grid: { label: "Grid", icon: "fa-th" },
-    area: { label: "Area", icon: "fa-chart-area" },
-    contour: { label: "Contour", icon: "fa-layer-group" },
-    special: { label: "Special", icon: "fa-shapes" },
+    line: { label: gettext_noop("Line"), icon: "fa-chart-line" },
+    scatter: { label: gettext_noop("Scatter"), icon: "fa-braille" },
+    categorical: { label: gettext_noop("Categorical"), icon: "fa-chart-bar" },
+    distribution: { label: gettext_noop("Distribution"), icon: "fa-chart-column" },
+    statistical: { label: gettext_noop("Statistical"), icon: "fa-square-root-variable" },
+    grid: { label: gettext_noop("Grid"), icon: "fa-th" },
+    area: { label: gettext_noop("Area"), icon: "fa-chart-area" },
+    contour: { label: gettext_noop("Contour"), icon: "fa-layer-group" },
+    special: { label: gettext_noop("Special"), icon: "fa-shapes" },
   };
 
 /** Every template once, in declaration order (a template may sit in two
@@ -118,7 +119,7 @@ export function useGalleryTemplates() {
         await addFigure(result.recipe_path);
         return true;
       } catch (e) {
-        showToast(`Failed to add template: ${e}`, "error");
+        showToast(interpolate(gettext("Failed to add template: %s"), [e]), "error");
         return false;
       }
     },

@@ -7,6 +7,7 @@ import { redo, undo } from "../../hooks/useUndoRedo";
 import { useEditorStore } from "../../store/useEditorStore";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
+import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function CanvasPane() {
   const {
@@ -31,13 +32,13 @@ export function CanvasPane() {
   // explanation — say what it means and how to get out of it.
   const selectedFig = placedFigures.find((f) => f.id === selectedFigureId);
   const figLabel = selectedFig
-    ? (selectedFig.path.split("/").pop() ?? "figure")
+    ? (selectedFig.path.split("/").pop() ?? gettext("figure"))
     : placedFigures.length > 0
-      ? `${placedFigures.length} figure${placedFigures.length > 1 ? "s" : ""}`
-      : "No figures yet";
+      ? interpolate(ngettext("%s figure", "%s figures", placedFigures.length), [placedFigures.length])
+      : gettext("No figures yet");
   const figLabelTitle =
     placedFigures.length === 0
-      ? "No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree."
+      ? gettext("No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree.")
       : undefined;
 
   return (
@@ -63,7 +64,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title="Undo (Ctrl+Z)"
+            title={gettext("Undo (Ctrl+Z)")}
             onClick={undo}
           >
             <i className="fas fa-undo" />
@@ -71,7 +72,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title="Redo (Ctrl+Shift+Z)"
+            title={gettext("Redo (Ctrl+Shift+Z)")}
             onClick={redo}
           >
             <i className="fas fa-redo" />
@@ -83,7 +84,7 @@ export function CanvasPane() {
           <button
             className={`pane-header-btn${snapEnabled ? " pane-header-btn--active" : ""}`}
             type="button"
-            title={`Snap: ${snapEnabled ? "ON" : "OFF"}`}
+            title={snapEnabled ? gettext("Snap: ON") : gettext("Snap: OFF")}
             onClick={toggleSnap}
           >
             <i className="fas fa-magnet" />
@@ -91,7 +92,7 @@ export function CanvasPane() {
           <button
             className={`pane-header-btn${showRulers ? " pane-header-btn--active" : ""}`}
             type="button"
-            title="Toggle rulers"
+            title={gettext("Toggle rulers")}
             onClick={toggleRulers}
           >
             <i className="fas fa-ruler-combined" />
@@ -103,7 +104,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title="Zoom to fit"
+            title={gettext("Zoom to fit")}
             onClick={zoomControls?.zoomToFit}
           >
             <i className="fas fa-compress-arrows-alt" />
@@ -113,7 +114,7 @@ export function CanvasPane() {
           <button
             className={`pane-header-btn${showHitmap ? " pane-header-btn--active" : ""}`}
             type="button"
-            title="Toggle hit regions (debug)"
+            title={gettext("Toggle hit regions (debug)")}
             onClick={toggleHitmap}
           >
             <i className="fas fa-bullseye" />
@@ -125,7 +126,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title="Save (Ctrl+S)"
+            title={gettext("Save (Ctrl+S)")}
             onClick={save}
           >
             <i className="fas fa-save" />
@@ -133,7 +134,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title="Restore original"
+            title={gettext("Restore original")}
             onClick={restore}
           >
             <i className="fas fa-undo-alt" />
@@ -141,7 +142,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title="Export (PNG/SVG/PDF)"
+            title={gettext("Export (PNG/SVG/PDF)")}
             onClick={() => setExportOpen(true)}
           >
             <i className="fas fa-download" />
@@ -153,7 +154,7 @@ export function CanvasPane() {
           <button
             className="pane-header-btn"
             type="button"
-            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            title={darkMode ? gettext("Switch to light mode") : gettext("Switch to dark mode")}
             onClick={() => setDarkMode(!darkMode)}
           >
             <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} />

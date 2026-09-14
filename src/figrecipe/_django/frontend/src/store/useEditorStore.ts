@@ -25,6 +25,7 @@ import { createFigureActions } from "./figureActions";
 import { createPersistActions } from "./persistActions";
 import { createSyncActions } from "./syncActions";
 import { rememberLastProject } from "./lastProjectMemory";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface ZoomControls {
   zoomIn: () => void;
@@ -318,7 +319,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
     } catch (e) {
       console.error("[Editor] Failed to load preview:", e);
-      get().showToast("Failed to load preview", "error");
+      get().showToast(gettext("Failed to load preview"), "error");
     } finally {
       set({ loading: false });
     }
@@ -372,7 +373,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }>("datatable/data");
       const tab: TabData = {
         id: "main",
-        label: "Data",
+        label: gettext("Data"),
         columns: data.columns ?? [],
         rows: data.rows ?? [],
       };

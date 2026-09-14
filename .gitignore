@@ -345,6 +345,8 @@ cover/
 # Translations
 *.mo
 *.pot
+# Shipped catalogs: Django reads the .mo at runtime, and msgfmt is absent from production images.
+!src/figrecipe/_django/locale/**/*.mo
 
 # Django stuff:
 *.log

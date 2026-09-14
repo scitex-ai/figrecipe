@@ -14,6 +14,7 @@ import { useRef, useState, useCallback } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryStart } from "../Gallery/GalleryStart";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function FigureViewer() {
   const { placedFigures, selectedFigureId, loading } = useEditorStore();
@@ -91,7 +92,7 @@ export function FigureViewer() {
       {previewImage && (
         <img
           src={`data:image/png;base64,${previewImage}`}
-          alt="Figure preview"
+          alt={gettext("Figure preview")}
           draggable={false}
           style={{
             transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
@@ -111,12 +112,12 @@ export function FigureViewer() {
         <button
           className="figure-viewer__export"
           type="button"
-          title="Export figure (PNG / SVG / PDF)"
-          aria-label="Export figure"
+          title={gettext("Export figure (PNG / SVG / PDF)")}
+          aria-label={gettext("Export figure")}
           onClick={() => setExportOpen(true)}
         >
           <i className="fas fa-download" />
-          <span>Export</span>
+          <span>{gettext("Export")}</span>
         </button>
       )}
 

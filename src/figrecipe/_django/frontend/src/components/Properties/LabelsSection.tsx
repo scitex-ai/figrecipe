@@ -5,6 +5,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { DebouncedInput } from "./DebouncedInput";
 import { PropSection } from "./PropSection";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function LabelsSection({ axIndex }: { axIndex: number }) {
   const labelsMap = useEditorStore((s) => s.labels);
@@ -25,7 +26,7 @@ export function LabelsSection({ axIndex }: { axIndex: number }) {
         refreshAfterMutation();
         loadLabels(axIndex);
       } catch (e) {
-        showToast(`Label update failed: ${e}`, "error");
+        showToast(interpolate(gettext("Label update failed: %s"), [e]), "error");
       }
     },
     [axIndex, refreshAfterMutation, loadLabels, showToast],
@@ -34,19 +35,19 @@ export function LabelsSection({ axIndex }: { axIndex: number }) {
   if (!labels) return null;
 
   return (
-    <PropSection title="Labels">
+    <PropSection title={gettext("Labels")}>
       <DebouncedInput
-        label="Title"
+        label={gettext("Title")}
         value={labels.title}
         onCommit={(v) => updateLabel("title", v)}
       />
       <DebouncedInput
-        label="X Label"
+        label={gettext("X Label")}
         value={labels.xlabel}
         onCommit={(v) => updateLabel("xlabel", v)}
       />
       <DebouncedInput
-        label="Y Label"
+        label={gettext("Y Label")}
         value={labels.ylabel}
         onCommit={(v) => updateLabel("ylabel", v)}
       />

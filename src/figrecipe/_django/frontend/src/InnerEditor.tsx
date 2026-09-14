@@ -23,6 +23,7 @@ import { AlertBanner } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type AppTab = "plot" | "canvas";
 
@@ -158,13 +159,13 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
           className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
           onClick={() => setActiveTab("plot")}
         >
-          <i className="fas fa-chart-line" /> Plot
+          <i className="fas fa-chart-line" /> {gettext("Plot")}
         </button>
         <button
           className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
           onClick={() => setActiveTab("canvas")}
         >
-          <i className="fas fa-object-group" /> Canvas
+          <i className="fas fa-object-group" /> {gettext("Canvas")}
         </button>
         {/* figrecipe's own project scope (TODO 145/147) — app-local, separate
             from the hub's global Current Project. Right-aligned in the tab row. */}
@@ -206,14 +207,14 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
                 <div className="pane-header">
                   <span className="panel-title">
                     <i className="fas fa-image" />
-                    Viewer
+                    {gettext("Viewer")}
                   </span>
                   <button
                     className="pane-header-btn panel-toggle-btn"
                     type="button"
                     onClick={toggleCenter}
-                    title="Expand figure viewer"
-                    aria-label="Expand figure viewer"
+                    title={gettext("Expand figure viewer")}
+                    aria-label={gettext("Expand figure viewer")}
                   >
                     <i className="fas fa-chevron-up" />
                   </button>
@@ -226,8 +227,8 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
                       className="pane-header-btn panel-toggle-btn"
                       type="button"
                       onClick={toggleCenter}
-                      title="Collapse figure viewer"
-                      aria-label="Collapse figure viewer"
+                      title={gettext("Collapse figure viewer")}
+                      aria-label={gettext("Collapse figure viewer")}
                     >
                       <i className="fas fa-chevron-down" />
                     </button>
@@ -250,14 +251,14 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
                 <div className="pane-header">
                   <span className="panel-title">
                     <i className="fas fa-object-group" />
-                    Canvas
+                    {gettext("Canvas")}
                   </span>
                   <button
                     className="pane-header-btn panel-toggle-btn"
                     type="button"
                     onClick={toggleCenter}
-                    title="Expand canvas"
-                    aria-label="Expand canvas"
+                    title={gettext("Expand canvas")}
+                    aria-label={gettext("Expand canvas")}
                   >
                     <i className="fas fa-chevron-up" />
                   </button>
@@ -273,8 +274,8 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
                       className="pane-header-btn panel-toggle-btn"
                       type="button"
                       onClick={toggleCenter}
-                      title="Collapse canvas"
-                      aria-label="Collapse canvas"
+                      title={gettext("Collapse canvas")}
+                      aria-label={gettext("Collapse canvas")}
                     >
                       <i className="fas fa-chevron-down" />
                     </button>

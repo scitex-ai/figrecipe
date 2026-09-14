@@ -1,0 +1,96 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: figrecipe VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-14 21:23+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja\n"
+"Language-Team: Japanese\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: handlers/gallery.py
+msgid "Line"
+msgstr "折れ線"
+
+#: handlers/gallery.py
+msgid "Fill Between"
+msgstr "範囲の塗りつぶし"
+
+#: handlers/gallery.py
+msgid "Stack"
+msgstr "積み上げ"
+
+#: handlers/gallery.py
+msgid "Scatter"
+msgstr "散布図"
+
+#: handlers/gallery.py
+msgid "Bar"
+msgstr "棒"
+
+#: handlers/gallery.py
+msgid "Box"
+msgstr "箱ひげ図"
+
+#: handlers/gallery.py
+msgid "Violin"
+msgstr "バイオリン図"
+
+#: handlers/gallery.py
+msgid "Histogram"
+msgstr "ヒストグラム"
+
+#: handlers/gallery.py
+msgid "Hist 2D"
+msgstr "2D ヒストグラム"
+
+#: handlers/gallery.py
+msgid "ECDF"
+msgstr "経験累積分布"
+
+#: handlers/gallery.py
+msgid "Error Bar"
+msgstr "エラーバー"
+
+#: handlers/gallery.py
+msgid "Image"
+msgstr "画像"
+
+#: handlers/gallery.py
+msgid "Matrix"
+msgstr "行列"
+
+#: handlers/gallery.py
+msgid "Stack Plot"
+msgstr "積み上げ面"
+
+#: handlers/gallery.py
+msgid "Contour"
+msgstr "等高線"
+
+#: handlers/gallery.py
+msgid "Pie"
+msgstr "円グラフ"
+
+#: handlers/gallery.py
+msgid "Spectrogram"
+msgstr "スペクトログラム"
+
+#: handlers/gallery.py
+msgid "Event"
+msgstr "イベント"
+
+#: handlers/gallery.py
+msgid "Graph"
+msgstr "グラフ"
+

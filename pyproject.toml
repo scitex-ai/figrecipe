@@ -240,6 +240,7 @@ exclude = [
 # sdist actually carry these files, so this stanza cannot rot silently.
 artifacts = [
     "src/figrecipe/_django/gallery_templates/**",
+    "src/figrecipe/_django/locale/**",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -247,6 +248,7 @@ artifacts = [
 # out. Without this an sdist-based install could reproduce the empty-gallery bug.
 artifacts = [
     "src/figrecipe/_django/gallery_templates/**",
+    "src/figrecipe/_django/locale/**",
 ]
 
 [tool.pytest.ini_options]

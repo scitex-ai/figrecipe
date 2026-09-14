@@ -9,6 +9,7 @@ import type { SnapGuide } from "../../hooks/useSnap";
 import { CANVAS_H, CANVAS_W } from "../../hooks/useSnap";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColorByLetter } from "../../utils/panelColors";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 /** Absolute canvas position of another panel label's center. */
 export interface LabelSnapTarget {
@@ -219,7 +220,7 @@ export function PanelLetterOverlay({
         e.stopPropagation();
         setEditing(true);
       }}
-      title="Drag to move, double-click to edit"
+      title={gettext("Drag to move, double-click to edit")}
     >
       {letter}
     </span>

@@ -8,6 +8,7 @@
 import { onEvent } from "./EventBus";
 import { switchRecipeFile } from "./MountPoint";
 import { csrfToken } from "../api/client";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 /** Cleanup functions for event subscriptions. */
 const cleanups: Array<() => void> = [];
@@ -40,7 +41,7 @@ export function wireWorkspaceBridge(visEditor: any): void {
   cleanups.push(
     onEvent("propertyChange", ({ key, value }) => {
       console.log("[Bridge] figrecipe property changed:", key, value);
-      visEditor.updateStatusBar?.(`Property ${key} updated`);
+      visEditor.updateStatusBar?.(interpolate(gettext("Property %s updated"), [key]));
     }),
   );
 
@@ -55,7 +56,7 @@ export function wireWorkspaceBridge(visEditor: any): void {
         "rows",
       );
       visEditor.updateStatusBar?.(
-        `Data: ${columns.length} columns, ${rowCount} rows`,
+        interpolate(gettext("Data: %s columns, %s rows"), [columns.length, rowCount]),
       );
     }),
   );
@@ -64,7 +65,7 @@ export function wireWorkspaceBridge(visEditor: any): void {
   cleanups.push(
     onEvent("statBracketAdd", (bracket) => {
       console.log("[Bridge] figrecipe stat bracket added:", bracket.bracket_id);
-      visEditor.updateStatusBar?.(`Stat bracket added: ${bracket.stars}`);
+      visEditor.updateStatusBar?.(interpolate(gettext("Stat bracket added: %s"), [bracket.stars]));
     }),
   );
 

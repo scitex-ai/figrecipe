@@ -6,6 +6,7 @@ import { DataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/d
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";
+import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface DataTablePaneProps {
   onToggleCollapse?: () => void;
@@ -76,7 +77,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      showToast(`Export failed: ${e}`, "error");
+      showToast(interpolate(gettext("Export failed: %s"), [e]), "error");
     }
   }, [showToast]);
 
@@ -87,11 +88,11 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
         const ext = file.name.split(".").pop()?.toLowerCase();
         const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
         await api.post("datatable/import", { content, format });
-        showToast("Imported data", "success");
+        showToast(gettext("Imported data"), "success");
         loadDatatable();
         refreshAfterMutation();
       } catch (e) {
-        showToast(`Import failed: ${e}`, "error");
+        showToast(interpolate(gettext("Import failed: %s"), [e]), "error");
       }
     },
     [showToast, loadDatatable, refreshAfterMutation],
@@ -108,8 +109,8 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           className="pane-header-btn panel-toggle-btn"
           type="button"
           onClick={onToggleCollapse}
-          title={collapsed ? "Expand data table" : "Collapse data table"}
-          aria-label={collapsed ? "Expand data table" : "Collapse data table"}
+          title={collapsed ? gettext("Expand data table") : gettext("Collapse data table")}
+          aria-label={collapsed ? gettext("Expand data table") : gettext("Collapse data table")}
         >
           <i
             className={`fas ${
@@ -123,8 +124,8 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             <i className="fas fa-table" />
             <span className="data-dropdown-label">
               {tabs.length > 0
-                ? `${tabs.length} table${tabs.length > 1 ? "s" : ""}`
-                : "No tables"}
+                ? interpolate(ngettext("%s table", "%s tables", tabs.length), [tabs.length])
+                : gettext("No tables")}
             </span>
             <i className="fas fa-chevron-down" />
           </button>
@@ -132,21 +133,21 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             className="pane-header-btn data-new-btn"
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            title="Import data"
+            title={gettext("Import data")}
           >
             <i className="fas fa-plus" />
           </button>
         </div>
 
         {/* WIP badge */}
-        <span className="badge badge-wip">WIP</span>
+        <span className="badge badge-wip">{gettext("WIP")}</span>
 
         {/* Action buttons */}
         <div className="pane-header-buttons">
           <button
             className="pane-header-btn"
             onClick={handleExportCsv}
-            title="Export CSV"
+            title={gettext("Export CSV")}
             disabled={tabs.length === 0}
             type="button"
           >
@@ -154,7 +155,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           </button>
           <button
             className="pane-header-btn"
-            title="Sort (WIP)"
+            title={gettext("Sort (WIP)")}
             type="button"
             disabled
           >
@@ -162,7 +163,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           </button>
           <button
             className="pane-header-btn"
-            title="Filter (WIP)"
+            title={gettext("Filter (WIP)")}
             type="button"
             disabled
           >
@@ -170,7 +171,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           </button>
           <button
             className="pane-header-btn"
-            title="Keyboard shortcuts"
+            title={gettext("Keyboard shortcuts")}
             type="button"
           >
             <i className="fas fa-keyboard" />
@@ -180,7 +181,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
         {/* Vertical title with icon (visible only when collapsed via CSS) */}
         <span className="panel-title">
           <i className="fas fa-table" />
-          Table
+          {gettext("Table")}
         </span>
       </div>
 
@@ -218,7 +219,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
                     e.stopPropagation();
                     handleCloseTab(tab.id);
                   }}
-                  title="Close tab and remove figure"
+                  title={gettext("Close tab and remove figure")}
                 >
                   &times;
                 </span>

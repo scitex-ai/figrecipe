@@ -9,6 +9,7 @@ import type {
   PreviewResponse,
   TabData,
 } from "../types/editor";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type Get = () => {
   placedFigures: PlacedFigure[];
@@ -39,7 +40,7 @@ export function createFigureActions(set: Set, get: Get) {
       if (placedFigures.some((f) => f.path === path)) {
         const existing = placedFigures.find((f) => f.path === path);
         if (existing) set({ selectedFigureId: existing.id });
-        get().showToast(`Already on canvas: ${path}`, "info");
+        get().showToast(interpolate(gettext("Already on canvas: %s"), [path]), "info");
         return;
       }
 
@@ -84,14 +85,14 @@ export function createFigureActions(set: Set, get: Get) {
         params.set("recipe", fullPath);
         window.history.replaceState(null, "", `?${params.toString()}`);
 
-        get().showToast(`Added: ${path}`, "success");
+        get().showToast(interpolate(gettext("Added: %s"), [path]), "success");
         pushUndoState();
         get().loadFiles();
         get().loadDatatable();
         get().loadPanelPositions();
       } catch (e) {
         console.error("[Editor] Failed to add figure:", e);
-        get().showToast(`Error: ${e}`, "error");
+        get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
         set({ loading: false } as never);
       }

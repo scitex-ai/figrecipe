@@ -1,3 +1,4 @@
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 /** API client for communicating with the Django backend. */
 
 let _base = import.meta.env.VITE_API_BASE || "";
@@ -69,7 +70,7 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `API error: ${res.status}`);
+    throw new Error(err.error || interpolate(gettext("API error: %s"), [res.status]));
   }
   return res.json();
 }
@@ -87,7 +88,7 @@ export const api = {
   getBlob: async (endpoint: string): Promise<Blob> => {
     const url = buildUrl(endpoint);
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+    if (!res.ok) throw new Error(interpolate(gettext("Download failed: %s"), [res.status]));
     return res.blob();
   },
 
@@ -99,7 +100,7 @@ export const api = {
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: data ? JSON.stringify(data) : undefined,
     });
-    if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+    if (!res.ok) throw new Error(interpolate(gettext("Export failed: %s"), [res.status]));
     return res.blob();
   },
 };
