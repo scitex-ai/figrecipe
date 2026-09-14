@@ -162,6 +162,10 @@
   min-width: 40px;
   background: var(--vis-bg-primary);
   position: relative;
+  /* Inside scitex-hub a fixed site dock covers the viewport bottom; standalone has no dock, so this is 0. */
+  scroll-margin-bottom: calc(
+    var(--site-dock-height, 0px) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 .split-pane-right {
