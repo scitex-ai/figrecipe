@@ -33,6 +33,7 @@ class EditorState:
     _color_map: Optional[Dict] = None
     _style_name: str = "SCITEX"
     _hitmap_generated: bool = False
+    imported_table: Optional[Dict[str, Any]] = None
 
     # StyleOverrides for layered style management
     _overrides: Any = None

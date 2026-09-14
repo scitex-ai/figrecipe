@@ -10,11 +10,32 @@ from django.http import JsonResponse
 logger = logging.getLogger(__name__)
 
 
+def _dtype(values):
+    present = [v for v in values if v is not None and v != ""]
+    numeric = all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in present
+    )
+    return "numeric" if numeric else "string"
+
+
+def _table_response(names, rows, source):
+    """The editor store reads ``columns[].name`` and positional ``rows``."""
+    columns = [
+        {"name": name, "dtype": _dtype([row[i] for row in rows if i < len(row)])}
+        for i, name in enumerate(names)
+    ]
+    return JsonResponse({"columns": columns, "rows": rows, "source": source})
+
+
 def handle_datatable_data(request, editor):
     from figrecipe._editor._helpers import to_json_serializable
 
+    imported = getattr(editor, "imported_table", None)
+    if imported:
+        return _table_response(imported["names"], imported["rows"], "import")
+
     if not hasattr(editor.fig, "record") or not editor.fig.record:
-        return JsonResponse({"columns": [], "data": [], "source": "empty"})
+        return _table_response([], [], "empty")
 
     record = editor.fig.record
     columns = []
@@ -77,7 +98,8 @@ def handle_datatable_data(request, editor):
                         data_rows[i][x_col] = xv
                         data_rows[i][y_col] = yv
 
-    return JsonResponse({"columns": columns, "data": data_rows, "source": "record"})
+    rows = [[row.get(col) for col in columns] for row in data_rows]
+    return _table_response(columns, rows, "record")
 
 
 def handle_datatable_plot(request, editor):
@@ -213,6 +235,9 @@ def handle_datatable_import(request, editor):
                     except ValueError:
                         row.append(val)
                 rows.append(row)
+
+        # Kept on the editor so the follow-up datatable/data shows this table.
+        editor.imported_table = {"names": list(headers), "rows": rows}
 
         columns = []
         for i, name in enumerate(headers):
