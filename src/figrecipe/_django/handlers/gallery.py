@@ -316,6 +316,11 @@ def handle_gallery_demo(request, editor):
         recipes of its own. A real project must not be littered with a demo,
         so the caller falls back to the template gallery.
     """
+    # The page URL already names a figure (e.g. "Open in FigRecipe" from Stats);
+    # the client appends it to every call. Opening the demo would race it onto the canvas.
+    if request.GET.get("recipe"):
+        return JsonResponse({"recipe_path": None, "reason": "a recipe was requested"})
+
     working_dir = _files_tree().resolve_working_dir(request, editor)
     demo_recipe = working_dir / f"{DEMO_TEMPLATE_NAME}.yaml"
 
