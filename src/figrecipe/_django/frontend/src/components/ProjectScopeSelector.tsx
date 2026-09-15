@@ -20,6 +20,7 @@
 
 import { useEffect, useRef } from "react";
 import {
+  hostProjectProvider,
   mountProjectSelectorByScope,
   PROJECT_SELECTOR_CHANGE,
 } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell";
@@ -38,6 +39,26 @@ export function ProjectScopeSelector() {
   const { workingDir, loadFiles, loadPreview, loadDatatable, loadHitmap } =
     useEditorStore();
 
+  // Inside a host (the hub) that serves a project list, pick from the host's
+  // projects; a pick reloads the editor on that project, and the host
+  // remembers it as last visited. figrecipe's manifest scope is "project".
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !hostProjectProvider()) return;
+    const host = document.createElement("div");
+    el.appendChild(host);
+    const selector = mountProjectSelectorByScope({
+      container: host,
+      scope: "project",
+      navigate: "?project={id}",
+      placeholder: gettext("Select project"),
+    });
+    return () => {
+      selector?.destroy();
+      el.innerHTML = "";
+    };
+  }, []);
+
   // (Re)mount the scope-gated selector whenever the current project or the
   // recent list changes. The SDK is imperative and self-contained: it reads
   // the page's stx-app-scope marker and either mounts the shared
@@ -45,7 +66,7 @@ export function ProjectScopeSelector() {
   // (user-scoped / standalone — nothing rendered, no global switcher).
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || hostProjectProvider()) return;
 
     const { options, currentId } = buildProjectOptions(
       workingDir,
