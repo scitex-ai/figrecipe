@@ -161,6 +161,10 @@ interface EditorState {
   toggleRulerUnit: () => void;
   showToast: (msg: string, type?: "info" | "success" | "error") => void;
   clearToast: () => void;
+
+  /** Plot family picked in the rail; the Data pane plots with it. */
+  plotFamily: string | null;
+  setPlotFamily: (family: string | null) => void;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -493,4 +497,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   clearToast: () => set({ toast: null }),
+
+  plotFamily: null,
+  setPlotFamily: (family) => set({ plotFamily: family }),
 }));

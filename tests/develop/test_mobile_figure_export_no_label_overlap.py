@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 """The figure Export control must not clip the figure title on mobile.
 
+2026-09-15: phones now show a labelled primary Export button (operator: the
+flow must be self-explanatory); the figure is pushed below its row instead of
+hiding the label.
+
 PR #381 added a labelled "⬇ Export" pill to FigureViewer (top-right of the
 figure surface). At ≤768px the figure fills the viewport, so the labelled pill
 stretches left across the figure's title — measured live on the deployed route
@@ -59,37 +63,23 @@ def test_mobile_media_block_exists():
     assert len(block.strip()) > 0, "mobile media block is empty"
 
 
-def test_mobile_export_control_hides_its_label():
+def test_mobile_export_control_keeps_its_label():
     # Arrange
     block = _mobile_media_block(_MOBILE.read_text(encoding="utf-8"))
     # Act
-    rules = _rules(".figure-viewer__export span", block)
-    hides = [
-        body
-        for _, body in rules
-        if re.search(r"display\s*:\s*none", body)
-    ]
+    hides = [body for _, body in _rules(".figure-viewer__export span", block) if re.search(r"display\s*:\s*none", body)]
     # Assert
-    assert hides, (
-        "mobile.css must hide the .figure-viewer__export label (span) inside the "
-        "@media (max-width: 768px) block, or the labelled pill clips the figure "
-        f"title on a 390px viewport. Found rules: {rules}"
-    )
+    assert not hides, "phones get a visible, labelled Export button"
 
 
-def test_mobile_export_control_is_compact():
+def test_mobile_figure_sits_below_the_export_button():
     # Arrange
     block = _mobile_media_block(_MOBILE.read_text(encoding="utf-8"))
     # Act
-    rules = [body for sel, body in _rules(".figure-viewer__export", block) if "span" not in sel]
-    # Assert -- a single glyph needs only square padding; the labelled pill's
-    # padding/gap must collapse so the control stops widening over the title.
-    assert any(
-        re.search(r"gap\s*:\s*0", body) and re.search(r"padding\s*:\s*\d+px", body)
-        for body in rules
-    ), (
-        "the mobile .figure-viewer__export rule must reset gap to 0 and padding "
-        f"to a compact value. Found: {rules}"
+    bodies = [body for sel, body in _rules(".figure-viewer:has(.figure-viewer__export)", block)]
+    # Assert
+    assert any(re.search(r"padding-top\s*:\s*\d+px", b) for b in bodies), (
+        f"the figure must be pushed below the Export button's row so the label cannot cover the title. Found: {bodies}"
     )
 
 

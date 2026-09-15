@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { SelectorNav } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
 import type { SelectorNavItem } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
 import { useEditorStore } from "../../store/useEditorStore";
@@ -25,6 +26,7 @@ import { GalleryPanel } from "../Gallery/GalleryPanel";
 import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
 import { singleFamilyTemplate } from "../Gallery/singleFamilyTemplate";
 import { familyExampleLabels, familyHasExamples } from "../Gallery/familyExamples";
+import { kindForFamily } from "../DataTablePane/columnPlotSelection";
 import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export const PLOT_TYPES: SelectorNavItem[] = [
@@ -44,10 +46,20 @@ export function PlotTypeNav() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryFamily, setGalleryFamily] = useState<string | undefined>();
   const [hoveredFamily, setHoveredFamily] = useState<string | null>(null);
-  const { placedFigures } = useEditorStore();
+  const { placedFigures, plotFamily, setPlotFamily, datatableTabs, activeTabId } =
+    useEditorStore();
   const { data, addTemplate } = useGalleryTemplates();
+  const activeTable = activeTabId ? datatableTabs[activeTabId] : null;
 
   const selectFamily = (id: string) => {
+    setPlotFamily(id);
+    // With a table loaded, the rail picks the type the Data pane plots with.
+    if (activeTable && activeTable.columns.length > 0 && kindForFamily(id)) {
+      document
+        .querySelector(".plot-from-columns")
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
     // One operation (TODO 129): a single-template family adds its plot directly.
     const sole = singleFamilyTemplate(data, id);
     if (sole) {
@@ -104,10 +116,11 @@ export function PlotTypeNav() {
 
   return (
     <div className="plot-type-nav">
+      <h2 className="fr-section-title">{gettext("Plot type")}</h2>
       <div ref={navRef} className="plot-type-nav__rail">
         <SelectorNav
           items={PLOT_TYPES.map((plotType) => ({ ...plotType, label: gettext(plotType.label) }))}
-          activeId={galleryFamily ?? null}
+          activeId={plotFamily ?? galleryFamily ?? null}
           onSelect={selectFamily}
           indicator="left"
           style={{ width: 56, minWidth: 56, maxWidth: 56 }}
@@ -132,12 +145,17 @@ export function PlotTypeNav() {
         </div>
       )}
 
-      {galleryOpen && galleryFamily && (
-        <GalleryPanel
-          family={galleryFamily}
-          onClose={() => setGalleryOpen(false)}
-        />
-      )}
+      {/* Portalled: a fixed overlay inside the scrolling phone layout was
+          clipped and peeked out behind other sections. */}
+      {galleryOpen &&
+        galleryFamily &&
+        createPortal(
+          <GalleryPanel
+            family={galleryFamily}
+            onClose={() => setGalleryOpen(false)}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
