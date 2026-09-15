@@ -54,6 +54,20 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     }
   });
 
+  const [stepsDismissed, setStepsDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("figrecipe-steps-dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const dismissSteps = () => {
+    setStepsDismissed(true);
+    try {
+      localStorage.setItem("figrecipe-steps-dismissed", "1");
+    } catch {}
+  };
+
   useEffect(() => {
     try {
       localStorage.setItem("figrecipe-app-tab", activeTab);
@@ -178,6 +192,25 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
             from the hub's global Current Project. Right-aligned in the tab row. */}
         <ProjectScopeSelector />
       </div>
+
+      {!stepsDismissed && activeTab === "plot" && (
+        <div className="fr-steps" role="note">
+          <ol className="fr-steps__list">
+            <li>{gettext("1. Pick or import data")}</li>
+            <li>{gettext("2. Choose a plot type")}</li>
+            <li>{gettext("3. Adjust & export")}</li>
+          </ol>
+          <button
+            type="button"
+            className="fr-steps__close"
+            onClick={dismissSteps}
+            aria-label={gettext("Close")}
+            title={gettext("Close")}
+          >
+            <i className="fas fa-times" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {/* ── Tab Content ─────────────────────────────── */}
       <div className="editor-body">

@@ -1163,3 +1163,18 @@ msgstr "%s をプロットしました"
 #: frontend/src/components/DataTablePane/PlotFromColumns.tsx
 msgid "Plot failed: %s"
 msgstr "プロットに失敗しました: %s"
+
+msgid "1. Pick or import data"
+msgstr "1. データを選ぶ・取り込む"
+
+msgid "2. Choose a plot type"
+msgstr "2. グラフの種類を選ぶ"
+
+msgid "3. Adjust & export"
+msgstr "3. 調整して書き出す"
+
+msgid "Plot type: %s"
+msgstr "プロットの種類: %s"
+
+msgid "This plot type cannot be drawn from table columns yet; pick Line, Scatter, Bar, Dist or Stats."
+msgstr "この種類は表の列からはまだ描けません。折れ線・散布図・棒・分布・統計から選んでください。"
