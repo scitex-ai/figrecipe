@@ -5,7 +5,7 @@
 import numpy as np
 
 
-def dispatch_plot(ax, plot_type, plot_data, columns):
+def dispatch_plot(ax, plot_type, plot_data, columns, x_mode="guess"):
     """Dispatch plot based on type and data.
 
     Args:
@@ -13,6 +13,7 @@ def dispatch_plot(ax, plot_type, plot_data, columns):
         plot_type: Frontend plot type name
         plot_data: Dict mapping column names to data arrays
         columns: List of column names in order
+        x_mode: How X is chosen for x/y plots (see ``_handle_standard_xy``)
 
     Returns:
         True on success
@@ -44,7 +45,7 @@ def dispatch_plot(ax, plot_type, plot_data, columns):
         return True
 
     # Handle standard xy plots
-    _handle_standard_xy(ax, plot_method, method_name, data_arrays, columns)
+    _handle_standard_xy(ax, plot_method, method_name, data_arrays, columns, x_mode)
     return True
 
 
@@ -107,7 +108,11 @@ def _handle_specialized(ax, plot_method, method_name, data_arrays, columns):
     """Handle specialized plot types that need custom argument handling."""
     if method_name in ("boxplot", "violinplot"):
         if method_name == "boxplot":
-            plot_method(data_arrays, labels=columns)
+            # Matplotlib 3.9 renamed ``labels`` to ``tick_labels``.
+            try:
+                plot_method(data_arrays, tick_labels=columns)
+            except TypeError:
+                plot_method(data_arrays, labels=columns)
         else:
             plot_method(data_arrays)
             ax.set_xticks(range(1, len(columns) + 1))
@@ -182,22 +187,31 @@ def _handle_specialized(ax, plot_method, method_name, data_arrays, columns):
     return False
 
 
-def _handle_standard_xy(ax, plot_method, method_name, data_arrays, columns):
-    """Handle standard x, y plots."""
-    # Detect x and y columns
+def _handle_standard_xy(
+    ax, plot_method, method_name, data_arrays, columns, x_mode="guess"
+):
+    """Handle standard x, y plots.
+
+    ``x_mode``: ``"guess"`` finds X by column name, ``"first"`` takes
+    ``columns[0]`` as X, ``"index"`` plots every column against the row number.
+    """
     x_idx = None
     y_indices = []
-    for i, col in enumerate(columns):
-        if col.endswith("_x") or col.lower() == "x":
-            x_idx = i
-        else:
-            y_indices.append(i)
+    if x_mode == "first" and len(columns) >= 2:
+        x_idx, y_indices = 0, list(range(1, len(columns)))
+    elif x_mode == "guess":
+        for i, col in enumerate(columns):
+            if col.endswith("_x") or col.lower() == "x":
+                x_idx = i
+            else:
+                y_indices.append(i)
 
     if x_idx is not None and y_indices:
         x_data = data_arrays[x_idx]
         y_arrays = [data_arrays[i] for i in y_indices]
         y_cols = [columns[i] for i in y_indices]
-    elif len(data_arrays) >= 2:
+    elif x_mode == "guess" and len(data_arrays) >= 2:
+        x_idx = 0
         x_data = data_arrays[0]
         y_arrays = data_arrays[1:]
         y_cols = columns[1:]
@@ -238,8 +252,8 @@ def _handle_standard_xy(ax, plot_method, method_name, data_arrays, columns):
                 plot_method(y_data, label=y_cols[i])
 
     # Set labels
-    if len(columns) >= 2:
-        ax.set_xlabel(columns[0])
+    if x_idx is not None:
+        ax.set_xlabel(columns[x_idx])
     if len(y_cols) == 1:
         ax.set_ylabel(y_cols[0])
     if len(y_cols) > 1:

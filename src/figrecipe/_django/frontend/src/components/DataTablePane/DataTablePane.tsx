@@ -6,6 +6,7 @@ import { DataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/d
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";
+import { PlotFromColumns } from "./PlotFromColumns";
 import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface DataTablePaneProps {
@@ -227,6 +228,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             ))}
           </div>
         )}
+        {activeTab && <PlotFromColumns key={activeTab.id} tab={activeTab} />}
         <DataTable
           data={
             activeTab

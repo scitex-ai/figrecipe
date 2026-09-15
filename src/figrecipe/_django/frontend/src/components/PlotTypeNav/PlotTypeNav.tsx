@@ -27,7 +27,7 @@ import { singleFamilyTemplate } from "../Gallery/singleFamilyTemplate";
 import { familyExampleLabels, familyHasExamples } from "../Gallery/familyExamples";
 import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
-const PLOT_TYPES: SelectorNavItem[] = [
+export const PLOT_TYPES: SelectorNavItem[] = [
   { id: "line", icon: "fas fa-chart-line", label: gettext_noop("Line") },
   { id: "scatter", icon: "fas fa-braille", label: gettext_noop("Scatter") },
   { id: "categorical", icon: "fas fa-chart-bar", label: gettext_noop("Bar") },
