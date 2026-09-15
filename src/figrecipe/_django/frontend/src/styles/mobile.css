@@ -321,3 +321,28 @@
 .inner-editor__tabs:not(:has(.inner-editor__tab, .stx-app-project-selector)) {
   display: none;
 }
+
+/* Picker-only row (hub mount, no Canvas tab): the picker spans the row and its
+   panel drops over the editor instead of being clipped by the scrolling row. */
+@media (max-width: 768px) {
+  .inner-editor__tabs:not(:has(.inner-editor__tab)):has(.stx-app-project-selector) {
+    height: auto;
+    min-height: 52px;
+    padding: 4px 12px;
+    overflow: visible;
+    position: relative;
+    z-index: 20;
+  }
+
+  .inner-editor__tabs:not(:has(.inner-editor__tab)) .project-scope-selector {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .inner-editor__tabs:not(:has(.inner-editor__tab)) .stx-app-project-selector__trigger {
+    height: 44px;
+    font-size: 14px;
+  }
+}
