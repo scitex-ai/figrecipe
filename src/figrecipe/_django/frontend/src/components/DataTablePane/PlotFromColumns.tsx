@@ -1,4 +1,4 @@
-/** Data pane form: pick a plot type and columns, then plot them onto the figure. */
+/** Data pane form: pick columns and plot them with the type chosen in the plot-type rail. */
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/client";
@@ -6,10 +6,9 @@ import { useEditorStore } from "../../store/useEditorStore";
 import type { TabData } from "../../types/editor";
 import { PLOT_TYPES } from "../PlotTypeNav/PlotTypeNav";
 import {
-  DATA_PLOT_KINDS,
   buildPlotRequest,
   defaultColumnSelection,
-  plotKind,
+  kindForFamily,
   reconcileSelection,
   type ColumnSelection,
 } from "./columnPlotSelection";
@@ -33,8 +32,8 @@ function kindLabel(id: string): string {
 }
 
 export function PlotFromColumns({ tab }: { tab: TabData }) {
-  const { showToast, refreshAfterMutation, loadDatatable } = useEditorStore();
-  const [kindId, setKindId] = useState(DATA_PLOT_KINDS[0].id);
+  const { showToast, refreshAfterMutation, loadDatatable, plotFamily } =
+    useEditorStore();
   const [selection, setSelection] = useState<ColumnSelection>(() =>
     defaultColumnSelection(tab.columns, tab.rows),
   );
@@ -45,10 +44,10 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
     setSelection((s) => reconcileSelection(s, tab.columns, tab.rows));
   }, [columnKey]); // the column set, not every row edit
 
-  const kind = plotKind(kindId);
+  const kind = kindForFamily(plotFamily);
   const request = useMemo(
-    () => buildPlotRequest(kindId, selection),
-    [kindId, selection],
+    () => (kind ? buildPlotRequest(kind.id, selection) : null),
+    [kind, selection],
   );
 
   const toggleY = (name: string) =>
@@ -82,29 +81,21 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
         void plot();
       }}
     >
-      <fieldset className="plot-from-columns__group">
-        <legend className="plot-from-columns__legend">{gettext("Plot type")}</legend>
-        <div className="plot-from-columns__kinds" role="radiogroup">
-          {DATA_PLOT_KINDS.map((k) => {
-            const icon = PLOT_TYPES.find((p) => p.id === k.family)?.icon;
-            return (
-              <button
-                key={k.id}
-                type="button"
-                role="radio"
-                aria-checked={k.id === kindId}
-                className={`plot-from-columns__chip${k.id === kindId ? " active" : ""}`}
-                onClick={() => setKindId(k.id)}
-              >
-                {icon && <i className={icon} aria-hidden="true" />}
-                <span>{kindLabel(k.id)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
+      <p className="plot-from-columns__kind">
+        {kind ? (
+          <>
+            <i
+              className={PLOT_TYPES.find((p) => p.id === kind.family)?.icon}
+              aria-hidden="true"
+            />
+            {interpolate(gettext("Plot type: %s"), [kindLabel(kind.id)])}
+          </>
+        ) : (
+          gettext("This plot type cannot be drawn from table columns yet; pick Line, Scatter, Bar, Dist or Stats.")
+        )}
+      </p>
 
-      {kind.usesX && (
+      {kind?.usesX && (
         <label className="plot-from-columns__group">
           <span className="plot-from-columns__legend">{gettext("X column")}</span>
           <select
@@ -128,7 +119,7 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
         <legend className="plot-from-columns__legend">{gettext("Y columns")}</legend>
         <div className="plot-from-columns__ys">
           {tab.columns
-            .filter((c) => !kind.usesX || c.name !== selection.x)
+            .filter((c) => !kind?.usesX || c.name !== selection.x)
             .map((c) => (
               <button
                 key={c.name}

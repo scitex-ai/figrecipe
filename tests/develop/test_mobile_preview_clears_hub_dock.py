@@ -74,14 +74,24 @@ def test_preview_reserves_hub_dock_height_with_standalone_fallback():
     ), f"layout.css .split-pane-center must reserve var(--site-dock-height, 0px) + safe area. Found: {bodies}"
 
 
-def test_mobile_orders_preview_first():
+def test_mobile_orders_preview_before_data():
+    # Arrange
+    block = _mobile_media_block(_MOBILE.read_text(encoding="utf-8"))
+    order = lambda sel: [int(m) for b in _rule_bodies(sel, block) for m in re.findall(r"order\s*:\s*(-?\d+)", b)]
+    # Act
+    center, left = order(".split-pane-center"), order(".split-pane-left")
+    # Assert
+    assert center and left and center[0] < left[0], f"preview must come before Data on phones: {center} vs {left}"
+
+
+def test_mobile_editor_body_scrolls_instead_of_squeezing():
     # Arrange
     block = _mobile_media_block(_MOBILE.read_text(encoding="utf-8"))
     # Act
-    bodies = _rule_bodies(".split-pane-center", block)
+    bodies = _rule_bodies(".editor-body", block)
     # Assert
-    assert any(re.search(r"order\s*:\s*-1", body) for body in bodies), (
-        f"mobile .split-pane-center must be ordered first (order: -1). Found: {bodies}"
+    assert any(re.search(r"overflow-y\s*:\s*auto", b) and re.search(r"padding-bottom\s*:", b) for b in bodies), (
+        f"mobile .editor-body must scroll with end padding so no section is squeezed or hidden. Found: {bodies}"
     )
 
 

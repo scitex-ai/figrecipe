@@ -43,7 +43,10 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     clearToast,
   } = useEditorStore();
 
+  // Hub mount is Plot only: Canvas composition stays in standalone figrecipe.
+  const canvasEnabled = !embedded;
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
+    if (!canvasEnabled) return "plot";
     try {
       return (localStorage.getItem("figrecipe-app-tab") as AppTab) || "plot";
     } catch {
@@ -155,18 +158,22 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     <div className="inner-editor">
       {/* ── Tab Switcher ────────────────────────────── */}
       <div className="inner-editor__tabs">
-        <button
-          className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => setActiveTab("plot")}
-        >
-          <i className="fas fa-chart-line" /> {gettext("Plot")}
-        </button>
-        <button
-          className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => setActiveTab("canvas")}
-        >
-          <i className="fas fa-object-group" /> {gettext("Canvas")}
-        </button>
+        {canvasEnabled && (
+          <>
+            <button
+              className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
+              onClick={() => setActiveTab("plot")}
+            >
+              <i className="fas fa-chart-line" /> {gettext("Plot")}
+            </button>
+            <button
+              className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
+              onClick={() => setActiveTab("canvas")}
+            >
+              <i className="fas fa-object-group" /> {gettext("Canvas")}
+            </button>
+          </>
+        )}
         {/* figrecipe's own project scope (TODO 145/147) — app-local, separate
             from the hub's global Current Project. Right-aligned in the tab row. */}
         <ProjectScopeSelector />
@@ -184,6 +191,7 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
                 dataPanel.collapsed ? undefined : { width: dataPanel.width }
               }
             >
+              <h2 className="fr-section-title">{gettext("Data")}</h2>
               <DataTablePane
                 onToggleCollapse={dataPanel.toggleCollapse}
                 collapsed={dataPanel.collapsed}

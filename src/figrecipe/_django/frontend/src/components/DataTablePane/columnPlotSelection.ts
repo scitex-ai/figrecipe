@@ -20,6 +20,12 @@ export const DATA_PLOT_KINDS: DataPlotKind[] = [
   { id: "boxplot", family: "statistical", usesX: false },
 ];
 
+/** The data kind a rail family plots as; null when the family has none. */
+export function kindForFamily(family: string | null): DataPlotKind | null {
+  if (!family) return DATA_PLOT_KINDS[0];
+  return DATA_PLOT_KINDS.find((k) => k.family === family) ?? null;
+}
+
 export function plotKind(id: string): DataPlotKind {
   return DATA_PLOT_KINDS.find((k) => k.id === id) ?? DATA_PLOT_KINDS[0];
 }
