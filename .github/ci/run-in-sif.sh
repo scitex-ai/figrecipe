@@ -158,10 +158,18 @@ python -c "import matplotlib; matplotlib.use('Agg'); from matplotlib import font
 # nice -n 19 ionice -c 3: run at the lowest CPU + idle I/O priority so that if
 # this node is ever shared with interactive/dev work, CI grabs otherwise-idle
 # cores but YIELDS the CPU and disk to any higher-priority process — "all
-# available CPUs, with priority handling". exec replaces the shell with nice,
-# which execs ionice, which execs python (still PID-traceable, signals/exit
-# code propagate to the runner step).
-exec nice -n 19 ionice -c 3 \
+# available CPUs, with priority handling".
+#
+# NO `exec` here (incident 2026-09-15, compute-04 root disk): `exec` replaces
+# the shell with nice->ionice->python, so the EXIT trap (line 58) that removes
+# this leg's ~2G $TMPDIR never fires and every COMPLETED job leaked its scratch,
+# filling the node's root filesystem. Running `nice` without exec keeps the
+# EXIT trap alive: after pytest returns, the script exits normally, the trap
+# cleans up, and bash preserves pytest's exit status across the EXIT handler.
+# GitHub Actions signals the whole process group on cancel/timeout, so the
+# python child is still torn down there; the age-gated sweep (line 72) is the
+# backstop for hard kills (SIGKILL/OOM) where no trap can run at all.
+nice -n 19 ionice -c 3 \
     python -m pytest tests/ -n "$WORKERS" --dist load -q \
     --cov=src/figrecipe --cov-report=xml --cov-report=term \
     -p no:cacheprovider
