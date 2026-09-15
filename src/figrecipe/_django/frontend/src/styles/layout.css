@@ -71,6 +71,64 @@
   border-bottom-color: var(--accent-primary);
 }
 
+/* ── First-visit steps strip ─────────────────────────── */
+
+.fr-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  background: var(--vis-accent-bg, rgba(88, 166, 255, 0.1));
+  border-bottom: 1px solid var(--vis-border);
+  color: var(--vis-text-primary);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.fr-steps__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fr-steps__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vis-text-muted);
+  cursor: pointer;
+}
+
+.fr-steps__close:hover {
+  background: var(--vis-bg-hover);
+  color: var(--vis-text-primary);
+}
+
+@media (max-width: 768px) {
+  .fr-steps {
+    padding: 8px 4px 8px 16px;
+    font-size: 13px;
+  }
+  .fr-steps__list {
+    flex-direction: column;
+  }
+  .fr-steps__close {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 /* ── Figure Viewer (Plot tab — shows rendered figure) ─── */
 
 .figure-viewer {

@@ -222,6 +222,17 @@
   background: var(--vis-bg-secondary);
 }
 
+.plot-from-columns__kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vis-text-primary);
+}
+
 .plot-from-columns__group {
   display: flex;
   flex-direction: column;
