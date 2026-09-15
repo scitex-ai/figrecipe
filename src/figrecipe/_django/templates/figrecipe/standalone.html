@@ -1,9 +1,9 @@
 {% extends "scitex_ui/standalone_shell.html" %}
-{% load static scitex_i18n %}
+{% load scitex_i18n scitex_static %}
 {% block extra_css %}
     <link rel="stylesheet"
           crossorigin
-          href="{% static 'figrecipe/assets/index.css' %}">
+          href="{% app_static 'figrecipe/assets/index.css' %}">
 {% endblock %}
 {% block app_content %}
     <div id="root"
@@ -14,5 +14,5 @@
     {% scitex_js_catalog "figrecipe._django" %}
     <script type="module"
             crossorigin
-            src="{% static 'figrecipe/assets/index.js' %}"></script>
+            src="{% app_static 'figrecipe/assets/index.js' %}"></script>
 {% endblock %}
