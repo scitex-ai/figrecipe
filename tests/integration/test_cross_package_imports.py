@@ -25,6 +25,7 @@ CROSS_PACKAGE_IMPORTS = [
     "scitex_app",
     "scitex_app._django",
     "scitex_app._standalone",
+    "scitex_app.i18n",
     "scitex_browser.debugging",
     "scitex_config",
     "scitex_config._ecosystem",

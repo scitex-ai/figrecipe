@@ -42,9 +42,13 @@ import shutil
 from pathlib import Path
 
 from django.http import JsonResponse
-from django.utils.translation import gettext_noop
 
 logger = logging.getLogger(__name__)
+
+
+def gettext_noop(message):
+    """Mark a label for extraction; Django's own reads settings at import time."""
+    return message
 
 
 def _files_tree():
