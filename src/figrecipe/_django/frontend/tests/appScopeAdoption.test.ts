@@ -54,6 +54,11 @@ check(
   ),
 );
 check(
+  "inside a host, picks from the host's project provider and reloads on the pick",
+  /hostProjectProvider[\s\S]*from\s*["']@scitex\/ui\/[^"']*\/ts\/shell/.test(code) &&
+    /navigate:\s*["']\?project=\{id\}["']/.test(code),
+);
+check(
   "still mounts into a local container (app-local surface, not the header)",
   /mountProjectSelectorByScope\s*\(/.test(code) && /container:\s*host/.test(code),
 );
