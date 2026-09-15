@@ -196,6 +196,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "KIND_ALIASES": ("._spec_builders", "KIND_ALIASES"),
     # ._render
     "render_spec_to_bytes": ("._render", "render_spec_to_bytes"),
+    # ._integrations._stats_plot_spec (neutral stats plot spec -> editable recipe)
+    "from_stats_plot_spec": ("._integrations._stats_plot_spec", "from_stats_plot_spec"),
     # ._utils._nice_lim  (issue #140)
     "nice_lim": ("._utils._nice_lim", "nice_lim"),
     # ._utils._termplot
@@ -358,6 +360,7 @@ __all__ = [
     "ALL_KINDS",
     "KIND_ALIASES",
     "render_spec_to_bytes",
+    "from_stats_plot_spec",
     "termplot",
     # Graph / style / editor helpers
     "draw_graph",
