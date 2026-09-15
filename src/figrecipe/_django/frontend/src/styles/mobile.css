@@ -341,7 +341,13 @@
     margin-left: 0;
   }
 
+  .inner-editor__tabs:not(:has(.inner-editor__tab)) .stx-app-project-selector {
+    display: block;
+    width: 100%;
+  }
+
   .inner-editor__tabs:not(:has(.inner-editor__tab)) .stx-app-project-selector__trigger {
+    width: 100%;
     height: 44px;
     font-size: 14px;
   }
