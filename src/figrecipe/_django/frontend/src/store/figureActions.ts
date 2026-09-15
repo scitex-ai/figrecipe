@@ -3,6 +3,7 @@
 import { api } from "../api/client";
 import { DPI, getPanelBboxes } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
+import { newId } from "../utils/newId";
 import type {
   BBox,
   PlacedFigure,
@@ -63,7 +64,7 @@ export function createFigureActions(set: Set, get: Get) {
         if (placedFigures.length > 0) nextY += 20;
 
         const newFig: PlacedFigure = {
-          id: crypto.randomUUID(),
+          id: newId(),
           path,
           x: 0,
           y: nextY,
@@ -185,7 +186,7 @@ export function createFigureActions(set: Set, get: Get) {
     /** Group selected figures (or all if none selected). */
     groupFigures: (ids: string[]) => {
       if (ids.length < 2) return;
-      const groupId = crypto.randomUUID();
+      const groupId = newId();
       set((s) => ({
         placedFigures: s.placedFigures.map((f) =>
           ids.includes(f.id) ? { ...f, groupId } : f,

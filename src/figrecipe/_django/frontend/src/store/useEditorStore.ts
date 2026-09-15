@@ -25,6 +25,7 @@ import { createFigureActions } from "./figureActions";
 import { createPersistActions } from "./persistActions";
 import { createSyncActions } from "./syncActions";
 import { rememberLastProject } from "./lastProjectMemory";
+import { newId } from "../utils/newId";
 import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface ZoomControls {
@@ -245,7 +246,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!clipboard) return;
     const newFig: PlacedFigure = {
       ...clipboard,
-      id: crypto.randomUUID(),
+      id: newId(),
       x: clipboard.x + 20,
       y: clipboard.y + 20,
       groupId: undefined,
@@ -297,7 +298,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const recipePath =
           currentFile ?? recipeParam.split("/").pop() ?? "preview";
         const fig: PlacedFigure = {
-          id: crypto.randomUUID(),
+          id: newId(),
           path: recipePath,
           x: 0,
           y: 0,

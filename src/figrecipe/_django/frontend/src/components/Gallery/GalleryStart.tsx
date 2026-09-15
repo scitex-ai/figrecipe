@@ -16,6 +16,8 @@ import { useGalleryTemplates, flattenTemplates } from "./useGalleryTemplates";
 import { visibleStartTemplates } from "./visibleStartTemplates";
 import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
+let demoAttempted = false;
+
 export function GalleryStart() {
   const { data, loading, failed, thumbnails, addTemplate, openDemoFigure } =
     useGalleryTemplates();
@@ -38,11 +40,15 @@ export function GalleryStart() {
   // This component only mounts when the canvas is EMPTY, and the ref makes
   // it fire once per mount, so it can neither interrupt open work nor loop:
   // a figure on the canvas unmounts it.
-  const [seeding, setSeeding] = useState(true);
+  const [seeding, setSeeding] = useState(!demoAttempted);
   const attempted = useRef(false);
   useEffect(() => {
     if (attempted.current) return;
     attempted.current = true;
+    // Once per page load: a failed add remounts this component, and a per-mount
+    // guard alone retried in a tight loop behind the loading overlay.
+    if (demoAttempted) return;
+    demoAttempted = true;
     void openDemoFigure().finally(() => setSeeding(false));
   }, [openDemoFigure]);
 
