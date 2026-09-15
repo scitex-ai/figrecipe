@@ -180,6 +180,10 @@ figrecipe = "figrecipe"
 [project.entry-points."scitex_dev.skills"]
 figrecipe = "figrecipe"
 
+# pip install figrecipe == a SciTeX hub app (scitex_app.plugins).
+[project.entry-points."scitex.apps"]
+figrecipe = "figrecipe._django.apps:FigRecipeEditorConfig"
+
 [project.entry-points."scitex_dev.linter.plugins"]
 figure = "figrecipe._quality._linter_plugin:get_plugin"
 
