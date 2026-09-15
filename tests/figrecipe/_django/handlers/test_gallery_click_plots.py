@@ -355,6 +355,31 @@ def test_seeding_an_empty_workspace_reports_that_it_wrote(
     assert body["seeded"] is True
 
 
+def test_demo_yields_when_the_page_names_a_recipe(client, split_workspace):
+    """"Open in FigRecipe" deep-links ?recipe=; the demo must not race onto the canvas."""
+    # Arrange
+    workspace, _ = split_workspace
+    url = f"/api/gallery/demo?working_dir={workspace}&recipe={workspace}/stats_ttest_ind_001.yaml"
+
+    # Act
+    body = json.loads(client.post(url, data="{}", content_type="application/json").content)
+
+    # Assert
+    assert body["recipe_path"] is None
+
+
+def test_demo_is_not_seeded_when_the_page_names_a_recipe(client, split_workspace):
+    # Arrange
+    workspace, _ = split_workspace
+    url = f"/api/gallery/demo?working_dir={workspace}&recipe={workspace}/stats_ttest_ind_001.yaml"
+
+    # Act
+    client.post(url, data="{}", content_type="application/json")
+
+    # Assert
+    assert sorted(p.name for p in workspace.glob("*.yaml")) == []
+
+
 def test_the_seeded_figure_actually_renders(client, split_workspace):
     # Arrange
     workspace, _ = split_workspace
