@@ -23,6 +23,7 @@ import { AlertBanner } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
+import { mountPanes, usePhoneLayout } from "./components/mobilePanes";
 import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type AppTab = "plot" | "canvas";
@@ -163,6 +164,21 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     collapseKey: "figrecipe-right-collapsed",
   });
 
+  // Hub phones: the columns become tabs (scitex-ui panes); collapse bars do not apply.
+  const phone = usePhoneLayout();
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const host = bodyRef.current?.parentElement;
+    if (!canvasEnabled && host) mountPanes(host);
+  }, [canvasEnabled]);
+  const dataCollapsed = dataPanel.collapsed && !phone;
+  const figureCollapsed = centerCollapsed && !phone;
+  const detailsCollapsed = rightPanel.collapsed && !phone;
+  const paneAttrs = (id: string, label: string, order: number) =>
+    canvasEnabled
+      ? {}
+      : { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order };
+
   // Sync the shared ref with rightPanel's panelRef
   useEffect(() => {
     rightPanelRef.current = rightPanel.panelRef.current;
@@ -213,28 +229,31 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
       )}
 
       {/* ── Tab Content ─────────────────────────────── */}
-      <div className="editor-body">
+      <div
+        ref={bodyRef}
+        className="editor-body"
+        {...(canvasEnabled ? {} : { "data-stx-panes": "figrecipe", "data-stx-panes-layout": "app" })}
+      >
         {activeTab === "plot" && (
           <>
             {/* Pane 1 — Data Table */}
             <aside
               ref={dataPanel.panelRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-left${dataPanel.collapsed ? " collapsed" : ""}`}
-              style={
-                dataPanel.collapsed ? undefined : { width: dataPanel.width }
-              }
+              className={`split-pane split-pane-left${dataCollapsed ? " collapsed" : ""}`}
+              style={dataCollapsed ? undefined : { width: dataPanel.width }}
+              {...paneAttrs("data", gettext("Data"), 2)}
             >
               <h2 className="fr-section-title">{gettext("Data")}</h2>
               <DataTablePane
                 onToggleCollapse={dataPanel.toggleCollapse}
-                collapsed={dataPanel.collapsed}
+                collapsed={dataCollapsed}
               />
             </aside>
 
             <div className="panel-resizer" {...dataPanel.resizerProps} />
 
             {/* Plot type selector nav — fixed width, not resizable */}
-            <PlotTypeNav />
+            <PlotTypeNav paneAttrs={paneAttrs("plot", gettext("Plot"), 3)} />
 
             {/* Pass-through resizer — propagates to DataTable (PlotTypeNav stays fixed) */}
             <div className="panel-resizer" {...dataPanel.resizerProps} />
@@ -242,9 +261,10 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
             {/* Pane 2 — Figure Viewer (rendered image, not canvas) */}
             <main
               ref={centerRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-center${centerCollapsed ? " collapsed" : ""}`}
+              className={`split-pane split-pane-center${figureCollapsed ? " collapsed" : ""}`}
+              {...paneAttrs("figure", gettext("Figure"), 1)}
             >
-              {centerCollapsed ? (
+              {figureCollapsed ? (
                 <div className="pane-header">
                   <span className="panel-title">
                     <i className="fas fa-image" />
@@ -332,18 +352,17 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
         <div
           className="stx-layout-most-right"
           style={{ display: "flex", flexShrink: 0, marginLeft: "auto" }}
+          {...paneAttrs("details", gettext("Details"), 4)}
         >
           <div className="panel-resizer" {...rightPanel.resizerProps} />
           <aside
             ref={rightPanel.panelRef as React.Ref<HTMLElement>}
-            className={`split-pane split-pane-right${rightPanel.collapsed ? " collapsed" : ""}`}
-            style={
-              rightPanel.collapsed ? undefined : { width: rightPanel.width }
-            }
+            className={`split-pane split-pane-right${detailsCollapsed ? " collapsed" : ""}`}
+            style={detailsCollapsed ? undefined : { width: rightPanel.width }}
           >
             <PropertiesPane
               onToggleCollapse={rightPanel.toggleCollapse}
-              collapsed={rightPanel.collapsed}
+              collapsed={detailsCollapsed}
             />
           </aside>
         </div>
