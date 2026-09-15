@@ -27,6 +27,7 @@ import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
 import { singleFamilyTemplate } from "../Gallery/singleFamilyTemplate";
 import { familyExampleLabels, familyHasExamples } from "../Gallery/familyExamples";
 import { kindForFamily } from "../DataTablePane/columnPlotSelection";
+import { showEditorPane } from "../mobilePanes";
 import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export const PLOT_TYPES: SelectorNavItem[] = [
@@ -42,7 +43,7 @@ export const PLOT_TYPES: SelectorNavItem[] = [
   { id: "special", icon: "fas fa-shapes", label: gettext_noop("Special") },
 ];
 
-export function PlotTypeNav() {
+export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, string | number> }) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryFamily, setGalleryFamily] = useState<string | undefined>();
   const [hoveredFamily, setHoveredFamily] = useState<string | null>(null);
@@ -55,6 +56,7 @@ export function PlotTypeNav() {
     setPlotFamily(id);
     // With a table loaded, the rail picks the type the Data pane plots with.
     if (activeTable && activeTable.columns.length > 0 && kindForFamily(id)) {
+      showEditorPane("data");
       document
         .querySelector(".plot-from-columns")
         ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -63,7 +65,7 @@ export function PlotTypeNav() {
     // One operation (TODO 129): a single-template family adds its plot directly.
     const sole = singleFamilyTemplate(data, id);
     if (sole) {
-      void addTemplate(sole);
+      void addTemplate(sole).then(() => showEditorPane("figure"));
       return;
     }
     // Otherwise open the gallery for that family (multiple/none/not-yet-loaded).
@@ -115,7 +117,7 @@ export function PlotTypeNav() {
       : null;
 
   return (
-    <div className="plot-type-nav">
+    <div className="plot-type-nav" {...paneAttrs}>
       <h2 className="fr-section-title">{gettext("Plot type")}</h2>
       <div ref={navRef} className="plot-type-nav__rail">
         <SelectorNav
@@ -153,6 +155,7 @@ export function PlotTypeNav() {
           <GalleryPanel
             family={galleryFamily}
             onClose={() => setGalleryOpen(false)}
+            onAdded={() => showEditorPane("figure")}
           />,
           document.body,
         )}

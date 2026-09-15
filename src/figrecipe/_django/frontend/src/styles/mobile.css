@@ -234,6 +234,89 @@
   }
 }
 
+/* Panes set an inline order for their tabs; the desktop columns keep DOM order. */
+@media (min-width: 769px) {
+  .editor-body > .stx-panes__pane {
+    order: 0 !important;
+  }
+}
+
+/* ── Hub phones: one tab per column (scitex-ui panes) ─────────────────
+   Figure | Data | Plot | Details. No collapse title bars: a collapsed
+   viewer left an empty area that read as a broken image. */
+@media (max-width: 640px) {
+  .editor-body.stx-panes--single {
+    height: auto !important;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+
+  .editor-body.stx-panes--single > .stx-panes__tabs {
+    background: var(--vis-bg-secondary);
+    border-bottom: 1px solid var(--vis-border);
+  }
+  .editor-body.stx-panes--single .stx-panes__tab {
+    color: var(--vis-text-muted);
+  }
+  .editor-body.stx-panes--single .stx-panes__tab[aria-selected="true"] {
+    background: var(--vis-bg-primary);
+    border-color: var(--vis-border);
+    color: var(--vis-text-primary);
+    box-shadow: inset 0 -2px 0 var(--accent-primary);
+  }
+
+  /* Beats the Details wrapper's inline display:flex. */
+  .editor-body.stx-panes--single > .stx-panes__pane:not([data-stx-pane-active]) {
+    display: none !important;
+  }
+  .editor-body.stx-panes--single > .stx-panes__pane[data-stx-pane-active] {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 1 1 0 !important;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .editor-body.stx-panes--single .fr-section-title,
+  .editor-body.stx-panes--single .pane-header--minimal,
+  .editor-body.stx-panes--single .panel-toggle-btn,
+  .editor-body.stx-panes--single .panel-title,
+  .editor-body.stx-panes--single .panel-resizer {
+    display: none !important;
+  }
+
+  .editor-body.stx-panes--single > .split-pane-center .figure-viewer {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+  }
+
+  .editor-body.stx-panes--single .split-pane-left .stx-app-data-table {
+    max-height: none;
+  }
+
+  .editor-body.stx-panes--single > .plot-type-nav .stx-app-selector-nav__items {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding: 12px;
+    gap: 8px;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .editor-body.stx-panes--single > .plot-type-nav .stx-app-selector-nav__item {
+    flex: 1 1 calc(33% - 8px);
+    min-height: 72px;
+    border: 1px solid var(--vis-border);
+  }
+
+  .editor-body.stx-panes--single > .stx-layout-most-right .split-pane-right {
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+}
+
 /* Hub mount without Canvas: an empty tab row is dropped. */
 .inner-editor__tabs:not(:has(.inner-editor__tab, .stx-app-project-selector)) {
   display: none;

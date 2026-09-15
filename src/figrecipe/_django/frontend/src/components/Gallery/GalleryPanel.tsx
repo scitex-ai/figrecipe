@@ -14,11 +14,13 @@ import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/
 
 interface Props {
   onClose: () => void;
+  /** Called after a template lands on the figure. */
+  onAdded?: () => void;
   /** The plot family chosen in the rail; the panel shows only its templates. */
   family: string;
 }
 
-export function GalleryPanel({ onClose, family }: Props) {
+export function GalleryPanel({ onClose, onAdded, family }: Props) {
   const { data, loading, failed, thumbnails, addTemplate } =
     useGalleryTemplates();
 
@@ -73,7 +75,9 @@ export function GalleryPanel({ onClose, family }: Props) {
                 className="gallery-item"
                 onClick={() => {
                   void addTemplate(tmpl).then((ok) => {
-                    if (ok) onClose();
+                    if (!ok) return;
+                    onClose();
+                    onAdded?.();
                   });
                 }}
                 title={interpolate(gettext("Add %s to canvas"), [tmpl.label])}

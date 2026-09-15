@@ -5,6 +5,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import type { TabData } from "../../types/editor";
 import { PLOT_TYPES } from "../PlotTypeNav/PlotTypeNav";
+import { showEditorPane } from "../mobilePanes";
 import {
   buildPlotRequest,
   defaultColumnSelection,
@@ -63,6 +64,7 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
       await api.post("datatable/plot", request);
       await refreshAfterMutation();
       loadDatatable();
+      showEditorPane("figure");
       showToast(interpolate(gettext("Plotted %s"), [request.columns.join(", ")]), "success");
     } catch (e) {
       showToast(interpolate(gettext("Plot failed: %s"), [e]), "error");
