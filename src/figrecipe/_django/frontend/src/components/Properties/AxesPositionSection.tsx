@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { PropSection } from "./PropSection";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface AxesPosition {
   left: number;
@@ -38,7 +39,7 @@ export function AxesPositionSection({ axIndex }: { axIndex: number }) {
         });
         loadPreview();
       } catch (e) {
-        showToast(`Position update failed: ${e}`, "error");
+        showToast(interpolate(gettext("Position update failed: %s"), [e]), "error");
       }
     },
     [axIndex, pos, loadPreview, showToast],
@@ -47,7 +48,7 @@ export function AxesPositionSection({ axIndex }: { axIndex: number }) {
   if (!pos) return null;
 
   return (
-    <PropSection title="Position (mm)">
+    <PropSection title={gettext("Position (mm)")}>
       <div className="property-row">
         <div className="property-group">
           <span className="property-label">X</span>
@@ -72,7 +73,7 @@ export function AxesPositionSection({ axIndex }: { axIndex: number }) {
       </div>
       <div className="property-row">
         <div className="property-group">
-          <span className="property-label">W</span>
+          <span className="property-label">{gettext("W")}</span>
           <input
             className="property-input"
             type="number"
@@ -82,7 +83,7 @@ export function AxesPositionSection({ axIndex }: { axIndex: number }) {
           />
         </div>
         <div className="property-group">
-          <span className="property-label">H</span>
+          <span className="property-label">{gettext("H")}</span>
           <input
             className="property-input"
             type="number"

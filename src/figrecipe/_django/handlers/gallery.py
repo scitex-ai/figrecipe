@@ -46,6 +46,11 @@ from django.http import JsonResponse
 logger = logging.getLogger(__name__)
 
 
+def gettext_noop(message):
+    """Mark a label for extraction; Django's own reads settings at import time."""
+    return message
+
+
 def _files_tree():
     """Import the working-dir resolver lazily.
 
@@ -90,43 +95,43 @@ _EXAMPLES_DIR = TEMPLATES_DIR
 # Category → template mapping (template name → display label)
 GALLERY_TEMPLATES = {
     "line": [
-        {"name": "plot_plot", "label": "Line", "icon": "fa-chart-line"},
-        {"name": "plot_fill_between", "label": "Fill Between", "icon": "fa-chart-area"},
-        {"name": "plot_stackplot", "label": "Stack", "icon": "fa-layer-group"},
+        {"name": "plot_plot", "label": gettext_noop("Line"), "icon": "fa-chart-line"},
+        {"name": "plot_fill_between", "label": gettext_noop("Fill Between"), "icon": "fa-chart-area"},
+        {"name": "plot_stackplot", "label": gettext_noop("Stack"), "icon": "fa-layer-group"},
     ],
     "scatter": [
-        {"name": "plot_scatter", "label": "Scatter", "icon": "fa-braille"},
+        {"name": "plot_scatter", "label": gettext_noop("Scatter"), "icon": "fa-braille"},
     ],
     "categorical": [
-        {"name": "plot_bar", "label": "Bar", "icon": "fa-chart-bar"},
-        {"name": "plot_boxplot", "label": "Box", "icon": "fa-box"},
-        {"name": "plot_violinplot", "label": "Violin", "icon": "fa-guitar"},
+        {"name": "plot_bar", "label": gettext_noop("Bar"), "icon": "fa-chart-bar"},
+        {"name": "plot_boxplot", "label": gettext_noop("Box"), "icon": "fa-box"},
+        {"name": "plot_violinplot", "label": gettext_noop("Violin"), "icon": "fa-guitar"},
     ],
     "distribution": [
-        {"name": "plot_hist", "label": "Histogram", "icon": "fa-chart-column"},
-        {"name": "plot_hist2d", "label": "Hist 2D", "icon": "fa-th"},
-        {"name": "plot_ecdf", "label": "ECDF", "icon": "fa-chart-line"},
+        {"name": "plot_hist", "label": gettext_noop("Histogram"), "icon": "fa-chart-column"},
+        {"name": "plot_hist2d", "label": gettext_noop("Hist 2D"), "icon": "fa-th"},
+        {"name": "plot_ecdf", "label": gettext_noop("ECDF"), "icon": "fa-chart-line"},
     ],
     "statistical": [
-        {"name": "plot_errorbar", "label": "Error Bar", "icon": "fa-arrows-alt-v"},
+        {"name": "plot_errorbar", "label": gettext_noop("Error Bar"), "icon": "fa-arrows-alt-v"},
     ],
     "grid": [
-        {"name": "plot_imshow", "label": "Image", "icon": "fa-image"},
-        {"name": "plot_matshow", "label": "Matrix", "icon": "fa-th"},
+        {"name": "plot_imshow", "label": gettext_noop("Image"), "icon": "fa-image"},
+        {"name": "plot_matshow", "label": gettext_noop("Matrix"), "icon": "fa-th"},
     ],
     "area": [
-        {"name": "plot_fill_between", "label": "Fill Between", "icon": "fa-chart-area"},
-        {"name": "plot_stackplot", "label": "Stack Plot", "icon": "fa-layer-group"},
+        {"name": "plot_fill_between", "label": gettext_noop("Fill Between"), "icon": "fa-chart-area"},
+        {"name": "plot_stackplot", "label": gettext_noop("Stack Plot"), "icon": "fa-layer-group"},
     ],
     "contour": [
-        {"name": "plot_contourf", "label": "Contour", "icon": "fa-mountain"},
+        {"name": "plot_contourf", "label": gettext_noop("Contour"), "icon": "fa-mountain"},
     ],
     "vector": [],
     "special": [
-        {"name": "plot_pie", "label": "Pie", "icon": "fa-chart-pie"},
-        {"name": "plot_specgram", "label": "Spectrogram", "icon": "fa-wave-square"},
-        {"name": "plot_eventplot", "label": "Event", "icon": "fa-timeline"},
-        {"name": "plot_graph", "label": "Graph", "icon": "fa-project-diagram"},
+        {"name": "plot_pie", "label": gettext_noop("Pie"), "icon": "fa-chart-pie"},
+        {"name": "plot_specgram", "label": gettext_noop("Spectrogram"), "icon": "fa-wave-square"},
+        {"name": "plot_eventplot", "label": gettext_noop("Event"), "icon": "fa-timeline"},
+        {"name": "plot_graph", "label": gettext_noop("Graph"), "icon": "fa-project-diagram"},
     ],
 }
 
@@ -190,8 +195,14 @@ def available_categories():
 
 
 def handle_gallery_available(request, editor):
-    """Return gallery categories with available templates."""
-    return JsonResponse({"categories": available_categories()})
+    """Return gallery categories with available templates, labels in the active language."""
+    from django.utils.translation import gettext
+
+    categories = {
+        category: [{**item, "label": gettext(item["label"])} for item in items]
+        for category, items in available_categories().items()
+    }
+    return JsonResponse({"categories": categories})
 
 
 def handle_gallery_thumbnail(request, editor, name: str):

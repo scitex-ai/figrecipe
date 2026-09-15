@@ -25,18 +25,19 @@ import { GalleryPanel } from "../Gallery/GalleryPanel";
 import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
 import { singleFamilyTemplate } from "../Gallery/singleFamilyTemplate";
 import { familyExampleLabels, familyHasExamples } from "../Gallery/familyExamples";
+import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 const PLOT_TYPES: SelectorNavItem[] = [
-  { id: "line", icon: "fas fa-chart-line", label: "Line" },
-  { id: "scatter", icon: "fas fa-braille", label: "Scatter" },
-  { id: "categorical", icon: "fas fa-chart-bar", label: "Bar" },
-  { id: "distribution", icon: "fas fa-chart-column", label: "Dist" },
-  { id: "statistical", icon: "fas fa-square-root-variable", label: "Stats" },
-  { id: "grid", icon: "fas fa-th", label: "Grid" },
-  { id: "area", icon: "fas fa-chart-area", label: "Area" },
-  { id: "contour", icon: "fas fa-layer-group", label: "Contour" },
-  { id: "vector", icon: "fas fa-arrows-alt", label: "Vector" },
-  { id: "special", icon: "fas fa-shapes", label: "Special" },
+  { id: "line", icon: "fas fa-chart-line", label: gettext_noop("Line") },
+  { id: "scatter", icon: "fas fa-braille", label: gettext_noop("Scatter") },
+  { id: "categorical", icon: "fas fa-chart-bar", label: gettext_noop("Bar") },
+  { id: "distribution", icon: "fas fa-chart-column", label: gettext_noop("Dist") },
+  { id: "statistical", icon: "fas fa-square-root-variable", label: gettext_noop("Stats") },
+  { id: "grid", icon: "fas fa-th", label: gettext_noop("Grid") },
+  { id: "area", icon: "fas fa-chart-area", label: gettext_noop("Area") },
+  { id: "contour", icon: "fas fa-layer-group", label: gettext_noop("Contour") },
+  { id: "vector", icon: "fas fa-arrows-alt", label: gettext_noop("Vector") },
+  { id: "special", icon: "fas fa-shapes", label: gettext_noop("Special") },
 ];
 
 export function PlotTypeNav() {
@@ -93,6 +94,9 @@ export function PlotTypeNav() {
     };
   }, [onItemHover]);
 
+  const hoveredPlotType = PLOT_TYPES.find((p) => p.id === hoveredFamily);
+  const hoveredFamilyLabel = hoveredPlotType ? gettext(hoveredPlotType.label) : hoveredFamily;
+
   const hoverLabels =
     hoveredFamily && familyHasExamples(data, hoveredFamily)
       ? familyExampleLabels(data, hoveredFamily)
@@ -102,7 +106,7 @@ export function PlotTypeNav() {
     <div className="plot-type-nav">
       <div ref={navRef} className="plot-type-nav__rail">
         <SelectorNav
-          items={PLOT_TYPES}
+          items={PLOT_TYPES.map((plotType) => ({ ...plotType, label: gettext(plotType.label) }))}
           activeId={galleryFamily ?? null}
           onSelect={selectFamily}
           indicator="left"
@@ -118,7 +122,7 @@ export function PlotTypeNav() {
       {hoverLabels && hoveredFamily && (
         <div className="plot-type-nav__hover" aria-hidden="true">
           <div className="plot-type-nav__hover-label">
-            {PLOT_TYPES.find((p) => p.id === hoveredFamily)?.label} examples
+            {interpolate(gettext("%s examples"), [hoveredFamilyLabel])}
           </div>
           <ul className="plot-type-nav__hover-list">
             {hoverLabels.map((lbl) => (

@@ -77,6 +77,7 @@ import type {
   SessionAdapter,
   SessionMessage,
 } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 // Mount React InnerEditor into app content area ONLY
 const root = document.getElementById("root");
@@ -197,11 +198,11 @@ initKeyboardShortcuts();
 // Register figrecipe-specific shortcuts for the modal
 registerShortcuts("figrecipe", [
   {
-    title: "Figure Editor",
+    title: gettext("Figure Editor"),
     shortcuts: [
-      { keys: "Ctrl+Z", description: "Undo" },
-      { keys: "Ctrl+Y", description: "Redo" },
-      { keys: "Del", description: "Delete selected" },
+      { keys: "Ctrl+Z", description: gettext("Undo") },
+      { keys: "Ctrl+Y", description: gettext("Redo") },
+      { keys: "Del", description: gettext("Delete selected") },
     ],
   },
 ]);
@@ -310,7 +311,7 @@ const figrecipeSessionAdapter: SessionAdapter = {
     const resp = await fetch("api/chat/sessions/", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
-      body: JSON.stringify({ title: title || "New Chat" }),
+      body: JSON.stringify({ title: title || gettext("New Chat") }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return resp.json();
@@ -413,17 +414,14 @@ document.addEventListener("stx-shell:clear-chat", () => {
 // Camera button → ChatMode handles via refs, also support custom event
 window.addEventListener("stx-shell:camera", () => {
   // ChatMode wires cameraBtn click internally; this handles custom events
-  const btn = document.querySelector<HTMLButtonElement>(
-    '.stx-shell-ai-input-btn[title="Camera"]',
-  );
+  // By id, not title: the shell translates its titles.
+  const btn = document.getElementById("stx-shell-ai-camera");
   btn?.click();
 });
 
 // Sketch button
 window.addEventListener("stx-shell:sketch", () => {
-  const btn = document.querySelector<HTMLButtonElement>(
-    '.stx-shell-ai-input-btn[title="Sketch"]',
-  );
+  const btn = document.getElementById("stx-shell-ai-sketch");
   btn?.click();
 });
 
@@ -447,7 +445,7 @@ window.addEventListener("stx-shell:settings", () => {
     <div class="ai-config-category expanded" data-cat="App Skills">
       <div class="ai-config-category-header">
         <i class="fas fa-chevron-right ai-config-category-chevron"></i>
-        <span class="ai-config-category-name">App Skills</span>
+        <span class="ai-config-category-name">${gettext("App Skills")}</span>
         <span class="ai-config-category-count">1/1</span>
       </div>
       <div class="ai-config-grid">
@@ -456,9 +454,9 @@ window.addEventListener("stx-shell:settings", () => {
             <i class="fas fa-chart-line ai-config-card-icon"></i>
             <div class="ai-config-card-info">
               <div class="ai-config-card-name">
-                FigRecipe <span class="ai-config-active-tag">active</span>
+                FigRecipe <span class="ai-config-active-tag">${gettext("active")}</span>
               </div>
-              <div class="ai-config-card-desc">Interactive figure editor — plt_*</div>
+              <div class="ai-config-card-desc">${gettext("Interactive figure editor — plt_*")}</div>
             </div>
             <label class="ai-config-toggle" onclick="event.stopPropagation()">
               <input type="checkbox" checked />

@@ -52,10 +52,17 @@ try:
 except ImportError:
     pass
 
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.middleware.common.CommonMiddleware",
-]
+from scitex_app.i18n import i18n_settings, with_locale_middleware  # noqa: E402
+
+MIDDLEWARE = with_locale_middleware(
+    [
+        "django.middleware.security.SecurityMiddleware",
+        "django.middleware.common.CommonMiddleware",
+    ]
+)
+
+# English by default; the browser's Accept-Language (or the django_language cookie) selects Japanese.
+globals().update(i18n_settings())
 
 # The STANDALONE root URLconf, not ``urls.py``: ``urls.py`` is the module a host
 # application ``include()``s under its own prefix (``_django/__init__.py``), and

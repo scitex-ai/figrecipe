@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGalleryTemplates, flattenTemplates } from "./useGalleryTemplates";
 import { visibleStartTemplates } from "./visibleStartTemplates";
+import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function GalleryStart() {
   const { data, loading, failed, thumbnails, addTemplate, openDemoFigure } =
@@ -49,7 +50,7 @@ export function GalleryStart() {
     return (
       <div className="gallery-start gallery-start--message">
         <i className="fas fa-spinner fa-spin" />
-        <p>Preparing a figure…</p>
+        <p>{gettext("Preparing a figure…")}</p>
       </div>
     );
   }
@@ -61,9 +62,9 @@ export function GalleryStart() {
     return (
       <div className="gallery-start gallery-start--message">
         <i className="fas fa-triangle-exclamation" />
-        <p>Could not load the example gallery.</p>
+        <p>{gettext("Could not load the example gallery.")}</p>
         <p className="gallery-start-hint">
-          Select a recipe file from the tree to view its figure.
+          {gettext("Select a recipe file from the tree to view its figure.")}
         </p>
       </div>
     );
@@ -75,9 +76,9 @@ export function GalleryStart() {
     return (
       <div className="gallery-start gallery-start--message">
         <i className="fas fa-image" />
-        <p>No example figures are available in this install.</p>
+        <p>{gettext("No example figures are available in this install.")}</p>
         <p className="gallery-start-hint">
-          Select a recipe file from the tree to view its figure.
+          {gettext("Select a recipe file from the tree to view its figure.")}
         </p>
       </div>
     );
@@ -86,10 +87,9 @@ export function GalleryStart() {
   return (
     <div className="gallery-start">
       <div className="gallery-start-head">
-        <h2 className="gallery-start-title">Start from an example</h2>
+        <h2 className="gallery-start-title">{gettext("Start from an example")}</h2>
         <p className="gallery-start-subtitle">
-          Click a figure to open its recipe — then edit the data, the style and
-          the layout, and export it publication-ready.
+          {gettext("Click a figure to open its recipe — then edit the data, the style and the layout, and export it publication-ready.")}
         </p>
       </div>
 
@@ -101,7 +101,7 @@ export function GalleryStart() {
               type="button"
               className="gallery-start-item"
               onClick={() => addTemplate(tmpl)}
-              title={`Open the ${tmpl.label} example`}
+              title={interpolate(gettext("Open the %s example"), [tmpl.label])}
             >
               <span className="gallery-start-thumb">
                 {thumbnails[tmpl.name] ? (
@@ -119,11 +119,11 @@ export function GalleryStart() {
           type="button"
           className="gallery-start-expand"
           onClick={() => setExamplesExpanded(true)}
-          title="Show example figures"
+          title={gettext("Show example figures")}
           aria-expanded={false}
         >
           <i className="fas fa-images" />
-          Show {templates.length} examples
+          {interpolate(ngettext("Show %s example", "Show %s examples", templates.length), [templates.length])}
         </button>
       )}
     </div>

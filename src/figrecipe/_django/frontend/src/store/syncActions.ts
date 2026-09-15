@@ -7,6 +7,7 @@ import type {
   CallRecord,
   StatBracket,
 } from "../types/editor";
+import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type Get = () => {
   selectedFigureId: string | null;
@@ -111,7 +112,7 @@ export function createSyncActions(set: Set, get: Get) {
         if (loadStatBrackets) loadStatBrackets();
         return data.bracket_id;
       } catch (e) {
-        get().showToast(`Add bracket failed: ${e}`, "error");
+        get().showToast(interpolate(gettext("Add bracket failed: %s"), [e]), "error");
         return null;
       }
     },
@@ -149,7 +150,7 @@ export function createSyncActions(set: Set, get: Get) {
         if (loadStatBrackets) loadStatBrackets();
         return true;
       } catch (e) {
-        get().showToast(`Remove bracket failed: ${e}`, "error");
+        get().showToast(interpolate(gettext("Remove bracket failed: %s"), [e]), "error");
         return false;
       }
     },
@@ -191,7 +192,7 @@ export function createSyncActions(set: Set, get: Get) {
         }
         return true;
       } catch (e) {
-        get().showToast(`Move legend failed: ${e}`, "error");
+        get().showToast(interpolate(gettext("Move legend failed: %s"), [e]), "error");
         return false;
       }
     },

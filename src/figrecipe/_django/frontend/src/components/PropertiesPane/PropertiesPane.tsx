@@ -2,6 +2,7 @@
 
 import { useEditorStore } from "../../store/useEditorStore";
 import { Properties } from "../Properties/Properties";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface PropertiesPaneProps {
   onToggleCollapse?: () => void;
@@ -25,8 +26,8 @@ export function PropertiesPane({
           className="pane-header-btn panel-toggle-btn"
           type="button"
           onClick={onToggleCollapse}
-          title={collapsed ? "Expand details" : "Collapse details"}
-          aria-label={collapsed ? "Expand details" : "Collapse details"}
+          title={collapsed ? gettext("Expand details") : gettext("Collapse details")}
+          aria-label={collapsed ? gettext("Expand details") : gettext("Collapse details")}
         >
           <i
             className={`fas ${
@@ -38,7 +39,7 @@ export function PropertiesPane({
         {/* Details title */}
         <span className="pane-header-title">
           <i className="fas fa-sliders-h" />
-          Details
+          {gettext("Details")}
         </span>
 
         {/* Selected type badge */}
@@ -49,7 +50,7 @@ export function PropertiesPane({
         {/* Vertical title (visible only when collapsed via CSS) */}
         <span className="panel-title">
           <i className="fas fa-sliders-h" />
-          Details
+          {gettext("Details")}
         </span>
       </div>
 

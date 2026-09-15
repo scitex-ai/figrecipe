@@ -31,6 +31,7 @@ import {
   getRecentProjects,
 } from "../store/recentProjects";
 import { rememberLastProject } from "../store/lastProjectMemory";
+import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export function ProjectScopeSelector() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -58,7 +59,7 @@ export function ProjectScopeSelector() {
       container: host,
       projects: options,
       current: currentId,
-      placeholder: "Select project",
+      placeholder: gettext("Select project"),
     });
     if (!selector) {
       // Not project-scoped (standalone / user-scoped host): the contract says
