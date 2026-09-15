@@ -66,6 +66,7 @@ from .image import (
 )
 from .stats import (
     handle_stats_add_bracket,
+    handle_stats_import_plot_spec,
     handle_stats_list_brackets,
     handle_stats_remove_bracket,
     handle_stats_update_bracket,
@@ -159,6 +160,7 @@ HANDLERS = {
     "stats/remove_bracket":         handle_stats_remove_bracket,
     "stats/update_bracket":         handle_stats_update_bracket,
     "stats/list_brackets":          handle_stats_list_brackets,
+    "api/import/stats-plot-spec":   handle_stats_import_plot_spec,
 }
 # fmt: on
 

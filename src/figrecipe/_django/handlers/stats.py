@@ -4,6 +4,7 @@
 
 import json
 import logging
+from pathlib import Path
 
 from django.http import JsonResponse
 
@@ -158,6 +159,62 @@ def handle_stats_update_bracket(request, editor):
     except Exception as e:
         logger.exception("[FigRecipe] stats/update_bracket failed")
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def handle_stats_import_plot_spec(request, editor):
+    """Create a recipe in the working dir from a neutral stats plot spec.
+
+    Body: ``{"spec": <scitex-stats.plot-spec>, "name": optional stem}``. The
+    workspace comes from the request (a host injects the user's project dir as
+    ``?working_dir=``), never from a live editor, so the figure lands in the
+    caller's project even when no recipe is open.
+    """
+    import re
+
+    import matplotlib.pyplot as plt
+
+    from figrecipe import save
+    from figrecipe._integrations._stats_plot_spec import (
+        from_stats_plot_spec,
+        validate_stats_plot_spec,
+    )
+
+    from ._files_tree import _get_working_dir_and_backend
+
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "invalid JSON body"}, status=400)
+    spec = data.get("spec", data) if isinstance(data, dict) else None
+    try:
+        validate_stats_plot_spec(spec)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+    working_dir, files = _get_working_dir_and_backend(request, None)
+    raw = str(data.get("name") or f"stats_{spec.get('test', {}).get('key', 'plot')}")
+    stem = re.sub(r"[^A-Za-z0-9_-]+", "_", raw).strip("_")[:60] or "stats_plot"
+    counter = 1
+    while files.exists(f"{stem}_{counter:03d}.yaml"):
+        counter += 1
+    rel = f"{stem}_{counter:03d}.yaml"
+    target = Path(working_dir) / rel
+
+    fig, _ax = from_stats_plot_spec(spec)
+    try:
+        save(fig, target.with_suffix(".png"), validate=False, verbose=False)
+    finally:
+        plt.close(getattr(fig, "_fig", fig))
+    return JsonResponse(
+        {
+            "success": True,
+            "file": rel,
+            "recipe_path": str(target),
+            "working_dir": str(working_dir),
+        }
+    )
 
 
 def handle_stats_list_brackets(request, editor):

@@ -78,6 +78,7 @@ _NO_EDITOR_ENDPOINTS = {
     "api/gallery/add",
     "api/gallery/demo",
     "api/compose",
+    "api/import/stats-plot-spec",
     "api/chat/stream",
     "api/chat/sessions/",
 }
