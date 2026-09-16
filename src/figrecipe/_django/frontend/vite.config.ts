@@ -1,6 +1,34 @@
 import { execSync } from "child_process";
+import { readFileSync } from "fs";
+import { dirname, resolve } from "path";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
+
+const __here = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Derive figrecipe's version from pyproject.toml (the package source of
+ * truth) at BUILD time, baked into the bundle as __FIGRECIPE_VERSION__.
+ * Reproducible (no timestamp), works on BOTH the standalone #root path and
+ * the Hub #app-mount host path (the host doesn't stamp a version), and is
+ * derived rather than hardcoded. A host that wants a different value can
+ * still override via the FigrecipeEditor appVersion prop or #root
+ * [data-version].
+ */
+function deriveFigrecipeVersion(): string {
+  try {
+    const pyproject = resolve(__here, "../../../../pyproject.toml");
+    const text = readFileSync(pyproject, "utf8");
+    const m = text.match(/^version\s*=\s*["']([^"']+)["']/m);
+    if (m) return m[1];
+  } catch {
+    // fall through
+  }
+  return "0.0.0+local";
+}
+
+const FIGRECIPE_VERSION = deriveFigrecipeVersion();
 
 /**
  * Discover scitex-ui static directory from the Python environment.
@@ -41,6 +69,14 @@ export default defineConfig({
         "",
       ),
     },
+  },
+  // figrecipe's own version, derived from pyproject.toml at build time.
+  // Referenced from the frontend as __FIGRECIPE_VERSION__ (the header's
+  // version-badge fallback, so it works on the Hub #app-mount path too, where
+  // no #root[data-version] is stamped). Reproducible; a host can still
+  // override via the FigrecipeEditor appVersion prop.
+  define: {
+    __FIGRECIPE_VERSION__: JSON.stringify(FIGRECIPE_VERSION),
   },
   build: {
     outDir: "../static/figrecipe",

@@ -23,6 +23,13 @@ export interface FigrecipeEditorProps {
   apiBaseUrl?: string;
   /** Project working directory (injected server-side). */
   workingDir?: string;
+  /**
+   * figrecipe's own version for the header badge. A host mounts via
+   * #app-mount (no #root[data-version]), so pass the derived version
+   * explicitly here; it takes precedence over the build-time
+   * __FIGRECIPE_VERSION__ fallback. Omit to use the fallback.
+   */
+  appVersion?: string;
   /** Initial recipe path to load. */
   recipe?: string;
   /** Dark mode. */
@@ -42,6 +49,7 @@ export interface FigrecipeEditorProps {
 export function FigrecipeEditor({
   apiBaseUrl,
   workingDir,
+  appVersion,
   recipe,
   darkMode,
   onFileSelect,
@@ -82,7 +90,7 @@ export function FigrecipeEditor({
     }
   }, [darkMode]);
 
-  return <InnerEditor embedded />;
+  return <InnerEditor embedded appVersion={appVersion} />;
 }
 
 // Re-export types for consumers

@@ -66,6 +66,10 @@ export function mountFigrecipeEditor(options: BridgeMountOptions): void {
     React.createElement(FigrecipeEditor, {
       apiBaseUrl,
       workingDir: options.workingDir,
+      // Host mounts via #app-mount (no #root[data-version]); pass the
+      // derived figrecipe version explicitly so the header badge works on
+      // the hub path too. A host that overrides appVersion wins.
+      appVersion: typeof __FIGRECIPE_VERSION__ !== "undefined" ? __FIGRECIPE_VERSION__ : undefined,
       recipe: options.initialFile,
       darkMode: options.darkMode,
       onFileSelect: (path: string) => {

@@ -70,7 +70,7 @@ dev = [
     # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
     # figrecipe/standalone.html extends -- so it declared a version that
     # cannot serve this package. Declaring only what has been exercised.
-    "scitex-ui>=0.21.0",
+    "scitex-ui>=0.22.0",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -109,7 +109,7 @@ scitex = [
     # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
     # figrecipe/standalone.html extends -- so it declared a version that
     # cannot serve this package. Declaring only what has been exercised.
-    "scitex-ui>=0.21.0",
+    "scitex-ui>=0.22.0",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -128,7 +128,7 @@ app = [
     # figrecipe now uses -- notably scitex_ui/standalone_shell.html, which
     # figrecipe/standalone.html extends -- so it declared a version that
     # cannot serve this package. Declaring only what has been exercised.
-    "scitex-ui>=0.21.0",
+    "scitex-ui>=0.22.0",
 ]
 desktop = [
     "django>=4.2.0",

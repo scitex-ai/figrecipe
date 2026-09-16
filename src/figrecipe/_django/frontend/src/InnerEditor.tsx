@@ -30,9 +30,16 @@ type AppTab = "plot" | "canvas";
 
 interface InnerEditorProps {
   embedded?: boolean;
+  /**
+   * Explicit figrecipe version for the header badge. Resolution order:
+   * this prop (host/mount contract) -> #root[data-version] (standalone
+   * Django view) -> __FIGRECIPE_VERSION__ (build-time from pyproject.toml,
+   * covers the Hub #app-mount path where neither is stamped).
+   */
+  appVersion?: string;
 }
 
-export function InnerEditor({ embedded = false }: InnerEditorProps) {
+export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) {
   const {
     loading,
     loadPreview,
@@ -46,6 +53,23 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
 
   // Hub mount is Plot only: Canvas composition stays in standalone figrecipe.
   const canvasEnabled = !embedded;
+  // figrecipe's own version for the header badge (distinct from the Hub global
+  // header's Hub-version). Resolution: explicit prop -> #root[data-version] ->
+  // build-derived __FIGRECIPE_VERSION__ (covers the #app-mount host path).
+  const resolvedVersion = (() => {
+    if (appVersion) return appVersion;
+    try {
+      const stamped = document.getElementById("root")?.getAttribute("data-version");
+      if (stamped) return stamped;
+    } catch {
+      /* #root absent (host mount) */
+    }
+    try {
+      return typeof __FIGRECIPE_VERSION__ !== "undefined" ? __FIGRECIPE_VERSION__ : "";
+    } catch {
+      return "";
+    }
+  })();
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     if (!canvasEnabled) return "plot";
     try {
@@ -186,6 +210,24 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
 
   return (
     <div className="inner-editor">
+      {/* ── App header (figrecipe-owned) — canonical .stx-app-header ─────
+          Structure: title, then the shared project-selector slot, then
+          (optional) app actions. The selector lives HERE (not the tab row)
+          per the 0.22.0 placement contract; the scitex-ui slot CSS
+          (.stx-app-header__slot--project-selector) pins it left-after-title
+          on desktop and full-width on phones. The vestigial React Toolbar's
+          "FigRecipe Editor" title is not in this render tree, so this is the
+          only visible title (no duplication). */}
+      <header className="stx-app-header">
+        <span className="stx-app-header__title">{gettext("FigRecipe")}</span>
+        {resolvedVersion && (
+          <span className="stx-app-header__version">v{resolvedVersion}</span>
+        )}
+        <div className="stx-app-header__slot--project-selector">
+          <ProjectScopeSelector />
+        </div>
+      </header>
+
       {/* ── Tab Switcher ────────────────────────────── */}
       <div className="inner-editor__tabs">
         {canvasEnabled && (
@@ -204,9 +246,6 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
             </button>
           </>
         )}
-        {/* figrecipe's own project scope (TODO 145/147) — app-local, separate
-            from the hub's global Current Project. Right-aligned in the tab row. */}
-        <ProjectScopeSelector />
       </div>
 
       {!stepsDismissed && activeTab === "plot" && (
