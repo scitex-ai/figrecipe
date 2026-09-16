@@ -38,6 +38,7 @@ function check(name: string, cond: boolean) {
 }
 
 const inner = read(SRC, "InnerEditor.tsx");
+const versionBadge = read(SRC, "components/FigrecipeVersionBadge.tsx");
 
 // 1. Canonical app header exists in the editor tree.
 check(
@@ -73,21 +74,23 @@ check(
   /gettext\("FigRecipe"\)/.test(inner),
 );
 
-// 4. Version is DERIVED, not hardcoded: resolved as prop -> #root
-//    [data-version] -> __FIGRECIPE_VERSION__ (build-time from pyproject.toml).
-//    The baked constant covers the Hub #app-mount path where neither a prop
-//    nor #root[data-version] is present.
+// 4. Version is DERIVED, not hardcoded: resolved as the host-supplied prop ->
+//    #root[data-version] -> __FIGRECIPE_VERSION__ (standalone leaf build).
 check(
-  "version falls back to build-derived __FIGRECIPE_VERSION__ (covers #app-mount)",
-  /__FIGRECIPE_VERSION__/.test(inner),
+  "InnerEditor renders the version badge with its appVersion prop",
+  /<FigrecipeVersionBadge\s+appVersion=\{appVersion\}\s*\/>/.test(inner),
+);
+check(
+  "version falls back to build-derived __FIGRECIPE_VERSION__",
+  /__FIGRECIPE_VERSION__/.test(versionBadge),
 );
 check(
   "version read from #root data-version attribute (standalone path)",
-  /getAttribute\("data-version"\)/.test(inner),
+  /getAttribute\("data-version"\)/.test(versionBadge),
 );
 check(
   "version badge rendered conditionally (hidden only when all sources empty)",
-  /resolvedVersion &&/.test(inner),
+  /if\s*\(!resolvedVersion\)\s*return null/.test(versionBadge),
 );
 
 // 5. The Django view stamps data-version from figrecipe.__version__ (the

@@ -17,6 +17,11 @@ import type {
 import { FigrecipeEditor } from "../FigrecipeEditor";
 import { emitEvent } from "./EventBus";
 
+interface FigrecipeBridgeMountOptions extends BridgeMountOptions {
+  /** Stable leaf version stamped by the host on the mount element. */
+  appVersion?: string;
+}
+
 /**
  * Figrecipe API endpoint prefixes that should be routed through Django.
  * Only these paths get rewritten — all other fetches pass through unchanged.
@@ -56,7 +61,7 @@ const BRIDGE_CONFIG: BridgeConfig = {
 /**
  * Mount the figrecipe editor into the given container.
  */
-export function mountFigrecipeEditor(options: BridgeMountOptions): void {
+export function mountFigrecipeEditor(options: FigrecipeBridgeMountOptions): void {
   installFetchOverride(BRIDGE_CONFIG);
 
   const apiBaseUrl = `/apps/${BRIDGE_CONFIG.slug}/${BRIDGE_CONFIG.slug}`;
@@ -66,10 +71,7 @@ export function mountFigrecipeEditor(options: BridgeMountOptions): void {
     React.createElement(FigrecipeEditor, {
       apiBaseUrl,
       workingDir: options.workingDir,
-      // Host mounts via #app-mount (no #root[data-version]); pass the
-      // derived figrecipe version explicitly so the header badge works on
-      // the hub path too. A host that overrides appVersion wins.
-      appVersion: typeof __FIGRECIPE_VERSION__ !== "undefined" ? __FIGRECIPE_VERSION__ : undefined,
+      appVersion: options.appVersion,
       recipe: options.initialFile,
       darkMode: options.darkMode,
       onFileSelect: (path: string) => {

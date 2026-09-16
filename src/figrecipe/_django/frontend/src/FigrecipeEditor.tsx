@@ -25,8 +25,8 @@ export interface FigrecipeEditorProps {
   workingDir?: string;
   /**
    * figrecipe's own version for the header badge. A host mounts via
-   * #app-mount (no #root[data-version]), so pass the derived version
-   * explicitly here; it takes precedence over the build-time
+   * #app-mount (no #root[data-version]), so pass the host's stable
+   * data-app-version metadata explicitly here; it takes precedence over the
    * __FIGRECIPE_VERSION__ fallback. Omit to use the fallback.
    */
   appVersion?: string;

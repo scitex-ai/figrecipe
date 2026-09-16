@@ -13,6 +13,7 @@ import { FigureViewer } from "./components/FigureViewer/FigureViewer";
 import { PlotTypeNav } from "./components/PlotTypeNav/PlotTypeNav";
 import { PropertiesPane } from "./components/PropertiesPane/PropertiesPane";
 import { ProjectScopeSelector } from "./components/ProjectScopeSelector";
+import { FigrecipeVersionBadge } from "./components/FigrecipeVersionBadge";
 import { Spinner } from "./components/common/Spinner";
 import { Toast } from "./components/common/Toast";
 // Element inspector now provided by scitex-ui (imported in main.tsx)
@@ -33,8 +34,7 @@ interface InnerEditorProps {
   /**
    * Explicit figrecipe version for the header badge. Resolution order:
    * this prop (host/mount contract) -> #root[data-version] (standalone
-   * Django view) -> __FIGRECIPE_VERSION__ (build-time from pyproject.toml,
-   * covers the Hub #app-mount path where neither is stamped).
+   * Django view) -> __FIGRECIPE_VERSION__ (standalone build-time fallback).
    */
   appVersion?: string;
 }
@@ -53,23 +53,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
 
   // Hub mount is Plot only: Canvas composition stays in standalone figrecipe.
   const canvasEnabled = !embedded;
-  // figrecipe's own version for the header badge (distinct from the Hub global
-  // header's Hub-version). Resolution: explicit prop -> #root[data-version] ->
-  // build-derived __FIGRECIPE_VERSION__ (covers the #app-mount host path).
-  const resolvedVersion = (() => {
-    if (appVersion) return appVersion;
-    try {
-      const stamped = document.getElementById("root")?.getAttribute("data-version");
-      if (stamped) return stamped;
-    } catch {
-      /* #root absent (host mount) */
-    }
-    try {
-      return typeof __FIGRECIPE_VERSION__ !== "undefined" ? __FIGRECIPE_VERSION__ : "";
-    } catch {
-      return "";
-    }
-  })();
+
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     if (!canvasEnabled) return "plot";
     try {
@@ -220,9 +204,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
           only visible title (no duplication). */}
       <header className="stx-app-header">
         <span className="stx-app-header__title">{gettext("FigRecipe")}</span>
-        {resolvedVersion && (
-          <span className="stx-app-header__version">v{resolvedVersion}</span>
-        )}
+        <FigrecipeVersionBadge appVersion={appVersion} />
         <div className="stx-app-header__slot--project-selector">
           <ProjectScopeSelector />
         </div>

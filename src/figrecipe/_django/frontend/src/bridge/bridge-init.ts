@@ -39,6 +39,7 @@ function init(): void {
 
   const isEmbedded = mount.dataset.embedded === "true";
   const workingDir = mount.dataset.workingDir;
+  const appVersion = mount.dataset.appVersion;
   const splitView = document.querySelector(
     ".workspace-split-view",
   ) as HTMLElement | null;
@@ -48,6 +49,7 @@ function init(): void {
     mountFigrecipeEditor({
       container: mount,
       workingDir,
+      appVersion,
       darkMode: document.body.classList.contains("dark-theme"),
     });
 
@@ -70,6 +72,7 @@ function init(): void {
       mountFigrecipeEditor({
         container: mount,
         workingDir,
+        appVersion,
         initialFile: recipePath,
         darkMode: document.body.classList.contains("dark-theme"),
       });

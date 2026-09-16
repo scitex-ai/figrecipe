@@ -10,11 +10,9 @@ const __here = dirname(fileURLToPath(import.meta.url));
 /**
  * Derive figrecipe's version from pyproject.toml (the package source of
  * truth) at BUILD time, baked into the bundle as __FIGRECIPE_VERSION__.
- * Reproducible (no timestamp), works on BOTH the standalone #root path and
- * the Hub #app-mount host path (the host doesn't stamp a version), and is
- * derived rather than hardcoded. A host that wants a different value can
- * still override via the FigrecipeEditor appVersion prop or #root
- * [data-version].
+ * Reproducible (no timestamp) and derived rather than hardcoded. This is the
+ * standalone fallback; host builds stamp data-app-version on their mount and
+ * pass it through the FigrecipeEditor appVersion prop.
  */
 function deriveFigrecipeVersion(): string {
   try {
@@ -72,9 +70,8 @@ export default defineConfig({
   },
   // figrecipe's own version, derived from pyproject.toml at build time.
   // Referenced from the frontend as __FIGRECIPE_VERSION__ (the header's
-  // version-badge fallback, so it works on the Hub #app-mount path too, where
-  // no #root[data-version] is stamped). Reproducible; a host can still
-  // override via the FigrecipeEditor appVersion prop.
+  // standalone version-badge fallback). Host builds may not define this
+  // constant and instead supply data-app-version through the bridge.
   define: {
     __FIGRECIPE_VERSION__: JSON.stringify(FIGRECIPE_VERSION),
   },
