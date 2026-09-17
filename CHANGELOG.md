@@ -22,6 +22,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directories in `/tmp`; the fixed script leaves none. The age-gated orphan
   sweep stays as the backstop for legs killed outright (SIGKILL/OOM), which no
   trap can cover.
+- **An artist removed after being drawn is now reported at save time instead of
+  passing unnoticed.** `ax.plot(...)` followed by `line.remove()` leaves the call
+  in the record, so a replay draws an artist the saved figure does not show. The
+  full repair is a multi-part design change (the record carries NO handle to the
+  artist it created, and the `track=False` escape hatch was measured not to cover
+  the family), so this takes the *detection* half: at save, where a live axes sits
+  next to its record, the axes' artist count is compared against the LOWER BOUND
+  the recorded plotting calls require. Fewer artists than calls means something
+  drawn is gone, and a nonblocking `ArtistLifecycleWarning` says so, with the
+  consequence and the action a user has. The check is conservative by
+  construction — it can miss a removal, it cannot invent one — and nothing is
+  removed, re-created or hidden for the user. Measured: with validation on, the
+  existing pixel validator already errors on the headline case (MSE 361.4), so
+  this covers the paths it cannot — `validate=False`, and sub-threshold
+  differences where the pixels pass but the recipe is still not faithful.
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather
   than overriding one key, and the keys left out did not fall back to the
