@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **A CI leg orphaned its own ~2G scratch on every job — the EXIT trap could
+  never fire.** `.github/ci/run-in-sif.sh` removed its run-unique `/tmp`
+  directory from an EXIT trap and then ended with `exec nice -n 19 ionice -c 3
+  python -m pytest …`. `exec` REPLACES the shell, so the trap belonged to a
+  process that no longer existed: every job leaked its scratch by construction,
+  which is how scitex-02 reached 270G of `ci-*` directories and a root
+  filesystem at 0 bytes (host_exec could not write its own audit log; a test run
+  died at 92%). The child now runs in the foreground and is waited on, so its
+  exit status is still the step's status and a failing suite still fails; TERM
+  and INT are forwarded to it explicitly, which is the one thing `exec` gave for
+  free. Reproducing the old handoff against the new test leaves 6 scratch
+  directories in `/tmp`; the fixed script leaves none. The age-gated orphan
+  sweep stays as the backstop for legs killed outright (SIGKILL/OOM), which no
+  trap can cover.
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather
   than overriding one key, and the keys left out did not fall back to the
