@@ -39,6 +39,21 @@ class TestStartupWarning:
         # Assert
         assert emitted is True and CHAT_APP in str(caught[0].message)
 
+    def test_a_registry_that_raises_lookup_error_is_missing_not_silent(self):
+        # Arrange -- DJANGO'S REAL REGISTRY RAISES LookupError for an app that is
+        # not installed. The first version of this fix caught that in its
+        # defensive handler and therefore never warned at all; only mounting the
+        # app end to end exposed it.
+        def raising_registry(label):
+            raise LookupError(f"No installed app with label {label!r}.")
+
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            emitted = FigRecipeEditorConfig._warn_if_chat_app_missing(raising_registry)
+        # Assert
+        assert emitted is True and CHAT_APP in str(caught[0].message)
+
     def test_a_host_with_the_chat_app_is_not_warned(self):
         # Arrange
         present = lambda label: True  # noqa: E731
@@ -62,6 +77,16 @@ class TestStartupWarning:
 
 
 class TestTheContractHoldsWhereItCanDrift:
+    def test_the_config_is_django_default_so_ready_actually_runs(self):
+        # Arrange / Act -- apps.py defines TWO AppConfig subclasses, and Django
+        # only picks one for the "figrecipe._django" INSTALLED_APPS entry when it
+        # is marked default; otherwise it silently falls back to the BASE
+        # AppConfig and ready() never runs. Mounting the package end to end
+        # showed exactly that: no warning fired, and the Agg forcing in ready()
+        # was dead code.
+        # Assert
+        assert FigRecipeEditorConfig.default is True
+
     def test_the_editors_own_settings_register_both_apps(self):
         # Arrange
         source = SETTINGS.read_text(encoding="utf-8")

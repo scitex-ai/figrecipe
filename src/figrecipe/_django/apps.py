@@ -12,6 +12,14 @@ class FigRecipeEditorConfig(ScitexAppConfig):
     name = "figrecipe._django"
     label = "figrecipe_editor"
     verbose_name = "FigRecipe Editor"
+    # REQUIRED, not decoration: apps.py defines TWO AppConfig subclasses, and
+    # Django's auto-detection for the "figrecipe._django" INSTALLED_APPS entry
+    # only picks one when it is marked default. Without this it silently falls
+    # back to the BASE AppConfig, so ready() never runs — which is why the
+    # chat-contract warning did not fire when the app was mounted the documented
+    # way, and why the Agg forcing below was dead code too (both measured by
+    # mounting the app end to end, not by unit tests).
+    default = True
 
     def ready(self):
         # The editor server renders figures in Django worker threads. Force the
@@ -47,13 +55,35 @@ class FigRecipeEditorConfig(ScitexAppConfig):
         """
         try:
             from django.apps import apps as django_apps
-
-            check = is_installed or django_apps.is_installed
-            if check("scitex_app"):
-                return False
         except Exception:
-            # No app registry yet (apps.py imported outside Django): there is no
-            # host mount to warn about here.
+            return False
+        if is_installed is None:
+            # Read the registry DIRECTLY rather than through
+            # django.apps.apps.is_installed(): that helper RAISES
+            # ImproperlyConfigured for an app that is not installed, and the
+            # first two versions of this fix let that land in a defensive
+            # handler and never warned at all. Both failures were invisible to
+            # unit tests that inject the predicate and appeared only when the app
+            # was actually mounted (docs/SCITEX_APP_INTEGRATION.md's one-app
+            # shape).
+            try:
+                django_apps.check_apps_ready()
+            except Exception:
+                # No usable registry (apps.py imported outside Django): there is
+                # no host mount to judge here.
+                return False
+            installed = any(
+                config.label == "scitex_app"
+                for config in django_apps.get_app_configs()
+            )
+        else:
+            try:
+                installed = bool(is_installed("scitex_app"))
+            except Exception:
+                # A raising predicate models Django's own is_installed(): the app
+                # is missing, so warn rather than swallow.
+                installed = False
+        if installed:
             return False
         warnings.warn(
             "figrecipe._django is mounted without "
