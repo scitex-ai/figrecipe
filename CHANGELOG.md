@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The data pane and canvas now meet the operator's augmented acceptance
+  (cards 7692/7694).** Five gaps the first review round left open.
+  - **Undo AND redo.** Undo alone could not recover the case its own existence
+    creates — deleting the wrong column, undoing it, then wanting the delete
+    back. Every undo parks the state it reversed, redo puts it back (Ctrl+Shift+Z
+    or the header button, same pane-scoped capture rule as Ctrl+Z so one
+    keystroke never reaches the canvas too), and any new edit clears the redo
+    branch, which no longer follows from what is on screen.
+  - **Duplicate column** (definition + every cell, inserted right after itself,
+    named with the module's unique-name rule) — "create/rename/delete" was not
+    the whole set the acceptance names.
+  - **Deleting a column assigned to X or Y now says so and clears it in the same
+    step.** The delete asks `assignmentImpact` first, so the confirm reads "It is
+    the X column — that assignment will be cleared", and the selection
+    reconciler drops the name atomically: no chip or plot binding is ever left
+    pointing at a column that no longer exists.
+  - **The canvas viewport survives tab changes.** Switching editor tabs unmounts
+    the canvas, so a view kept in component state was thrown away on every
+    switch; zoom/pan now live in the session store and a remount resumes them.
+  - **The hitmap selects on touch, and a selection opens the property controls.**
+    Touch/pen taps are handled on `pointerup` (a tap is not reliably a click
+    once `touch-action` is set) through the same `applySelection` the mouse and
+    keyboard use, and selecting now opens the Details pane, where the chosen
+    artist's controls live.
 - **Example content and table edits belong to the project, and only on request
   (Private Beta spec, scitex-hub PR 923).** Two things the editor did to a
   project behind the user's back, both now explicit and project-scoped.

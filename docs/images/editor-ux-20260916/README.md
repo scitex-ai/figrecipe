@@ -22,3 +22,4 @@ decision is unit-tested in `frontend/tests/variantChooser.test.ts`), and the
 hitmap selection itself (it needs a figure placed on the composition canvas and
 a hitmap raster; its resolution and selection transitions are covered by
 `frontend/tests/hitmapSelect.test.ts`).
+| `mobile-390-crud-undo-redo.png` | 390px phone, Data tab: the six-button CRUD toolbar (add/delete row, add/rename/duplicate/delete column) and the assigned-column confirm: "Delete column plot_000_x? It is the X column — that assignment will be cleared." Undo/redo round-tripped the duplicate edit in the same run. |

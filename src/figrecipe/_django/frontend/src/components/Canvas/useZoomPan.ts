@@ -23,6 +23,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useEditorStore } from "../../store/useEditorStore";
 import {
   MIN_ZOOM,
   applyPan,
@@ -44,6 +46,9 @@ interface ZoomPanState {
 const INITIAL_ZOOM = 0.22; // vis_app: canvasZoomLevel = 0.22
 const ZOOM_SENSITIVITY = 0.999; // vis_app: 0.999 ** deltaY
 
+/** The view a fresh session opens on: vis_app's initial zoom, no pan. */
+const INITIAL_VIEW: ZoomPanState = { zoom: INITIAL_ZOOM, panX: 0, panY: 0 };
+
 /** Which surface a pointerdown landed on.
  *
  * WHY this has to be read from the target: the same canvas hosts figure drags
@@ -63,16 +68,24 @@ function gestureOriginOf(target: EventTarget | null): GestureOrigin {
 }
 
 export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
-  const [state, setState] = useState<ZoomPanState>({
-    zoom: INITIAL_ZOOM,
-    panX: 0,
-    panY: 0,
-  });
+  // Resume the viewport the session was in. The canvas UNMOUNTS when the editor
+  // switches tabs (Canvas / Plot / Details), so component state alone would throw
+  // the user's zoom and pan away on every tab change — operator acceptance 7694
+  // requires the viewport to survive them.
+  const [state, setState] = useState<ZoomPanState>(
+    () => useEditorStore.getState().canvasView ?? INITIAL_VIEW,
+  );
 
   const [isPanning, setIsPanning] = useState(false);
 
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Mirror every view change into the session store, so the next mount resumes
+  // from here (and a fit/reset is persisted just like a manual pan).
+  useEffect(() => {
+    useEditorStore.getState().setCanvasView(state);
+  }, [state]);
 
   // Pan tracking refs
   const isPanningRef = useRef(false);

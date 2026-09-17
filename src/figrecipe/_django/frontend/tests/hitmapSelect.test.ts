@@ -253,4 +253,31 @@ ok("hitmapSelect has no React / @scitex-ui import", () => {
   );
 });
 
+// ------------------------------------------------------- component contracts
+
+const overlaySource = readFileSync(
+  join(here, "..", "src", "components", "Canvas", "HitmapOverlay.tsx"),
+  "utf8",
+);
+
+ok("a touch tap selects, on the same path a click takes", () => {
+  // Arrange / Act / Assert -- bound to pointerup, gated off the mouse so the
+  // click path stays its single handler, and sharing applySelection.
+  assert.match(overlaySource, /onPointerUp=\{handlePointerUp\}/);
+  assert.match(overlaySource, /if \(event\.pointerType === "mouse"\) return;/);
+  assert.match(
+    overlaySource,
+    /const handlePointerUp = useCallback\([\s\S]*?applySelection\(hit\)/,
+  );
+});
+
+ok("a selection opens the property controls", () => {
+  // Arrange / Act / Assert -- one place applies every selection (click, tap,
+  // keyboard), so the Details pane cannot follow one gesture but not another.
+  assert.match(
+    overlaySource,
+    /if \(outcome\.kind === "select"\) \{[\s\S]*?showEditorPane\("details"\)/,
+  );
+});
+
 console.log("\nAll hitmapSelect checks passed (" + passed + " assertion-groups).");

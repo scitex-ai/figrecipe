@@ -18,6 +18,7 @@ import {
   interpolate,
 } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 import { useEditorStore } from "../../store/useEditorStore";
+import { showEditorPane } from "../mobilePanes";
 import {
   DEFAULT_FOCUS_POINT,
   buildHexToElementKey,
@@ -121,12 +122,18 @@ export function HitmapOverlay({ onSelect, onClear }: Props) {
     [],
   );
 
-  /** Selection transitions in one place, so click and Enter cannot diverge. */
+  /** Selection transitions in one place, so click, tap and Enter cannot diverge. */
   const applySelection = useCallback(
     (hit: string | null) => {
       const outcome = selectionAfterHit(selectedElement, hit);
-      if (outcome.kind === "select") onSelect(outcome.elementId);
-      else if (outcome.kind === "clear") onClear();
+      if (outcome.kind === "select") {
+        onSelect(outcome.elementId);
+        // The property controls follow the selection (operator acceptance 7692:
+        // selecting a hit region must "open/synchronize the relevant property
+        // controls"). On the phone layout that is the Details tab; on desktop
+        // the Details pane is already on screen, so this is a no-op.
+        showEditorPane("details");
+      } else if (outcome.kind === "clear") onClear();
       // "unchanged" writes nothing — a stray click must not touch the store.
     },
     [onClear, onSelect, selectedElement],
@@ -141,6 +148,21 @@ export function HitmapOverlay({ onSelect, onClear }: Props) {
         // the element selection we are making right now.
         event.stopPropagation();
       }
+      applySelection(hit);
+    },
+    [applySelection, keyAtBoxPoint, pointInBox],
+  );
+
+  /** A finger tap. Bound to pointerup, not click: with `touch-action` set, a
+   *  touch tap is not reliably delivered as a click, and the acceptance requires
+   *  selection on touch as well as mouse. The mouse is excluded here so the
+   *  click path above stays its single handler (one gesture, one selection). */
+  const handlePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType === "mouse") return;
+      const box = event.currentTarget.getBoundingClientRect();
+      const hit = keyAtBoxPoint(pointInBox(event, box), box);
+      if (hit) event.stopPropagation();
       applySelection(hit);
     },
     [applySelection, keyAtBoxPoint, pointInBox],
@@ -201,6 +223,7 @@ export function HitmapOverlay({ onSelect, onClear }: Props) {
       aria-label={gettext("Plot hit regions")}
       title={title}
       onClick={handleClick}
+      onPointerUp={handlePointerUp}
       onPointerMove={handlePointerMove}
       onPointerLeave={() => setHoverKey(null)}
       onFocus={() => setFocused(true)}

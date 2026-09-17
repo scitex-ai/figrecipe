@@ -35,6 +35,16 @@ interface ZoomControls {
   resetView: () => void;
 }
 
+/** The canvas viewport. Session-scoped state, not component state: switching
+ *  editor tabs unmounts the canvas, and the user's view must survive that
+ *  (operator acceptance 7694: "preserve the new viewport across tab changes
+ *  during the session"). */
+export interface CanvasView {
+  zoom: number;
+  panX: number;
+  panY: number;
+}
+
 interface EditorState {
   // ── Canvas figures ──────────────────────────────────────
   placedFigures: PlacedFigure[];
@@ -92,6 +102,10 @@ interface EditorState {
 
   // ── Zoom / Debug / Rulers / Toast ──────────────────────
   zoomControls: ZoomControls | null;
+  /** Last canvas viewport (zoom/pan) — kept here so a tab change, which
+   *  unmounts the canvas, restores the view the user was working in. */
+  canvasView: CanvasView | null;
+  setCanvasView: (view: CanvasView) => void;
   showHitmap: boolean;
   showRulers: boolean;
   rulerUnit: "mm" | "inch";
@@ -199,6 +213,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   snapEnabled: true,
   activeSnapGuides: [],
   zoomControls: null,
+  canvasView: null,
   showHitmap: false,
   showRulers: true,
   rulerUnit:
@@ -481,6 +496,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   toggleHitmap: () => set((s) => ({ showHitmap: !s.showHitmap })),
+  setCanvasView: (view) => set({ canvasView: view }),
   toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
   toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),
   toggleRulerUnit: () =>

@@ -16,6 +16,8 @@ import { fileURLToPath } from "node:url";
 
 import {
   addColumn,
+  affectedAssignmentLabel,
+  assignmentImpact,
   changedCells,
   cloneTable,
   datasetFromTable,
@@ -23,11 +25,14 @@ import {
   deleteRowAt,
   deleteRowsAt,
   diffTable,
+  duplicateColumnAt,
   findRowIndexByValues,
   inferColumnDtype,
   insertRowAt,
   planColumnDelete,
+  popRedo,
   popUndo,
+  pushRedo,
   pushUndo,
   renameColumnAt,
   rowValuesAt,
@@ -35,7 +40,9 @@ import {
   setCellValue,
   tableFromDataset,
   tablesEqual,
+  UNDO_LIMIT,
   uniqueColumnName,
+  type RedoEntry,
   type TableModel,
   type UndoEntry,
 } from "../src/components/DataTablePane/dataTableEdit.ts";
@@ -624,6 +631,161 @@ ok("inferColumnDtype treats an empty column as text, not as numeric", () => {
   assert.equal(inferColumnDtype([1, "x"]), "string");
   assert.equal(inferColumnDtype([]), "string");
   assert.equal(inferColumnDtype(["", ""]), "string");
+});
+
+// ------------------------------------------------- duplicate + redo + impact
+
+const CRUD_TABLE: TableModel = {
+  columns: [
+    { name: "mass", dtype: "numeric" },
+    { name: "label", dtype: "string" },
+  ],
+  rows: [
+    [1, "a"],
+    [2, "b"],
+  ],
+};
+
+ok("duplicateColumnAt copies the column in right after itself", () => {
+  // Arrange
+  const table = CRUD_TABLE;
+  // Act
+  const next = duplicateColumnAt(table, 0);
+  // Assert
+  assert.deepEqual(
+    next.columns.map((c) => c.name),
+    ["mass", "mass_copy", "label"],
+  );
+});
+
+ok("duplicateColumnAt copies every cell of that column only", () => {
+  // Arrange
+  const table = CRUD_TABLE;
+  // Act
+  const next = duplicateColumnAt(table, 0);
+  // Assert
+  assert.deepEqual(next.rows, [
+    [1, 1, "a"],
+    [2, 2, "b"],
+  ]);
+});
+
+ok("duplicateColumnAt never collides with an existing name", () => {
+  // Arrange -- a table that already holds the first candidate name.
+  const table: TableModel = {
+    columns: [
+      { name: "mass", dtype: "numeric" },
+      { name: "mass_copy", dtype: "numeric" },
+    ],
+    rows: [[1, 9]],
+  };
+  // Act
+  const next = duplicateColumnAt(table, 0);
+  // Assert
+  assert.deepEqual(
+    next.columns.map((c) => c.name),
+    ["mass", "mass_copy_2", "mass_copy"],
+  );
+});
+
+ok("duplicateColumnAt leaves the table untouched for an unknown column", () => {
+  // Arrange
+  const table = CRUD_TABLE;
+  // Act
+  const next = duplicateColumnAt(table, 7);
+  // Assert
+  assert.deepEqual(next, table);
+});
+
+ok("redo restores exactly the state an undo removed", () => {
+  // Arrange -- "delete row 1, undo, redo" as the pane performs it.
+  const before = CRUD_TABLE;
+  const deleted = deleteRowAt(before, 0);
+  const undoEntry: UndoEntry = {
+    label: "Delete row 1",
+    op: { kind: "delete-rows", rowNumbers: [1] },
+    snapshot: cloneTable(before),
+  };
+  // Act -- undo restores the snapshot, then redo takes back what it removed.
+  const afterUndo = cloneTable(undoEntry.snapshot);
+  const parked = pushRedo([], { label: undoEntry.label, table: cloneTable(deleted) });
+  const { entry, stack } = popRedo(parked);
+  const afterRedo = entry ? cloneTable(entry.table) : null;
+  // Assert
+  assert.deepEqual(afterUndo, before);
+  assert.deepEqual(afterRedo, deleted);
+  assert.deepEqual(stack, []);
+});
+
+ok("an empty redo stack is a no-op, not an error", () => {
+  // Arrange
+  const stack: RedoEntry[] = [];
+  // Act
+  const { entry, stack: after } = popRedo(stack);
+  // Assert
+  assert.equal(entry, null);
+  assert.deepEqual(after, []);
+});
+
+ok("the redo stack is capped like undo, oldest dropped", () => {
+  // Arrange
+  let stack: RedoEntry[] = [];
+  // Act
+  for (let i = 0; i < UNDO_LIMIT + 3; i += 1) {
+    stack = pushRedo(stack, { label: `op ${i}`, table: cloneTable(CRUD_TABLE) });
+  }
+  // Assert
+  assert.equal(stack.length, UNDO_LIMIT);
+  assert.equal(stack[0].label, "op 3");
+});
+
+ok("assignmentImpact names the X column", () => {
+  // Arrange
+  const selection = { x: "mass", ys: ["label"] };
+  // Act
+  const impact = assignmentImpact(selection, "mass");
+  // Assert
+  assert.deepEqual(impact, { x: true, y: false, affected: true });
+});
+
+ok("assignmentImpact names a Y column", () => {
+  // Arrange
+  const selection = { x: "mass", ys: ["label", "other"] };
+  // Act
+  const impact = assignmentImpact(selection, "other");
+  // Assert
+  assert.deepEqual(impact, { x: false, y: true, affected: true });
+});
+
+ok("assignmentImpact says nothing for an unassigned column", () => {
+  // Arrange
+  const selection = { x: "mass", ys: ["label"] };
+  // Act
+  const impact = assignmentImpact(selection, "spare");
+  // Assert
+  assert.equal(impact.affected, false);
+});
+
+ok("assignmentImpact tolerates no removed column at all", () => {
+  // Arrange
+  const selection = { x: null, ys: [] };
+  // Act
+  const impact = assignmentImpact(selection, null);
+  // Assert
+  assert.deepEqual(impact, { x: false, y: false, affected: false });
+});
+
+ok("the affected assignment is named the way the user sees it", () => {
+  // Arrange
+  const cases = [
+    [{ x: true, y: false, affected: true }, "X"],
+    [{ x: false, y: true, affected: true }, "Y"],
+    [{ x: true, y: true, affected: true }, "X and Y"],
+  ] as const;
+  // Act
+  const labels = cases.map(([impact]) => affectedAssignmentLabel(impact));
+  // Assert
+  assert.deepEqual(labels, ["X", "Y", "X and Y"]);
 });
 
 // ------------------------------------------------------- module hygiene

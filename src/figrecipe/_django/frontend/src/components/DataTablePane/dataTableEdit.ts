@@ -34,6 +34,7 @@ export type TableOp =
   | { kind: "delete-column"; columnName: string }
   | { kind: "insert-row"; rowNumber: number }
   | { kind: "add-column"; columnName: string }
+  | { kind: "duplicate-column"; columnName: string; newName: string }
   | { kind: "clear-cells"; count: number }
   | {
       kind: "edit-cells";
@@ -322,6 +323,31 @@ export function deleteColumnAt(table: TableModel, index: number): TableModel {
   };
 }
 
+/** Copy a column — its definition and every cell — in right after the original.
+ *
+ * "Duplicate" is the operation that makes a table a scratchpad (take `mass`,
+ * copy it, transform the copy); the operator acceptance for this card lists
+ * create/rename/duplicate/delete as one set, so duplicate is not satisfied by
+ * add-then-retype. The copy gets a unique name, so a duplicated column can never
+ * collide with one that already exists. */
+export function duplicateColumnAt(table: TableModel, index: number): TableModel {
+  const source = table.columns[index];
+  if (!source) return cloneTable(table);
+  const columns = copyColumns(table.columns);
+  columns.splice(index + 1, 0, {
+    ...source,
+    name: uniqueColumnName(table.columns, `${source.name}_copy`),
+  });
+  return {
+    columns,
+    rows: table.rows.map((row) => {
+      const next = [...row];
+      next.splice(index + 1, 0, row[index] ?? "");
+      return next;
+    }),
+  };
+}
+
 export interface ColumnDeletePlan {
   /** Safe to delete straight away. */
   allowed: boolean;
@@ -345,6 +371,41 @@ export function planColumnDelete(
     return { allowed: false, needsConfirm: true, columnName: column.name };
   }
   return { allowed: true, needsConfirm: false, columnName: column.name };
+}
+
+/** Which plot assignment a column currently carries.
+ *
+ * Deleting a column that is bound to X or Y must not leave the Data pane's
+ * chips pointing at a column that no longer exists (operator acceptance 7692:
+ * "show affected assignment, clear/update it atomically, never leave a stale
+ * chip/plot binding"). The pane asks this BEFORE the delete so it can say what
+ * the delete will affect, and the selection reconciler drops the name in the
+ * same edit. */
+export interface AssignmentImpact {
+  /** The deleted column is the plot's X. */
+  x: boolean;
+  /** The deleted column is one of the plot's Y columns. */
+  y: boolean;
+  /** Either of the above — the delete touches the plot assignment. */
+  affected: boolean;
+}
+
+export function assignmentImpact(
+  selection: { x: string | null; ys: readonly string[] },
+  removedName: string | null,
+): AssignmentImpact {
+  if (!removedName) return { x: false, y: false, affected: false };
+  const x = selection.x === removedName;
+  const y = selection.ys.includes(removedName);
+  return { x, y, affected: x || y };
+}
+
+/** How to name the affected assignment in the user's own words. */
+export function affectedAssignmentLabel(impact: AssignmentImpact): string {
+  if (impact.x && impact.y) return "X and Y";
+  if (impact.x) return "X";
+  if (impact.y) return "Y";
+  return "";
 }
 
 // ---------------------------------------------------------------- diff + undo
@@ -402,6 +463,42 @@ export function pushUndo(
 export function popUndo(stack: readonly UndoEntry[]): {
   entry: UndoEntry | null;
   stack: UndoEntry[];
+} {
+  if (stack.length === 0) return { entry: null, stack: [] };
+  return { entry: stack[stack.length - 1], stack: stack.slice(0, -1) };
+}
+
+// ---------------------------------------------------------------- redo
+
+/** One redo step: the table as it was AFTER the edit that undo reversed.
+ *
+ * Undo alone is only half a destructive-edit story: the operator acceptance for
+ * this card requires undo AND redo, because an undo is itself a change the user
+ * may want back ("I deleted the wrong column, undid it, then wanted the delete
+ * back"). The undo stack stores what to RESTORE going back; this stores what to
+ * restore going forward. */
+export interface RedoEntry {
+  /** The same human-readable label the undo entry carried. */
+  label: string;
+  /** The table to put back when this entry is redone. */
+  table: TableModel;
+}
+
+export const REDO_LIMIT = UNDO_LIMIT;
+
+/** Push a redo entry with the same cap policy as undo. */
+export function pushRedo(
+  stack: readonly RedoEntry[],
+  entry: RedoEntry,
+): RedoEntry[] {
+  const next = [...stack, entry];
+  return next.length > REDO_LIMIT ? next.slice(next.length - REDO_LIMIT) : next;
+}
+
+/** Take the most recent redo entry; an empty stack is a no-op. */
+export function popRedo(stack: readonly RedoEntry[]): {
+  entry: RedoEntry | null;
+  stack: RedoEntry[];
 } {
   if (stack.length === 0) return { entry: null, stack: [] };
   return { entry: stack[stack.length - 1], stack: stack.slice(0, -1) };

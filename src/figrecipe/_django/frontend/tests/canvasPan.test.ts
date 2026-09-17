@@ -290,4 +290,16 @@ ok("canvasPan has no React / @scitex-ui import", () => {
   );
 });
 
+ok("the viewport is kept in the session store, not in the canvas component", () => {
+  // Arrange / Act / Assert -- the canvas UNMOUNTS on a tab change, so a view
+  // that lives only in component state is thrown away on every switch; the
+  // acceptance requires it to survive the session.
+  const hook = readFileSync(
+    join(here, "..", "src", "components", "Canvas", "useZoomPan.ts"),
+    "utf8",
+  );
+  assert.match(hook, /useEditorStore\.getState\(\)\.canvasView \?\? INITIAL_VIEW/);
+  assert.match(hook, /setCanvasView\(state\)/);
+});
+
 console.log("\nAll canvasPan checks passed (" + passed + " assertion-groups).");

@@ -22,20 +22,26 @@ import {
 import type { ColumnSelection } from "./columnPlotSelection";
 import {
   addColumn,
+  affectedAssignmentLabel,
+  assignmentImpact,
   cloneTable,
   datasetFromTable,
   deleteColumnAt,
   deleteRowsAt,
   diffTable,
+  duplicateColumnAt,
   findRowIndexByValues,
   insertRowAt,
   planColumnDelete,
+  popRedo,
   popUndo,
+  pushRedo,
   pushUndo,
   renameColumnAt,
   rowValuesAt,
   serializeTableToCsv,
   tableFromDataset,
+  type RedoEntry,
   type TableDataset,
   type TableModel,
   type TableOp,
@@ -71,6 +77,11 @@ function opLabel(op: TableOp): string {
       return interpolate(gettext("Add row %s"), [op.rowNumber]);
     case "add-column":
       return interpolate(gettext("Add column '%s'"), [op.columnName]);
+    case "duplicate-column":
+      return interpolate(gettext("Duplicate column '%s' as '%s'"), [
+        op.columnName,
+        op.newName,
+      ]);
     case "clear-cells":
       return interpolate(
         ngettext("Clear %s cell", "Clear %s cells", op.count),
@@ -139,10 +150,20 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
     col: number;
   } | null>(null);
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
+  /** The forward half of the history: every undo parks the state it undid here
+   *  so it can be redone (operator acceptance 7692 requires undo AND redo). */
+  const [redoStack, setRedoStack] = useState<RedoEntry[]>([]);
   const [renameDraft, setRenameDraft] = useState<string | null>(null);
-  const [confirmColumnDelete, setConfirmColumnDelete] = useState<string | null>(
-    null,
-  );
+  /** A delete that needs the user's word first: the last column, or one that is
+   *  currently bound to the plot (the binding is cleared with it, so the user is
+   *  told which assignment the delete affects — operator acceptance 7692). */
+  const [confirmColumnDelete, setConfirmColumnDelete] = useState<{
+    name: string;
+    /** "X", "Y", "X and Y", or null when the delete touches no assignment. */
+    assignment: string | null;
+    /** Deleting would leave the table with no columns at all. */
+    last: boolean;
+  } | null>(null);
 
   const tabs = Object.values(datatableTabs);
   const activeTab = activeTabId ? datatableTabs[activeTabId] : null;
@@ -219,6 +240,10 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       setUndoStack((stack) =>
         pushUndo(stack, { label, op, snapshot: cloneTable(table) }),
       );
+      // A fresh edit invalidates the redo branch: the states parked there no
+      // longer follow from what is on screen, so offering them would apply an
+      // edit the user cannot predict.
+      setRedoStack([]);
       writeTable(next);
       void persistTable(next, label);
     },
@@ -323,6 +348,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
   useEffect(() => {
     setSelectedCell(null);
     setUndoStack([]);
+    setRedoStack([]);
     setRenameDraft(null);
     setConfirmColumnDelete(null);
   }, [activeTabId]);
@@ -405,6 +431,29 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
     return fromCell ?? badgeSelection.x ?? badgeSelection.ys[0] ?? null;
   }, [activeTab, selectedCell, badgeSelection]);
 
+  /** Copy the selected column (definition + every cell) in right after itself. */
+  const handleDuplicateColumn = useCallback(() => {
+    const table = currentTable();
+    if (!table) {
+      showToast(gettext("No data table to edit"), "error");
+      return;
+    }
+    const index = activeColumnName
+      ? table.columns.findIndex((c) => c.name === activeColumnName)
+      : -1;
+    if (index < 0) {
+      showToast(gettext("Select a column to duplicate"), "error");
+      return;
+    }
+    const next = duplicateColumnAt(table, index);
+    const copy = next.columns[index + 1];
+    applyEdit(next, {
+      kind: "duplicate-column",
+      columnName: table.columns[index].name,
+      newName: copy ? copy.name : table.columns[index].name,
+    });
+  }, [activeColumnName, applyEdit, currentTable, showToast]);
+
   const handleDeleteColumn = useCallback(() => {
     const table = currentTable();
     if (!table) {
@@ -419,9 +468,29 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       return;
     }
     const plan = planColumnDelete(table, index);
+    // What the delete does to the plot assignment, decided BEFORE the edit so
+    // it can be shown and then cleared in the same step (never a stale chip).
+    const impact = assignmentImpact(badgeSelection, plan.columnName);
     if (!plan.allowed) {
       // The last remaining column is asked about, never deleted silently.
-      if (plan.needsConfirm) setConfirmColumnDelete(plan.columnName);
+      if (plan.needsConfirm) {
+        setConfirmColumnDelete({
+          name: plan.columnName ?? "",
+          assignment: impact.affected
+            ? affectedAssignmentLabel(impact)
+            : null,
+          last: true,
+        });
+      }
+      return;
+    }
+    if (impact.affected) {
+      // Destructive beyond the cells: the plot's binding goes with it.
+      setConfirmColumnDelete({
+        name: plan.columnName ?? "",
+        assignment: affectedAssignmentLabel(impact),
+        last: false,
+      });
       return;
     }
     setConfirmColumnDelete(null);
@@ -429,11 +498,11 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       kind: "delete-column",
       columnName: plan.columnName ?? "",
     });
-  }, [activeColumnName, applyEdit, currentTable, showToast]);
+  }, [activeColumnName, applyEdit, badgeSelection, currentTable, showToast]);
 
   const handleConfirmColumnDelete = useCallback(() => {
     const table = currentTable();
-    const name = confirmColumnDelete;
+    const name = confirmColumnDelete?.name ?? null;
     setConfirmColumnDelete(null);
     if (!table || !name) return;
     const index = table.columns.findIndex((c) => c.name === name);
@@ -477,10 +546,36 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
     // Empty stack: nothing to undo is not an error worth a toast.
     if (!entry) return;
     setUndoStack(stack);
+    // Park the state being undone, so the very next redo can put it back.
+    setRedoStack((r) => pushRedo(r, { label: entry.label, table: cloneTable(table) }));
     const restored = cloneTable(entry.snapshot);
     writeTable(restored);
     void persistTable(restored, interpolate(gettext("Undid: %s"), [entry.label]));
   }, [currentTable, persistTable, showToast, undoStack, writeTable]);
+
+  /** Put back the edit the last undo reversed. */
+  const handleRedo = useCallback(() => {
+    const table = currentTable();
+    if (!table) {
+      showToast(gettext("No data table to edit"), "error");
+      return;
+    }
+    const { entry, stack } = popRedo(redoStack);
+    // Nothing to redo is a silent no-op, like an empty undo stack.
+    if (!entry) return;
+    setRedoStack(stack);
+    // The redo becomes undoable again, so the two stacks stay symmetric.
+    setUndoStack((u) =>
+      pushUndo(u, {
+        label: entry.label,
+        op: { kind: "set-table" },
+        snapshot: cloneTable(table),
+      }),
+    );
+    const restored = cloneTable(entry.table);
+    writeTable(restored);
+    void persistTable(restored, interpolate(gettext("Redid: %s"), [entry.label]));
+  }, [currentTable, persistTable, redoStack, showToast, writeTable]);
 
   // The editor already binds Ctrl+Z globally to the canvas undo, so the table's
   // undo only takes the keystroke when the interaction was in this pane, and
@@ -505,8 +600,12 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
   // way to keep one Ctrl+Z from undoing the canvas as well.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.shiftKey) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
       if (e.key.toLowerCase() !== "z") return;
+      // Shift+Ctrl/Cmd+Z is the redo half of the pair. Both are the table's
+      // while this pane holds the interaction context, and both are stopped
+      // here so the canvas' own Ctrl+Z handler never sees the same keystroke.
+      const redo = e.shiftKey;
       if (!paneInteractionRef.current) return;
       // Typing targets keep the browser's own undo: the cell editor's text is
       // not the table yet.
@@ -519,11 +618,12 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
         return;
       e.preventDefault();
       e.stopPropagation();
-      handleUndo();
+      if (redo) handleRedo();
+      else handleUndo();
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [handleUndo]);
+  }, [handleRedo, handleUndo]);
 
   /** Close a tab and remove the corresponding figure from canvas. */
   const handleCloseTab = useCallback(
@@ -650,6 +750,20 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             type="button"
           >
             <i className="fas fa-undo" />
+          </button>
+          <button
+            className="pane-header-btn"
+            onClick={handleRedo}
+            title={
+              redoStack.length > 0
+                ? interpolate(gettext("Redo %s"), [redoStack[redoStack.length - 1].label])
+                : gettext("Redo (Ctrl+Shift+Z)")
+            }
+            aria-label={gettext("Redo the last undone table change")}
+            disabled={redoStack.length === 0}
+            type="button"
+          >
+            <i className="fas fa-redo" />
           </button>
           <button
             className="pane-header-btn"
@@ -803,6 +917,16 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           <button
             type="button"
             className="data-pane__btn"
+            onClick={handleDuplicateColumn}
+            disabled={!activeTab || !activeColumnName}
+            title={gettext("Duplicate the selected column beside itself")}
+          >
+            <i className="fas fa-clone" aria-hidden="true" />
+            {gettext("Duplicate column")}
+          </button>
+          <button
+            type="button"
+            className="data-pane__btn"
             onClick={handleDeleteColumn}
             disabled={!activeTab || !activeColumnName}
             title={gettext("Delete the selected column")}
@@ -841,12 +965,23 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           <div
             className="data-pane__prompt data-pane__prompt--danger"
             role="alertdialog"
-            aria-label={gettext("Confirm deleting the last column")}
+            aria-label={
+              confirmColumnDelete.last
+                ? gettext("Confirm deleting the last column")
+                : gettext("Confirm deleting an assigned column")
+            }
           >
             <span className="data-pane__prompt-label">
-              {interpolate(gettext("Delete the last column '%s'?"), [
-                confirmColumnDelete,
-              ])}
+              {confirmColumnDelete.last
+                ? interpolate(gettext("Delete the last column '%s'?"), [
+                    confirmColumnDelete.name,
+                  ])
+                : interpolate(
+                    gettext(
+                      "Delete column '%s'? It is the %s column — that assignment will be cleared.",
+                    ),
+                    [confirmColumnDelete.name, confirmColumnDelete.assignment ?? ""],
+                  )}
             </span>
             <button
               type="button"
