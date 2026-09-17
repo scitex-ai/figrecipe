@@ -3,6 +3,7 @@
 """Utilities for recorder argument processing."""
 
 from typing import Any, Dict, List
+import warnings
 
 import numpy as np
 
@@ -57,6 +58,26 @@ class UnrecordableArgumentError(TypeError):
 
     Raised at RECORD time — the only moment the caller can still fix it — rather
     than letting the value reach the recipe as text that no replay can undo.
+    """
+
+
+class UnrecordableArgumentWarning(UserWarning):
+    """An argument is being stored as its TEXT because nothing else is possible.
+
+    Cards figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906:
+    a value the recorder cannot serialize was quietly replaced by ``str(value)``,
+    so the recipe replays a STRING where the call passed an object — the figure
+    is right and its description is wrong, which is the silent half of the
+    failure this project exists to prevent. Announcing it at record time is the
+    whole fix: the caller is the only one who knows what should be passed
+    instead.
+
+    Why a WARNING here and an ERROR for the one-shot iterator
+    (:class:`UnrecordableArgumentError`): a generator has no faithful recording
+    at all, so continuing would be a lie either way. A text repr, by contrast,
+    replays deterministically and is sometimes exactly what the caller passed (a
+    string-like object) — refusing outright would break those figures. The defect
+    was the SILENCE, so the fix is to speak.
     """
 
 
@@ -256,7 +277,12 @@ def _process_array_list(
 
 
 def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, Any]:
-    """Process scalar or other value."""
+    """Process scalar or other value.
+
+    A value nothing else could handle is stored as its text — but never
+    SILENTLY: see :class:`UnrecordableArgumentWarning`, which is the fix for
+    card figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906.
+    """
     # numpy scalars (np.int64, np.float64, np.bool_, …) are not natively
     # serializable. np.float64 happens to subclass Python float so it slips
     # through, but np.int64 does NOT subclass int -> it falls to the str(value)
@@ -267,14 +293,42 @@ def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, An
     if isinstance(value, np.generic):
         value = value.item()
     try:
-        return {
-            "name": name,
-            "data": value if is_serializable_func(value) else str(value),
-        }
+        if is_serializable_func(value):
+            # The good path: numbers, strings, bools — nothing to announce.
+            return {"name": name, "data": value}
+        text = str(value)
     except (TypeError, ValueError):
-        return {"name": name, "data": str(value)}
+        text = str(value)
+    _warn_text_recorded(name, value, text)
+    return {"name": name, "data": text}
 
 
-__all__ = ["RE_ITERABLE_SEQUENCES", "UnrecordableArgumentError", "process_args"]
+def _warn_text_recorded(name: str, value: Any, text: str) -> None:
+    """Say that an argument is going into the recipe as TEXT.
+
+    Not an error: the text replays deterministically, and for a string-like
+    object it may be what the caller meant. But a recipe that passes a string
+    where the figure was drawn from an object is not faithful, and only the
+    caller can decide what to pass instead — so the warning names the argument,
+    its type, and the remedy.
+    """
+    warnings.warn(
+        f"figrecipe is recording argument {name!r} as TEXT: "
+        f"{type(value).__name__} is not serializable, so the recipe stores "
+        f"{text!r} and a replay will pass that string where this call passed an "
+        f"object. The figure is correct; its recipe is not faithful. Pass "
+        f"something recordable at the call site (e.g. list(...)/np.asarray(...) "
+        f"of the values, or the string you actually mean) to remove this warning.",
+        UnrecordableArgumentWarning,
+        stacklevel=3,
+    )
+
+
+__all__ = [
+    "RE_ITERABLE_SEQUENCES",
+    "UnrecordableArgumentError",
+    "UnrecordableArgumentWarning",
+    "process_args",
+]
 
 # EOF
