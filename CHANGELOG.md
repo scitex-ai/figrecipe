@@ -22,6 +22,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directories in `/tmp`; the fixed script leaves none. The age-gated orphan
   sweep stays as the backstop for legs killed outright (SIGKILL/OOM), which no
   trap can cover.
+- **The recorder no longer turns an unserializable argument into text
+  SILENTLY.** A value nothing else could handle was recorded as `str(value)`, so
+  the recipe replayed a *string* where the call passed an object — the figure
+  right, its description wrong, and nothing said at the only moment the caller
+  could still fix it (card
+  `figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906`). The
+  fallback now warns (`UnrecordableArgumentWarning`) naming the argument, its
+  type, the text being stored, and the remedy (`list(...)`/`np.asarray(...)` of
+  the values). The recorded payload is unchanged — the defect was the silence —
+  and a WARNING is deliberate rather than the outright refusal the recorder uses
+  for one-shot iterators (`UnrecordableArgumentError`): a text repr replays
+  deterministically and is sometimes exactly what was passed, whereas a consumed
+  generator can never be faithful. `np.int64`-style values are coerced to native
+  Python first, so the ordinary numeric path stays silent (pinned by tests in
+  `tests/figrecipe/_recorder/test__utils.py`).
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather
   than overriding one key, and the keys left out did not fall back to the
