@@ -241,6 +241,12 @@ data/*
 !src/figrecipe/_django/gallery_templates/*.png
 !src/figrecipe/_django/gallery_templates/*.yaml
 
+# Browser evidence for an editor UX change (docs/images/editor-ux-20260916).
+# A canvas/rail/data-pane change cannot be reviewed from the diff alone, so the
+# screenshots are deliberate artefacts rather than run output — the same reason
+# the example figures above need an exception.
+!docs/images/editor-ux-20260916/*.png
+
 !examples/02_composition_out/gallery.jpg
 !docs/style_granularity.jpg
 !docs/sphinx/_static/*.png
