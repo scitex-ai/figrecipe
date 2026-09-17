@@ -37,6 +37,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generator can never be faithful. `np.int64`-style values are coerced to native
   Python first, so the ordinary numeric path stays silent (pinned by tests in
   `tests/figrecipe/_recorder/test__utils.py`).
+- **A misspelled style key is no longer silently ignored.** `SCITEX_STYLE`
+  advertises 33 keys, the applier honors a different set and the layout path a
+  third — three vocabularies with no single declaration of which one a consumer
+  honors — so a key that matched none of them (`style={"font_famly": "Arial"}`)
+  was simply carried through the merge in `_api/_subplots.py`: no error, no log,
+  and a figure that just did not change. The merge site now reports keys that
+  belong to neither the loaded style nor `SCITEX_STYLE`, and names the nearest
+  known key when there is one (`Did you mean 'font_family'?`). It is a warning,
+  not an error, because styles merge from several sources and a key this module
+  cannot see may still be honored by a consumer it cannot see — failing the call
+  would break working figures, saying which key was dropped does not. The
+  vocabularies themselves are NOT unified here; the measured split (15 keys never
+  read by the applier, 9 owned by the layout path, 6 referenced nowhere) is
+  recorded on card `figrecipe-three-style-key-vocabularies-disagree-20260907`.
+
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather
   than overriding one key, and the keys left out did not fall back to the
