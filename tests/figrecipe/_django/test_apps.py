@@ -78,14 +78,16 @@ class TestStartupWarning:
 
 class TestTheContractHoldsWhereItCanDrift:
     def test_the_config_is_django_default_so_ready_actually_runs(self):
-        # Arrange / Act -- apps.py defines TWO AppConfig subclasses, and Django
-        # only picks one for the "figrecipe._django" INSTALLED_APPS entry when it
-        # is marked default; otherwise it silently falls back to the BASE
-        # AppConfig and ready() never runs. Mounting the package end to end
-        # showed exactly that: no warning fired, and the Agg forcing in ready()
-        # was dead code.
+        # Arrange -- apps.py defines TWO AppConfig subclasses, and Django only
+        # picks one for the "figrecipe._django" INSTALLED_APPS entry when it is
+        # marked default; otherwise it silently falls back to the BASE AppConfig
+        # and ready() never runs. Mounting the package end to end showed exactly
+        # that: no warning fired, and the Agg forcing in ready() was dead code.
+        config = FigRecipeEditorConfig
+        # Act
+        is_default = config.default
         # Assert
-        assert FigRecipeEditorConfig.default is True
+        assert is_default is True
 
     def test_the_editors_own_settings_register_both_apps(self):
         # Arrange
