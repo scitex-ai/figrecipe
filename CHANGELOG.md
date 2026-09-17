@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.34.8] - 2026-09-17
+
 ### Fixed
 - **A CI leg orphaned its own ~2G scratch on every job — the EXIT trap could
   never fire.** `.github/ci/run-in-sif.sh` removed its run-unique `/tmp`
