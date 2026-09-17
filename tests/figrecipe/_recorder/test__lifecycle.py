@@ -13,6 +13,12 @@ Each test makes a single assertion (STX-TQ007); no mocks (PA-306).
 import warnings
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")  # before figrecipe: the save path renders
+
+import figrecipe as fr  # noqa: E402
+
 from figrecipe._recorder._lifecycle import (
     ArtistLifecycleWarning,
     PLOTTING_METHODS,
@@ -162,3 +168,51 @@ class TestModuleHygiene:
         has_core_methods = {"plot", "scatter", "bar"} <= methods
         # Assert
         assert has_core_methods
+
+
+class TestSavePathWiring:
+    """The detector must fire from a REAL save, not only when called directly.
+
+    The tests above prove the decision; these prove the WIRING in
+    ``_api/_save_helpers.py`` — the part a function-level test cannot see, and
+    the part that has twice in this repo been the actual defect (a correct pure
+    layer behind a hook nobody reached).
+    """
+
+    @staticmethod
+    def _save_with_removed_artist(tmp_path, name):
+        """Draw two lines, remove one, save. Returns the lifecycle warnings."""
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 2, 3], label="keep")
+        (doomed,) = ax.plot([1, 2, 3], [3, 2, 1], label="drop")
+        doomed.remove()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        return [w for w in caught if "fewer artists" in str(w.message)]
+
+    @staticmethod
+    def _save_faithful_figure(tmp_path, name):
+        """Draw one line and save. Returns the lifecycle warnings."""
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 2, 3], label="keep")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        return [w for w in caught if "fewer artists" in str(w.message)]
+
+    def test_a_real_save_warns_when_an_artist_was_removed(self, tmp_path):
+        # Arrange
+        name = "removed.png"
+        # Act
+        hits = self._save_with_removed_artist(tmp_path, name)
+        # Assert -- exactly one warning, not one per call or per axes.
+        assert len(hits) == 1
+
+    def test_a_real_save_is_silent_for_a_faithful_figure(self, tmp_path):
+        # Arrange
+        name = "faithful.png"
+        # Act
+        hits = self._save_faithful_figure(tmp_path, name)
+        # Assert -- a faithful figure must produce no lifecycle noise at all.
+        assert hits == []
