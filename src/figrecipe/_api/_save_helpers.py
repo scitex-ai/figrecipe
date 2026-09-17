@@ -78,7 +78,7 @@ def crop_to_content_bbox(
     from .._utils._crop import crop, mm_to_pixels
 
     try:
-        l, b, w, h = (float(v) for v in content_bbox)
+        left, bottom, width, height = (float(v) for v in content_bbox)
     except (TypeError, ValueError):
         return None
 
@@ -86,11 +86,17 @@ def crop_to_content_bbox(
         img_w, img_h = img.size
 
     # content_bbox is matplotlib y-up; PIL crop box is y-down (origin top-left).
-    # top edge in mpl fraction = b + h ; bottom edge = b.
-    left_px = round(l * img_w) - mm_to_pixels(margins_mm["left"], dpi)
-    right_px = round((l + w) * img_w) + mm_to_pixels(margins_mm["right"], dpi)
-    upper_px = round((1.0 - (b + h)) * img_h) - mm_to_pixels(margins_mm["top"], dpi)
-    lower_px = round((1.0 - b) * img_h) + mm_to_pixels(margins_mm["bottom"], dpi)
+    # top edge in mpl fraction = bottom + height; bottom edge = bottom.
+    left_px = round(left * img_w) - mm_to_pixels(margins_mm["left"], dpi)
+    right_px = round((left + width) * img_w) + mm_to_pixels(
+        margins_mm["right"], dpi
+    )
+    upper_px = round((1.0 - (bottom + height)) * img_h) - mm_to_pixels(
+        margins_mm["top"], dpi
+    )
+    lower_px = round((1.0 - bottom) * img_h) + mm_to_pixels(
+        margins_mm["bottom"], dpi
+    )
 
     if right_px - left_px <= 0 or lower_px - upper_px <= 0:
         return None
@@ -369,6 +375,46 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
         for key, mpl_ax in zip(remaining, mpl_axes):
             if key.startswith("ax_mm_"):
                 fig.record.axes[key].bbox = _to_cropped(mpl_ax.get_position())
+
+    # Artist lifecycle (card figrecipe-recipe-keeps-artists-removed-before-save-20260906).
+    # A call whose artist was removed after being drawn STAYS in the record, so a
+    # replay draws what this figure does not show. This is the one place where a
+    # live axes sits next to its record at the moment the recipe is written, so
+    # it is where the mismatch can be noticed -- and only noticed: nothing here
+    # removes, re-creates or hides an artist, and replay is not changed. The
+    # check is conservative (a call's artist COUNT is not knowable, only a lower
+    # bound), so it can miss a removal but never invents one.
+    try:
+        from .._recorder._lifecycle import detect_removals, warn_removals
+
+        lifecycle_reports = []
+        for key, mpl_ax in zip(fig.record.axes, fig.fig.get_axes()):
+            report = detect_removals(
+                key,
+                fig.record.axes[key].calls,
+                _live_artist_count(mpl_ax),
+            )
+            if report is not None:
+                lifecycle_reports.append(report)
+        warn_removals(lifecycle_reports)
+    except Exception:
+        pass  # best-effort, like the captures above: an audit must not break a save
+
+
+def _live_artist_count(mpl_ax) -> int:
+    """Artists the axes currently shows, over the containers plotting appends to.
+
+    ``texts`` intentionally includes figrecipe's own decorations (panel letters,
+    stats brackets, captions), which only ever INFLATES the count — and an
+    inflated count makes the removal check quieter, never noisier.
+    """
+    total = 0
+    for container in ("lines", "collections", "patches", "texts", "images"):
+        try:
+            total += len(getattr(mpl_ax, container, None) or [])
+        except Exception:
+            continue
+    return total
 
 
 def _capture_content_layout(fig) -> None:

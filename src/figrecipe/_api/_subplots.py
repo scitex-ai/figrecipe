@@ -257,6 +257,16 @@ def _apply_style_to_axes(
                 to_subplots_kwargs(global_style) if global_style is not None else {}
             )
             style_dict = {**(base or {}), **style}
+            # A key in NEITHER the resolved style NOR SCITEX_STYLE is honored by
+            # no consumer, and the merge above carries it silently — which is how
+            # a typo ("font_famly") becomes a no-op instead of a message. The
+            # union is the vocabulary a caller may legitimately pass, computed
+            # from what is already here rather than from a hand-kept list (card
+            # figrecipe-three-style-key-vocabularies-disagree-20260907).
+            from ..presets._scitex_style import SCITEX_STYLE
+            from ..styles._style_keys import warn_unknown_style_keys
+
+            warn_unknown_style_keys(style, set(base or {}) | set(SCITEX_STYLE))
     elif apply_style_mm and global_style is not None:
         style_dict = to_subplots_kwargs(global_style)
         if style_dict and style_dict.get("axes_thickness_mm") is not None:
