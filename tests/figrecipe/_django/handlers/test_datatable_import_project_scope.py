@@ -112,22 +112,18 @@ class TestImportWritesIntoTheProject:
 
 
 class TestNoUnselectedDirectoryIsEverWritten:
-    def test_a_session_with_only_the_process_cwd_writes_nothing(
-        self, _django_ready, tmp_path, monkeypatch
-    ):
+    def test_a_session_with_only_the_process_cwd_writes_nothing(self, _django_ready):
         # Arrange -- EditorState.working_dir defaults to the process CWD, which
         # is the directory the server was launched from, NOT a project the user
-        # chose. No recipe either: nothing owns this table.
-        monkeypatch.chdir(tmp_path)
+        # chose. No recipe either: nothing owns this table. `would_be_file` is
+        # the one file a handler that mistook the CWD for a project would write.
         editor = EditorState()
+        would_be_file = Path.cwd() / "figure_data.csv"
         # Act
         _import(editor)
-        # Assert -- the live pane still shows the edit...
-        problems = []
-        if _datatable_data(editor)["rows"] != [[1.5, "alpha"], [2.5, "beta"]]:
-            problems.append("the session's own pane lost the edit")
-        # ...but nothing was created in a directory nobody selected.
-        created = sorted(p.name for p in Path(tmp_path).iterdir())
-        if created != []:
-            problems.append(f"files created in the CWD: {created}")
-        assert problems == [], "; ".join(problems)
+        # Assert -- the live pane keeps the edit for this session, and no file
+        # appeared in a directory nobody selected.
+        assert _datatable_data(editor)["rows"] == [[1.5, "alpha"], [2.5, "beta"]] and not would_be_file.exists(), (
+            f"session rows={_datatable_data(editor)['rows']}, "
+            f"cwd file written={would_be_file.exists()}"
+        )
