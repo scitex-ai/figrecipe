@@ -8,6 +8,8 @@ checkout or a stale bundle).
 
 | File | Shows |
 | --- | --- |
+| `start-empty-project-offer.png` | A brand-new, EMPTY project on load: the canvas offers "Open an example figure" and the disclosure "Show 18 examples". Nothing has been written into the project at this point (the directory listing was empty before and after the load). |
+| `start-explicit-example-open.png` | The same project after that offer was CLICKED: `demo_first_figure.yaml` + `demo_first_figure_data/` now exist, because the user asked for them. Before this change the seeding happened on load instead. |
 | `mobile-390-variant-chooser.png` | 390x844 phone: tapping the rail's **Bar** category opened the variant chooser — "Plot from data columns…", then Bar / Box / Violin with their real gallery thumbnails, plus "See all templates…". |
 | `desktop-1440-variant-chooser.png` | 1440x900: the same chooser for **Special** (Pie, Spectrogram, Event, Graph), placed beside the pointed rail item and clamped inside the viewport. |
 | `data-pane-1440-xy-highlight.png` | Data pane with the loaded table: the X/Y selection marks matching columns (98 marked cells) and the CRUD toolbar (add/delete row, add/rename/delete column) plus Undo are in the pane header. |

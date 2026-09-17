@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Example content and table edits belong to the project, and only on request
+  (Private Beta spec, scitex-hub PR 923).** Two things the editor did to a
+  project behind the user's back, both now explicit and project-scoped.
+  - **No example is seeded into a project by simply opening it.** The
+    empty-canvas surface POSTed `api/gallery/demo` from a mount effect, and the
+    server seeds a demo recipe plus its `<stem>_data/` directory into the
+    workspace — so opening a project created example artifacts nobody asked for
+    (measured: `demo_first_figure.yaml` + `demo_first_figure_data/` appearing in
+    an empty project on load). The example is now OFFERED ("Open an example
+    figure") and written only when that button is pressed; the property "nothing
+    seeds without a user request" is a tested transition table
+    (`Gallery/exampleSeed.ts`), not a comment.
+  - **An edited table is stored in the project, not in the server process.**
+    `datatable/import` (the Data pane's CRUD write path) only set
+    `editor.imported_table` — one attribute on one EditorState — so a restart (or
+    a second process opening the same project) silently lost the user's edits,
+    because the table had never been part of the project. It is now written
+    beside the recipe as `<recipe stem>_data.csv`, under the same name the CSV
+    export offers, and read back from there before the in-memory copy
+    (`source: "project"`). A session whose only candidate directory is the
+    process CWD stores nothing: the server's launch directory is not a project
+    the user selected, and attaching their data to it is the same silent
+    mis-association the rule above forbids.
 - **The editor's five worst UX dead ends, fixed together (data-column and
   plot-variant card, 2026-09-16).** Each was a control that looked live and was
   not: the X/Y badges could not see the table, the table could not be edited,

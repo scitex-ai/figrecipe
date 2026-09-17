@@ -9,14 +9,27 @@
  *
  * The tiles come from the same gallery the plot-type nav opens, so a template
  * added there appears here with no second registration.
+ *
+ * EXPLICIT, never automatic (card figrecipe-data-column-and-plot-variant-ux-20260916,
+ * spec scitex-hub PR 923: "Create or import a project explicitly; never
+ * silently select an example"). This surface used to POST `api/gallery/demo`
+ * on mount, and the server seeds a demo recipe plus its data directory into the
+ * workspace — so merely opening a project wrote example artifacts the user
+ * never asked for. The offer and the seeding are now two steps: the button
+ * below is the only thing that can start a seed (see ./exampleSeed), and the
+ * tiles remain one click away either way.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useGalleryTemplates, flattenTemplates } from "./useGalleryTemplates";
 import { visibleStartTemplates } from "./visibleStartTemplates";
+import {
+  isSeeding as isSeedingState,
+  nextSeedState,
+  offersExampleSeed,
+  type SeedState,
+} from "./exampleSeed";
 import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
-
-let demoAttempted = false;
 
 export function GalleryStart() {
   const { data, loading, failed, thumbnails, addTemplate, openDemoFigure } =
@@ -28,31 +41,22 @@ export function GalleryStart() {
   // kept one click away behind a disclosure instead of all shown at once; the
   // rail remains the persistent primary entry.
   const [examplesExpanded, setExamplesExpanded] = useState(false);
+  // Nothing has asked for the example figure yet, and nothing will on its own.
+  const [seed, setSeed] = useState<SeedState>("idle");
 
-  // Open on a FIGURE, not on a menu.
-  //
-  // A grid of thumbnails is still a chooser: the first screen of a plotting
-  // tool showed no plot, and the data pane next to it read "No tables". So
-  // this asks the server for a demo figure first and only falls back to the
-  // grid when there is none (the workspace already holds the user's own
-  // recipes, or the seed could not be written).
-  //
-  // This component only mounts when the canvas is EMPTY, and the ref makes
-  // it fire once per mount, so it can neither interrupt open work nor loop:
-  // a figure on the canvas unmounts it.
-  const [seeding, setSeeding] = useState(!demoAttempted);
-  const attempted = useRef(false);
-  useEffect(() => {
-    if (attempted.current) return;
-    attempted.current = true;
-    // Once per page load: a failed add remounts this component, and a per-mount
-    // guard alone retried in a tight loop behind the loading overlay.
-    if (demoAttempted) return;
-    demoAttempted = true;
-    void openDemoFigure().finally(() => setSeeding(false));
-  }, [openDemoFigure]);
+  /** The one path into the demo figure: a deliberate click. */
+  const openExampleFigure = () => {
+    setSeed((state) => nextSeedState(state, "user-request"));
+    void openDemoFigure().then((opened) => {
+      setSeed((state) =>
+        nextSeedState(state, opened ? "seed-opened" : "seed-declined"),
+      );
+    });
+  };
 
-  if (loading || seeding) {
+  if (seed === "open") return null;
+
+  if (loading || isSeedingState(seed)) {
     return (
       <div className="gallery-start gallery-start--message">
         <i className="fas fa-spinner fa-spin" />
@@ -98,6 +102,21 @@ export function GalleryStart() {
           {gettext("Click a figure to open its recipe — then edit the data, the style and the layout, and export it publication-ready.")}
         </p>
       </div>
+
+      {/* The example figure is OFFERED here and only opened on this click. The
+          server seeds its recipe and data into the project, so it must never
+          happen because the pane rendered. */}
+      {offersExampleSeed(seed) && (
+        <button
+          type="button"
+          className="gallery-start-demo"
+          onClick={openExampleFigure}
+          title={gettext("Add an example recipe and its data to this project")}
+        >
+          <i className="fas fa-wand-magic-sparkles" />
+          {gettext("Open an example figure")}
+        </button>
+      )}
 
       {examplesExpanded ? (
         <div className="gallery-start-grid">
