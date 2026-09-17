@@ -18,10 +18,9 @@ import matplotlib
 matplotlib.use("Agg")  # before figrecipe: the save path renders
 
 import figrecipe as fr  # noqa: E402
-
 from figrecipe._recorder._lifecycle import (
-    ArtistLifecycleWarning,
     PLOTTING_METHODS,
+    ArtistLifecycleWarning,
     RemovalReport,
     detect_removals,
     minimum_artists_for,

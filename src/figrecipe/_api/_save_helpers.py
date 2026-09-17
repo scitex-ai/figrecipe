@@ -78,7 +78,7 @@ def crop_to_content_bbox(
     from .._utils._crop import crop, mm_to_pixels
 
     try:
-        l, b, w, h = (float(v) for v in content_bbox)
+        left, bottom, width, height = (float(v) for v in content_bbox)
     except (TypeError, ValueError):
         return None
 
@@ -86,11 +86,17 @@ def crop_to_content_bbox(
         img_w, img_h = img.size
 
     # content_bbox is matplotlib y-up; PIL crop box is y-down (origin top-left).
-    # top edge in mpl fraction = b + h ; bottom edge = b.
-    left_px = round(l * img_w) - mm_to_pixels(margins_mm["left"], dpi)
-    right_px = round((l + w) * img_w) + mm_to_pixels(margins_mm["right"], dpi)
-    upper_px = round((1.0 - (b + h)) * img_h) - mm_to_pixels(margins_mm["top"], dpi)
-    lower_px = round((1.0 - b) * img_h) + mm_to_pixels(margins_mm["bottom"], dpi)
+    # top edge in mpl fraction = bottom + height; bottom edge = bottom.
+    left_px = round(left * img_w) - mm_to_pixels(margins_mm["left"], dpi)
+    right_px = round((left + width) * img_w) + mm_to_pixels(
+        margins_mm["right"], dpi
+    )
+    upper_px = round((1.0 - (bottom + height)) * img_h) - mm_to_pixels(
+        margins_mm["top"], dpi
+    )
+    lower_px = round((1.0 - bottom) * img_h) + mm_to_pixels(
+        margins_mm["bottom"], dpi
+    )
 
     if right_px - left_px <= 0 or lower_px - upper_px <= 0:
         return None

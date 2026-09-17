@@ -10,10 +10,7 @@ import warnings
 import numpy as np
 import pytest
 
-from figrecipe._recorder._utils import (
-    UnrecordableArgumentWarning,
-    _process_scalar,
-)
+from figrecipe._recorder._utils import _process_scalar
 
 
 def _is_native(value):

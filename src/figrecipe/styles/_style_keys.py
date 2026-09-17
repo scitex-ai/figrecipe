@@ -24,7 +24,7 @@ the repo's expression tests.
 
 import warnings
 from difflib import get_close_matches
-from typing import Any, Dict, Iterable, List, Mapping, Tuple
+from typing import Any, Dict, Iterable, List, Mapping
 
 
 class UnknownStyleKeyWarning(UserWarning):
