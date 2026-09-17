@@ -11,6 +11,7 @@ import { useContextMenu } from "../../hooks/useContextMenu";
 import { CANVAS_H, CANVAS_W, DPI } from "../../hooks/useSnap";
 import { useEditorStore } from "../../store/useEditorStore";
 import { ContextMenu } from "../ContextMenu/ContextMenu";
+import { CanvasGrid } from "./CanvasGrid";
 import { PlacedFigure } from "./PlacedFigure";
 import { HorizontalRuler, VerticalRuler } from "./Rulers";
 import { SnapGuides } from "./SnapGuides";
@@ -76,12 +77,28 @@ export function Canvas() {
     }
   }, [placedFigures.length, zoomToFit]);
 
-  // Mousedown on empty canvas → start marquee or deselect on click
+  // Mousedown on empty canvas → the view pans (useZoomPan reads the same
+  // mousedown). Shift+left-drag keeps the marquee for rubber-band selection, and
+  // a plain click (no movement) still clears the figure selection the way the
+  // marquee's click branch used to.
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
       // Only start on the canvas itself, not on child elements
       if (e.target !== e.currentTarget) return;
+
+      if (!e.shiftKey) {
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const handleUp = (ev: MouseEvent) => {
+          document.removeEventListener("mouseup", handleUp);
+          if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < 4) {
+            selectFigure(null);
+          }
+        };
+        document.addEventListener("mouseup", handleUp);
+        return;
+      }
 
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const startX = (e.clientX - rect.left) / zoom;
@@ -208,6 +225,8 @@ export function Canvas() {
           onMouseDown={handleCanvasMouseDown}
           onContextMenu={handleCanvasContextMenu}
         >
+          {/* Grid first: it is the page ruling, everything else sits on it */}
+          <CanvasGrid zoom={zoom} dark={darkMode} />
           {placedFigures.length === 0 ? (
             <div className="canvas-empty">
               <p>{gettext("No figure loaded")}</p>

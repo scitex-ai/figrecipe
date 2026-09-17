@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The editor's five worst UX dead ends, fixed together (data-column and
+  plot-variant card, 2026-09-16).** Each was a control that looked live and was
+  not: the X/Y badges could not see the table, the table could not be edited,
+  the hitmap could not select, the canvas could not be dragged, and a plot-type
+  category could not show which variants it holds.
+  - **X/Y columns are highlighted in the table, in both directions.** Clicking a
+    column header (or any cell) selects that column for the plot and moves the
+    X/Y badges; toggling a badge — or merely hovering it — lights up that
+    column's header and cells. The mark carries a role attribute and the letter
+    `X`/`Y`, so it is not colour alone.
+  - **The Data pane edits the table for real, and a delete is undoable.** Insert
+    and delete rows, add/rename/delete columns, edit cells — persisted through
+    the existing `datatable/import` write path, so a reload shows the change. An
+    Undo button and Ctrl+Z (only while the pane was the last thing touched, so a
+    single keystroke never undoes the canvas too) restore the exact previous
+    table; the last remaining column requires an explicit confirm.
+  - **Plot elements are selectable through the hitmap.** Clicking resolves the
+    element under the cursor and selects it visibly; background and Escape clear
+    it; arrow keys plus Enter select from the keyboard. A not-yet-loaded or
+    resized raster is a no-op rather than a thrown canvas.
+  - **The canvas pans by drag and by touch, and shows a grid.** Left-drag or one
+    finger pans, two fingers pinch about the centroid, and Ctrl+wheel / middle /
+    right-drag are unchanged; the grid is a zoom-aware 1-2-5 mm ladder that pans
+    and scales with the page instead of a fixed CSS pattern. A drag that starts
+    on a figure still moves the figure — the marquee that used to own plain
+    left-drag now takes Shift+left-drag.
+  - **Pointing at a plot type shows its variants as thumbnails.** The rail's
+    read-only example list became a chooser: hover/focus on a fine pointer, tap
+    on a touch screen, one click to add a variant, plus "See all templates…" and
+    (with a table loaded) "Plot from data columns…". On touch the chooser takes
+    the tap that used to jump to the Data pane, which is why it carries that
+    route itself.
+
 ### Fixed
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather

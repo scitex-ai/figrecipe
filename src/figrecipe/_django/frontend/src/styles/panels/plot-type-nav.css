@@ -1,11 +1,11 @@
 /* Plot Type Nav — figrecipe-specific overrides.
  * Base styles come from scitex-ui's shared selector-nav.css.
- * Only the count badge and the rail wrapper + hover preview are app-specific.
+ * Only the count badge, the rail wrapper and the variant chooser are
+ * app-specific.
  */
 
-/* Wrapper for the fixed-width rail; position:relative anchors the hover
-   preview. width:56 matches the SelectorNav so the plot tab row layout is
-   unchanged. */
+/* Wrapper for the fixed-width rail. width:56 matches the SelectorNav so the
+   plot tab row layout is unchanged. */
 .plot-type-nav {
   position: relative;
   display: flex;
@@ -32,47 +32,134 @@
   border-radius: 10px;
 }
 
-/* TODO 130 — read-only hover preview of the pointed family's examples.
-   Sits just right of the rail, vertically centered. pointer-events:none so it
-   never intercepts the rail's own hover/click (hovering the panel itself keeps
-   the rail item hovered). */
-.plot-type-nav__hover {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 40;
-  min-width: 148px;
-  max-width: 220px;
-  padding: 8px 10px;
+/* TODO 130 (figrecipe-data-column-and-plot-variant-ux-20260916) — the pointed
+   category's VARIANTS as a thumbnail chooser. Unlike the read-only list it
+   replaces, it is interactive (a variant can be added from it), so
+   pointer-events stay on. It is portalled to <body> and positioned inline by
+   Gallery/variantChooser.chooserPlacement, hence position:fixed with no
+   left/top of its own — an absolutely-positioned panel inside the scrolling
+   phone layout was clipped and peeked out behind other sections. */
+.plot-type-nav__chooser {
+  position: fixed;
+  z-index: 60; /* above the panes, below the gallery modal */
+  width: 248px;
+  max-width: calc(100vw - 16px);
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
   background: var(--vis-bg-elevated, #1c2128);
   border: 1px solid var(--vis-border, #30363d);
   border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  outline: none;
 }
 
-.plot-type-nav__hover-label {
+.plot-type-nav__chooser:focus-visible {
+  border-color: var(--vis-accent, #58a6ff);
+}
+
+.plot-type-nav__chooser-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.plot-type-nav__chooser-title {
+  flex: 1 1 auto;
   font-size: 11px;
   font-weight: 600;
   color: var(--vis-text-primary, #e6edf3);
-  margin-bottom: 4px;
   text-transform: capitalize;
 }
 
-.plot-type-nav__hover-list {
+.plot-type-nav__chooser-close {
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  background: none;
+  border: 0;
+  color: var(--vis-text-secondary, #c9d1d9);
+  cursor: pointer;
+}
+
+.plot-type-nav__chooser-close:hover {
+  color: var(--vis-text-primary, #e6edf3);
+}
+
+/* The list scrolls inside the placement's maxHeight, so a category with many
+   variants never runs off the viewport. */
+.plot-type-nav__chooser-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--vis-text-secondary, #c9d1d9);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-@media (max-width: 768px) {
-  /* On narrow screens the panel would overflow the viewport; keep it but cap
-     its width and anchor from the left edge so it stays readable. */
-  .plot-type-nav__hover {
-    max-width: 180px;
-  }
+.plot-type-nav__chooser-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--vis-text-secondary, #c9d1d9);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.plot-type-nav__chooser-item:hover,
+.plot-type-nav__chooser-item.is-active {
+  background: rgba(88, 166, 255, 0.12);
+  border-color: rgba(88, 166, 255, 0.5);
+  color: var(--vis-text-primary, #e6edf3);
+}
+
+.plot-type-nav__chooser-thumb {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--vis-bg-canvas, #0d1117);
+  border-radius: 4px;
+}
+
+.plot-type-nav__chooser-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.plot-type-nav__chooser-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The "plot from data columns" route: the gesture the tap used to perform with
+   a table loaded, so it sits above the variants and reads as an action. */
+.plot-type-nav__chooser-item--data {
+  margin-bottom: 4px;
+  border-color: var(--vis-border, #30363d);
+  color: var(--vis-text-primary, #e6edf3);
+}
+
+.plot-type-nav__chooser-more {
+  margin-top: 6px;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  color: var(--vis-accent, #58a6ff);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
 }

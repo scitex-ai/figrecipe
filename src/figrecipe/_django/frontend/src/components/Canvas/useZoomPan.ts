@@ -1,19 +1,39 @@
 /**
- * Zoom/pan hook — exact port of vis_app ZoomPanManager + RulersManager dragging.
+ * Zoom/pan hook — exact port of vis_app ZoomPanManager + RulersManager dragging,
+ * extended with the gestures that were missing: left-drag pan on the canvas body
+ * and the touch gestures (one finger pans, two fingers pinch/pan).
  *
  * Ctrl+Wheel: zoom to cursor position (vis_app: 0.999 ** deltaY)
+ * Left-drag on empty canvas: pan (grab/grabbing cursor) — a drag that starts on
+ *   a figure moves the figure instead (useDrag owns it), and Shift+left-drag on
+ *   the page keeps the marquee
  * Middle-mouse drag: pan
  * Right-click drag (>3px): pan
  * Ruler drag (left-click on ruler): pan (grab/grabbing cursor)
+ * Touch: one finger pans, two fingers pinch-zoom about their centroid
  * Alt modifier: 10% speed pan (vis_app RulersManager)
  * Double-click on ruler: reset pan to origin
  * Double right-click: reset view
  *
  * Initial zoom: 0.22 (vis_app CANVAS_CONSTANTS)
  * Transform: translate(panX, panY) scale(zoom) on .vis-rulers-area
+ *
+ * The pan/zoom arithmetic itself lives in ./canvasPan (React-free, tested under
+ * node --experimental-strip-types); this hook is the DOM glue around it.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  MIN_ZOOM,
+  applyPan,
+  canStartCanvasPan,
+  clampZoom,
+  panDelta,
+  pinchUpdate,
+  pointerKindOf,
+  sanitizeView,
+} from "./canvasPan";
+import type { GestureOrigin, PinchStart, Point } from "./canvasPan";
 
 interface ZoomPanState {
   zoom: number;
@@ -22,9 +42,25 @@ interface ZoomPanState {
 }
 
 const INITIAL_ZOOM = 0.22; // vis_app: canvasZoomLevel = 0.22
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 5.0;
 const ZOOM_SENSITIVITY = 0.999; // vis_app: 0.999 ** deltaY
+
+/** Which surface a pointerdown landed on.
+ *
+ * WHY this has to be read from the target: the same canvas hosts figure drags
+ * (useDrag), the marquee (React onMouseDown on the page) and the ruler drag (its
+ * own React handlers), and stopPropagation() from those handlers cannot reach
+ * this element's native listeners — they run earlier, during the native bubble.
+ * So the region that was grabbed decides, not the button. */
+function gestureOriginOf(target: EventTarget | null): GestureOrigin {
+  if (!(target instanceof Element)) return "board";
+  // Rulers first: they sit in the same grid as the page but pan by themselves.
+  if (target.closest(".ruler")) return "ruler";
+  if (target.closest(".placed-figure")) return "figure";
+  // The context menu floats over the board and owns its clicks.
+  if (target.closest(".context-menu")) return "widget";
+  if (target.closest(".vis-canvas-container")) return "page";
+  return "board";
+}
 
 export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
   const [state, setState] = useState<ZoomPanState>({
@@ -43,6 +79,13 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
   const panStart = useRef({ x: 0, y: 0 });
   const rightClickStart = useRef<{ x: number; y: number } | null>(null);
   const didDragPan = useRef(false); // Track if right-click resulted in pan drag
+
+  // Touch/pen gesture state. Tracked by pointerId so one finger pans and two
+  // pinch; the mouse deliberately does NOT come through here (it keeps the
+  // mousemove path below, and handling both would pan twice per frame).
+  const activePointers = useRef(new Map<number, Point>());
+  const panPointerId = useRef<number | null>(null);
+  const pinch = useRef<PinchStart | null>(null);
 
   // Zoom accumulator for rAF throttling
   const zoomDelta = useRef(0);
@@ -66,8 +109,7 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
 
     const s = stateRef.current;
     const oldZoom = s.zoom;
-    let newZoom = oldZoom * ZOOM_SENSITIVITY ** zoomDelta.current;
-    newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    const newZoom = clampZoom(oldZoom * ZOOM_SENSITIVITY ** zoomDelta.current);
 
     const ratio = newZoom / oldZoom;
     const mx = zoomMousePos.current.x;
@@ -112,9 +154,19 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     [containerRef, applyZoom],
   );
 
-  // Mouse down → start pan (middle button or right button)
+  // Mouse down → start pan (left on the empty canvas, middle button, right button)
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
+      // Left mouse button → pan, unless the gesture belongs to a figure or to
+      // the marquee (see canStartCanvasPan).
+      if (
+        e.button === 0 &&
+        canStartCanvasPan(gestureOriginOf(e.target), { kind: "mouse", button: 0, shiftKey: e.shiftKey })
+      ) {
+        e.preventDefault(); // don't start a text selection while dragging
+        startPanning(e.clientX, e.clientY);
+        return;
+      }
       // Middle mouse button
       if (e.button === 1) {
         e.preventDefault();
@@ -130,24 +182,14 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
 
   // vis_app incremental pan: delta each frame, Alt = 10% speed
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    // Active panning (middle-mouse, right-drag, or ruler drag)
+    // Active panning (left-drag, middle-mouse, right-drag, or ruler drag)
     if (isPanningRef.current) {
-      let deltaX = e.clientX - panStart.current.x;
-      let deltaY = e.clientY - panStart.current.y;
-
-      if (e.altKey) {
-        deltaX *= 0.1;
-        deltaY *= 0.1;
-      }
+      const delta = panDelta(panStart.current, { x: e.clientX, y: e.clientY }, e.altKey);
 
       // Update start point for next frame (vis_app incremental approach)
       panStart.current = { x: e.clientX, y: e.clientY };
 
-      setState((s) => ({
-        ...s,
-        panX: s.panX + deltaX,
-        panY: s.panY + deltaY,
-      }));
+      setState((s) => applyPan(s, delta));
       return;
     }
 
@@ -186,12 +228,95 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     }
   }, []);
 
+  // ── Touch / pen gestures (Pointer Events) ─────────────────────────────
+  //
+  // One finger pans exactly like a mouse drag (same delta -> same pan, because
+  // both go through canvasPan); a second finger turns the gesture into a pinch
+  // that zooms about the fingers' centroid and pans with it. touch-action: none
+  // on .canvas-outer (canvas.css) is what stops the browser from scrolling the
+  // pane out from under us and delivering a pointercancel instead.
+
+  const secondPointerDown = useCallback(() => {
+    const points = [...activePointers.current.values()];
+    if (points.length < 2) return;
+    // Freeze the pinch against the CURRENT view, which may already have been
+    // panned by the first finger: pinchUpdate is absolute from here.
+    pinch.current = { a: points[0], b: points[1], view: stateRef.current };
+    isPanningRef.current = false;
+    setIsPanning(false);
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: PointerEvent) => {
+      const kind = pointerKindOf(e.pointerType);
+      if (kind === "mouse") return; // the mouse keeps its own mousemove path
+      if (!canStartCanvasPan(gestureOriginOf(e.target), { kind, button: e.button })) {
+        return;
+      }
+      // Also suppresses the compatibility mouse events, so a touch on the empty
+      // canvas cannot fall through to the marquee or to a figure drag.
+      e.preventDefault();
+
+      activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activePointers.current.size === 1) {
+        panPointerId.current = e.pointerId;
+        startPanning(e.clientX, e.clientY);
+      } else if (activePointers.current.size === 2) {
+        secondPointerDown();
+      }
+    },
+    [secondPointerDown, startPanning],
+  );
+
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (pointerKindOf(e.pointerType) === "mouse") return;
+    if (!activePointers.current.has(e.pointerId)) return;
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pinch.current && activePointers.current.size >= 2) {
+      const points = [...activePointers.current.values()];
+      setState(pinchUpdate(pinch.current, points[0], points[1]));
+      return;
+    }
+
+    if (panPointerId.current === e.pointerId && isPanningRef.current) {
+      const delta = panDelta(panStart.current, { x: e.clientX, y: e.clientY });
+      panStart.current = { x: e.clientX, y: e.clientY };
+      setState((s) => applyPan(s, delta));
+    }
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: PointerEvent) => {
+      if (pointerKindOf(e.pointerType) === "mouse") return;
+      if (!activePointers.current.delete(e.pointerId)) return;
+
+      const remaining = [...activePointers.current.entries()];
+      if (remaining.length === 0) {
+        panPointerId.current = null;
+        pinch.current = null;
+        stopPanning();
+        return;
+      }
+      // Pinch → one finger left: re-anchor on the remaining finger, or the view
+      // would jump by however far the two fingers had travelled apart.
+      panPointerId.current = remaining[0][0];
+      pinch.current = null;
+      startPanning(remaining[0][1].x, remaining[0][1].y);
+    },
+    [startPanning, stopPanning],
+  );
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     el.addEventListener("wheel", handleWheel, { passive: false });
     el.addEventListener("mousedown", handleMouseDown);
+    el.addEventListener("pointerdown", handlePointerDown);
+    el.addEventListener("pointermove", handlePointerMove);
+    el.addEventListener("pointerup", handlePointerUp);
+    el.addEventListener("pointercancel", handlePointerUp);
     el.addEventListener("contextmenu", handleContextMenu);
     el.addEventListener("auxclick", handleDblClick);
     window.addEventListener("mousemove", handleMouseMove);
@@ -200,6 +325,10 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     return () => {
       el.removeEventListener("wheel", handleWheel);
       el.removeEventListener("mousedown", handleMouseDown);
+      el.removeEventListener("pointerdown", handlePointerDown);
+      el.removeEventListener("pointermove", handlePointerMove);
+      el.removeEventListener("pointerup", handlePointerUp);
+      el.removeEventListener("pointercancel", handlePointerUp);
       el.removeEventListener("contextmenu", handleContextMenu);
       el.removeEventListener("auxclick", handleDblClick);
       window.removeEventListener("mousemove", handleMouseMove);
@@ -210,6 +339,9 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     containerRef,
     handleWheel,
     handleMouseDown,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
     handleMouseMove,
     handleMouseUp,
     handleContextMenu,
@@ -241,14 +373,14 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
   const zoomIn = useCallback(() => {
     setState((s) => ({
       ...s,
-      zoom: Math.min(MAX_ZOOM, s.zoom * 1.2),
+      zoom: clampZoom(s.zoom * 1.2),
     }));
   }, []);
 
   const zoomOut = useCallback(() => {
     setState((s) => ({
       ...s,
-      zoom: Math.max(MIN_ZOOM, s.zoom / 1.2),
+      zoom: clampZoom(s.zoom / 1.2),
     }));
   }, []);
 
@@ -263,7 +395,7 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
       const ch = contentHeight ?? 2953;
       const zoomX = containerWidth / cw;
       const zoomY = containerHeight / ch;
-      const fitZoom = Math.max(Math.min(zoomX, zoomY, 1.0), 0.1);
+      const fitZoom = Math.max(Math.min(zoomX, zoomY, 1.0), MIN_ZOOM);
       setState({ zoom: fitZoom, panX: 0, panY: 0 });
     },
     [containerRef],
@@ -273,10 +405,14 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     setState({ zoom: INITIAL_ZOOM, panX: 0, panY: 0 });
   }, []);
 
+  // Never hand a non-finite transform to the DOM: translate(NaNpx) drops the
+  // whole rulers/canvas layer, and the grid ladder would degenerate with it.
+  const view = sanitizeView(state);
+
   return {
-    zoom: state.zoom,
-    panX: state.panX,
-    panY: state.panY,
+    zoom: view.zoom,
+    panX: view.panX,
+    panY: view.panY,
     isPanning,
     zoomIn,
     zoomOut,
@@ -285,7 +421,7 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     handleRulerMouseDown,
     handleRulerDoubleClick,
     transformStyle: {
-      transform: `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`,
+      transform: `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`,
       transformOrigin: "0 0",
     } as React.CSSProperties,
   };

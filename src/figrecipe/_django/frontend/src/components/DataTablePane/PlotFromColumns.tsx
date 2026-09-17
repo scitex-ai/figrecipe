@@ -13,6 +13,7 @@ import {
   reconcileSelection,
   type ColumnSelection,
 } from "./columnPlotSelection";
+import { selectionAfterColumnClick } from "./dataColumnHighlight";
 import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 function kindLabel(id: string): string {
@@ -32,7 +33,28 @@ function kindLabel(id: string): string {
   }
 }
 
-export function PlotFromColumns({ tab }: { tab: TabData }) {
+/** A click on a table column, sent down by the Data pane. `nonce` re-arms a
+ * repeat click on the column that is already selected. */
+export interface ColumnClickCommand {
+  name: string;
+  nonce: number;
+}
+
+interface PlotFromColumnsProps {
+  tab: TabData;
+  /** Set when the user clicks a table column header or cell. */
+  columnCommand?: ColumnClickCommand | null;
+  /** Mirrors the badge state up so the pane can highlight the table column each
+   * badge names. Pass a stable setter (not an inline arrow): the pane's model
+   * and this form must not ping-pong. */
+  onSelectionChange?: (selection: ColumnSelection) => void;
+}
+
+export function PlotFromColumns({
+  tab,
+  columnCommand,
+  onSelectionChange,
+}: PlotFromColumnsProps) {
   const { showToast, refreshAfterMutation, loadDatatable, plotFamily } =
     useEditorStore();
   const [selection, setSelection] = useState<ColumnSelection>(() =>
@@ -44,6 +66,17 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
   useEffect(() => {
     setSelection((s) => reconcileSelection(s, tab.columns, tab.rows));
   }, [columnKey]); // the column set, not every row edit
+
+  // A click in the table is a badge gesture: an X-column sets X, a Y-column
+  // toggles Y — the same rule the chips and the select follow.
+  useEffect(() => {
+    if (!columnCommand) return;
+    setSelection((s) => selectionAfterColumnClick(s, columnCommand.name));
+  }, [columnCommand]);
+
+  useEffect(() => {
+    onSelectionChange?.(selection);
+  }, [selection, onSelectionChange]);
 
   const kind = kindForFamily(plotFamily);
   const request = useMemo(
@@ -100,8 +133,12 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
       {kind?.usesX && (
         <label className="plot-from-columns__group">
           <span className="plot-from-columns__legend">{gettext("X column")}</span>
+          {/* data-column/data-role is how the Data pane finds the badge under
+              the pointer and highlights the table column it names. */}
           <select
             className="plot-from-columns__select"
+            data-role="x"
+            data-column={selection.x ?? ""}
             value={selection.x ?? ""}
             onChange={(e) =>
               setSelection((s) => ({ ...s, x: e.target.value || null }))
@@ -109,7 +146,7 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
           >
             <option value="">{gettext("Row number")}</option>
             {tab.columns.map((c) => (
-              <option key={c.name} value={c.name}>
+              <option key={c.name} value={c.name} data-role="x" data-column={c.name}>
                 {c.name}
               </option>
             ))}
@@ -127,6 +164,8 @@ export function PlotFromColumns({ tab }: { tab: TabData }) {
                 key={c.name}
                 type="button"
                 aria-pressed={selection.ys.includes(c.name)}
+                data-role="y"
+                data-column={c.name}
                 className={`plot-from-columns__chip${selection.ys.includes(c.name) ? " active" : ""}`}
                 onClick={() => toggleY(c.name)}
               >

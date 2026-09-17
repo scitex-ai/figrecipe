@@ -110,11 +110,11 @@ export function CanvasPane() {
             <i className="fas fa-compress-arrows-alt" />
           </button>
 
-          {/* Hitmap */}
+          {/* Hitmap — also the entry point for selecting a plot element */}
           <button
             className={`pane-header-btn${showHitmap ? " pane-header-btn--active" : ""}`}
             type="button"
-            title={gettext("Toggle hit regions (debug)")}
+            title={gettext("Toggle hit regions — click a plot element to select it")}
             onClick={toggleHitmap}
           >
             <i className="fas fa-bullseye" />

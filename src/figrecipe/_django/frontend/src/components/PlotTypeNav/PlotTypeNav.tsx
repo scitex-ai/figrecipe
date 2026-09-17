@@ -9,12 +9,16 @@
  * data still loading) fall back to opening the gallery, which shows ONLY the
  * chosen family (TODO 128 — no 'All'/re-choose), exactly as before.
  *
- * TODO 130 — informational HOVER panel: on hover/focus of a rail item, a
- * small panel to its right previews that family's related examples (e.g. hover
- * "Line" -> "Line, Fill Between, Stack"). It is READ-ONLY and purely
- * informational: hovering neither selects nor opens the gallery, and the panel
- * itself is not clickable. It complements the click behavior (#128/#129) rather
- * than replacing it.
+ * TODO 130 (upgraded by figrecipe-data-column-and-plot-variant-ux-20260916) —
+ * POINTING at a rail item reveals that category's VARIANTS as a thumbnail
+ * chooser (VariantChooser). The old panel listed the variant labels
+ * read-only; a label names a variant but the variants are pictures, so the
+ * panel now shows the same thumbnails the gallery uses and a variant can be
+ * added straight from it, without the round trip through the gallery modal.
+ * The reveal gesture follows the input device: hover/focus on a fine pointer,
+ * TAP on a touch screen (where a hover cannot be held). Which gesture, which
+ * variants and where the panel may sit are pure decisions in
+ * Gallery/variantChooser — this file only wires them to the rail.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -23,12 +27,21 @@ import { SelectorNav } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app
 import type { SelectorNavItem } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryPanel } from "../Gallery/GalleryPanel";
-import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
+import { CATEGORY_LABELS, useGalleryTemplates } from "../Gallery/useGalleryTemplates";
 import { singleFamilyTemplate } from "../Gallery/singleFamilyTemplate";
-import { familyExampleLabels, familyHasExamples } from "../Gallery/familyExamples";
+import { VariantChooser } from "../Gallery/VariantChooser";
+import {
+  chooserAvailable,
+  chooserOffersDataRoute,
+  revealMode,
+  variantChoices,
+  type AnchorRect,
+  type PointerCaps,
+  type VariantChoice,
+} from "../Gallery/variantChooser";
 import { kindForFamily } from "../DataTablePane/columnPlotSelection";
 import { showEditorPane } from "../mobilePanes";
-import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, gettext_noop } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 export const PLOT_TYPES: SelectorNavItem[] = [
   { id: "line", icon: "fas fa-chart-line", label: gettext_noop("Line") },
@@ -43,23 +56,126 @@ export const PLOT_TYPES: SelectorNavItem[] = [
   { id: "special", icon: "fas fa-shapes", label: gettext_noop("Special") },
 ];
 
+/** The rail item's box, for anchoring the chooser. */
+function rectOf(el: Element): AnchorRect {
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+}
+
+/** How this device reveals the chooser (hover vs tap). Read from matchMedia;
+ * without it, assume a mouse rather than stranding a desktop user behind a
+ * gesture they cannot perform. */
+function usePointerCaps(): PointerCaps {
+  const read = (): PointerCaps => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return { hover: true, coarse: false };
+    }
+    return {
+      hover: window.matchMedia("(hover: hover)").matches,
+      coarse: window.matchMedia("(pointer: coarse)").matches,
+    };
+  };
+  const [caps, setCaps] = useState<PointerCaps>(read);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const queries = [
+      window.matchMedia("(hover: hover)"),
+      window.matchMedia("(pointer: coarse)"),
+    ];
+    const onChange = () => setCaps(read());
+    queries.forEach((m) => m.addEventListener("change", onChange));
+    return () => queries.forEach((m) => m.removeEventListener("change", onChange));
+  }, []);
+  return caps;
+}
+
+/** Time the panel survives the pointer leaving the rail, so crossing the gap
+ * into the panel does not close it. */
+const CLOSE_DELAY_MS = 140;
+
+interface Reveal {
+  family: string;
+  anchor: AnchorRect;
+  /** Tap-revealed: stays until dismissed. Hover-revealed: closes on leave. */
+  pinned: boolean;
+}
+
 export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, string | number> }) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryFamily, setGalleryFamily] = useState<string | undefined>();
-  const [hoveredFamily, setHoveredFamily] = useState<string | null>(null);
+  const [reveal, setReveal] = useState<Reveal | null>(null);
   const { placedFigures, plotFamily, setPlotFamily, datatableTabs, activeTabId } =
     useEditorStore();
-  const { data, addTemplate } = useGalleryTemplates();
+  const { data, thumbnails, addTemplate } = useGalleryTemplates();
   const activeTable = activeTabId ? datatableTabs[activeTabId] : null;
+  const mode = revealMode(usePointerCaps());
+
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const closeTimer = useRef<number | null>(null);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }, []);
+
+  const closeReveal = useCallback(() => {
+    cancelClose();
+    setReveal(null);
+  }, [cancelClose]);
+
+  const scheduleClose = useCallback(() => {
+    cancelClose();
+    // A pinned (tap) panel is dismissed by a click/Escape, never by a timer.
+    if (reveal?.pinned) return;
+    closeTimer.current = window.setTimeout(() => setReveal(null), CLOSE_DELAY_MS);
+  }, [cancelClose, reveal?.pinned]);
+
+  useEffect(() => cancelClose, [cancelClose]);
+
+  /** The rail item for a family, for anchoring the chooser. */
+  const anchorForFamily = useCallback((family: string): AnchorRect => {
+    const idx = PLOT_TYPES.findIndex((p) => p.id === family);
+    const item = navRef.current?.querySelectorAll(".stx-app-selector-nav__item")[idx];
+    return item
+      ? rectOf(item)
+      : { top: 56, left: 0, right: 56, bottom: 96, width: 56, height: 40 };
+  }, []);
+
+  const familyLabel = useCallback((family: string): string => {
+    const labelled = CATEGORY_LABELS[family]?.label ?? PLOT_TYPES.find((p) => p.id === family)?.label;
+    return labelled ? gettext(labelled) : family;
+  }, []);
+
+  const plotFromData = useCallback(() => {
+    // The family is already in the store; the Data pane's column form reads it.
+    showEditorPane("data");
+    document
+      .querySelector(".plot-from-columns")
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, []);
+
+  const canPlotFromData = (family: string): boolean =>
+    Boolean(
+      activeTable && activeTable.columns.length > 0 && kindForFamily(family),
+    );
 
   const selectFamily = (id: string) => {
     setPlotFamily(id);
+    // Touch: a category holding SEVERAL variants opens its thumbnail chooser
+    // first. Because the tap is now spent on the chooser, the chooser itself
+    // carries the "plot from data columns" route when the category can be
+    // plotted from the loaded table — otherwise the tap gesture would be a dead
+    // end for a phone user with a table.
+    if (mode === "tap" && variantChoices(data, id).length >= 2) {
+      setReveal({ family: id, anchor: anchorForFamily(id), pinned: true });
+      return;
+    }
     // With a table loaded, the rail picks the type the Data pane plots with.
-    if (activeTable && activeTable.columns.length > 0 && kindForFamily(id)) {
-      showEditorPane("data");
-      document
-        .querySelector(".plot-from-columns")
-        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (canPlotFromData(id)) {
+      closeReveal();
+      plotFromData();
       return;
     }
     // One operation (TODO 129): a single-template family adds its plot directly.
@@ -74,47 +190,79 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
     setGalleryOpen(true);
   };
 
-  // TODO 130 — delegate hover/focus on the SelectorNav container to find which
-  // family is pointed at (the scitex-ui items are <button>s in PLOT_TYPES order,
-  // and carry no data-id, so we map by index). The panel is informational only.
-  const navRef = useRef<HTMLDivElement | null>(null);
-  const onItemHover = useCallback((familyId: string | null) => {
-    setHoveredFamily(familyId);
-  }, []);
+  const chooseVariant = (choice: VariantChoice) => {
+    const family = reveal?.family;
+    // Keep using the gallery's own objects, so adding a variant is the same code
+    // path as adding any other template (copy + open as an editable recipe).
+    const template =
+      (family ? variantChoices(data, family).find((t) => t.name === choice.name) : undefined) ??
+      choice;
+    void addTemplate(template).then((ok) => {
+      if (!ok) return;
+      closeReveal();
+      showEditorPane("figure");
+    });
+  };
+
+  const seeAllTemplates = () => {
+    const family = reveal?.family;
+    closeReveal();
+    if (!family) return;
+    setGalleryFamily(family);
+    setGalleryOpen(true);
+  };
+
+  // TODO 130 — hover/focus tracking on the SelectorNav container: the scitex-ui
+  // items are <button>s in PLOT_TYPES order and carry no data-id, so we map by
+  // index. The chooser is revealed, not selection: pointing at a family never
+  // adds a plot by itself.
   useEffect(() => {
     const root = navRef.current;
     if (!root) return;
-    const itemAt = (e: Event): string | null => {
+    const infoAt = (e: Event): Reveal | null => {
       const el = e.target as HTMLElement | null;
       const item = el?.closest?.(".stx-app-selector-nav__item") as HTMLElement | null;
       if (!item) return null;
       const idx = [...root.querySelectorAll(".stx-app-selector-nav__item")].indexOf(item);
       const t = PLOT_TYPES[idx];
-      return t ? t.id : null;
+      return t ? { family: t.id, anchor: rectOf(item), pinned: false } : null;
     };
-    const over = (e: Event) => onItemHover(itemAt(e));
-    const leave = () => onItemHover(null);
-    const focusin = (e: Event) => onItemHover(itemAt(e));
-    const focusout = () => onItemHover(null);
-    root.addEventListener("mouseover", over);
+    const hover = (e: Event) => {
+      if (mode !== "hover") return; // touch: the tap on the rail reveals it
+      const info = infoAt(e);
+      if (!info) return;
+      if (!chooserAvailable(data, info.family)) return;
+      cancelClose();
+      setReveal((cur) =>
+        cur?.family === info.family && cur.pinned ? cur : { ...info, anchor: info.anchor },
+      );
+    };
+    const leave = () => scheduleClose();
+    const focusin = (e: Event) => {
+      const info = infoAt(e);
+      if (!info || !chooserAvailable(data, info.family)) return;
+      cancelClose();
+      setReveal(info);
+    };
+    const focusout = (e: Event) => {
+      // Tabbing INTO the chooser leaves the rail: keep the panel open, or a
+      // keyboard user could never reach the variants.
+      const next = (e as FocusEvent).relatedTarget as Node | null;
+      const panel = document.querySelector(".plot-type-nav__chooser");
+      if (next && panel?.contains(next)) return;
+      scheduleClose();
+    };
+    root.addEventListener("mouseover", hover);
     root.addEventListener("mouseleave", leave);
     root.addEventListener("focusin", focusin);
     root.addEventListener("focusout", focusout);
     return () => {
-      root.removeEventListener("mouseover", over);
+      root.removeEventListener("mouseover", hover);
       root.removeEventListener("mouseleave", leave);
       root.removeEventListener("focusin", focusin);
       root.removeEventListener("focusout", focusout);
     };
-  }, [onItemHover]);
-
-  const hoveredPlotType = PLOT_TYPES.find((p) => p.id === hoveredFamily);
-  const hoveredFamilyLabel = hoveredPlotType ? gettext(hoveredPlotType.label) : hoveredFamily;
-
-  const hoverLabels =
-    hoveredFamily && familyHasExamples(data, hoveredFamily)
-      ? familyExampleLabels(data, hoveredFamily)
-      : null;
+  }, [mode, data, cancelClose, scheduleClose]);
 
   return (
     <div className="plot-type-nav" {...paneAttrs}>
@@ -132,19 +280,33 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
         />
       </div>
 
-      {/* TODO 130 — read-only hover preview of the pointed family's examples.
-          pointer-events:none so it never intercepts the rail's own hover/click. */}
-      {hoverLabels && hoveredFamily && (
-        <div className="plot-type-nav__hover" aria-hidden="true">
-          <div className="plot-type-nav__hover-label">
-            {interpolate(gettext("%s examples"), [hoveredFamilyLabel])}
-          </div>
-          <ul className="plot-type-nav__hover-list">
-            {hoverLabels.map((lbl) => (
-              <li key={lbl}>{lbl}</li>
-            ))}
-          </ul>
-        </div>
+      {/* The category's variants as thumbnails, revealed by pointing at (or
+          tapping) a rail item. Portalled: inside the scrolling phone layout an
+          in-flow panel was clipped and peeked out behind other sections. */}
+      {reveal && (
+        <VariantChooser
+          anchor={reveal.anchor}
+          familyLabel={familyLabel(reveal.family)}
+          choices={variantChoices(data, reveal.family)}
+          thumbnails={thumbnails}
+          pinned={reveal.pinned}
+          onChoose={chooseVariant}
+          onSeeAll={seeAllTemplates}
+          onPlotFromData={
+            chooserOffersDataRoute(
+              kindForFamily(reveal.family)?.id ?? null,
+              Boolean(activeTable && activeTable.columns.length > 0),
+            )
+              ? () => {
+                  closeReveal();
+                  plotFromData();
+                }
+              : undefined
+          }
+          onClose={closeReveal}
+          onPointerEnter={cancelClose}
+          onPointerLeave={scheduleClose}
+        />
       )}
 
       {/* Portalled: a fixed overlay inside the scrolling phone layout was

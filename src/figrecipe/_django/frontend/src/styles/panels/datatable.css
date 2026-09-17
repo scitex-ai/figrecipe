@@ -346,4 +346,137 @@
     max-width: none;
     width: 100%;
   }
+
+  .data-pane__btn {
+    min-height: 44px;
+    font-size: 13px;
+  }
+}
+
+/* ── Data pane: table column highlight ───────────────────────────────────
+ * The X/Y badges and the table column they name share one highlight. The role
+ * rides on data-col-highlight (machine + screen-reader readable) and the header
+ * prints the role letter, so the highlight is never signalled by colour alone.
+ * The classes are stamped by DataTablePane/dataTableDom.ts, not by JSX. */
+
+.data-pane__content [data-col-highlight] {
+  background: rgba(124, 92, 191, 0.16);
+}
+
+.data-pane__content [data-col-highlight="y"] {
+  background: rgba(107, 168, 154, 0.18);
+}
+
+/* X = solid ring, Y = dashed underline: two shapes, not two shades. */
+.data-pane__content th[data-col-highlight="x"],
+.data-pane__content td[data-col-highlight="x"] {
+  box-shadow: inset 0 0 0 2px rgba(124, 92, 191, 0.85);
+}
+
+.data-pane__content th[data-col-highlight="y"],
+.data-pane__content td[data-col-highlight="y"] {
+  border-bottom: 2px dashed rgba(107, 168, 154, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(107, 168, 154, 0.45);
+}
+
+/* Hover preview: the same column, visibly provisional. */
+.data-pane__content [data-col-highlight].data-pane__col--preview {
+  background: rgba(124, 92, 191, 0.08);
+  box-shadow: none;
+  border-bottom: 1px dotted rgba(139, 148, 158, 0.9);
+}
+
+.data-pane__content th[data-col-highlight] > span::after {
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.data-pane__content th[data-col-highlight="x"] > span::after {
+  content: "X";
+  color: var(--accent-primary);
+}
+
+.data-pane__content th[data-col-highlight="y"] > span::after {
+  content: "Y";
+  color: var(--status-success);
+}
+
+/* ── Data pane: row/column editing toolbar ─────────────────────────────── */
+
+.data-pane__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vis-border);
+  background: var(--vis-bg-secondary);
+}
+
+.data-pane__toolbar-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--vis-border);
+}
+
+.data-pane__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-btn-border);
+  border-radius: var(--radius);
+  background: var(--color-btn-bg);
+  color: var(--vis-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.data-pane__btn:hover:not(:disabled) {
+  background: var(--color-btn-hover-bg);
+  color: var(--vis-text-primary);
+}
+
+.data-pane__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.data-pane__btn--danger {
+  border-color: var(--status-error-border);
+  color: var(--status-error-text);
+}
+
+.data-pane__prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vis-border);
+  background: var(--vis-bg-secondary);
+}
+
+/* The last-column confirmation is a stop, not a step in the flow. */
+.data-pane__prompt--danger {
+  background: var(--status-warning-bg);
+}
+
+.data-pane__prompt-label {
+  font-size: 11px;
+  color: var(--vis-text-secondary);
+}
+
+.data-pane__prompt-input {
+  min-height: 26px;
+  padding: 2px 6px;
+  border: 1px solid var(--color-btn-border);
+  border-radius: var(--radius);
+  background: var(--vis-bg-primary);
+  color: var(--vis-text-primary);
+  font-size: 12px;
 }

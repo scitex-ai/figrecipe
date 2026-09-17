@@ -1,8 +1,9 @@
-/** Node test for the rail hover-panel example list (TODO 130).
+/** Node test for a plot family's template list.
  *
- * The hover panel is informational: it previews the templates a family holds,
- * distinct from click behavior (TODO 128/129). The decision is the pure helper
- * `familyExamples`. Run under Node strip-types (no React/DOM/SelectorNav):
+ * The list feeds the rail's variant chooser (card
+ * figrecipe-data-column-and-plot-variant-ux-20260916): which variants a
+ * category offers, and whether the chooser should open for it at all. Run under
+ * Node strip-types (no React/DOM/SelectorNav):
  *
  *   node --experimental-strip-types \
  *     src/figrecipe/_django/frontend/tests/familyExamples.test.ts
@@ -11,9 +12,8 @@
 import assert from "node:assert/strict";
 
 import {
-  familyTemplates,
-  familyExampleLabels,
   familyHasExamples,
+  familyTemplates,
 } from "../src/components/Gallery/familyExamples.ts";
 import type { GalleryData } from "../src/components/Gallery/useGalleryTemplates.ts";
 
@@ -40,24 +40,26 @@ function ok(name: string, fn: () => void) {
   console.log("  ok - " + name);
 }
 
-console.log("familyExamples (TODO 130 hover panel):");
+console.log("family templates (variant chooser source):");
 
-ok("multi-template family -> all its labels", () => {
-  assert.deepEqual(familyExampleLabels(data, "line"), ["Line", "Fill Between", "Stack"]);
-  assert.deepEqual(familyTemplates(data, "line").map((t) => t.name), [
-    "plot_plot",
-    "plot_fill_between",
-    "plot_stackplot",
-  ]);
+ok("multi-template family -> all its templates, in gallery order", () => {
+  assert.deepEqual(
+    familyTemplates(data, "line").map((t) => t.name),
+    ["plot_plot", "plot_fill_between", "plot_stackplot"],
+  );
+  assert.deepEqual(
+    familyTemplates(data, "line").map((t) => t.label),
+    ["Line", "Fill Between", "Stack"],
+  );
 });
 
-ok("single-template family -> that one label", () => {
-  assert.deepEqual(familyExampleLabels(data, "scatter"), ["Scatter"]);
-  assert.deepEqual(familyExampleLabels(data, "statistical"), ["Error Bar"]);
+ok("single-template family -> that one", () => {
+  assert.deepEqual(familyTemplates(data, "scatter").map((t) => t.label), ["Scatter"]);
+  assert.deepEqual(familyTemplates(data, "statistical").map((t) => t.label), ["Error Bar"]);
 });
 
-ok("family with no templates (vector) -> empty, panel suppressed", () => {
-  assert.deepEqual(familyExampleLabels(data, "vector"), []);
+ok("family with no templates (vector) -> empty, chooser suppressed", () => {
+  assert.deepEqual(familyTemplates(data, "vector"), []);
   assert.equal(familyHasExamples(data, "vector"), false);
 });
 
@@ -66,13 +68,13 @@ ok("familyHasExamples: true when loaded + has templates", () => {
   assert.equal(familyHasExamples(data, "scatter"), true);
 });
 
-ok("data not loaded yet (null) -> empty, no panel (do not preview undetermined)", () => {
-  assert.deepEqual(familyExampleLabels(null, "line"), []);
+ok("data not loaded yet (null) -> empty, no chooser (do not offer an undetermined set)", () => {
+  assert.deepEqual(familyTemplates(null, "line"), []);
   assert.equal(familyHasExamples(null, "line"), false);
 });
 
 ok("unknown family -> empty", () => {
-  assert.deepEqual(familyExampleLabels(data, "nope"), []);
+  assert.deepEqual(familyTemplates(data, "nope"), []);
   assert.equal(familyHasExamples(data, "nope"), false);
 });
 

@@ -17,6 +17,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import type { PlacedFigure as PlacedFigureType } from "../../types/editor";
 import { getPanelColorByLetter } from "../../utils/panelColors";
 import { BboxOverlay } from "./BboxOverlay";
+import { HitmapOverlay } from "./HitmapOverlay";
 import { LegendDragOverlay } from "./LegendDragOverlay";
 import { CaptionOverlay } from "./CaptionOverlay";
 import { PanelLetterOverlay } from "./PanelLetterOverlay";
@@ -166,6 +167,12 @@ export function PlacedFigure({
     [figure.id, figure.bboxes, selectElement],
   );
 
+  // Empty hitmap background / Escape: drop the element selection but keep the
+  // figure selected (the user is still working on this figure).
+  const clearElementSelection = useCallback(() => {
+    selectElement(null);
+  }, [selectElement]);
+
   // Legend drag → axes-fraction anchor → moveLegend.
   // The legend bbox carries ax_index; its parent axes bbox is "ax{N}_axes".
   // Convert the dropped top-left (image px) to axes fraction (y is bottom-up).
@@ -234,6 +241,9 @@ export function PlacedFigure({
           alwaysVisible={showHitmap}
           selectedElement={isSelected ? selectedElement : null}
         />
+        {showHitmap && isSelected && (
+          <HitmapOverlay onSelect={handleElementClick} onClear={clearElementSelection} />
+        )}
         <PanelLetterOverlay
           letter={figure.panelLetter}
           position={figure.panelLetterPos}

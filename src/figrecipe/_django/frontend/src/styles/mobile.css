@@ -162,9 +162,10 @@
     font-size: 11px;
   }
 
-  /* The placed-figure count is desktop chrome; on a phone it was clipped. */
-  .plot-type-nav .stx-app-selector-nav__footer,
-  .plot-type-nav__hover {
+  /* The placed-figure count is desktop chrome; on a phone it was clipped. The
+     variant chooser is deliberately NOT hidden here: on a touch screen a TAP
+     is its reveal gesture, so it is the phone's main way to pick a variant. */
+  .plot-type-nav .stx-app-selector-nav__footer {
     display: none;
   }
 

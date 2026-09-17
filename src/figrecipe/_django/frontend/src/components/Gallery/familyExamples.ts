@@ -1,18 +1,22 @@
-/** Pure helpers for a plot family's example list (TODO 130 — hover panel).
+/** Pure helpers for a plot family's template list.
  *
- * The rail's hover panel is INFORMATIONAL: it previews the templates a family
- * holds, distinct from the click behavior (TODO 128/129 — click adds a
- * single-template family directly or opens that family's gallery). These pure
- * functions derive the hover content from the already-fetched gallery data so
- * the decision is unit-testable under Node without React, the DOM, or the
- * scitex-ui SelectorNav.
+ * The rail showed a family's templates as a READ-ONLY list of labels (TODO
+ * 130). That list is gone: pointing at a rail item now reveals the variants as
+ * a thumbnail chooser (card figrecipe-data-column-and-plot-variant-ux-20260916,
+ * see ./variantChooser.ts), because a label names a variant while the variants
+ * themselves are pictures.
+ *
+ * What the two surfaces still share is which templates a family holds, so it is
+ * derived here once, from the already-fetched gallery data, without React, the
+ * DOM or the scitex-ui SelectorNav — the chooser's decisions are unit-tested
+ * under Node on top of these.
  */
 
 import type { GalleryData, GalleryTemplate } from "./useGalleryTemplates";
 
 /** The templates a family ships (empty when the family has none or data is
- * not loaded yet). A family like "vector" declares no templates — the hover
- * panel should simply not appear for it. */
+ * not loaded yet). A family like "vector" declares no templates — the chooser
+ * must not open for it. */
 export function familyTemplates(
   data: GalleryData | null,
   family: string,
@@ -21,16 +25,9 @@ export function familyTemplates(
   return data.categories[family] ?? [];
 }
 
-/** The example labels a family holds, for display in the hover panel. */
-export function familyExampleLabels(
-  data: GalleryData | null,
-  family: string,
-): string[] {
-  return familyTemplates(data, family).map((t) => t.label);
-}
-
-/** Whether the hover panel should show for a family: it has templates AND the
- * data is loaded (so we are not previewing an empty/undetermined state). */
+/** Whether a family has templates to show: data loaded AND non-empty. The
+ * chooser is suppressed otherwise, so pointing at a family never opens an
+ * empty panel that reads as a broken one. */
 export function familyHasExamples(
   data: GalleryData | null,
   family: string,
