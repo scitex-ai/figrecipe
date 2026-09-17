@@ -125,13 +125,16 @@ class TestScratchCleanup:
 
 class TestStatusPropagation:
     def test_a_failing_suite_fails_the_step(self, sif_harness):
-        # Arrange / Act -- `wait` must hand pytest's status to the runner.
+        # Arrange -- a suite that fails must still hand its status up through
+        # the script's `wait`, which is what the runner step reads.
+        # Act
         result = _run(sif_harness, STUB_PYTEST_EXIT="1")
         # Assert
         assert result.returncode == 1, (result.returncode, result.stdout[-400:])
 
     def test_a_passing_suite_passes_the_step(self, sif_harness):
-        # Arrange / Act
+        # Arrange -- and a green suite must not be turned red by the handoff.
+        # Act
         result = _run(sif_harness, STUB_PYTEST_EXIT="0")
         # Assert
         assert result.returncode == 0, (result.returncode, result.stdout[-400:])
@@ -148,18 +151,20 @@ class TestStatusPropagation:
 
 class TestHandoffShape:
     def test_the_test_command_is_not_exec_ed(self):
-        # Arrange / Act -- the guard against reintroducing the defect: `exec`
-        # before the pytest call is what defeated the EXIT trap.
+        # Arrange
+        source_lines = SCRIPT.read_text(encoding="utf-8").splitlines()
+        # Act -- the guard against reintroducing the defect: `exec` before the
+        # pytest call is what defeated the EXIT trap.
         lines = [
-            line.strip()
-            for line in SCRIPT.read_text(encoding="utf-8").splitlines()
-            if line.strip().startswith("exec ")
+            line.strip() for line in source_lines if line.strip().startswith("exec ")
         ]
         # Assert
         assert lines == [], f"run-in-sif.sh exec's the test command again: {lines}"
 
     def test_the_scratch_trap_is_still_registered(self):
-        # Arrange / Act
+        # Arrange
         source = SCRIPT.read_text(encoding="utf-8")
+        # Act
+        registered = "trap 'rm -rf \"$TMPDIR\"" in source
         # Assert -- the cleanup this test exercises must remain in place.
-        assert "trap 'rm -rf \"$TMPDIR\"" in source, source[-600:]
+        assert registered, source[-600:]
