@@ -302,4 +302,17 @@ ok("the viewport is kept in the session store, not in the canvas component", () 
   assert.match(hook, /setCanvasView\(state\)/);
 });
 
+ok("the auto-fit is remembered in the SESSION store, not in a component ref", () => {
+  // Arrange / Act / Assert -- the canvas unmounts on every tab switch, so a ref
+  // came back as "not yet fitted" each remount and the refit discarded the
+  // restored viewport. Measured live at 1440px before the fix: pan 180/90 ->
+  // Canvas->Plot->Canvas -> 0/0. After it: 180/90 kept.
+  const canvas = readFileSync(
+    join(here, "..", "src", "components", "Canvas", "Canvas.tsx"),
+    "utf8",
+  );
+  assert.match(canvas, /store\.canvasFitKey === figuresKey/);
+  assert.doesNotMatch(canvas, /didAutoFit/);
+});
+
 console.log("\nAll canvasPan checks passed (" + passed + " assertion-groups).");

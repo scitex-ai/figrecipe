@@ -68,14 +68,19 @@ export function Canvas() {
     });
   }, [zoomIn, zoomOut, fitCanvas, resetView]);
 
-  // Auto-fit only on first figure load — don't reset view when adding more
-  const didAutoFit = useRef(false);
+  // Auto-fit once per FIGURE SET, remembered in the session store rather than in
+  // a component ref: the canvas unmounts on every editor tab switch, so a ref
+  // came back as "not yet fitted" on each remount and the refit discarded the
+  // viewport the user had panned to — measured live at 1440px: a 180/90 pan
+  // returned as 0/0 after Canvas -> Plot -> Canvas. Keyed by the figures present,
+  // so a genuinely different figure is still fitted on arrival.
+  const figuresKey = placedFigures.map((figure) => figure.id).join("|");
   useEffect(() => {
-    if (!didAutoFit.current && placedFigures.length > 0) {
-      didAutoFit.current = true;
-      zoomToFit(CANVAS_W, CANVAS_H);
-    }
-  }, [placedFigures.length, zoomToFit]);
+    const store = useEditorStore.getState();
+    if (store.canvasFitKey === figuresKey) return;
+    store.setCanvasFitKey(figuresKey);
+    if (placedFigures.length > 0) zoomToFit(CANVAS_W, CANVAS_H);
+  }, [figuresKey, placedFigures.length, zoomToFit]);
 
   // Mousedown on empty canvas → the view pans (useZoomPan reads the same
   // mousedown). Shift+left-drag keeps the marquee for rubber-band selection, and

@@ -106,6 +106,12 @@ interface EditorState {
    *  unmounts the canvas, restores the view the user was working in. */
   canvasView: CanvasView | null;
   setCanvasView: (view: CanvasView) => void;
+  /** Which figure set the view was last AUTO-FITTED for. Session-scoped on
+   *  purpose: the canvas unmounts on every tab switch, so a component ref cannot
+   *  remember "already fitted" — it reset and the remount refit threw the
+   *  restored viewport away (measured live; acceptance 7694). */
+  canvasFitKey: string | null;
+  setCanvasFitKey: (key: string) => void;
   showHitmap: boolean;
   showRulers: boolean;
   rulerUnit: "mm" | "inch";
@@ -214,6 +220,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeSnapGuides: [],
   zoomControls: null,
   canvasView: null,
+  canvasFitKey: null,
   showHitmap: false,
   showRulers: true,
   rulerUnit:
@@ -497,6 +504,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   toggleHitmap: () => set((s) => ({ showHitmap: !s.showHitmap })),
   setCanvasView: (view) => set({ canvasView: view }),
+  setCanvasFitKey: (key) => set({ canvasFitKey: key }),
   toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
   toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),
   toggleRulerUnit: () =>
