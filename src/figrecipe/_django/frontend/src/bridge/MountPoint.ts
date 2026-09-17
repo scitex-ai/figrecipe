@@ -16,6 +16,8 @@ import type {
 } from "scitex-ui/react/app/bridge";
 import { FigrecipeEditor } from "../FigrecipeEditor";
 import { emitEvent } from "./EventBus";
+import { resolveAppVersion } from "./appVersion";
+
 
 /**
  * Figrecipe API endpoint prefixes that should be routed through Django.
@@ -66,10 +68,16 @@ export function mountFigrecipeEditor(options: BridgeMountOptions): void {
     React.createElement(FigrecipeEditor, {
       apiBaseUrl,
       workingDir: options.workingDir,
-      // Host mounts via #app-mount (no #root[data-version]); pass the
-      // derived figrecipe version explicitly so the header badge works on
-      // the hub path too. A host that overrides appVersion wins.
-      appVersion: typeof __FIGRECIPE_VERSION__ !== "undefined" ? __FIGRECIPE_VERSION__ : undefined,
+      // Version for the header badge: read the stable `data-app-version` mount
+      // attribute the host stamps generically (present on the Hub #app-mount
+      // path), then fall back to figrecipe's own build-time constant. On the
+      // Hub bundle the build-time constant is undefined, so without the
+      // attribute read the badge fell back to "" (no .stx-app-header__version).
+      // Omitted entirely when neither source has a value -> InnerEditor runs
+      // its own resolution chain (prop -> #root[data-version] -> build const).
+      appVersion: resolveAppVersion(
+        options.container.getAttribute("data-app-version"),
+      ),
       recipe: options.initialFile,
       darkMode: options.darkMode,
       onFileSelect: (path: string) => {
