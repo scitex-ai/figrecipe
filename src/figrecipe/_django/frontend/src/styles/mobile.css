@@ -317,36 +317,42 @@
   }
 }
 
-/* Hub mount without Canvas: an empty tab row is dropped. */
-.inner-editor__tabs:not(:has(.inner-editor__tab, .stx-app-project-selector)) {
+/* Hub mount without Canvas: an empty tab row is dropped. (The project
+   selector no longer lives in the tab row — it's in the app header — so this
+   now keys off the tabs only.) */
+.inner-editor__tabs:not(:has(.inner-editor__tab)) {
   display: none;
 }
 
-/* Picker-only row (hub mount, no Canvas tab): the picker spans the row and its
-   panel drops over the editor instead of being clipped by the scrolling row. */
+/* Phones: the project selector (now in the app header) spans full width and
+   its panel drops over the editor instead of being clipped. scitex-ui's slot
+   CSS already makes .stx-app-header__slot--project-selector order:0/width:100%
+   on ≤600px/coarse (so it wraps to its own full-width row below the title);
+   we add the header-row chrome (overflow/z-index/flex-wrap) + the 44px tap
+   target + larger font for the trigger. */
 @media (max-width: 768px) {
-  .inner-editor__tabs:not(:has(.inner-editor__tab)):has(.stx-app-project-selector) {
+  .stx-app-header {
     height: auto;
     min-height: 52px;
     padding: 4px 12px;
     overflow: visible;
     position: relative;
     z-index: 20;
+    flex-wrap: wrap;
   }
 
-  .inner-editor__tabs:not(:has(.inner-editor__tab)) .project-scope-selector {
+  .stx-app-header .project-scope-selector {
     flex: 1 1 auto;
     min-width: 0;
     max-width: none;
     margin-left: 0;
   }
 
-  .inner-editor__tabs:not(:has(.inner-editor__tab)) .stx-app-project-selector {
-    display: block;
+  .stx-app-header .stx-app-project-selector {
     width: 100%;
   }
 
-  .inner-editor__tabs:not(:has(.inner-editor__tab)) .stx-app-project-selector__trigger {
+  .stx-app-header .stx-app-project-selector__trigger {
     width: 100%;
     height: 44px;
     font-size: 14px;

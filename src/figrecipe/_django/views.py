@@ -110,6 +110,7 @@ def editor_page(request):
     try:
         working_dir = os.environ.get("FIGRECIPE_WORKING_DIR", "")
         working_dir_name = Path(working_dir).name if working_dir else "Files"
+        from figrecipe import __version__ as app_version
         # Consumer packages that alias this same CLI/Django app under their
         # own console-script (e.g. scitex-plt) can rebrand the page title
         # and favicon by setting these two env vars before launching the
@@ -121,6 +122,7 @@ def editor_page(request):
             {
                 "app_name": "figrecipe",
                 "app_label": os.environ.get("FIGRECIPE_APP_LABEL", "FigRecipe Editor"),
+                "app_version": app_version,
                 "working_dir": working_dir,
                 "working_dir_name": working_dir_name,
                 "favicon_href": (

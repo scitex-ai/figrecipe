@@ -18,7 +18,10 @@
 set -euo pipefail
 
 V="${1:?python version arg required (3.11/3.12/3.13)}"
-VENV="/opt/venv-$V"
+# SIF_VENV exists so the script's scratch/cleanup contract can be exercised
+# end-to-end by tests/ci/test_run_in_sif_scratch_cleanup.py, which supplies a
+# stub interpreter; CI passes only the version and gets the baked one.
+VENV="${SIF_VENV:-/opt/venv-$V}"
 test -x "$VENV/bin/python" || {
     echo "::error::baked python missing in $VENV — rebuild the SIF: scitex-container apptainer build ci-cpu"
     exit 1
@@ -158,10 +161,30 @@ python -c "import matplotlib; matplotlib.use('Agg'); from matplotlib import font
 # nice -n 19 ionice -c 3: run at the lowest CPU + idle I/O priority so that if
 # this node is ever shared with interactive/dev work, CI grabs otherwise-idle
 # cores but YIELDS the CPU and disk to any higher-priority process — "all
-# available CPUs, with priority handling". exec replaces the shell with nice,
-# which execs ionice, which execs python (still PID-traceable, signals/exit
-# code propagate to the runner step).
-exec nice -n 19 ionice -c 3 \
+# available CPUs, with priority handling".
+#
+# NOT `exec` (incident 2026-09-15, compute-04 root filesystem at 0 bytes): this
+# line used to be `exec nice ... ionice ... python -m pytest`, and exec REPLACES
+# this shell with the pytest process. The EXIT trap above (line 58) is then a
+# trap on a process that no longer exists — it never fires — so every run
+# orphaned its own ~2G scratch under /tmp, the exact leak the trap and the
+# age-gated sweep were added to stop. `exec` here bought signal propagation at
+# the cost of the cleanup contract, which is the wrong trade for a runner step.
+# The child now runs in the foreground and is WAITED ON, so its exit status is
+# still this script's status (a failing suite still fails the step), and TERM/INT
+# — the propagation `exec` gave for free — are forwarded to it explicitly before
+# the EXIT trap removes the scratch.
+nice -n 19 ionice -c 3 \
     python -m pytest tests/ -n "$WORKERS" --dist load -q \
     --cov=src/figrecipe --cov-report=xml --cov-report=term \
-    -p no:cacheprovider
+    -p no:cacheprovider &
+PYTEST_PID=$!
+
+# A cancelled job signals this shell; without forwarding, pytest would keep
+# running to completion while the runner reaps the process group.
+forward_signal() { kill -TERM "$PYTEST_PID" 2>/dev/null || true; }
+trap forward_signal TERM INT
+
+status=0
+wait "$PYTEST_PID" || status=$?
+exit "$status"

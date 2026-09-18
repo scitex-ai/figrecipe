@@ -8,7 +8,8 @@
 {% block app_content %}
     <div id="root"
          data-working-dir="{{ working_dir|default:'' }}"
-         data-app-name="figrecipe"></div>
+         data-app-name="figrecipe"
+         data-version="{{ app_version|default:'' }}"></div>
 {% endblock %}
 {% block extra_js %}
     {% scitex_js_catalog "figrecipe._django" %}
