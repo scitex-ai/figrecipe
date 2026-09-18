@@ -87,8 +87,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (with a table loaded) "Plot from data columns…". On touch the chooser takes
     the tap that used to jump to the Data pane, which is why it carries that
     route itself.
+## [0.34.8] - 2026-09-17
 
 ### Fixed
+- **A CI leg orphaned its own ~2G scratch on every job — the EXIT trap could
+  never fire.** `.github/ci/run-in-sif.sh` removed its run-unique `/tmp`
+  directory from an EXIT trap and then ended with `exec nice -n 19 ionice -c 3
+  python -m pytest …`. `exec` REPLACES the shell, so the trap belonged to a
+  process that no longer existed: every job leaked its scratch by construction,
+  which is how scitex-02 reached 270G of `ci-*` directories and a root
+  filesystem at 0 bytes (host_exec could not write its own audit log; a test run
+  died at 92%). The child now runs in the foreground and is waited on, so its
+  exit status is still the step's status and a failing suite still fails; TERM
+  and INT are forwarded to it explicitly, which is the one thing `exec` gave for
+  free. Reproducing the old handoff against the new test leaves 6 scratch
+  directories in `/tmp`; the fixed script leaves none. The age-gated orphan
+  sweep stays as the backstop for legs killed outright (SIGKILL/OOM), which no
+  trap can cover.
+- **The recorder no longer turns an unserializable argument into text
+  SILENTLY.** A value nothing else could handle was recorded as `str(value)`, so
+  the recipe replayed a *string* where the call passed an object — the figure
+  right, its description wrong, and nothing said at the only moment the caller
+  could still fix it (card
+  `figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906`). The
+  fallback now warns (`UnrecordableArgumentWarning`) naming the argument, its
+  type, the text being stored, and the remedy (`list(...)`/`np.asarray(...)` of
+  the values). The recorded payload is unchanged — the defect was the silence —
+  and a WARNING is deliberate rather than the outright refusal the recorder uses
+  for one-shot iterators (`UnrecordableArgumentError`): a text repr replays
+  deterministically and is sometimes exactly what was passed, whereas a consumed
+  generator can never be faithful. `np.int64`-style values are coerced to native
+  Python first, so the ordinary numeric path stays silent (pinned by tests in
+  `tests/figrecipe/_recorder/test__utils.py`).
+- **A misspelled style key is no longer silently ignored.** `SCITEX_STYLE`
+  advertises 33 keys, the applier honors a different set and the layout path a
+  third — three vocabularies with no single declaration of which one a consumer
+  honors — so a key that matched none of them (`style={"font_famly": "Arial"}`)
+  was simply carried through the merge in `_api/_subplots.py`: no error, no log,
+  and a figure that just did not change. The merge site now reports keys that
+  belong to neither the loaded style nor `SCITEX_STYLE`, and names the nearest
+  known key when there is one (`Did you mean 'font_family'?`). It is a warning,
+  not an error, because styles merge from several sources and a key this module
+  cannot see may still be honored by a consumer it cannot see — failing the call
+  would break working figures, saying which key was dropped does not. The
+  vocabularies themselves are NOT unified here; the measured split (15 keys never
+  read by the applier, 9 owned by the layout path, 6 referenced nowhere) is
+  recorded on card `figrecipe-three-style-key-vocabularies-disagree-20260907`.
+- **An artist removed after being drawn is now reported at save time instead of
+  passing unnoticed.** `ax.plot(...)` followed by `line.remove()` leaves the call
+  in the record, so a replay draws an artist the saved figure does not show. The
+  full repair is a multi-part design change (the record carries NO handle to the
+  artist it created, and the `track=False` escape hatch was measured not to cover
+  the family), so this takes the *detection* half: at save, where a live axes sits
+  next to its record, the axes' artist count is compared against the LOWER BOUND
+  the recorded plotting calls require. Fewer artists than calls means something
+  drawn is gone, and a nonblocking `ArtistLifecycleWarning` says so, with the
+  consequence and the action a user has. The check is conservative by
+  construction — it can miss a removal, it cannot invent one — and nothing is
+  removed, re-created or hidden for the user. Measured: with validation on, the
+  existing pixel validator already errors on the headline case (MSE 361.4), so
+  this covers the paths it cannot — `validate=False`, and sub-threshold
+  differences where the pixels pass but the recipe is still not faithful.
+
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather
   than overriding one key, and the keys left out did not fall back to the

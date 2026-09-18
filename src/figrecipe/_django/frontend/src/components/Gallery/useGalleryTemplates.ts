@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
+import { mapWithConcurrency } from "../../utils/mapWithConcurrency";
 import { useEditorStore } from "../../store/useEditorStore";
 import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
@@ -28,18 +29,21 @@ export interface GalleryData {
   categories: Record<string, GalleryTemplate[]>;
 }
 
-export const CATEGORY_LABELS: Record<string, { label: string; icon: string }> =
-  {
-    line: { label: gettext_noop("Line"), icon: "fa-chart-line" },
-    scatter: { label: gettext_noop("Scatter"), icon: "fa-braille" },
-    categorical: { label: gettext_noop("Categorical"), icon: "fa-chart-bar" },
-    distribution: { label: gettext_noop("Distribution"), icon: "fa-chart-column" },
-    statistical: { label: gettext_noop("Statistical"), icon: "fa-square-root-variable" },
-    grid: { label: gettext_noop("Grid"), icon: "fa-th" },
-    area: { label: gettext_noop("Area"), icon: "fa-chart-area" },
-    contour: { label: gettext_noop("Contour"), icon: "fa-layer-group" },
-    special: { label: gettext_noop("Special"), icon: "fa-shapes" },
-  };
+/** Max thumbnail requests in flight at once (site audit D2 — bounds the
+ * per-session connection burst that exhausted the shared hub's Postgres). */
+const THUMBNAIL_CONCURRENCY = 4;
+
+export const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
+  line: { label: gettext_noop("Line"), icon: "fa-chart-line" },
+  scatter: { label: gettext_noop("Scatter"), icon: "fa-braille" },
+  categorical: { label: gettext_noop("Categorical"), icon: "fa-chart-bar" },
+  distribution: { label: gettext_noop("Distribution"), icon: "fa-chart-column" },
+  statistical: { label: gettext_noop("Statistical"), icon: "fa-square-root-variable" },
+  grid: { label: gettext_noop("Grid"), icon: "fa-th" },
+  area: { label: gettext_noop("Area"), icon: "fa-chart-area" },
+  contour: { label: gettext_noop("Contour"), icon: "fa-layer-group" },
+  special: { label: gettext_noop("Special"), icon: "fa-shapes" },
+};
 
 /** Every template once, in declaration order (a template may sit in two
  * categories — "Fill Between" is both line and area). */
@@ -91,19 +95,29 @@ export function useGalleryTemplates() {
 
   useEffect(() => {
     if (!data) return;
-    for (const tmpl of flattenTemplates(data)) {
-      if (!tmpl.has_thumbnail || requested.current.has(tmpl.name)) continue;
-      requested.current.add(tmpl.name);
-      api
-        .get<{ image: string }>(`api/gallery/thumbnail/${tmpl.name}`)
-        .then((d) => {
-          setThumbnails((prev) => ({ ...prev, [tmpl.name]: d.image }));
-        })
-        .catch(() => {
-          // A missing thumbnail degrades to the template's icon; it must
-          // never take the surrounding grid down with it.
-        });
-    }
+    // Names that still need a thumbnail. Mark them requested up front (the
+    // ref, not a re-render), then fetch through a concurrency cap.
+    const due = flattenTemplates(data).filter(
+      (tmpl) => tmpl.has_thumbnail && !requested.current.has(tmpl.name),
+    );
+    for (const tmpl of due) requested.current.add(tmpl.name);
+    if (due.length === 0) return;
+    // CAP THE BURST (site audit D2): at most THUMBNAIL_CONCURRENCY thumbnail
+    // requests in flight at once. Un-capped, a session fired ~18
+    // api/gallery/thumbnail requests simultaneously; on a shared hub with many
+    // sessions that exhausted the Postgres pool ("too many clients", 120 in
+    // 15 min) and surfaced as "Could not load the example gallery". A small
+    // constant keeps the gallery fully populated while bounding the connection
+    // burst each session contributes.
+    void mapWithConcurrency(due, THUMBNAIL_CONCURRENCY, async (tmpl) => {
+      try {
+        const d = await api.get<{ image: string }>(`api/gallery/thumbnail/${tmpl.name}`);
+        setThumbnails((prev) => ({ ...prev, [tmpl.name]: d.image }));
+      } catch {
+        // A missing thumbnail degrades to the template's icon; it must
+        // never take the surrounding grid down with it.
+      }
+    });
   }, [data]);
 
   /** Copy a template into the working dir and open it on the canvas. This is

@@ -5,6 +5,8 @@ NeuroVista Fig 2 bug: ``np.int64`` positions were serialized as the string
 ``'0'`` and broke replay on a category-unit axis).
 """
 
+import warnings
+
 import numpy as np
 import pytest
 
@@ -193,3 +195,56 @@ def test_equal_length_int_array_list_still_records_int_dtype():
     out = _process_array_list(value)
     # Assert: no padding -> stored dtype stays int, recorded dtype agrees (no-op).
     assert out["dtype"] == str(out["_array"].dtype)
+
+
+# --- the str() fallback is never silent (card
+# figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906) -----
+
+
+class TestUnserializableArgumentIsAnnounced:
+    class Unrecordable:
+        """An object the recorder cannot serialize."""
+
+        def __repr__(self):
+            return "<Unrecordable>"
+
+    def test_an_unserializable_argument_warns_and_names_itself(self):
+        # Arrange
+        value = self.Unrecordable()
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            _process_scalar("theta", value, _is_native)
+        # Assert -- the caller is told WHICH argument, not just that one failed.
+        assert caught and "theta" in str(caught[0].message)
+
+    def test_the_text_is_still_recorded_so_nothing_breaks(self):
+        # Arrange
+        value = self.Unrecordable()
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            processed = _process_scalar("theta", value, _is_native)
+        # Assert -- the fix is the ANNOUNCEMENT; the recorded payload is unchanged.
+        assert bool(caught) and processed == {"name": "theta", "data": str(value)}
+
+    def test_a_serializable_argument_is_silent(self):
+        # Arrange
+        catcher = warnings.catch_warnings()
+        # Act
+        with catcher:
+            warnings.simplefilter("error")
+            processed = _process_scalar("x", 3, _is_native)
+        # Assert -- any warning here would be a false alarm on the ordinary path.
+        assert processed == {"name": "x", "data": 3}
+
+    def test_a_numpy_scalar_is_silent_because_it_is_coerced_first(self):
+        # Arrange
+        catcher = warnings.catch_warnings()
+        # Act
+        with catcher:
+            warnings.simplefilter("error")
+            processed = _process_scalar("pos", np.int64(7), _is_native)
+        # Assert -- np.int64 is coerced to int before the serializability test, so
+        # the warning must NOT fire for it.
+        assert processed == {"name": "pos", "data": 7}

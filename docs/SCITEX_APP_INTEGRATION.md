@@ -100,7 +100,7 @@ figrecipe uses **no Django models**. All data is stored as files in the user's p
 This means figrecipe works identically in:
 - **Standalone mode** -- `figrecipe_editor --recipe my_plot.yaml`
 - **Cloud mode** -- mounted inside scitex-cloud workspace
-- **Other Django projects** -- `INSTALLED_APPS += ["figrecipe._django"]`
+- **Other Django projects** -- `INSTALLED_APPS += ["figrecipe._django", "figrecipe._django.apps.ScitexAppChatConfig"]` (BOTH entries; see "Mounting" below)
 
 ## The `_django` Convention
 
@@ -129,10 +129,23 @@ urlpatterns = [
 figrecipe can run without scitex-cloud. The `settings.py` provides minimal Django config:
 
 ```python
-INSTALLED_APPS = ["django.contrib.staticfiles", "figrecipe._django"]
+# BOTH apps are required. `figrecipe._django` is the editor; the second registers
+# scitex_app._chat's models, and the handler registry routes `api/chat/*` to views
+# that query them. Mounting only the first leaves a host with no chat models and
+# chat calls failing at request time rather than at startup.
+INSTALLED_APPS = [
+    "django.contrib.staticfiles",
+    "figrecipe._django",
+    "figrecipe._django.apps.ScitexAppChatConfig",
+]
 # Optionally: "scitex_ui" for shared components
-DATABASES = {}  # No database needed
+DATABASES = {}  # Editor-only installs need none; chat history does. Without a
+                # usable database the chat SESSION endpoints answer 501 instead
+                # of leaking a Django settings diagnostic into the browser.
 ```
+
+FigRecipeEditorConfig.ready() warns at startup when the chat app is missing, so a
+host sees the omission in its logs instead of as a broken chat at request time.
 
 This validates a key platform principle: apps must be independently functional.
 
