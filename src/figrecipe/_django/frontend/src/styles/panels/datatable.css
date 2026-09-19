@@ -346,11 +346,6 @@
     max-width: none;
     width: 100%;
   }
-
-  .data-pane__btn {
-    min-height: 44px;
-    font-size: 13px;
-  }
 }
 
 /* ── Data pane: table column highlight ───────────────────────────────────
@@ -479,4 +474,30 @@
   background: var(--vis-bg-primary);
   color: var(--vis-text-primary);
   font-size: 12px;
+}
+
+/* ── Data pane: phone touch targets for the CRUD controls ────────────────
+ * WHY THIS BLOCK IS LAST IN THE FILE. A @media query adds no specificity, so
+ * an earlier `@media (max-width: 768px) .data-pane__btn { min-height: 44px }`
+ * lost to the base `.data-pane__btn { min-height: 26px }` declared further
+ * down: at equal specificity the LATER rule wins, media condition or not. The
+ * phone CRUD toolbar therefore rendered 26px tall — measured in Chrome at
+ * 390px, and the reason the 44px target read as done in review while it was
+ * dead in the browser.
+ *
+ * These declarations must stay BELOW the base rules they override.
+ * tests/dataPaneMobileTargets.test.ts evaluates the final cascade at phone and
+ * desktop widths and fails if they are ever moved above them. */
+@media (max-width: 768px) {
+  .data-pane__btn {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  /* The rename/confirm rows are the same CRUD flow, so they get the same
+     target: the rename field and the prompt buttons. */
+  .data-pane__prompt-input {
+    min-height: 44px;
+    font-size: 14px;
+  }
 }

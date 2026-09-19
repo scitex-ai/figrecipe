@@ -33,7 +33,9 @@ import { VariantChooser } from "../Gallery/VariantChooser";
 import {
   chooserAvailable,
   chooserOffersDataRoute,
+  railKeyIntent,
   revealMode,
+  revealOnFocus,
   variantChoices,
   type AnchorRect,
   type PointerCaps,
@@ -98,6 +100,9 @@ interface Reveal {
   anchor: AnchorRect;
   /** Tap-revealed: stays until dismissed. Hover-revealed: closes on leave. */
   pinned: boolean;
+  /** Opened from the keyboard: the panel takes focus onto its active variant,
+   *  and dismissing it hands focus back to this rail item. */
+  keyboard: boolean;
 }
 
 export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, string | number> }) {
@@ -112,6 +117,10 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
 
   const navRef = useRef<HTMLDivElement | null>(null);
   const closeTimer = useRef<number | null>(null);
+  /** The category whose panel the keyboard just dismissed: the rail reveals on
+   *  focus, and Escape hands the focus back to that very item, so without this
+   *  the panel would re-open on the way out (see revealOnFocus). */
+  const suppressedFamily = useRef<string | null>(null);
 
   const cancelClose = useCallback(() => {
     if (closeTimer.current !== null) {
@@ -134,14 +143,38 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
 
   useEffect(() => cancelClose, [cancelClose]);
 
-  /** The rail item for a family, for anchoring the chooser. */
-  const anchorForFamily = useCallback((family: string): AnchorRect => {
+  /** The rail item for a family, for anchoring the chooser (and for handing
+   *  focus back to it when a keyboard-opened panel closes). */
+  const itemForFamily = useCallback((family: string): HTMLElement | null => {
     const idx = PLOT_TYPES.findIndex((p) => p.id === family);
-    const item = navRef.current?.querySelectorAll(".stx-app-selector-nav__item")[idx];
-    return item
-      ? rectOf(item)
-      : { top: 56, left: 0, right: 56, bottom: 96, width: 56, height: 40 };
+    const items = navRef.current?.querySelectorAll<HTMLElement>(
+      ".stx-app-selector-nav__item",
+    );
+    return items?.[idx] ?? null;
   }, []);
+
+  const anchorForFamily = useCallback(
+    (family: string): AnchorRect => {
+      const item = itemForFamily(family);
+      return item
+        ? rectOf(item)
+        : { top: 56, left: 0, right: 56, bottom: 96, width: 56, height: 40 };
+    },
+    [itemForFamily],
+  );
+
+  /** Dismiss the panel, and give the rail item its focus back when the panel was
+   *  opened from the keyboard (otherwise the user is dropped at the top of the
+   *  document, with nothing to continue from). The item is suppressed from
+   *  re-revealing the panel by that very focus — else Escape would look like it
+   *  did nothing. */
+  const dismissReveal = useCallback(() => {
+    const { family, keyboard } = reveal ?? { family: null, keyboard: false };
+    closeReveal();
+    if (!keyboard || !family) return;
+    suppressedFamily.current = family;
+    itemForFamily(family)?.focus();
+  }, [closeReveal, itemForFamily, reveal?.family, reveal?.keyboard]);
 
   const familyLabel = useCallback((family: string): string => {
     const labelled = CATEGORY_LABELS[family]?.label ?? PLOT_TYPES.find((p) => p.id === family)?.label;
@@ -169,7 +202,7 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
     // plotted from the loaded table — otherwise the tap gesture would be a dead
     // end for a phone user with a table.
     if (mode === "tap" && variantChoices(data, id).length >= 2) {
-      setReveal({ family: id, anchor: anchorForFamily(id), pinned: true });
+      setReveal({ family: id, anchor: anchorForFamily(id), pinned: true, keyboard: false });
       return;
     }
     // With a table loaded, the rail picks the type the Data pane plots with.
@@ -225,22 +258,52 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
       if (!item) return null;
       const idx = [...root.querySelectorAll(".stx-app-selector-nav__item")].indexOf(item);
       const t = PLOT_TYPES[idx];
-      return t ? { family: t.id, anchor: rectOf(item), pinned: false } : null;
+      return t
+        ? { family: t.id, anchor: rectOf(item), pinned: false, keyboard: false }
+        : null;
     };
     const hover = (e: Event) => {
       if (mode !== "hover") return; // touch: the tap on the rail reveals it
       const info = infoAt(e);
       if (!info) return;
       if (!chooserAvailable(data, info.family)) return;
+      // The pointer is in use again: a keyboard dismissal no longer applies.
+      suppressedFamily.current = null;
       cancelClose();
       setReveal((cur) =>
         cur?.family === info.family && cur.pinned ? cur : { ...info, anchor: info.anchor },
       );
     };
     const leave = () => scheduleClose();
+    // Keyboard reveal: the arrow keys open the panel and move focus into it (the
+    // panel is portalled to <body>, so TAB could never land there). Enter/Space
+    // keep their rail meaning — one gesture, one action.
+    const keydown = (e: KeyboardEvent) => {
+      const info = infoAt(e);
+      if (!info) return;
+      // Whether the LIST already holds the focus, not whether the panel is
+      // open: the rail reveals the panel on focus, and that reveal must still
+      // take an arrow into the list.
+      const panel = document.querySelector(".plot-type-nav__chooser");
+      const focusInPanel = Boolean(
+        panel && document.activeElement && panel.contains(document.activeElement),
+      );
+      if (
+        railKeyIntent(
+          e.key,
+          chooserAvailable(data, info.family),
+          focusInPanel,
+        ) !== "open"
+      )
+        return;
+      e.preventDefault();
+      cancelClose();
+      setReveal({ ...info, pinned: true, keyboard: true });
+    };
     const focusin = (e: Event) => {
       const info = infoAt(e);
       if (!info || !chooserAvailable(data, info.family)) return;
+      if (!revealOnFocus(info.family, suppressedFamily.current)) return;
       cancelClose();
       setReveal(info);
     };
@@ -250,17 +313,21 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
       const next = (e as FocusEvent).relatedTarget as Node | null;
       const panel = document.querySelector(".plot-type-nav__chooser");
       if (next && panel?.contains(next)) return;
+      // The focus left the rail entirely: the next visit is a fresh gesture.
+      suppressedFamily.current = null;
       scheduleClose();
     };
     root.addEventListener("mouseover", hover);
     root.addEventListener("mouseleave", leave);
     root.addEventListener("focusin", focusin);
     root.addEventListener("focusout", focusout);
+    root.addEventListener("keydown", keydown);
     return () => {
       root.removeEventListener("mouseover", hover);
       root.removeEventListener("mouseleave", leave);
       root.removeEventListener("focusin", focusin);
       root.removeEventListener("focusout", focusout);
+      root.removeEventListener("keydown", keydown);
     };
   }, [mode, data, cancelClose, scheduleClose]);
 
@@ -290,6 +357,7 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
           choices={variantChoices(data, reveal.family)}
           thumbnails={thumbnails}
           pinned={reveal.pinned}
+          focusOnOpen={reveal.keyboard}
           onChoose={chooseVariant}
           onSeeAll={seeAllTemplates}
           onPlotFromData={
@@ -303,7 +371,7 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
                 }
               : undefined
           }
-          onClose={closeReveal}
+          onClose={dismissReveal}
           onPointerEnter={cancelClose}
           onPointerLeave={scheduleClose}
         />

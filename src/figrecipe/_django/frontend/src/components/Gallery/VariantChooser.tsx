@@ -20,6 +20,7 @@ import { createPortal } from "react-dom";
 import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 import {
   choiceKeyAction,
+  chooserFocusIndex,
   chooserPlacement,
   type AnchorRect,
   type ChooserPlacement,
@@ -37,6 +38,9 @@ interface Props {
   /** A tap-revealed panel stays until dismissed; a hover-revealed one closes
    * when the pointer leaves rail + panel. */
   pinned: boolean;
+  /** Opened from the keyboard: focus is moved onto the active variant so the
+   * list is operable without a pointer. */
+  focusOnOpen?: boolean;
   onChoose: (choice: VariantChoice) => void;
   /** "See all" hands the whole category back to the gallery modal. */
   onSeeAll: () => void;
@@ -60,6 +64,7 @@ export function VariantChooser({
   choices,
   thumbnails,
   pinned,
+  focusOnOpen,
   onChoose,
   onSeeAll,
   onPlotFromData,
@@ -68,6 +73,8 @@ export function VariantChooser({
   onPointerLeave,
 }: Props) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  /** The variant buttons, for the keyboard open below. */
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [placement, setPlacement] = useState<ChooserPlacement | null>(null);
   const [active, setActive] = useState(0);
 
@@ -112,10 +119,25 @@ export function VariantChooser({
   }, [pinned, active, choices.length, onClose]);
 
   // Move focus into a pinned panel so the variant list is reachable by keyboard
-  // (and by a screen reader) the moment it opens.
+  // (and by a screen reader) the moment it opens. A panel the KEYBOARD opened
+  // puts focus on the active variant instead of the container, so the list's own
+  // arrows/Enter work immediately — one focus move per open, then the roving
+  // tabindex keeps it navigable.
+  const focusedOnce = useRef(false);
   useEffect(() => {
-    if (pinned) panelRef.current?.focus();
-  }, [pinned]);
+    if (!pinned) {
+      focusedOnce.current = false;
+      return;
+    }
+    if (focusedOnce.current) return;
+    if (focusOnOpen) {
+      const index = chooserFocusIndex(active, choices.length);
+      itemRefs.current[index]?.focus();
+    } else {
+      panelRef.current?.focus();
+    }
+    focusedOnce.current = true;
+  }, [pinned, focusOnOpen, active, choices.length]);
 
   if (choices.length === 0) return null;
 
@@ -133,6 +155,10 @@ export function VariantChooser({
       return;
     }
     setActive(result.index);
+    // Focus follows the highlight: the roving tabindex moves the list's only
+    // tab stop, and a keyboard user has to SEE where they are. Focusing the
+    // item re-runs its onFocus, which sets the same index (no loop).
+    itemRefs.current[result.index]?.focus();
   };
 
   return createPortal(
@@ -192,6 +218,9 @@ export function VariantChooser({
           <li key={choice.name}>
             <button
               type="button"
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
               className={`plot-type-nav__chooser-item${i === active ? " is-active" : ""}`}
               tabIndex={i === active ? 0 : -1}
               onFocus={() => setActive(i)}

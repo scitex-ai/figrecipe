@@ -13,6 +13,7 @@ import {
   reconcileSelection,
   type ColumnSelection,
 } from "./columnPlotSelection";
+import { cloneSelection } from "./dataTableEdit";
 import { selectionAfterColumnClick } from "./dataColumnHighlight";
 import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
@@ -40,10 +41,24 @@ export interface ColumnClickCommand {
   nonce: number;
 }
 
+/** An explicit selection handed down by the Data pane (undo/redo).
+ *
+ * The table and its X/Y binding change in one history transition, so the form
+ * must take the whole binding — not just "click column X" — and it must take it
+ * AFTER the reconciler has looked at the restored column set (see the effect
+ * order below). `nonce` re-arms an identical command. */
+export interface SelectionCommand {
+  selection: ColumnSelection;
+  nonce: number;
+}
+
 interface PlotFromColumnsProps {
   tab: TabData;
   /** Set when the user clicks a table column header or cell. */
   columnCommand?: ColumnClickCommand | null;
+  /** Set when the table and its binding were restored from history (undo/redo):
+   *  applied after the reconciler, in the same commit as the table. */
+  selectionCommand?: SelectionCommand | null;
   /** Mirrors the badge state up so the pane can highlight the table column each
    * badge names. Pass a stable setter (not an inline arrow): the pane's model
    * and this form must not ping-pong. */
@@ -53,6 +68,7 @@ interface PlotFromColumnsProps {
 export function PlotFromColumns({
   tab,
   columnCommand,
+  selectionCommand,
   onSelectionChange,
 }: PlotFromColumnsProps) {
   const { showToast, refreshAfterMutation, loadDatatable, plotFamily } =
@@ -73,6 +89,15 @@ export function PlotFromColumns({
     if (!columnCommand) return;
     setSelection((s) => selectionAfterColumnClick(s, columnCommand.name));
   }, [columnCommand]);
+
+  // An explicit binding from the pane (undo/redo). The table and its X/Y travel
+  // through history as ONE transition, so this must be applied in the same
+  // commit as the restored table — and AFTER the reconciler above, which looks at
+  // the new column set and would otherwise drop a name the restore re-introduced.
+  useEffect(() => {
+    if (!selectionCommand) return;
+    setSelection(cloneSelection(selectionCommand.selection));
+  }, [selectionCommand]);
 
   useEffect(() => {
     onSelectionChange?.(selection);
@@ -164,6 +189,11 @@ export function PlotFromColumns({
                 key={c.name}
                 type="button"
                 aria-pressed={selection.ys.includes(c.name)}
+                /* The chip's visible text is the column name; the accessible
+                   name adds the role it assigns, so the button still says what
+                   it does when it is reached out of the legend's context
+                   (WCAG 2.5.3: the name contains the visible text). */
+                aria-label={interpolate(gettext("Y column: %s"), [c.name])}
                 data-role="y"
                 data-column={c.name}
                 className={`plot-from-columns__chip${selection.ys.includes(c.name) ? " active" : ""}`}

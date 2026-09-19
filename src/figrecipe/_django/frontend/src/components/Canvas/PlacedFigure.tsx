@@ -242,7 +242,11 @@ export function PlacedFigure({
           selectedElement={isSelected ? selectedElement : null}
         />
         {showHitmap && isSelected && (
-          <HitmapOverlay onSelect={handleElementClick} onClear={clearElementSelection} />
+          <HitmapOverlay
+            figureRecipe={figure.path}
+            onSelect={handleElementClick}
+            onClear={clearElementSelection}
+          />
         )}
         <PanelLetterOverlay
           letter={figure.panelLetter}

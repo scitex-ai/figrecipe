@@ -24,6 +24,7 @@ import {
   buildHexToElementKey,
   elementLabel,
   focusPointToPixels,
+  hitmapMatchesFigure,
   hitmapPixelCoords,
   isFocusKey,
   moveFocusPoint,
@@ -34,16 +35,26 @@ import {
 import type { FocusPoint, Point } from "./hitmapSelect";
 
 interface Props {
+  /** The recipe this overlay is drawn on. A raster depicts ONE recipe, so the
+   *  overlay is inert unless the loaded hitmap is this figure's picture. */
+  figureRecipe: string;
   /** Element key resolved from the hitmap; the host figure selects it. */
   onSelect: (elementId: string) => void;
   /** The selection must be dropped (empty background click or Escape). */
   onClear: () => void;
 }
 
-export function HitmapOverlay({ onSelect, onClear }: Props) {
+export function HitmapOverlay({ figureRecipe, onSelect, onClear }: Props) {
   const hitmapImage = useEditorStore((s) => s.hitmapImage);
   const colorMap = useEditorStore((s) => s.colorMap);
+  const hitmapRecipe = useEditorStore((s) => s.hitmapRecipe);
   const selectedElement = useEditorStore((s) => s.selectedElement);
+
+  /** Whether the loaded raster is THIS figure's picture. Everything below is
+   *  gated on it: the store keeps one raster for the whole canvas, and sampling
+   *  another figure's would resolve its colours against this figure's keys —
+   *  selecting (and then editing) an element that is not the one clicked. */
+  const belongsToFigure = hitmapMatchesFigure(hitmapRecipe, figureRecipe);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -58,11 +69,12 @@ export function HitmapOverlay({ onSelect, onClear }: Props) {
   const hexToElementKey = useMemo(() => buildHexToElementKey(colorMap), [colorMap]);
 
   // Draw the hitmap PNG onto a hidden scratch canvas: the only way to read the
-  // pixel colours back out of it.
+  // pixel colours back out of it. A raster that depicts another recipe is never
+  // drawn at all, so nothing downstream can sample it.
   useEffect(() => {
     setReady(false);
     ctxRef.current = null;
-    if (!hitmapImage || !canvasRef.current) return;
+    if (!belongsToFigure || !hitmapImage || !canvasRef.current) return;
 
     const img = new Image();
     img.onload = () => {
@@ -94,7 +106,7 @@ export function HitmapOverlay({ onSelect, onClear }: Props) {
     (point: Point, box: { width: number; height: number }): string | null => {
       const canvas = canvasRef.current;
       const ctx = ctxRef.current;
-      if (!canvas || !ctx) return null;
+      if (!belongsToFigure || !canvas || !ctx) return null;
       const raster = hitmapPixelCoords(
         { width: canvas.width, height: canvas.height },
         point,
@@ -212,6 +224,11 @@ export function HitmapOverlay({ onSelect, onClear }: Props) {
       : selectedElement
         ? interpolate(gettext("Selected: %s"), [selectedLabel])
         : gettext("Click a plot element to select it; Escape clears the selection");
+
+  // The loaded raster depicts another recipe: there is no correct hit map for
+  // this figure, so the layer is not mounted at all. Sampling it here was the
+  // bug this identity exists to prevent.
+  if (!belongsToFigure) return null;
 
   return (
     <div

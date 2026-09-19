@@ -126,7 +126,58 @@ export function chooserPlacement(
   return { side, top, left, maxHeight };
 }
 
+/** What a key pressed on a RAIL ITEM does about the chooser.
+ *
+ * A keyboard user can focus a rail item (which reveals the panel), but the
+ * panel is portalled to <body> and its variants use a roving tabindex, so TAB
+ * never lands inside it: the list was announced and unreachable. The menu-button
+ * pattern fixes that — the arrow keys OPEN the panel and move focus into it,
+ * where the list's own arrows/Enter/Escape then apply (choiceKeyAction).
+ *
+ * Three things deliberately do NOT open it:
+ *   - Enter/Space keep their existing meaning on the rail (the one-operation
+ *     plot and the data route). One gesture, one action.
+ *   - a category with no variants, where an empty panel would be a dead end and
+ *     would also swallow the rail's own arrow navigation.
+ *   - a panel whose LIST already holds the focus: there the arrows belong to the
+ *     list. Note this is focus, not mere openness — an already-revealed panel
+ *     (the rail reveals on hover/focus) with the focus still on the rail item
+ *     must still take the arrow, or the reveal would be decorative for the
+ *     keyboard user it exists for. */
+export function railKeyIntent(
+  key: string,
+  hasChoices: boolean,
+  focusInPanel: boolean,
+): "open" | "ignore" {
+  if (!hasChoices || focusInPanel) return "ignore";
+  return key === "ArrowDown" || key === "ArrowRight" ? "open" : "ignore";
+}
+
+/** The variant to put focus on when the chooser opens from the keyboard.
+ *  Clamped like choiceKeyAction, so a stale index cannot focus nothing. */
+export function chooserFocusIndex(active: number, count: number): number {
+  if (count <= 0) return 0;
+  const last = count - 1;
+  const current = Number.isFinite(active) ? Math.trunc(active) : 0;
+  return Math.min(Math.max(current, 0), last);
+}
+
+/** May focusing a rail item reveal its chooser?
+ *
+ * `suppressedFamily` is the category whose panel the keyboard just dismissed.
+ * Escape hands the focus back to that very rail item, and the rail reveals on
+ * focus — without this the panel would re-open on the way out and Escape would
+ * look like a no-op. The suppression lasts until the next deliberate gesture
+ * (an arrow, a click, a hover, or leaving the rail). */
+export function revealOnFocus(
+  family: string,
+  suppressedFamily: string | null,
+): boolean {
+  return family !== suppressedFamily;
+}
+
 export type ChoiceKeyActionKind = "move" | "choose" | "dismiss" | "ignore";
+
 export interface ChoiceKeyAction {
   /** Index the chooser should highlight after this key. */
   index: number;

@@ -20,10 +20,12 @@ import {
   buildHexToElementKey,
   elementLabel,
   focusPointToPixels,
+  hitmapMatchesFigure,
   hitmapPixelCoords,
   isFocusKey,
   moveFocusPoint,
   resolveElementKey,
+  resolveFigureHit,
   rgbToHex,
   selectionAfterClear,
   selectionAfterHit,
@@ -253,6 +255,155 @@ ok("hitmapSelect has no React / @scitex-ui import", () => {
   );
 });
 
+// ------------------------------------------------------- per-figure identity
+// One raster, many figures. The backend renders a hitmap for the recipe the
+// editor has open, and the store keeps that single raster — so without an
+// identity check the overlay sampled it on EVERY selected figure and resolved
+// its colours against another figure's elements.
+
+const RECIPE_A = "alice/fig_a.yaml";
+const RECIPE_B = "bob/fig_b.yaml";
+
+ok("a raster belongs to the figure whose recipe it was rendered for", () => {
+  // Arrange / Act / Assert
+  assert.equal(hitmapMatchesFigure(RECIPE_A, RECIPE_A), true);
+  assert.equal(hitmapMatchesFigure(RECIPE_A, RECIPE_B), false);
+});
+
+ok("an untagged raster belongs to nobody", () => {
+  // Arrange / Act / Assert — a raster with no recipe is one the editor cannot
+  // vouch for; every figure must be inert against it rather than guess.
+  assert.equal(hitmapMatchesFigure(null, RECIPE_A), false);
+  assert.equal(hitmapMatchesFigure(undefined, RECIPE_A), false);
+  assert.equal(hitmapMatchesFigure("", RECIPE_A), false);
+});
+
+ok("a figure with no recipe never claims the raster", () => {
+  // Arrange / Act / Assert
+  assert.equal(hitmapMatchesFigure(RECIPE_A, null), false);
+  assert.equal(hitmapMatchesFigure(RECIPE_A, undefined), false);
+  assert.equal(hitmapMatchesFigure(RECIPE_A, ""), false);
+  assert.equal(hitmapMatchesFigure(null, null), false);
+});
+
+ok("the same recipe on two different figures is the same picture", () => {
+  // Arrange: a pasted copy shares its recipe with the figure it came from, and
+  // the raster depicts exactly that recipe.
+  const paste = `${RECIPE_A}`;
+  // Act / Assert
+  assert.equal(hitmapMatchesFigure(RECIPE_A, paste), true);
+});
+
+ok("a hit resolves only against the figure the raster belongs to", () => {
+  // Arrange
+  const hexToKey = buildHexToElementKey(COLOR_MAP);
+  const pixel = [255, 107, 107, 255];
+  // Act
+  const own = resolveFigureHit({
+    hitmapRecipe: RECIPE_A,
+    figureRecipe: RECIPE_A,
+    ready: true,
+    pixel,
+    hexToKey,
+  });
+  const other = resolveFigureHit({
+    hitmapRecipe: RECIPE_A,
+    figureRecipe: RECIPE_B,
+    ready: true,
+    pixel,
+    hexToKey,
+  });
+  // Assert: the same pixel, the same colour map — and no element for figure B.
+  assert.equal(own, "ax0_line_0");
+  assert.equal(other, null);
+});
+
+ok("the identity gate does not replace the raster's own guards", () => {
+  // Arrange
+  const hexToKey = buildHexToElementKey(COLOR_MAP);
+  // Act / Assert
+  assert.equal(
+    resolveFigureHit({
+      hitmapRecipe: RECIPE_A,
+      figureRecipe: RECIPE_A,
+      ready: false,
+      pixel: [255, 107, 107, 255],
+      hexToKey,
+    }),
+    null,
+  );
+  assert.equal(
+    resolveFigureHit({
+      hitmapRecipe: RECIPE_A,
+      figureRecipe: RECIPE_A,
+      ready: true,
+      pixel: [255, 255, 255, 255],
+      hexToKey,
+    }),
+    null,
+  );
+});
+
+// ------------------------------------------------------- store contracts
+
+ok("the store tags the raster with the recipe it was fetched for", () => {
+  // Arrange
+  const store = readFileSync(
+    join(here, "..", "src", "store", "useEditorStore.ts"),
+    "utf8",
+  );
+  // Act / Assert: the tag comes from the request, not from whatever figure is
+  // selected when the response lands, or a late response would re-label itself.
+  assert.match(store, /hitmapRecipe: string \| null/);
+  assert.ok(
+    store.indexOf("const forRecipe =") < store.indexOf("api.get<HitmapResponse>"),
+    "the recipe must be captured before the request, not after the response",
+  );
+  assert.match(
+    store,
+    /set\(\{ hitmapImage: data\.image, colorMap: data\.color_map, hitmapRecipe: forRecipe \}\)/,
+  );
+});
+
+ok("a figure with no recipe yet falls back to the selected figure's recipe", () => {
+  // Arrange: on first mount the files list may not have resolved, and the
+  // editor's loaded recipe is the one the preview came from.
+  const store = readFileSync(
+    join(here, "..", "src", "store", "useEditorStore.ts"),
+    "utf8",
+  );
+  // Act / Assert
+  assert.match(
+    store,
+    /const forRecipe =[\s\S]{0,220}?selectedFigureId[\s\S]{0,80}?\?\.path[\s\S]{0,30}?\?\?[\s\S]{0,30}?null;/,
+  );
+});
+
+ok("switching figures drops the previous figure's element selection", () => {
+  // Arrange: a stale element id from another figure is the same class of bug —
+  // the identity gate below must not have to compensate for it.
+  const figureActions = readFileSync(
+    join(here, "..", "src", "store", "figureActions.ts"),
+    "utf8",
+  );
+  // Act / Assert
+  assert.match(
+    figureActions,
+    /selectFigure: \(id: string \| null\) => \{[\s\S]*?selectedElement: null,[\s\S]*?selectedBbox: null,/,
+  );
+});
+
+ok("opening a recipe refreshes the raster that depicts it", () => {
+  // Arrange: api/switch resets the server's hitmap cache, so the raster must be
+  // re-fetched or the new figure would have none.
+  const figureActions = readFileSync(
+    join(here, "..", "src", "store", "figureActions.ts"),
+    "utf8",
+  );
+  // Act / Assert
+  assert.match(figureActions, /get\(\)\.loadHitmap\(\);/);
+});
+
 // ------------------------------------------------------- component contracts
 
 const overlaySource = readFileSync(
@@ -278,6 +429,39 @@ ok("a selection opens the property controls", () => {
     overlaySource,
     /if \(outcome\.kind === "select"\) \{[\s\S]*?showEditorPane\("details"\)/,
   );
+});
+
+ok("the overlay is told which figure it is drawn on", () => {
+  // Arrange / Act / Assert — the identity needs both sides.
+  assert.match(overlaySource, /figureRecipe: string/);
+  assert.match(
+    overlaySource,
+    /const belongsToFigure = hitmapMatchesFigure\(hitmapRecipe, figureRecipe\);/,
+  );
+});
+
+ok("the overlay never samples or draws another figure's raster", () => {
+  // Arrange / Act / Assert: the gate guards the scratch canvas the sampler
+  // reads back from, the sample itself, and whether the layer exists at all.
+  assert.match(
+    overlaySource,
+    /if \(!belongsToFigure \|\| !hitmapImage \|\| !canvasRef\.current\) return;/,
+  );
+  assert.match(
+    overlaySource,
+    /if \(!belongsToFigure \|\| !canvas \|\| !ctx\) return null;/,
+  );
+  assert.match(overlaySource, /if \(!belongsToFigure\) return null;/);
+});
+
+ok("a figure hands its own recipe to the overlay", () => {
+  // Arrange
+  const placed = readFileSync(
+    join(here, "..", "src", "components", "Canvas", "PlacedFigure.tsx"),
+    "utf8",
+  );
+  // Act / Assert
+  assert.match(placed, /<HitmapOverlay[\s\S]*?figureRecipe=\{figure\.path\}/);
 });
 
 console.log("\nAll hitmapSelect checks passed (" + passed + " assertion-groups).");

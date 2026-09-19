@@ -7,8 +7,36 @@
  */
 
 import type { ColumnDef } from "../../types/editor.ts";
+import type { ColumnSelection } from "./columnPlotSelection.ts";
 
 export type CellValue = string | number;
+
+/** The plot assignment (which column is X, which are Y) at one point in the
+ *  table's history. Structurally a ColumnSelection, copied so history never
+ *  aliases the live state. */
+export type AssignmentSnapshot = ColumnSelection;
+
+/** An independent copy of an assignment. History must never share the Y array
+ *  with the live selection, or a later edit would rewrite what undo restores. */
+export function cloneSelection(
+  selection: ColumnSelection | null | undefined,
+): AssignmentSnapshot {
+  return { x: selection?.x ?? null, ys: [...(selection?.ys ?? [])] };
+}
+
+/** Does the assignment name only columns this table has?
+ *
+ *  The invariant the atomic pair exists to keep: undo/redo must never leave a
+ *  chip (or the plot request) pointing at a column that is not in the restored
+ *  table. Asserted in tests/tableAssignmentHistory.test.ts. */
+export function assignmentFitsTable(
+  table: TableModel,
+  assignment: ColumnSelection,
+): boolean {
+  const names = new Set(table.columns.map((c) => c.name));
+  const x = assignment.x === null || names.has(assignment.x);
+  return x && assignment.ys.every((y) => names.has(y));
+}
 
 /** The editable shape of one data tab (`TabData` minus its identity). */
 export interface TableModel {
@@ -56,6 +84,14 @@ export interface UndoEntry {
   op: TableOp;
   /** The table as it was BEFORE the op: an independent copy, never aliased. */
   snapshot: TableModel;
+  /** The plot assignment (X/Y) as it was BEFORE the op.
+   *
+   *  A delete or a rename of an assigned column CLEARS that binding, and the
+   *  binding is dropped by the form's reconciler — not by this module — so an
+   *  undo that restored only the table would bring the column back with the
+   *  plot still pointing nowhere. Both halves of the state travel together in
+   *  one entry, and applyUndo/applyRedo return them as one pair. */
+  assignment: AssignmentSnapshot;
 }
 
 /** Undo is a safety net, not a history: capping it keeps a long editing
@@ -482,6 +518,10 @@ export interface RedoEntry {
   label: string;
   /** The table to put back when this entry is redone. */
   table: TableModel;
+  /** The plot assignment (X/Y) as it was AFTER the edit this entry redoes — for
+   *  a delete of an assigned column, that means the CLEARED binding, put back
+   *  together with the table it belongs to. */
+  assignment: AssignmentSnapshot;
 }
 
 export const REDO_LIMIT = UNDO_LIMIT;
@@ -502,6 +542,69 @@ export function popRedo(stack: readonly RedoEntry[]): {
 } {
   if (stack.length === 0) return { entry: null, stack: [] };
   return { entry: stack[stack.length - 1], stack: stack.slice(0, -1) };
+}
+
+// ---------------------------------------------------------------- transitions
+
+/** Everything one undo/redo changes: the table AND the plot assignment it
+ *  belongs to, plus both stacks. Returned as a whole so a caller cannot apply
+ *  half of it (the pane writes the table and hands the assignment to the form in
+ *  the same commit). */
+export interface TableHistory {
+  table: TableModel;
+  /** The X/Y binding that goes with `table`. */
+  assignment: AssignmentSnapshot;
+  undoStack: UndoEntry[];
+  redoStack: RedoEntry[];
+}
+
+/** A transition, named: `label` is what the toast and the new history entry say
+ *  the change was. */
+export interface TableHistoryTransition extends TableHistory {
+  label: string;
+}
+
+/** Undo one step: the table and its X/Y binding come back together.
+ *
+ * Returns null when there is nothing to undo (a no-op, not an error), matching
+ * popUndo. The state that was undone is parked on the redo stack AS A PAIR, so a
+ * redo re-applies the cleared binding together with the delete that cleared it.
+ * The caller's state is never mutated. */
+export function applyUndo(history: TableHistory): TableHistoryTransition | null {
+  const { entry, stack } = popUndo(history.undoStack);
+  if (!entry) return null;
+  return {
+    table: cloneTable(entry.snapshot),
+    assignment: cloneSelection(entry.assignment),
+    label: entry.label,
+    undoStack: stack,
+    redoStack: pushRedo(history.redoStack, {
+      label: entry.label,
+      table: cloneTable(history.table),
+      assignment: cloneSelection(history.assignment),
+    }),
+  };
+}
+
+/** Redo one step: the table and its X/Y binding come back together.
+ *
+ * The redo becomes undoable again, so the two stacks stay symmetric (the op is
+ * unnamed here — it is the same change the original entry named). */
+export function applyRedo(history: TableHistory): TableHistoryTransition | null {
+  const { entry, stack } = popRedo(history.redoStack);
+  if (!entry) return null;
+  return {
+    table: cloneTable(entry.table),
+    assignment: cloneSelection(entry.assignment),
+    label: entry.label,
+    redoStack: stack,
+    undoStack: pushUndo(history.undoStack, {
+      label: entry.label,
+      op: { kind: "set-table" },
+      snapshot: cloneTable(history.table),
+      assignment: cloneSelection(history.assignment),
+    }),
+  };
 }
 
 // ---------------------------------------------------------------- persistence

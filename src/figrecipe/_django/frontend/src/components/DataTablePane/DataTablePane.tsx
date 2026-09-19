@@ -23,7 +23,10 @@ import type { ColumnSelection } from "./columnPlotSelection";
 import {
   addColumn,
   affectedAssignmentLabel,
+  applyRedo,
+  applyUndo,
   assignmentImpact,
+  cloneSelection,
   cloneTable,
   datasetFromTable,
   deleteColumnAt,
@@ -33,9 +36,6 @@ import {
   findRowIndexByValues,
   insertRowAt,
   planColumnDelete,
-  popRedo,
-  popUndo,
-  pushRedo,
   pushUndo,
   renameColumnAt,
   rowValuesAt,
@@ -52,7 +52,12 @@ import {
   readRowValues,
   readSelectedCells,
   renderedColumnNodes,
+  type ColumnRoleWords,
 } from "./dataTableDom";
+import {
+  createTableSaveQueue,
+  type TableSaveQueue,
+} from "./tableSaveQueue";
 import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface DataTablePaneProps {
@@ -142,6 +147,13 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
     name: string;
     nonce: number;
   } | null>(null);
+  /** A binding restored from history, handed down to the badges. Undo/redo move
+   *  the table and its X/Y binding in one transition, so the form is given the
+   *  whole binding and applies it in the same commit as the table. */
+  const [selectionCommand, setSelectionCommand] = useState<{
+    selection: ColumnSelection;
+    nonce: number;
+  } | null>(null);
   const [hoverBadge, setHoverBadge] = useState<HoverBadge | null>(null);
   /** The table's own selection: the row numbers are the order the table
    *  currently shows, which is not the model's order once it is sorted. */
@@ -179,9 +191,9 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       : null,
   );
 
-  /** The pane's table model, read when a handler runs rather than when it was
-   *  created: an import, a plot or a tab switch replaces the tab object, and a
-   *  captured one would edit a table that is no longer on screen. */
+  /** The pane's table-model reads: an import, a plot or a tab switch replaces
+   *  the tab object, and a captured one would edit a table that is no longer on
+   *  screen. */
   const currentTable = useCallback((): TableModel | null => {
     const state = useEditorStore.getState();
     const tab = state.activeTabId
@@ -189,6 +201,15 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       : null;
     return tab ? { columns: tab.columns, rows: tab.rows } : null;
   }, []);
+
+  /** The write path for every table edit: one save in flight, edits coalesced to
+   *  the newest, and a revision gate on adopting the server's state. The queue is
+   *  created once per pane (see tableSaveQueue.ts). */
+  const saveQueue = useRef<TableSaveQueue>(
+    createTableSaveQueue(async (csv: string) => {
+      await api.post("datatable/import", { content: csv, format: "csv" });
+    }),
+  ).current;
 
   /** Write the pane's model back into the store — the table, the badges and the
    *  plot form all read the same tab. */
@@ -207,28 +228,43 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
   }, []);
 
   /** Persist through the leaf's own write path: datatable/import replaces the
-   *  stored table, then the reload shows what the backend actually kept. */
+   *  stored table, then the reload shows what the backend actually kept.
+   *
+   *  Every edit goes through the save queue, which keeps ONE write in flight and
+   *  coalesces the edits that arrive meanwhile to the newest one — overlapping
+   *  POSTs used to let a stale response decide the stored table. A completion
+   *  may only be adopted (reload + toast) when no newer edit has been handed
+   *  over; a superseded save stays silent because the newer edit speaks for the
+   *  table. */
   const persistTable = useCallback(
     async (table: TableModel, message: string) => {
+      const outcome = await saveQueue.enqueue(serializeTableToCsv(table));
+      if (outcome.status === "failed") {
+        // The edit stays on screen: a failed save must not also throw away what
+        // the user just changed. The error toast is the fail-loud signal.
+        showToast(interpolate(gettext("Save failed: %s"), [outcome.error]), "error");
+        return;
+      }
+      // A newer edit is already queued, and ITS completion is what may adopt the
+      // server's state. Reloading here would put the older table back on screen.
+      if (outcome.status !== "applied") return;
+      const revision = outcome.revision;
       try {
-        await api.post("datatable/import", {
-          content: serializeTableToCsv(table),
-          format: "csv",
-        });
-        await loadDatatable();
+        // `isCurrent` covers the read itself: an edit that lands while this
+        // reload is in flight must not be overwritten by the older server copy.
+        await loadDatatable({ isCurrent: () => saveQueue.revision === revision });
         await refreshAfterMutation();
         showToast(message, "success");
       } catch (e) {
-        // The edit stays on screen: a failed save must not also throw away what
-        // the user just changed. The error toast is the fail-loud signal.
         showToast(interpolate(gettext("Save failed: %s"), [e]), "error");
       }
     },
-    [loadDatatable, refreshAfterMutation, showToast],
+    [loadDatatable, refreshAfterMutation, saveQueue, showToast],
   );
 
   /** The single write path for every edit: snapshot for undo, update the model,
-   *  then persist. */
+   *  then persist. The snapshot carries the plot assignment too, so undoing a
+   *  delete that cleared an X/Y binding brings the binding back with the table. */
   const applyEdit = useCallback(
     (next: TableModel, op: TableOp) => {
       const table = currentTable();
@@ -238,7 +274,12 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       }
       const label = opLabel(op);
       setUndoStack((stack) =>
-        pushUndo(stack, { label, op, snapshot: cloneTable(table) }),
+        pushUndo(stack, {
+          label,
+          op,
+          snapshot: cloneTable(table),
+          assignment: cloneSelection(badgeSelection),
+        }),
       );
       // A fresh edit invalidates the redo branch: the states parked there no
       // longer follow from what is on screen, so offering them would apply an
@@ -247,7 +288,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       writeTable(next);
       void persistTable(next, label);
     },
-    [currentTable, persistTable, showToast, writeTable],
+    [badgeSelection, currentTable, persistTable, showToast, writeTable],
   );
 
   /** The shared table edits itself (double-click a cell, rename a header, paste,
@@ -328,20 +369,30 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
     [activeTab?.columns, badgeSelection, hoverBadge],
   );
 
+  /** The X/Y role words the highlighted columns announce. Built here, not in
+   *  dataTableDom: the copy belongs with the rest of the pane's gettext text,
+   *  and the module stays free of the i18n layer (accessibility was previously
+   *  the CSS `::after` letter alone, which no screen reader reads out). */
+  const roleWords = useMemo<ColumnRoleWords>(
+    () => ({ x: gettext("X column"), y: gettext("Y column") }),
+    [],
+  );
+
   // The shared table re-renders its own className, which drops anything stamped
   // on it, so the highlight is re-applied after every commit here and whenever
   // the table's DOM changes underneath (sorting, virtual scrolling).
   useEffect(() => {
     const root = contentRef.current;
     if (!root) return;
-    const sync = () => applyColumnHighlight(renderedColumnNodes(root), highlights);
+    const sync = () =>
+      applyColumnHighlight(renderedColumnNodes(root), highlights, roleWords);
     sync();
     const observer = new MutationObserver(sync);
     // childList only: the applier writes classes/attributes, and observing those
     // would make it trigger itself.
     observer.observe(root, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [highlights]);
+  }, [highlights, roleWords]);
 
   // A different tab is a different table: the old selection and the undo
   // history no longer describe what is on screen.
@@ -542,40 +593,44 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       showToast(gettext("No data table to edit"), "error");
       return;
     }
-    const { entry, stack } = popUndo(undoStack);
+    // One transition: the table AND the X/Y binding it was made with come back
+    // together, and the state being undone is parked as a pair for redo.
+    const next = applyUndo({
+      table,
+      assignment: cloneSelection(badgeSelection),
+      undoStack,
+      redoStack,
+    });
     // Empty stack: nothing to undo is not an error worth a toast.
-    if (!entry) return;
-    setUndoStack(stack);
-    // Park the state being undone, so the very next redo can put it back.
-    setRedoStack((r) => pushRedo(r, { label: entry.label, table: cloneTable(table) }));
-    const restored = cloneTable(entry.snapshot);
-    writeTable(restored);
-    void persistTable(restored, interpolate(gettext("Undid: %s"), [entry.label]));
-  }, [currentTable, persistTable, showToast, undoStack, writeTable]);
+    if (!next) return;
+    setUndoStack(next.undoStack);
+    setRedoStack(next.redoStack);
+    writeTable(next.table);
+    setSelectionCommand((c) => ({ selection: next.assignment, nonce: (c?.nonce ?? 0) + 1 }));
+    void persistTable(next.table, interpolate(gettext("Undid: %s"), [next.label]));
+  }, [badgeSelection, currentTable, persistTable, redoStack, showToast, undoStack, writeTable]);
 
-  /** Put back the edit the last undo reversed. */
+  /** Put back the edit the last undo reversed — table and binding together. */
   const handleRedo = useCallback(() => {
     const table = currentTable();
     if (!table) {
       showToast(gettext("No data table to edit"), "error");
       return;
     }
-    const { entry, stack } = popRedo(redoStack);
+    const next = applyRedo({
+      table,
+      assignment: cloneSelection(badgeSelection),
+      undoStack,
+      redoStack,
+    });
     // Nothing to redo is a silent no-op, like an empty undo stack.
-    if (!entry) return;
-    setRedoStack(stack);
-    // The redo becomes undoable again, so the two stacks stay symmetric.
-    setUndoStack((u) =>
-      pushUndo(u, {
-        label: entry.label,
-        op: { kind: "set-table" },
-        snapshot: cloneTable(table),
-      }),
-    );
-    const restored = cloneTable(entry.table);
-    writeTable(restored);
-    void persistTable(restored, interpolate(gettext("Redid: %s"), [entry.label]));
-  }, [currentTable, persistTable, redoStack, showToast, writeTable]);
+    if (!next) return;
+    setUndoStack(next.undoStack);
+    setRedoStack(next.redoStack);
+    writeTable(next.table);
+    setSelectionCommand((c) => ({ selection: next.assignment, nonce: (c?.nonce ?? 0) + 1 }));
+    void persistTable(next.table, interpolate(gettext("Redid: %s"), [next.label]));
+  }, [badgeSelection, currentTable, persistTable, redoStack, showToast, undoStack, writeTable]);
 
   // The editor already binds Ctrl+Z globally to the canvas undo, so the table's
   // undo only takes the keystroke when the interaction was in this pane, and
@@ -672,6 +727,10 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
         const content = await file.text();
         const ext = file.name.split(".").pop()?.toLowerCase();
         const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
+        // An import REPLACES the same stored table the save queue writes, so a
+        // pending edit must land first — otherwise it would overwrite the file
+        // the user just chose.
+        await saveQueue.idle();
         await api.post("datatable/import", { content, format });
         showToast(gettext("Imported data"), "success");
         loadDatatable();
@@ -680,7 +739,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
         showToast(interpolate(gettext("Import failed: %s"), [e]), "error");
       }
     },
-    [showToast, loadDatatable, refreshAfterMutation],
+    [showToast, loadDatatable, refreshAfterMutation, saveQueue],
   );
 
   const dataset = useMemo(
@@ -862,6 +921,7 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             key={activeTab.id}
             tab={activeTab}
             columnCommand={columnCommand}
+            selectionCommand={selectionCommand}
             onSelectionChange={setBadgeSelection}
           />
         )}

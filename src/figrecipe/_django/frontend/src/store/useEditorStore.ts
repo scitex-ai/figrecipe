@@ -54,6 +54,10 @@ interface EditorState {
   // ── Legacy ──────────────────────────────────────────────
   hitmapImage: string | null;
   colorMap: Record<string, unknown>;
+  /** The recipe the loaded hitmap depicts. A raster is rendered for ONE recipe,
+   *  so this is what makes it per-figure instead of global: an overlay only
+   *  samples the raster whose recipe is its own figure's (hitmapMatchesFigure). */
+  hitmapRecipe: string | null;
   loading: boolean;
 
   // ── Selection ───────────────────────────────────────────
@@ -122,7 +126,10 @@ interface EditorState {
   loadHitmap: () => Promise<void>;
   loadFiles: () => Promise<void>;
   loadThemes: () => Promise<void>;
-  loadDatatable: () => Promise<void>;
+  /** @param options.isCurrent — apply the server's table only when this still
+   *  returns true after the read (the Data pane uses it to ignore a response a
+   *  newer edit has overtaken). */
+  loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
   addFigure: (path: string) => Promise<void>;
@@ -196,6 +203,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedFigureIds: [],
   hitmapImage: null,
   colorMap: {},
+  hitmapRecipe: null,
   loading: false,
   selectedElement: null,
   selectedBbox: null,
@@ -353,9 +361,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   loadHitmap: async () => {
+    // The raster the server renders depicts the recipe IT has open, and the
+    // frontend mirrors that as currentFile — falling back to the selected
+    // figure's own recipe while the files list is still resolving. Captured
+    // BEFORE the request: a response that lands after the user opened something
+    // else must not re-label itself as that figure's picture.
+    const forRecipe =
+      get().currentFile ??
+      get().placedFigures.find((f) => f.id === get().selectedFigureId)?.path ??
+      null;
     try {
       const data = await api.get<HitmapResponse>("hitmap");
-      set({ hitmapImage: data.image, colorMap: data.color_map });
+      set({ hitmapImage: data.image, colorMap: data.color_map, hitmapRecipe: forRecipe });
     } catch (e) {
       console.error("[Editor] Failed to load hitmap:", e);
     }
@@ -388,7 +405,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
 
-  loadDatatable: async () => {
+  loadDatatable: async (options?) => {
     try {
       const data = await api.get<{
         columns: ColumnDef[];
@@ -398,6 +415,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           { columns: string[]; row_indices: number[] }
         >;
       }>("datatable/data");
+      // A read that began before a newer edit must not put the older table back
+      // on screen: the Data pane's save queue says whether this response is
+      // still current, and the newest edit answers for the table anyway.
+      const { isCurrent } = options ?? {};
+      if (isCurrent && !isCurrent()) return;
       const tab: TabData = {
         id: "main",
         label: gettext("Data"),

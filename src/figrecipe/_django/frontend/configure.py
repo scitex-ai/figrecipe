@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """Configure figrecipe frontend build environment.
 
-Creates a symlink from ./scitex-ui-types → scitex_ui's static directory,
-so both TypeScript (tsconfig paths) and Vite (resolve.alias) can find
-scitex-ui components from the pip-installed package.
+Creates a symlink from ./scitex-ui-types → scitex_ui's static directory, so
+TypeScript (tsconfig paths) can find a pip-installed scitex-ui for a bare
+`scitex-ui/...` specifier.
+
+NOTE (dependency alignment): the frontend no longer imports that way. Every
+`@scitex/ui` import uses the deep source path the vite alias and tsconfig
+`paths` resolve against the sibling OWNER CHECKOUT, so neither this symlink nor
+its tsconfig mapping is part of the build; `tests/scitexUiContract.test.ts`
+fails if a bare `scitex-ui/...` specifier comes back. This script is kept for a
+manual, pip-only workflow and is not run by CI.
 
 Run once after install:
     python configure.py

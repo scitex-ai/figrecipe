@@ -110,6 +110,43 @@ export type SelectionOutcome =
   | { kind: "clear" }
   | { kind: "unchanged" };
 
+/** Does the loaded hitmap belong to this figure?
+ *
+ * A hitmap raster is rendered server-side for ONE recipe — the one the editor
+ * has open — and the store keeps exactly one of them. Without this identity the
+ * overlay sampled that raster on every selected figure and resolved its colours
+ * against that other figure's elements: clicking figure B selected (and then
+ * edited) whatever element of figure A happened to share the pixel's colour.
+ * Two figures placed from the SAME recipe are the same picture, which is why the
+ * identity is the recipe and not the figure's id. */
+export function hitmapMatchesFigure(
+  hitmapRecipe: string | null | undefined,
+  figureRecipe: string | null | undefined,
+): boolean {
+  if (!hitmapRecipe || !figureRecipe) return false;
+  return hitmapRecipe === figureRecipe;
+}
+
+/** The element key under a sampled pixel, for THIS figure only.
+ *
+ * Same chain as resolveElementKey with the identity gate in front, so a raster
+ * that depicts another recipe can never select anything here — and so a caller
+ * cannot forget the gate. */
+export function resolveFigureHit(input: {
+  hitmapRecipe: string | null | undefined;
+  figureRecipe: string | null | undefined;
+  ready: boolean;
+  pixel: PixelSample;
+  hexToKey: Record<string, string>;
+}): string | null {
+  if (!hitmapMatchesFigure(input.hitmapRecipe, input.figureRecipe)) return null;
+  return resolveElementKey({
+    ready: input.ready,
+    pixel: input.pixel,
+    hexToKey: input.hexToKey,
+  });
+}
+
 /** Selection transition for a click / Enter on `hit` (null = empty background).
  *
  * A miss CLEARS: leaving the previously clicked element highlighted while the

@@ -17,10 +17,13 @@ import { fileURLToPath } from "node:url";
 
 import {
   chooserAvailable,
+  chooserFocusIndex,
   chooserOffersDataRoute,
   chooserPlacement,
   choiceKeyAction,
+  railKeyIntent,
   revealMode,
+  revealOnFocus,
   variantChoices,
 } from "../src/components/Gallery/variantChooser.ts";
 import type { GalleryData } from "../src/components/Gallery/useGalleryTemplates.ts";
@@ -208,6 +211,65 @@ ok("a stale index is clamped, so a rebuilt list cannot choose the wrong variant"
   assert.deepEqual(choiceKeyAction("ArrowDown", 99, 3), { index: 0, action: "move" });
 });
 
+// ---- reaching the chooser by keyboard ------------------------------------
+
+// The panel is portalled to <body> and its items use a roving tabindex, so a
+// keyboard user who focuses a rail item opens the chooser but can never TAB into
+// it: focus never enters the panel, and its arrows/Enter handler never runs.
+
+ok("an arrow on a rail item opens the chooser", () => {
+  // Arrange / Act / Assert — the menu-button pattern; the rail is a vertical
+  // strip, so the Down arrow is the natural one and Right is its lateral twin.
+  assert.equal(railKeyIntent("ArrowDown", true, false), "open");
+  assert.equal(railKeyIntent("ArrowRight", true, false), "open");
+});
+
+ok("Enter keeps its own meaning and never opens the chooser", () => {
+  // Arrange / Act / Assert: Enter on a rail item is the one-operation plot
+  // (TODO 129) / the data route. One gesture, one action.
+  assert.equal(railKeyIntent("Enter", true, false), "ignore");
+  assert.equal(railKeyIntent(" ", true, false), "ignore");
+});
+
+ok("a category with no variants never steals the arrow keys", () => {
+  // Arrange / Act / Assert: "vector" has no templates; opening an empty panel
+  // would be a dead end that also breaks the rail's own arrow navigation.
+  assert.equal(railKeyIntent("ArrowDown", false, false), "ignore");
+  assert.equal(railKeyIntent("ArrowRight", false, false), "ignore");
+});
+
+ok("a panel whose list holds the focus leaves the arrows to the list", () => {
+  // Arrange / Act / Assert: the rail must not fight the variant list for them.
+  assert.equal(railKeyIntent("ArrowDown", true, true), "ignore");
+  assert.equal(railKeyIntent("ArrowRight", true, true), "ignore");
+});
+
+ok("a panel that is revealed but not yet focused still takes the arrow", () => {
+  // Arrange: focusing a rail item reveals the panel, so the first arrow arrives
+  // with the panel already on screen and the focus still on the rail item — the
+  // exact case a keyboard user is in. Gating on "open" would strand them.
+  // Act / Assert
+  assert.equal(railKeyIntent("ArrowDown", true, false), "open");
+});
+
+ok("opening by keyboard focuses a real variant, clamped to the list", () => {
+  // Arrange / Act / Assert
+  assert.equal(chooserFocusIndex(0, 3), 0);
+  assert.equal(chooserFocusIndex(2, 3), 2);
+  assert.equal(chooserFocusIndex(99, 3), 2);
+  assert.equal(chooserFocusIndex(-5, 3), 0);
+  assert.equal(chooserFocusIndex(1, 0), 0);
+});
+
+ok("a dismissed panel does not re-open just because Escape focused the rail", () => {
+  // Arrange: Escape hands the focus back to the rail item, and the rail reveals
+  // on focus — the dismissal has to survive that.
+  // Act / Assert
+  assert.equal(revealOnFocus("line", "line"), false);
+  assert.equal(revealOnFocus("line", "scatter"), true);
+  assert.equal(revealOnFocus("line", null), true);
+});
+
 // ---- the data route the chooser has to carry on touch --------------------
 
 ok("data route offered only for a plottable kind AND a loaded table", () => {
@@ -243,6 +305,57 @@ ok("the chooser is portalled and named for assistive tech", () => {
   assert.match(panel, /document\.body/);
   assert.match(panel, /role="dialog"/);
   assert.match(panel, /aria-label=\{interpolate\(gettext\("%s variants"\), \[familyLabel\]\)\}/);
+});
+
+// ---- conformance: the chooser is reachable from the keyboard --------------
+
+ok("the rail opens the chooser on an arrow key, through the pure decision", () => {
+  // Arrange
+  const rail = sql("components/PlotTypeNav/PlotTypeNav.tsx");
+  // Act / Assert: the reveal is decided by railKeyIntent, not re-derived in JSX,
+  // and the key that opens a panel does not also scroll the pane.
+  assert.match(rail, /railKeyIntent\(/);
+  assert.match(rail, /addEventListener\("keydown", keydown\)/);
+  assert.match(
+    rail,
+    /railKeyIntent\(\s*e\.key,[\s\S]{0,200}?\) !== "open"/,
+  );
+  assert.match(rail, /e\.preventDefault\(\);\s*\n\s*cancelClose\(\);\s*\n\s*setReveal\(\{ \.\.\.info, pinned: true, keyboard: true \}\)/);
+});
+
+ok("a keyboard-opened panel is pinned, so Escape can dismiss it", () => {
+  // Arrange / Act / Assert: a hover panel closes on pointer-leave; a panel the
+  // keyboard opened has no pointer, so it must behave like the tapped one.
+  const rail = sql("components/PlotTypeNav/PlotTypeNav.tsx");
+  assert.match(rail, /setReveal\(\{ \.\.\.info, pinned: true, keyboard: true \}\)/);
+  assert.match(rail, /pinned=\{reveal\.pinned\}/);
+});
+
+ok("closing a keyboard-opened panel hands focus back to its rail item", () => {
+  // Arrange
+  const rail = sql("components/PlotTypeNav/PlotTypeNav.tsx");
+  // Act / Assert: otherwise the user is dropped at the top of the document.
+  assert.match(rail, /itemForFamily\(family\)\?\.focus\(\)/);
+  assert.match(rail, /onClose=\{dismissReveal\}/);
+});
+
+ok("the panel moves focus onto the active variant when the keyboard opened it", () => {
+  // Arrange
+  const panel = sql("components/Gallery/VariantChooser.tsx");
+  // Act / Assert: the roving tabindex then works — arrows move the highlight
+  // inside the panel's own handler, Enter chooses, Escape dismisses.
+  assert.match(panel, /focusOnOpen\?: boolean;/);
+  assert.match(
+    panel,
+    /const index = chooserFocusIndex\(active, choices\.length\);\s*\n\s*itemRefs\.current\[index\]\?\.focus\(\);/,
+  );
+  assert.match(panel, /ref=\{\(el\) => \{\s*\n\s*itemRefs\.current\[i\] = el;/);
+});
+
+ok("the rail tells the panel whether the keyboard opened it", () => {
+  // Arrange / Act / Assert
+  const rail = sql("components/PlotTypeNav/PlotTypeNav.tsx");
+  assert.match(rail, /focusOnOpen=\{reveal\.keyboard\}/);
 });
 
 // ---- conformance: the module must stay node-runnable ---------------------

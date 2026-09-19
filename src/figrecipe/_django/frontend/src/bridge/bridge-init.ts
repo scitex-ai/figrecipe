@@ -6,7 +6,7 @@
  */
 
 // scitex-ui app-level CSS (selector-nav, data-table, etc.)
-import "scitex-ui/css/app.css";
+import "@scitex/ui/src/scitex_ui/static/scitex_ui/css/app.css";
 
 // figrecipe-specific styles
 import "../styles/app-variables.css";
@@ -23,12 +23,9 @@ import "../styles/mobile.css";
 
 import {
   mountFigrecipeEditor,
-  unmountFigrecipeEditor,
-  switchRecipeFile,
 } from "./MountPoint";
 import {
   wireWorkspaceBridge,
-  unwireWorkspaceBridge,
 } from "./WorkspaceIntegration";
 
 const RECIPE_EXTS = [".yaml", ".yml"];

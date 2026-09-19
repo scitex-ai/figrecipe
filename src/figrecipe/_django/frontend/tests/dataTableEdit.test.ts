@@ -446,6 +446,7 @@ ok("delete then undo restores the exact prior table", () => {
     label: "Delete row 2",
     op: { kind: "delete-rows", rowNumbers: [2] },
     snapshot,
+    assignment: { x: "time", ys: ["signal"] },
   });
   // Act: delete a row and a column, then undo the last entry.
   const edited = deleteColumnAt(deleteRowAt(table, 1), 0);
@@ -475,6 +476,7 @@ ok("a snapshot is not mutated by the edits that follow it", () => {
     label: "Delete column 'time'",
     op: { kind: "delete-column", columnName: "time" },
     snapshot: cloneTable(table),
+    assignment: { x: "time", ys: ["signal"] },
   };
   const before = cloneTable(table);
   // Act: edit the live table in every way this module offers.
@@ -496,11 +498,13 @@ ok("undo works from the oldest op down to the empty stack", () => {
     label: "Delete row 1",
     op: { kind: "delete-rows", rowNumbers: [1] },
     snapshot: fixture(),
+    assignment: { x: null, ys: [] },
   };
   const second: UndoEntry = {
     label: "Delete column 'signal'",
     op: { kind: "delete-column", columnName: "signal" },
     snapshot: fixture(),
+    assignment: { x: null, ys: [] },
   };
   // Act
   const stack = pushUndo(pushUndo([], first), second);
@@ -531,6 +535,7 @@ ok("the undo stack keeps its most recent entries within the cap", () => {
       label: "Delete row " + (i + 1),
       op: { kind: "delete-rows", rowNumbers: [i + 1] },
       snapshot: fixture(),
+      assignment: { x: null, ys: [] },
     });
   }
   // Assert
@@ -705,10 +710,15 @@ ok("redo restores exactly the state an undo removed", () => {
     label: "Delete row 1",
     op: { kind: "delete-rows", rowNumbers: [1] },
     snapshot: cloneTable(before),
+    assignment: { x: "time", ys: ["signal"] },
   };
   // Act -- undo restores the snapshot, then redo takes back what it removed.
   const afterUndo = cloneTable(undoEntry.snapshot);
-  const parked = pushRedo([], { label: undoEntry.label, table: cloneTable(deleted) });
+  const parked = pushRedo([], {
+    label: undoEntry.label,
+    table: cloneTable(deleted),
+    assignment: { x: "time", ys: ["signal"] },
+  });
   const { entry, stack } = popRedo(parked);
   const afterRedo = entry ? cloneTable(entry.table) : null;
   // Assert
@@ -732,7 +742,11 @@ ok("the redo stack is capped like undo, oldest dropped", () => {
   let stack: RedoEntry[] = [];
   // Act
   for (let i = 0; i < UNDO_LIMIT + 3; i += 1) {
-    stack = pushRedo(stack, { label: `op ${i}`, table: cloneTable(CRUD_TABLE) });
+    stack = pushRedo(stack, {
+      label: `op ${i}`,
+      table: cloneTable(CRUD_TABLE),
+      assignment: { x: "time", ys: ["signal"] },
+    });
   }
   // Assert
   assert.equal(stack.length, UNDO_LIMIT);

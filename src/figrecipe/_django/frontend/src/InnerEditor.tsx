@@ -198,7 +198,11 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
   const dataCollapsed = dataPanel.collapsed && !phone;
   const figureCollapsed = centerCollapsed && !phone;
   const detailsCollapsed = rightPanel.collapsed && !phone;
-  const paneAttrs = (id: string, label: string, order: number) =>
+  const paneAttrs = (
+    id: string,
+    label: string,
+    order: number,
+  ): Record<string, string | number> =>
     canvasEnabled
       ? {}
       : { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order };
