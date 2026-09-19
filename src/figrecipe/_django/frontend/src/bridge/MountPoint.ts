@@ -9,11 +9,11 @@ import {
   installFetchOverride,
   mountReactApp,
   unmountReactApp,
-} from "scitex-ui/react/app/bridge";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/bridge";
 import type {
   BridgeConfig,
   BridgeMountOptions,
-} from "scitex-ui/react/app/bridge";
+} from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/bridge";
 import { FigrecipeEditor } from "../FigrecipeEditor";
 import { emitEvent } from "./EventBus";
 import { resolveAppVersion } from "./appVersion";

@@ -19,7 +19,8 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "scitex-ui/*": ["./scitex-ui-types/*"]
+      "@scitex/ui": ["./node_modules/@scitex/ui"],
+      "@scitex/ui/*": ["./node_modules/@scitex/ui/*"]
     }
   },
   "include": ["src"]

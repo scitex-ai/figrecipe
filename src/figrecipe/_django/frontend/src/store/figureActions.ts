@@ -27,6 +27,7 @@ type Get = () => {
   loadFiles: () => Promise<void>;
   loadDatatable: () => Promise<void>;
   loadPanelPositions: () => Promise<void>;
+  loadHitmap: () => Promise<void>;
 };
 type Set = (
   partial:
@@ -91,6 +92,10 @@ export function createFigureActions(set: Set, get: Get) {
         get().loadFiles();
         get().loadDatatable();
         get().loadPanelPositions();
+        // api/switch resets the server's hitmap cache, so the raster is now a
+        // picture of THIS recipe and must be re-fetched: the previous figure's
+        // raster depicts a different one and is inert on this figure.
+        get().loadHitmap();
       } catch (e) {
         console.error("[Editor] Failed to add figure:", e);
         get().showToast(interpolate(gettext("Error: %s"), [e]), "error");

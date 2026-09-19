@@ -342,6 +342,10 @@ msgstr "テーブル"
 msgid "Close tab and remove figure"
 msgstr "タブを閉じて図を削除"
 
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Y column"
+msgstr "Y列"
+
 #: frontend/src/components/ExportDialog/ExportDialog.tsx
 msgid "Raster (300 DPI)"
 msgstr "ラスター (300 DPI)"
@@ -1137,6 +1141,7 @@ msgid "Box"
 msgstr "箱ひげ図"
 
 #: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "X column"
 msgstr "X列"
 
@@ -1147,6 +1152,11 @@ msgstr "行番号"
 #: frontend/src/components/DataTablePane/PlotFromColumns.tsx
 msgid "Y columns"
 msgstr "Y列"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+#, javascript-format, python-format
+msgid "Y column: %s"
+msgstr "Y列: %s"
 
 #: frontend/src/components/DataTablePane/PlotFromColumns.tsx
 msgid "Plot type"

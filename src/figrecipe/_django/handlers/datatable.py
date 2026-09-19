@@ -31,9 +31,40 @@ def handle_datatable_data(request, editor):
     return _table_response(*_current_table(editor))
 
 
+def _project_working_dir(editor, is_selected):
+    """The selected project dir to attach data to, or None when there is none.
+
+    ``EditorState.working_dir`` falls back to the process CWD, which is not a
+    project the user chose, so it only counts when it differs from the CWD.
+    """
+    working_dir = getattr(editor, "working_dir", None)
+    return working_dir if is_selected(working_dir) else None
+
+
 def _current_table(editor):
-    """The table the Data pane shows, as ``(names, rows, source)``."""
+    """The table the Data pane shows, as ``(names, rows, source)``.
+
+    Order: the table this PROJECT has stored, then this session's in-memory
+    import, then the figure's recorded data. The stored table comes first
+    because it is the edit the user made — and, unlike ``imported_table``, which
+    lives on one EditorState in one process, it survives a server restart and is
+    visible to any process opening the same project (Private Beta spec: project
+    data stays connected to the project).
+    """
     from figrecipe._editor._helpers import to_json_serializable
+
+    from figrecipe._django._project_table import (
+        is_selected_project_dir,
+        load_project_table,
+    )
+
+    stored = load_project_table(
+        getattr(editor, "recipe_path", None),
+        _project_working_dir(editor, is_selected_project_dir),
+    )
+    if stored:
+        names, rows = stored
+        return names, rows, "project"
 
     imported = getattr(editor, "imported_table", None)
     if imported:
@@ -274,6 +305,21 @@ def handle_datatable_import(request, editor):
 
         # Kept on the editor so the follow-up datatable/data shows this table.
         editor.imported_table = {"names": list(headers), "rows": rows}
+
+        # ...and written into the PROJECT, so the edit outlives this process and
+        # stays attached to the recipe it belongs to (the in-memory attribute
+        # alone is lost on restart and invisible to any other process).
+        from figrecipe._django._project_table import (
+            is_selected_project_dir,
+            save_project_table,
+        )
+
+        save_project_table(
+            getattr(editor, "recipe_path", None),
+            _project_working_dir(editor, is_selected_project_dir),
+            list(headers),
+            rows,
+        )
 
         columns = []
         for i, name in enumerate(headers):

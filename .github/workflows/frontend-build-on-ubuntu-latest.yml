@@ -45,26 +45,71 @@ jobs:
       # "@scitex/ui" is a file: dependency pointing at the scitex-ui repo root
       # (package.json: "file:../../../../../scitex-ui"), which resolves to a
       # SIBLING of this checkout — so npm install cannot run without it.
-      - name: Check out scitex-ui as a sibling
+      - name: Check out scitex-ui as a sibling (the RELEASED owner commit)
         uses: actions/checkout@v4
         with:
           repository: scitex-ai/scitex-ui
-          ref: develop
+          # Pinned to the release figrecipe declares (frontend/package.json ->
+          # scitexUi.commit, tag v0.23.0). This used to float on `develop`: a
+          # moving branch can silently stop matching the declared release, which
+          # is exactly the drift this leg exists to catch, and it made the
+          # contract's "is the checkout new enough" answer depend on the day.
+          ref: e081f1def88d7c7a3d88af3601dd0e94e117e818
           path: scitex-ui
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # The dependency contract runs the repo's documented test runner,
+          # `node --experimental-strip-types`, which needs Node >= 22.6 — the
+          # previous "20" could not execute it at all. Pinned to the version the
+          # frontend suite and the contract are actually run and verified on
+          # (v22.23.2); any 22.x at or above 22.6 works.
+          node-version: "22.23.2"
 
       - name: Install frontend deps
         working-directory: figrecipe/src/figrecipe/_django/frontend
         run: npm install --no-audit --no-fund
+
+      # The checkout is pinned, so prove it IS the declared release before
+      # anything builds on it: the SHA and the owner's own package version are
+      # both asserted against figrecipe's declaration. Fails loudly — a missing
+      # object or a moved ref must not be discovered later as a bundle error.
+      - name: Assert the owner checkout is the declared release
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        env:
+          SCITEX_UI_DIR: ${{ github.workspace }}/scitex-ui
+        run: |
+          set -euo pipefail
+          declared_commit="$(node -p "require('./package.json').scitexUi.commit")"
+          declared_version="$(node -p "require('./package.json').scitexUi.version")"
+          actual_commit="$(git -C "$SCITEX_UI_DIR" rev-parse HEAD)"
+          owner_version="$(node -p "require('$SCITEX_UI_DIR/package.json').version")"
+          echo "declared    : $declared_version / $declared_commit"
+          echo "checked out : $owner_version / $actual_commit"
+          if [ "$actual_commit" != "$declared_commit" ]; then
+            echo "::error::scitex-ui HEAD $actual_commit is not the declared release $declared_commit"
+            exit 1
+          fi
+          if [ "$owner_version" != "$declared_version" ]; then
+            echo "::error::scitex-ui package version $owner_version != declared $declared_version"
+            exit 1
+          fi
 
       # SCITEX_UI_STATIC is the documented override in figrecipe's
       # vite.config.ts; setting it explicitly skips the python3
       # `import scitex_ui` discovery path, so this leg does not need a Python
       # env and cannot silently pick up a DIFFERENT scitex-ui than the one
       # checked out above.
+      # The dependency contract in its own step, BEFORE the bundle: a red X here
+      # means the owner source or the lockfile drifted (the checked-out
+      # scitex-ui is older than package.json's `scitexUi.version`, the lockfile
+      # disagrees with it, or an `@scitex/ui/...` import no longer resolves or is
+      # no longer exported) — not that the bundle broke. That drift is what
+      # reached a production container as an unresolvable import before.
+      - name: The dependency contract (paths, symbols, lock vs source)
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: node --experimental-strip-types tests/scitexUiContract.test.ts
+
       - name: Build (vite) — must resolve every @scitex/ui import
         working-directory: figrecipe/src/figrecipe/_django/frontend
         env:

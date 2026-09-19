@@ -31,6 +31,12 @@
     "zustand": "^4.5.0",
     "@scitex/ui": "file:../../../../../scitex-ui"
   },
+  "scitexUi": {
+    "version": "0.23.0",
+    "tag": "v0.23.0",
+    "commit": "e081f1def88d7c7a3d88af3601dd0e94e117e818",
+    "reason": "The editor imports owner source by deep path (ts/_base/gettext.ts, react/app/data-table, react/app/selector-nav, react/app/alert-banner, react/app/usePanelResize, react/app/bridge, ts/shell/*, ts/app/panes, ts/app/project-selector/types, css/*). 0.20.2 - the version the lock used to record - has none of the newer ones. tests/scitexUiContract.test.ts enforces this requirement against the sibling checkout."
+  },
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
