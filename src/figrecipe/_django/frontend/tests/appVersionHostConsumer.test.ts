@@ -56,17 +56,17 @@ assert.equal(
     "Hub mount.",
 );
 
-// 1. THE regression: host stamps data-app-version="0.34.8", constant absent.
-//    The badge must show the installed leaf version -> v0.34.8 (the element
+// 1. THE regression: host stamps data-app-version="0.35.0", constant absent.
+//    The badge must show the installed leaf version -> v0.35.0 (the element
 //    renders "v" + resolvedVersion).
 assert.equal(
-  resolveAppVersion("0.34.8"),
-  "0.34.8",
+  resolveAppVersion("0.35.0"),
+  "0.35.0",
   "stamped host version must be returned even when __FIGRECIPE_VERSION__ is absent",
 );
 
 // 2. Whitespace-stamped value is trimmed, not dropped and not padded.
-assert.equal(resolveAppVersion("  0.34.8  "), "0.34.8");
+assert.equal(resolveAppVersion("  0.35.0  "), "0.35.0");
 
 // 3. No stamp (null / undefined / blank) -> undefined, so the mount OMITS the
 //    appVersion prop and InnerEditor runs its own chain. Must NOT return a
