@@ -27,12 +27,13 @@ scitex original:
 
 from __future__ import annotations
 
-import logging  # noqa: STX-I007 (figrecipe is a leaf — no @stx.session)
 from typing import Any, Dict, Optional, Tuple
+
+import scitex_logging as slogging
 
 from .styles._dotdict import DotDict
 
-logger = logging.getLogger(__name__)
+logger = slogging.getLogger(__name__)
 
 # mm → pt conversion (matplotlib uses points internally)
 _MM_TO_PT = 2.83465

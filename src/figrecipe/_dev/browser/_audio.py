@@ -12,6 +12,10 @@ import subprocess
 from pathlib import Path
 from typing import List, Tuple
 
+import scitex_logging as slogging
+
+console = slogging.getConsole(f"{__name__}.console")
+
 # Check for ElevenLabs API key
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 
@@ -93,7 +97,7 @@ def generate_tts_segments(
     audio_files = []
 
     if ELEVENLABS_API_KEY:
-        print("Using ElevenLabs TTS (high quality)")
+        console.info("Using ElevenLabs TTS (high quality)")
         try:
             from elevenlabs import ElevenLabs
 
@@ -104,7 +108,7 @@ def generate_tts_segments(
 
                 # Check cache
                 if cache_path.exists():
-                    print(f"  [cache] {cache_path.name}")
+                    console.info(f"  [cache] {cache_path.name}")
                     audio_files.append(cache_path)
                     continue
 
@@ -120,16 +124,16 @@ def generate_tts_segments(
                     for chunk in audio:
                         f.write(chunk)
 
-                print(f"  ✓ ElevenLabs: {cache_path.name} - '{text[:40]}...'")
+                console.info(f"  ✓ ElevenLabs: {cache_path.name} - '{text[:40]}...'")
                 audio_files.append(cache_path)
 
             return audio_files
 
         except Exception as e:
-            print(f"  ElevenLabs failed: {e}, falling back to gTTS")
+            console.error(f"  ElevenLabs failed: {e}, falling back to gTTS")
 
     # Fallback to gTTS
-    print("Using gTTS (fallback)")
+    console.info("Using gTTS (fallback)")
     try:
         from gtts import gTTS
 
@@ -138,7 +142,7 @@ def generate_tts_segments(
 
             # Check cache
             if cache_path.exists():
-                print(f"  [cache] {cache_path.name}")
+                console.info(f"  [cache] {cache_path.name}")
                 audio_files.append(cache_path)
                 continue
 
@@ -146,7 +150,7 @@ def generate_tts_segments(
             tts = gTTS(text=text, lang="en")
             tts.save(str(cache_path))
 
-            print(f"  ✓ gTTS: {cache_path.name} - '{text[:40]}...'")
+            console.info(f"  ✓ gTTS: {cache_path.name} - '{text[:40]}...'")
             audio_files.append(cache_path)
 
         return audio_files

@@ -8,6 +8,7 @@ import pandas as pd
 
 from figrecipe._utils._csv_column_naming import get_csv_column_name
 
+from ..._utils._optional import missing_extra
 from ._format_plot import _parse_tracking_id
 
 
@@ -38,7 +39,10 @@ def _format_boxplot(id, tracked_dict, kwargs):
         x = args[0]
 
         # One box plot
-        from scitex_types import is_listed_X as scitex_types_is_listed_X
+        try:
+            from scitex_types import is_listed_X as scitex_types_is_listed_X
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         if isinstance(x, np.ndarray) or scitex_types_is_listed_X(x, [float, int]):
             df = pd.DataFrame(x)
@@ -54,7 +58,10 @@ def _format_boxplot(id, tracked_dict, kwargs):
             df.columns = [col_name]
         else:
             # Multiple boxes
-            import scitex_pd
+            try:
+                import scitex_pd
+            except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+                raise missing_extra(exc) from exc
 
             df = scitex_pd.force_df({i_x: _x for i_x, _x in enumerate(x)})
 

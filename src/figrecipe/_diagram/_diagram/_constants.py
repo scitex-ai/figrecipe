@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Constants for diagram diagram rendering."""
+import scitex_logging as slogging
 
 # 9 canonical anchors (relative to box: 0-1 range)
 ANCHOR_POINTS = {
@@ -39,9 +40,8 @@ def normalize_anchor(raw: str) -> str:
         h = [t for t in tokens if t in _HORIZONTAL]
         if v and h:
             return f"{v[0]}-{h[0]}"
-    import logging
 
-    logging.getLogger(__name__).warning(
+    slogging.getLogger(__name__).warning(
         "Unknown anchor '%s'. Available: %s. Falling back to 'center'.",
         raw,
         ", ".join(sorted(ANCHOR_POINTS)),

@@ -8,6 +8,8 @@ Fixes container enclosure (R1), box overlaps (R2), and canvas bounds (R9).
 from itertools import combinations
 from typing import TYPE_CHECKING, Dict, List
 
+import scitex_logging as slogging
+
 from ._geom import box_rect, rects_overlap
 
 try:
@@ -15,9 +17,8 @@ try:
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ._core import Diagram

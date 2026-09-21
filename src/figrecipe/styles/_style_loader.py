@@ -15,6 +15,7 @@ Usage:
     # Access individual style parameters
     line_width = STYLE.lines.trace_mm
 """
+import scitex_logging as slogging
 
 __all__ = [
     "load_style",
@@ -36,6 +37,8 @@ from ruamel.yaml import YAML
 
 from ._dotdict import DotDict
 from ._kwargs_converter import to_subplots_kwargs
+
+console = slogging.getConsole(f"{__name__}.console")
 
 # Path to presets directory
 _PRESETS_DIR = Path(__file__).parent / "presets"
@@ -403,18 +406,18 @@ STYLE = _StyleProxy()
 
 if __name__ == "__main__":
     # Test loading
-    print("Loading default style...")
+    console.info("Loading default style...")
     style = load_style()
-    print(f"  axes.width_mm: {style.axes.width_mm}")
-    print(f"  fonts.axis_label_pt: {style.fonts.axis_label_pt}")
-    print(f"  lines.trace_mm: {style.lines.trace_mm}")
+    console.info(f"  axes.width_mm: {style.axes.width_mm}")
+    console.info(f"  fonts.axis_label_pt: {style.fonts.axis_label_pt}")
+    console.info(f"  lines.trace_mm: {style.lines.trace_mm}")
 
-    print("\nConverting to subplots kwargs...")
+    console.info("\nConverting to subplots kwargs...")
     kwargs = to_subplots_kwargs()
     for k, v in list(kwargs.items())[:5]:
-        print(f"  {k}: {v}")
+        console.info(f"  {k}: {v}")
 
-    print("\nUsing STYLE proxy...")
-    print(f"  STYLE.fonts.family: {STYLE.fonts.family}")
+    console.info("\nUsing STYLE proxy...")
+    console.info(f"  STYLE.fonts.family: {STYLE.fonts.family}")
 
 # EOF

@@ -7,14 +7,15 @@ the matplotlib figure directly (labels, legend, axes positions).
 Uses a lightweight EditorState dataclass.
 """
 
-import logging
 import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-logger = logging.getLogger(__name__)
+import scitex_logging as slogging
+
+logger = slogging.getLogger(__name__)
 
 # In-process cache: session_key -> (editor, last_access_time)
 _editor_cache: Dict[str, Tuple[Any, float]] = {}

@@ -9,6 +9,10 @@ needed by Django handlers.
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+import scitex_logging as slogging
+
+from .._utils._optional import missing_extra
+
 
 def _check_figure_has_content(fig) -> bool:
     """Check if figure has any plot content."""
@@ -173,9 +177,8 @@ def gui(
 
             start_terminal_server(port + 1)
         except Exception as e:
-            import logging
 
-            logging.getLogger(__name__).warning("Terminal server failed: %s", e)
+            slogging.getLogger(__name__).warning("Terminal server failed: %s", e)
 
     import threading
 
@@ -212,7 +215,10 @@ def gui(
 
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "figrecipe._django.settings")
 
-        import django
+        try:
+            import django
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         django.setup()
 
@@ -220,7 +226,10 @@ def gui(
         if open_browser:
             threading.Timer(1.5, webbrowser.open, args=[url]).start()
 
-        from django.core.management import call_command
+        try:
+            from django.core.management import call_command
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         noreload = [] if hot_reload else ["--noreload"]
         call_command("runserver", f"{host}:{port}", *noreload)

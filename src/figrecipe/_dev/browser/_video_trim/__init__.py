@@ -24,6 +24,8 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+import scitex_logging as slogging
+
 from ._detection import detect_markers
 from ._markers import (
     MARKER_END_ID,
@@ -31,6 +33,8 @@ from ._markers import (
     inject_end_marker,
     inject_start_marker,
 )
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def trim_video(
@@ -114,14 +118,14 @@ def process_video_with_markers(
     start_time, end_time, metadata = detect_markers(input_path)
 
     if verbose:
-        print(f"  Marker detection: start={start_time}, end={end_time}")
+        console.info(f"  Marker detection: start={start_time}, end={end_time}")
 
     if start_time is None:
-        print("Warning: No start marker detected, using beginning")
+        console.warning("Warning: No start marker detected, using beginning")
         start_time = 0
 
     if end_time is None:
-        print("Warning: No end marker detected, using end of video")
+        console.warning("Warning: No end marker detected, using end of video")
 
     # Trim video
     success = trim_video(input_path, output_path, start_time, end_time)

@@ -7,6 +7,8 @@ from typing import Tuple, Union
 
 import numpy as np
 
+from .._utils._optional import missing_extra
+
 
 def load_image(path: Union[str, Path]) -> np.ndarray:
     """Load image as numpy array.
@@ -26,7 +28,10 @@ def load_image(path: Union[str, Path]) -> np.ndarray:
     ValueError
         If image exceeds maximum allowed size (decompression bomb protection).
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Temporarily increase limit for scientific figures (some can be large)
     # Default is ~178M pixels, allow up to 500M
@@ -171,7 +176,10 @@ def compare_images(
 
     # Save diff image if requested
     if diff_path is not None and diff_img is not None:
-        from PIL import Image
+        try:
+            from PIL import Image
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         Image.fromarray(diff_img).save(diff_path)
 

@@ -18,11 +18,15 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
+import scitex_logging as slogging
+
 from ._caption import hide_caption, show_caption
 from ._click_effect import inject_click_effect, remove_click_effect
 from ._cursor import inject_cursor, remove_cursor
 from ._highlight import highlight_element
 from ._utils import convert_to_gif
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 class DemoRecorder(ABC):
@@ -445,7 +449,7 @@ class DemoRecorder(ABC):
                     # Detect markers and trim automatically
                     process_video_with_markers(webm_path, mp4_path, cleanup=True)
                 except Exception as e:
-                    print(f"Warning: Marker-based trim failed ({e}), using fallback")
+                    console.warning(f"Warning: Marker-based trim failed ({e}), using fallback")
                     # Fallback: simple conversion without trim
                     import subprocess
 
@@ -467,7 +471,7 @@ class DemoRecorder(ABC):
                     )
                     webm_path.unlink(missing_ok=True)
 
-        print(f"Recorded: {mp4_path}")
+        console.info(f"Recorded: {mp4_path}")
         return mp4_path
 
     async def record_and_convert(self) -> tuple:
@@ -483,9 +487,9 @@ class DemoRecorder(ABC):
 
         try:
             convert_to_gif(mp4_path, gif_path)
-            print(f"Converted: {gif_path}")
+            console.info(f"Converted: {gif_path}")
         except Exception as e:
-            print(f"GIF conversion failed: {e}")
+            console.error(f"GIF conversion failed: {e}")
             gif_path = None
 
         return mp4_path, gif_path

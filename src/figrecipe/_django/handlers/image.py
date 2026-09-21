@@ -4,12 +4,18 @@
 
 import base64
 import io
-import logging
 import urllib.request
 
-from django.http import JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def _add_image_panel(editor, img_array, filename, drop_x, drop_y):
@@ -63,7 +69,10 @@ def handle_add_image_panel(request, editor):
     import json
 
     import numpy as np
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     data = json.loads(request.body) if request.body else {}
     image_data = data.get("image_data")
@@ -90,7 +99,10 @@ def handle_add_image_from_url(request, editor):
     import json
 
     import numpy as np
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     data = json.loads(request.body) if request.body else {}
     url = data.get("url")

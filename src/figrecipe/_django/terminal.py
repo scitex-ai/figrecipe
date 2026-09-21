@@ -13,14 +13,15 @@ Protocol:
 
 import asyncio
 import fcntl
-import logging
 import os
 import pty
 import struct
 import termios
 import threading
 
-logger = logging.getLogger(__name__)
+import scitex_logging as slogging
+
+logger = slogging.getLogger(__name__)
 
 
 async def terminal_ws_handler(websocket, path=None):

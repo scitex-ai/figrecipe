@@ -3,12 +3,18 @@
 """Statistical annotation handlers — add/remove/update/list brackets."""
 
 import json
-import logging
 from pathlib import Path
 
-from django.http import JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def handle_stats_add_bracket(request, editor):

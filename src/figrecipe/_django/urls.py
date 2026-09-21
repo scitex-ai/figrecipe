@@ -2,7 +2,12 @@
 # -*- coding: utf-8 -*-
 """URL patterns for the figrecipe editor Django app."""
 
-from django.urls import path
+from .._utils._optional import missing_extra
+
+try:
+    from django.urls import path
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from . import views
 

@@ -37,13 +37,19 @@ Both are fixed by routing every workspace read/write through ONE resolver,
 
 import base64
 import json
-import logging
 import shutil
 from pathlib import Path
 
-from django.http import JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def gettext_noop(message):
@@ -196,7 +202,10 @@ def available_categories():
 
 def handle_gallery_available(request, editor):
     """Return gallery categories with available templates, labels in the active language."""
-    from django.utils.translation import gettext
+    try:
+        from django.utils.translation import gettext
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     categories = {
         category: [{**item, "label": gettext(item["label"])} for item in items]

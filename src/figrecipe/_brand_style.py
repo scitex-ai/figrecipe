@@ -18,6 +18,8 @@ and best-effort — any failure is swallowed so it can never break import.
 
 from __future__ import annotations
 
+import scitex_logging as slogging
+
 # Brands that should auto-apply the SCITEX house style on import.
 _SCITEX_BRANDS = frozenset({"scitex.plt"})
 
@@ -84,7 +86,7 @@ def apply_brand_style(brand: str) -> bool:
             sans = ["Helvetica", "DejaVu Sans", "Liberation Sans", "sans-serif"]
             import logging
 
-            logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+            slogging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 
         cjk = cjk_font()
         if cjk:

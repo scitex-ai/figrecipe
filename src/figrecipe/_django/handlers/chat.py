@@ -16,6 +16,8 @@ standalone editor runs with no database -- see ``_database_is_configured``.
 # already-imported `scitex_app` package.
 from scitex_app import chat as _chat
 
+from ..._utils._optional import missing_extra
+
 _raw_chat_stream = _chat.chat_stream_view
 _raw_session_detail = _chat.session_detail_view
 _raw_session_list = _chat.session_list_view
@@ -34,7 +36,10 @@ def _database_is_configured() -> bool:
     handlers -- scitex-hub, scitex-cloud -- configures a real database, and
     there the same endpoints must keep working; hence a check, not a deletion.
     """
-    from django.conf import settings
+    try:
+        from django.conf import settings
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     default = (getattr(settings, "DATABASES", None) or {}).get("default") or {}
     engine = default.get("ENGINE") or ""
@@ -49,7 +54,10 @@ def _chat_unavailable(request):
     about this deployment rather than a fault. 501 is the honest code -- the
     endpoint exists in the API and this server does not implement it.
     """
-    from django.http import JsonResponse
+    try:
+        from django.http import JsonResponse
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     return JsonResponse(
         {

@@ -20,8 +20,12 @@ Usage
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import scitex_logging as slogging
+
 from ._categories import CATEGORIES
 from ._registry import REGISTRY
+
+console = slogging.getConsole(f"{__name__}.console")
 
 __all__ = ["generate", "get_plot_spec", "get_plot_data"]
 
@@ -94,7 +98,7 @@ def generate(  # noqa: C901
 
     plots = _plots_to_generate(category, plot_type)
     if verbose:
-        print(f"Generating {len(plots)} plots to {output_dir}")
+        console.info(f"Generating {len(plots)} plots to {output_dir}")
 
     results: Dict[str, list] = {
         "png": [],
@@ -120,7 +124,7 @@ def generate(  # noqa: C901
         plot_func = REGISTRY.get(plot_name)
         if plot_func is None:
             if verbose:
-                print(f"  [SKIP] {plot_name}: not implemented")
+                console.info(f"  [SKIP] {plot_name}: not implemented")
             continue
 
         cat_dir = output_dir / _category_for_plot(plot_name)
@@ -138,7 +142,7 @@ def generate(  # noqa: C901
             if save_png and png_path.exists():
                 results["png"].append(str(png_path))
                 if verbose:
-                    print(f"  [PNG] {png_path}")
+                    console.info(f"  [PNG] {png_path}")
 
             # figrecipe save() emits <stem>.yaml (recipe) + <stem>_data/*.csv
             recipe_path = png_path.with_suffix(".yaml")
@@ -150,7 +154,7 @@ def generate(  # noqa: C901
                 if merged.exists():
                     results["csv"].append(str(merged))
                     if verbose:
-                        print(f"  [CSV] {merged}")
+                        console.info(f"  [CSV] {merged}")
 
             if save_svg:
                 svg_path = cat_dir / f"{plot_name}.svg"
@@ -159,10 +163,10 @@ def generate(  # noqa: C901
                     mpl_fig.savefig(svg_path, format="svg")
                     results["svg"].append(str(svg_path))
                     if verbose:
-                        print(f"  [SVG] {svg_path}")
+                        console.info(f"  [SVG] {svg_path}")
                 except Exception as e:  # noqa: BLE001
                     if verbose:
-                        print(f"  [WARN] svg for {plot_name}: {e}")
+                        console.warning(f"  [WARN] svg for {plot_name}: {e}")
 
             if save_plot and recipe_path.exists():
                 results["plot"].append(str(recipe_path))
@@ -180,15 +184,15 @@ def generate(  # noqa: C901
         except Exception as e:  # noqa: BLE001
             results["errors"].append({"plot": plot_name, "error": str(e)})
             if verbose:
-                print(f"  [ERROR] {plot_name}: {e}")
+                console.error(f"  [ERROR] {plot_name}: {e}")
 
     if verbose:
-        print(
+        console.info(
             f"\nGenerated: {len(results['png'])} PNG, {len(results['svg'])} SVG, "
             f"{len(results['csv'])} CSV, {len(results['plot'])} recipes"
         )
         if results["errors"]:
-            print(f"Errors: {len(results['errors'])}")
+            console.error(f"Errors: {len(results['errors'])}")
 
     return results
 

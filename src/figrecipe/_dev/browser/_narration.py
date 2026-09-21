@@ -11,7 +11,11 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import scitex_logging as slogging
+
 from ._audio import generate_tts_segments, mix_narration_with_bgm
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def extract_captions_from_script(script_path: Path) -> List[str]:
@@ -146,7 +150,7 @@ def add_narration_to_video(
     try:
         duration = get_video_duration(video_path)
         if verbose:
-            print(f"  Video duration: {duration:.2f}s")
+            console.info(f"  Video duration: {duration:.2f}s")
 
         # Build narrations list
         narrations = []
@@ -156,7 +160,7 @@ def add_narration_to_video(
             narrations.append((f"caption_{i}", caption))
 
         if verbose:
-            print(f"  {len(narrations)} narration segments")
+            console.info(f"  {len(narrations)} narration segments")
 
         # Estimate timing
         caption_times = estimate_caption_times(captions, duration)
@@ -165,13 +169,13 @@ def add_narration_to_video(
         # Generate TTS
         tts_cache_dir.mkdir(parents=True, exist_ok=True)
         if verbose:
-            print("  Generating TTS...")
+            console.info("  Generating TTS...")
         narration_files = generate_tts_segments(narrations, tts_cache_dir)
 
         # Mix audio
         mixed_audio = Path(f"/tmp/narration_mixed_{video_path.stem}.mp3")
         if verbose:
-            print("  Mixing audio...")
+            console.info("  Mixing audio...")
         mix_narration_with_bgm(
             narration_files=narration_files,
             narration_times=narration_times,
@@ -186,7 +190,7 @@ def add_narration_to_video(
 
         # Create final video
         if verbose:
-            print(f"  Creating: {output_path.name}")
+            console.info(f"  Creating: {output_path.name}")
 
         result = subprocess.run(
             [
