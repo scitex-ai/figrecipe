@@ -3,13 +3,19 @@
 """File management handlers: list/switch/new/delete/rename/duplicate/download."""
 
 import json
-import logging
 import time
 from pathlib import Path
 
-from django.http import FileResponse, JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import FileResponse, JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 # Directory-listing helpers extracted to _files_tree.py (tree enrichment,
 # recipe detection, working-dir/backend resolution).

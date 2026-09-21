@@ -30,11 +30,12 @@ handlers layer is tested separately against a real recipe.
 
 import csv
 import io
-import logging
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Tuple
 
-logger = logging.getLogger(__name__)
+import scitex_logging as slogging
+
+logger = slogging.getLogger(__name__)
 
 #: Same suffix the CSV export uses, so the file the user downloads and the file
 #: the project keeps are recognisably the same artifact.

@@ -2,10 +2,15 @@
 # -*- coding: utf-8 -*-
 import warnings
 
+from .._utils._optional import missing_extra
+
 try:
     from scitex_app._django import ScitexAppConfig
 except ImportError:
-    from django.apps import AppConfig as ScitexAppConfig
+    try:
+        from django.apps import AppConfig as ScitexAppConfig
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
 
 class FigRecipeEditorConfig(ScitexAppConfig):

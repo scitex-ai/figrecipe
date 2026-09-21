@@ -4,7 +4,12 @@
 
 from pathlib import Path
 
+import scitex_logging as slogging
+
+from .._utils._optional import missing_extra
 from ._plotters import PLOTTERS
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def _compare_images(
@@ -33,7 +38,10 @@ def _compare_images(
         (is_match, max_diff, mean_diff, diff_pixels, size_info)
     """
     import numpy as np
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     img1 = np.array(Image.open(img1_path))
     img2 = np.array(Image.open(img2_path))
@@ -145,15 +153,15 @@ def run_all_demos(
     # Sequential mode: plot -> reproduce -> verify -> next
     if pixel_perfect:
         if verbose:
-            print("=" * 60)
-            print("PIXEL-PERFECT VERIFICATION MODE")
-            print(f"Tolerance: {tolerance} (0 = exact match)")
-            print("=" * 60)
+            console.info("=" * 60)
+            console.info("PIXEL-PERFECT VERIFICATION MODE")
+            console.info(f"Tolerance: {tolerance} (0 = exact match)")
+            console.info("=" * 60)
 
         for i, (name, func) in enumerate(sorted(plotters_to_run.items()), 1):
             if verbose:
-                print(f"\n[{i}/{total}] Testing: {name}")
-                print("-" * 40)
+                console.info(f"\n[{i}/{total}] Testing: {name}")
+                console.info("-" * 40)
 
             # Step 1: Generate original plot
             try:
@@ -169,10 +177,10 @@ def run_all_demos(
                 )
                 _plt.close("all")
                 if verbose:
-                    print(f"  [1/3] Original saved: {out_path.name}")
+                    console.info(f"  [1/3] Original saved: {out_path.name}")
             except Exception as e:
                 results[name] = {"success": False, "error": str(e), "path": None}
-                print(f"  FAILED to generate: {e}")
+                console.error(f"  FAILED to generate: {e}")
                 raise RuntimeError(f"Failed to generate {name}: {e}")
 
             # Step 2: Reproduce from YAML
@@ -182,14 +190,14 @@ def run_all_demos(
                 fr.save(fig2, reproduced_path, validate=False, verbose=False)
                 _plt.close("all")
                 if verbose:
-                    print(f"  [2/3] Reproduced saved: {reproduced_path.name}")
+                    console.info(f"  [2/3] Reproduced saved: {reproduced_path.name}")
             except Exception as e:
                 results[name] = {
                     "success": False,
                     "error": f"Reproduce failed: {e}",
                     "path": str(out_path),
                 }
-                print(f"  FAILED to reproduce: {e}")
+                console.error(f"  FAILED to reproduce: {e}")
                 raise RuntimeError(f"Failed to reproduce {name}: {e}")
 
             # Step 3: Compare pixel by pixel
@@ -201,13 +209,13 @@ def run_all_demos(
             if is_match:
                 results[name] = {"success": True, "error": None, "path": str(out_path)}
                 if verbose:
-                    print("  [3/3] PIXEL-PERFECT MATCH ✓")
+                    console.info("  [3/3] PIXEL-PERFECT MATCH ✓")
                     size_note = (
                         ""
                         if size_info["same_size"]
                         else f" (size tolerance: {size_info['size1']} vs {size_info['size2']})"
                     )
-                    print(
+                    console.info(
                         f"        Max diff: {max_diff}, Mean diff: {mean_diff:.4f}{size_note}"
                     )
             else:
@@ -217,20 +225,20 @@ def run_all_demos(
                     "path": str(out_path),
                     "hitmap": str(hitmap_path) if hitmap_path.exists() else None,
                 }
-                print("  [3/3] PIXEL MISMATCH ✗")
-                print(f"        Size: {size_info['size1']} vs {size_info['size2']}")
-                print(f"        Max diff: {max_diff}")
-                print(f"        Mean diff: {mean_diff:.4f}")
-                print(f"        Pixels differing: {diff_pixels}")
+                console.info("  [3/3] PIXEL MISMATCH ✗")
+                console.info(f"        Size: {size_info['size1']} vs {size_info['size2']}")
+                console.info(f"        Max diff: {max_diff}")
+                console.info(f"        Mean diff: {mean_diff:.4f}")
+                console.info(f"        Pixels differing: {diff_pixels}")
                 if hitmap_path.exists():
-                    print(f"        Hitmap: {hitmap_path}")
-                print("\n" + "=" * 60)
-                print(f"STOPPED AT: {name}")
-                print(f"Original:   {out_path}")
-                print(f"Reproduced: {reproduced_path}")
+                    console.info(f"        Hitmap: {hitmap_path}")
+                console.info("\n" + "=" * 60)
+                console.info(f"STOPPED AT: {name}")
+                console.info(f"Original:   {out_path}")
+                console.info(f"Reproduced: {reproduced_path}")
                 if hitmap_path.exists():
-                    print(f"Hitmap:     {hitmap_path}")
-                print("=" * 60)
+                    console.info(f"Hitmap:     {hitmap_path}")
+                console.info("=" * 60)
                 assert False, (
                     f"Pixel-perfect reproduction FAILED for '{name}': "
                     f"max_diff={max_diff}, mean_diff={mean_diff:.4f}, "
@@ -238,9 +246,9 @@ def run_all_demos(
                 )
 
         if verbose:
-            print("\n" + "=" * 60)
-            print(f"ALL {total} PLOTS PIXEL-PERFECT ✓")
-            print("=" * 60)
+            console.info("\n" + "=" * 60)
+            console.info(f"ALL {total} PLOTS PIXEL-PERFECT ✓")
+            console.info("=" * 60)
 
         return results
 
@@ -259,17 +267,17 @@ def run_all_demos(
                 _plt.close("all")
             results[name] = {"success": True, "error": None, "path": str(out_path)}
             if verbose:
-                print(f"[{i}/{total}] {name}: OK")
+                console.info(f"[{i}/{total}] {name}: OK")
         except Exception as e:
             results[name] = {"success": False, "error": str(e), "path": None}
             if verbose:
-                print(f"[{i}/{total}] {name}: FAILED - {e}")
+                console.error(f"[{i}/{total}] {name}: FAILED - {e}")
             _plt.close("all")
 
     # Generate reproduced plots if requested
     if reproduce:
         if verbose:
-            print("\nGenerating reproduced plots...")
+            console.info("\nGenerating reproduced plots...")
         reproduced_count = 0
         failed_reproductions = []
         for name, result in results.items():
@@ -283,14 +291,14 @@ def run_all_demos(
                         fr.save(fig, reproduced_path, validate=False, verbose=False)
                         reproduced_count += 1
                         if verbose:
-                            print(f"  Reproduced: {name}")
+                            console.info(f"  Reproduced: {name}")
                     except Exception as e:
                         failed_reproductions.append((name, str(e)))
                         if verbose:
-                            print(f"  FAILED to reproduce {name}: {e}")
+                            console.error(f"  FAILED to reproduce {name}: {e}")
                     _plt.close("all")
         if verbose:
-            print(f"Reproduced {reproduced_count} plots")
+            console.info(f"Reproduced {reproduced_count} plots")
         if failed_reproductions:
             raise RuntimeError(
                 f"Failed to reproduce {len(failed_reproductions)} plots: "
@@ -300,8 +308,8 @@ def run_all_demos(
     # Summary
     success = sum(1 for r in results.values() if r["success"])
     if verbose:
-        print(f"\nSummary: {success}/{total} demos succeeded")
-        print(f"Output directory: {output_dir}")
+        console.info(f"\nSummary: {success}/{total} demos succeeded")
+        console.info(f"Output directory: {output_dir}")
 
     return results
 

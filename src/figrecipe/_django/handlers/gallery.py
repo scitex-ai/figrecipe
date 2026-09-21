@@ -37,13 +37,28 @@ Both are fixed by routing every workspace read/write through ONE resolver,
 
 import base64
 import json
-import logging
 import shutil
 from pathlib import Path
 
-from django.http import JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+# The install hint is imported in the FAILURE path, not at module scope, on
+# purpose: this module is loaded BY PATH by two packaging tests
+# (tests/figrecipe/_django/handlers/test_gallery.py and
+# tests/develop/test__gallery_templates_packaged.py use
+# spec_from_file_location), and a module-level relative import needs a
+# __package__ those loaders do not necessarily give it. With Django present --
+# every supported install path, since the [editor] extra supplies it -- the
+# relative import below never executes at all, so the module loads in any
+# context; without Django the figure cannot be served anyway.
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    from ..._utils._optional import missing_extra
+
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def gettext_noop(message):
@@ -196,7 +211,12 @@ def available_categories():
 
 def handle_gallery_available(request, editor):
     """Return gallery categories with available templates, labels in the active language."""
-    from django.utils.translation import gettext
+    try:
+        from django.utils.translation import gettext
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        from ..._utils._optional import missing_extra
+
+        raise missing_extra(exc) from exc
 
     categories = {
         category: [{**item, "label": gettext(item["label"])} for item in items]

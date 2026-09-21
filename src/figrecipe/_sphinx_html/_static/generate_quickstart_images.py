@@ -5,12 +5,16 @@
 import sys
 from pathlib import Path
 
+import scitex_logging as slogging
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 import numpy as np
 
 import figrecipe as fr
+
+console = slogging.getConsole(f"{__name__}.console")
 
 OUT = Path(__file__).parent
 
@@ -29,7 +33,7 @@ def create_trig_plot():
     ax.legend()
 
     fr.save(fig, OUT / "quickstart_trig.png", verbose=False)
-    print(f"Created: {OUT / 'quickstart_trig.png'}")
+    console.info(f"Created: {OUT / 'quickstart_trig.png'}")
 
 
 def create_bundle_example():
@@ -47,11 +51,11 @@ def create_bundle_example():
 
     # Save as bundle
     fr.save(fig, OUT / "quickstart_bundle.zip", verbose=False)
-    print(f"Created: {OUT / 'quickstart_bundle.zip'}")
+    console.info(f"Created: {OUT / 'quickstart_bundle.zip'}")
 
     # Also save PNG for display
     fr.save(fig, OUT / "quickstart_bundle.png", verbose=False)
-    print(f"Created: {OUT / 'quickstart_bundle.png'}")
+    console.info(f"Created: {OUT / 'quickstart_bundle.png'}")
 
 
 def create_composition_example():
@@ -75,7 +79,7 @@ def create_composition_example():
         layout="horizontal",
         panel_labels=True,
     )
-    print(f"Created: {OUT / 'quickstart_composed.png'}")
+    console.info(f"Created: {OUT / 'quickstart_composed.png'}")
 
 
 if __name__ == "__main__":
@@ -83,4 +87,4 @@ if __name__ == "__main__":
     create_bundle_example()
     # Note: Composition example skipped - requires compose API fix
     # create_composition_example()
-    print("\nDone! Quickstart images generated.")
+    console.info("\nDone! Quickstart images generated.")

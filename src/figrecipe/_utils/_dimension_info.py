@@ -16,6 +16,10 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+import scitex_logging as slogging
+
+console = slogging.getConsole(f"{__name__}.console")
+
 
 def get_dimension_info(fig, ax) -> Dict[str, Any]:
     """Get all dimension info about a figure/axes for debugging.
@@ -173,46 +177,46 @@ def print_dimension_info(fig, ax) -> None:
     """Print ``get_dimension_info`` output in a human-readable format."""
     info = get_dimension_info(fig, ax)
 
-    print("\n" + "=" * 60)
-    print("DIMENSION INFORMATION")
-    print("=" * 60)
+    console.info("\n" + "=" * 60)
+    console.info("DIMENSION INFORMATION")
+    console.info("=" * 60)
 
-    print("\nFIGURE (total canvas including margins):")
-    print(
+    console.info("\nFIGURE (total canvas including margins):")
+    console.info(
         f"  Size (mm):    {info['figure_size_mm'][0]:.2f} x {info['figure_size_mm'][1]:.2f}"
     )
-    print(
+    console.info(
         f"  Size (inch):  {info['figure_size_inch'][0]:.3f} x {info['figure_size_inch'][1]:.3f}"
     )
-    print(f"  Size (px):    {info['figure_size_px'][0]} x {info['figure_size_px'][1]}")
+    console.info(f"  Size (px):    {info['figure_size_px'][0]} x {info['figure_size_px'][1]}")
 
-    print("\nAXES (actual plot area):")
-    print(
+    console.info("\nAXES (actual plot area):")
+    console.info(
         f"  Size (mm):    {info['axes_size_mm'][0]:.2f} x {info['axes_size_mm'][1]:.2f}"
     )
-    print(
+    console.info(
         f"  Size (inch):  {info['axes_size_inch'][0]:.3f} x {info['axes_size_inch'][1]:.3f}"
     )
-    print(f"  Size (px):    {info['axes_size_px'][0]} x {info['axes_size_px'][1]}")
-    print(
+    console.info(f"  Size (px):    {info['axes_size_px'][0]} x {info['axes_size_px'][1]}")
+    console.info(
         f"  Position:     left={info['axes_position'][0]:.3f}, bottom={info['axes_position'][1]:.3f}"
     )
 
-    print("\nSETTINGS:")
-    print(f"  DPI:          {info['dpi']}")
-    print(f"  Conversion:   1 inch = {info['mm_per_inch']} mm")
-    print(
+    console.info("\nSETTINGS:")
+    console.info(f"  DPI:          {info['dpi']}")
+    console.info(f"  Conversion:   1 inch = {info['mm_per_inch']} mm")
+    console.info(
         f"  At {info['dpi']} DPI: 1 mm = {info['dpi'] / 25.4:.2f} px, 1 inch = {info['dpi']} px"
     )
 
-    print("\nFOR PUBLICATION:")
-    print(
+    console.info("\nFOR PUBLICATION:")
+    console.info(
         f"  Save with: fig.savefig('file.tiff', dpi={info['dpi']}, bbox_inches='tight')"
     )
-    print(
+    console.info(
         f"  Final axes size: ~{info['axes_size_mm'][0]:.1f} x {info['axes_size_mm'][1]:.1f} mm"
     )
-    print("=" * 60 + "\n")
+    console.info("=" * 60 + "\n")
 
 
 __all__ = [

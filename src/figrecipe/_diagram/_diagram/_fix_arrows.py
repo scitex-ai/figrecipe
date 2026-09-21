@@ -9,14 +9,15 @@ bidirectional splitting, and post-render label collisions (R5/R6).
 import math
 from typing import TYPE_CHECKING, Dict, List
 
+import scitex_logging as slogging
+
 try:
     from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ._core import Diagram

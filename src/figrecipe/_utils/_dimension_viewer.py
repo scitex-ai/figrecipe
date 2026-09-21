@@ -15,12 +15,15 @@ This tool helps you understand and debug the relationship between:
 
 Very useful when you're confused about dimensions!
 """
+import scitex_logging as slogging
 
 __FILE__ = __file__
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def view_dimensions(fig, ax, show_rulers=True, show_grid=True, output_path=None):
@@ -282,7 +285,7 @@ def view_dimensions(fig, ax, show_rulers=True, show_grid=True, output_path=None)
     # Save if path provided
     if output_path:
         fig_diag.savefig(output_path, dpi=150, bbox_inches="tight")
-        print(f"✅ Dimension viewer saved to: {output_path}")
+        console.info(f"✅ Dimension viewer saved to: {output_path}")
 
     return fig_diag
 
@@ -316,8 +319,8 @@ def compare_modes(axes_width_mm=30, axes_height_mm=21, output_path=None):
     from ._dimension_info import create_axes_with_size_mm, print_dimension_info
 
     # Create publication mode
-    print("\n📐 PUBLICATION MODE:")
-    print("-" * 60)
+    console.info("\n📐 PUBLICATION MODE:")
+    console.info("-" * 60)
     fig_pub, ax_pub = create_axes_with_size_mm(
         axes_width_mm=axes_width_mm,
         axes_height_mm=axes_height_mm,
@@ -331,8 +334,8 @@ def compare_modes(axes_width_mm=30, axes_height_mm=21, output_path=None):
     print_dimension_info(fig_pub, ax_pub)
 
     # Create display mode
-    print("\n🖥️  DISPLAY MODE:")
-    print("-" * 60)
+    console.info("\n🖥️  DISPLAY MODE:")
+    console.info("-" * 60)
     fig_disp, ax_disp = create_axes_with_size_mm(
         axes_width_mm=axes_width_mm,
         axes_height_mm=axes_height_mm,
@@ -375,7 +378,7 @@ def compare_modes(axes_width_mm=30, axes_height_mm=21, output_path=None):
     # Save if path provided
     if output_path:
         fig_comp.savefig(output_path, dpi=150, bbox_inches="tight")
-        print(f"\n✅ Mode comparison saved to: {output_path}")
+        console.info(f"\n✅ Mode comparison saved to: {output_path}")
 
     return fig_comp
 
@@ -383,12 +386,12 @@ def compare_modes(axes_width_mm=30, axes_height_mm=21, output_path=None):
 if __name__ == "__main__":
     from ._dimension_info import create_axes_with_size_mm
 
-    print("=" * 60)
-    print("DIMENSION VIEWER DEMO")
-    print("=" * 60)
+    console.info("=" * 60)
+    console.info("DIMENSION VIEWER DEMO")
+    console.info("=" * 60)
 
     # Create a figure
-    print("\n1. Creating a 30×21 mm axes (publication mode)")
+    console.info("\n1. Creating a 30×21 mm axes (publication mode)")
     fig, ax = create_axes_with_size_mm(
         axes_width_mm=30,
         axes_height_mm=21,
@@ -407,15 +410,15 @@ if __name__ == "__main__":
     ax.set_title("Sample Plot")
 
     # View dimensions
-    print("\n2. Viewing dimensions")
+    console.info("\n2. Viewing dimensions")
     fig_diag = view_dimensions(fig, ax, output_path="/tmp/dimension_viewer_demo.png")
 
     # Compare modes
-    print("\n3. Comparing publication vs display modes")
+    console.info("\n3. Comparing publication vs display modes")
     fig_comp = compare_modes(30, 21, output_path="/tmp/mode_comparison.png")
 
-    print("\n✅ Demo complete!")
-    print("Check /tmp/dimension_viewer_demo.png and /tmp/mode_comparison.png")
+    console.info("\n✅ Demo complete!")
+    console.info("Check /tmp/dimension_viewer_demo.png and /tmp/mode_comparison.png")
 
     plt.show()
 

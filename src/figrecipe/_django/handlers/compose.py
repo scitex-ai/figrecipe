@@ -10,12 +10,18 @@ the canvas layout, including theme, dark mode, and all decorations.
 import base64
 import io
 import json
-import logging
 from pathlib import Path
 
-from django.http import HttpResponse, JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import HttpResponse, JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def _parse_figures(request):
@@ -51,7 +57,10 @@ def _compose_pil(figures, dark_mode):
 
     Each figure has {x, y, width, height, image} where image is base64 PNG.
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Compute canvas bounds from figure positions + sizes
     max_x = 0
@@ -96,7 +105,10 @@ def _compose_pil(figures, dark_mode):
         # Draw panel letter (A, B, C...) — Arial 10pt bold
         panel_letter = fig.get("panel_letter")
         if panel_letter:
-            from PIL import ImageDraw, ImageFont
+            try:
+                from PIL import ImageDraw, ImageFont
+            except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+                raise missing_extra(exc) from exc
 
             draw = ImageDraw.Draw(canvas)
             # 10pt at 300 DPI = 10 * 300/72 ≈ 42px
