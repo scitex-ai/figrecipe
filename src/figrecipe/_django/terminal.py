@@ -6,9 +6,9 @@ Spawns a bash shell and bridges I/O over WebSocket.
 Used by figrecipe's standalone GUI for the terminal panel.
 
 Protocol:
-  - Client sends raw text → written to pty master
+  - Client sends raw text → written to pty primary
   - Client sends "resize:ROWS:COLS" → pty resized via TIOCSWINSZ
-  - Server sends raw text ← read from pty master
+  - Server sends raw text ← read from pty primary
 """
 
 import asyncio
