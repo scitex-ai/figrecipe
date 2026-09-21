@@ -10,14 +10,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import scitex_logging as slogging
+
 try:
     from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -153,12 +154,12 @@ def generate_debug_image(
     import logging
 
     # Suppress duplicate warnings from second render (main render already logged them)
-    prev_level = logging.getLogger(diagram.__class__.__module__).level
-    logging.getLogger(diagram.__class__.__module__).setLevel(logging.ERROR)
+    prev_level = slogging.getLogger(diagram.__class__.__module__).level
+    slogging.getLogger(diagram.__class__.__module__).setLevel(logging.ERROR)
     try:
         fig, ax = diagram.render()
     finally:
-        logging.getLogger(diagram.__class__.__module__).setLevel(prev_level)
+        slogging.getLogger(diagram.__class__.__module__).setLevel(prev_level)
 
     _annotate_containers(diagram, ax)
     _annotate_boxes(diagram, ax)

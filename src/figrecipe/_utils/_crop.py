@@ -6,12 +6,18 @@ This utility automatically detects the content area of saved figures
 and crops them, removing excess whitespace while preserving a specified margin.
 """
 
+import scitex_logging as slogging
+
+from .._utils._optional import missing_extra
+
 __all__ = ["crop", "crop_svg", "find_content_area", "mm_to_pixels"]
 
 from pathlib import Path
 from typing import Optional, Tuple, Union
 
 import numpy as np
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def find_content_area(image_path: Union[str, Path]) -> Tuple[int, int, int, int]:
@@ -32,7 +38,10 @@ def find_content_area(image_path: Union[str, Path]) -> Tuple[int, int, int, int]
     FileNotFoundError
         If the image cannot be read
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     img = Image.open(image_path)
     img_array = np.array(img)
@@ -174,7 +183,10 @@ def crop(
     >>> fr.crop("figure.png", margin_mm=2.0)   # 2mm margin
     >>> fr.crop("figure.png", margin_px=24)    # explicit 24 pixels
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     input_path = Path(input_path)
 
@@ -216,9 +228,9 @@ def crop(
         margin_bottom_px = mm_to_pixels(mb, dpi)
 
     if verbose:
-        print(f"Original: {original_width}x{original_height}")
-        print(f"DPI: {dpi}")
-        print(
+        console.info(f"Original: {original_width}x{original_height}")
+        console.info(f"DPI: {dpi}")
+        console.info(
             f"Margins (px): left={margin_left_px}, right={margin_right_px}, "
             f"top={margin_top_px}, bottom={margin_bottom_px}"
         )
@@ -227,13 +239,13 @@ def crop(
     if crop_box is not None:
         left, upper, right, lower = crop_box
         if verbose:
-            print(f"Using explicit crop_box: {crop_box}")
+            console.info(f"Using explicit crop_box: {crop_box}")
     else:
         content_left, content_upper, content_right, content_lower = find_content_area(
             input_path
         )
         if verbose:
-            print(
+            console.info(
                 f"Content area: left={content_left}, upper={content_upper}, "
                 f"right={content_right}, lower={content_lower}"
             )
@@ -245,8 +257,8 @@ def crop(
         lower = content_lower + margin_bottom_px
 
     if verbose:
-        print(f"Desired crop: {left},{upper} -> {right},{lower}")
-        print(f"New size: {right - left}x{lower - upper}")
+        console.info(f"Desired crop: {left},{upper} -> {right},{lower}")
+        console.info(f"New size: {right - left}x{lower - upper}")
 
     # Check if we need to extend the canvas (content touches original edge)
     needs_extend = left < 0 or upper < 0 or right > img.width or lower > img.height
@@ -299,8 +311,8 @@ def crop(
         crop_lower = min(lower, img.height)
 
         if verbose:
-            print(f"Extending canvas: paste at ({paste_x}, {paste_y})")
-            print(f"Background color: {bg_color}")
+            console.info(f"Extending canvas: paste at ({paste_x}, {paste_y})")
+            console.info(f"Background color: {bg_color}")
 
         # Paste original content onto new canvas
         cropped_original = img.crop((crop_left, crop_upper, crop_right, crop_lower))
@@ -321,7 +333,10 @@ def crop(
         save_kwargs["optimize"] = True
 
         # Preserve PNG text chunks
-        from PIL import PngImagePlugin
+        try:
+            from PIL import PngImagePlugin
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         pnginfo = PngImagePlugin.PngInfo()
         for key, value in img.info.items():
@@ -346,9 +361,9 @@ def crop(
         area_reduction = 1 - (
             (final_width * final_height) / (original_width * original_height)
         )
-        print(f"Saved {area_reduction * 100:.1f}% of original area")
+        console.info(f"Saved {area_reduction * 100:.1f}% of original area")
         if output_path != input_path:
-            print(f"Saved to: {output_path}")
+            console.info(f"Saved to: {output_path}")
 
     if return_offset:
         offset = {

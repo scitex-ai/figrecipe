@@ -3,11 +3,17 @@
 """Datatable handlers: data, plot, import."""
 
 import json
-import logging
 
-from django.http import JsonResponse
+import scitex_logging as slogging
 
-logger = logging.getLogger(__name__)
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def _dtype(values):
@@ -51,12 +57,11 @@ def _current_table(editor):
     visible to any process opening the same project (Private Beta spec: project
     data stays connected to the project).
     """
-    from figrecipe._editor._helpers import to_json_serializable
-
     from figrecipe._django._project_table import (
         is_selected_project_dir,
         load_project_table,
     )
+    from figrecipe._editor._helpers import to_json_serializable
 
     stored = load_project_table(
         getattr(editor, "recipe_path", None),

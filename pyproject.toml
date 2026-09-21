@@ -44,6 +44,11 @@ dependencies = [
     "scipy>=1.7.0",
     "click>=8.0.0",
     "rich>=13.0.0",
+    # scitex-logging moves up from the `[scitex]` extra: every print/status
+    # line in the package now goes through its logger/console tier, so it is a
+    # hard requirement, not a scitex-suite nicety. Declaring it here is what
+    # lets the source import it unguarded.
+    "scitex-logging>=0.1.0",
     "scitex-app>=0.25.0",
     "scitex-config>=0.3.0",
     "scitex-dev>=0.12.2",

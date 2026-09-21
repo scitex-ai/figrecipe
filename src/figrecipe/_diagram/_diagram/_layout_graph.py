@@ -4,6 +4,8 @@
 
 from typing import Dict, List, Tuple
 
+import scitex_logging as slogging
+
 
 def _spring_layout(
     box_ids: List[str],
@@ -39,9 +41,8 @@ def _spring_layout(
 
             _logger = getLogger(__name__)
         except ImportError:
-            import logging as _logging
 
-            _logger = _logging.getLogger(__name__)
+            _logger = slogging.getLogger(__name__)
         _logger.warning("networkx not available, falling back to flow layout")
         return _flow_layout(box_ids, edges, "lr", x_min, x_max, y_min, y_max)
 

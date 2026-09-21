@@ -10,6 +10,7 @@ Constants:
     - 1 inch = 72 points (PostScript points)
     - 1 mm = 72/25.4 points
 """
+import scitex_logging as slogging
 
 __all__ = [
     "mm_to_inch",
@@ -21,6 +22,8 @@ __all__ = [
 ]
 
 from typing import List, Tuple, Union
+
+console = slogging.getConsole(f"{__name__}.console")
 
 # Conversion constants
 MM_PER_INCH = 25.4
@@ -198,11 +201,11 @@ def normalize_color(
 
 if __name__ == "__main__":
     # Test conversions
-    print("Unit conversion tests:")
-    print(f"  25.4 mm = {mm_to_inch(25.4):.4f} inch")
-    print(f"  1 inch = {inch_to_mm(1.0):.1f} mm")
-    print(f"  0.2 mm = {mm_to_pt(0.2):.4f} pt")
-    print(f"  1 pt = {pt_to_mm(1.0):.4f} mm")
-    print("\nColor normalization:")
-    print(f"  [0, 128, 192] -> {normalize_color([0, 128, 192])}")
-    print(f"  '#0080C0' -> {normalize_color('#0080C0')}")
+    console.info("Unit conversion tests:")
+    console.info(f"  25.4 mm = {mm_to_inch(25.4):.4f} inch")
+    console.info(f"  1 inch = {inch_to_mm(1.0):.1f} mm")
+    console.info(f"  0.2 mm = {mm_to_pt(0.2):.4f} pt")
+    console.info(f"  1 pt = {pt_to_mm(1.0):.4f} mm")
+    console.info("\nColor normalization:")
+    console.info(f"  [0, 128, 192] -> {normalize_color([0, 128, 192])}")
+    console.info(f"  '#0080C0' -> {normalize_color('#0080C0')}")

@@ -20,6 +20,11 @@ import os
 import sys
 from pathlib import Path
 
+import scitex_logging as slogging
+
+log = slogging.getLogger(__name__)
+console = slogging.getConsole(f"{__name__}.console")
+
 FRONTEND_DIR = Path(__file__).parent
 LINK_NAME = FRONTEND_DIR / "scitex-ui-types"
 
@@ -30,12 +35,12 @@ def main() -> int:
 
         static_dir = scitex_ui.get_static_dir()
     except ImportError:
-        print("ERROR: scitex-ui is not installed.", file=sys.stderr)
-        print("  pip install scitex-ui", file=sys.stderr)
+        log.error("ERROR: scitex-ui is not installed.")
+        log.error("  pip install scitex-ui")
         return 1
 
     if not static_dir.is_dir():
-        print(f"ERROR: static dir not found: {static_dir}", file=sys.stderr)
+        log.error(f"ERROR: static dir not found: {static_dir}")
         return 1
 
     # Remove stale symlink
@@ -43,7 +48,7 @@ def main() -> int:
         LINK_NAME.unlink()
 
     os.symlink(str(static_dir), str(LINK_NAME))
-    print(f"OK: {LINK_NAME.name} -> {static_dir}")
+    console.info(f"OK: {LINK_NAME.name} -> {static_dir}")
     return 0
 
 

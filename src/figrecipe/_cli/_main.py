@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from .. import __version__
+from .._utils._console import render_rich
 from ._apis import list_python_apis
 from ._completion import attach_shell_completion
 from ._compose import compose
@@ -95,9 +96,9 @@ class CategorizedGroup(click.Group):
 
 def _print_command_help(cmd, prefix: str, parent_ctx) -> None:
     """Recursively print help for a command and its subcommands."""
-    console.print(f"\n[bold cyan]━━━ {prefix} ━━━[/bold cyan]")
+    render_rich(f"\n[bold cyan]━━━ {prefix} ━━━[/bold cyan]", __name__)
     sub_ctx = click.Context(cmd, info_name=prefix.split()[-1], parent=parent_ctx)
-    console.print(cmd.get_help(sub_ctx))
+    render_rich(cmd.get_help(sub_ctx), __name__)
 
     # If this is a Group, recurse into subcommands
     if isinstance(cmd, click.Group):
@@ -176,8 +177,8 @@ def main(
 
 def _show_recursive_help(ctx: click.Context) -> None:
     """Display recursive help for all commands."""
-    console.print("[bold cyan]━━━ figrecipe ━━━[/bold cyan]")
-    console.print(ctx.get_help())
+    render_rich("[bold cyan]━━━ figrecipe ━━━[/bold cyan]", __name__)
+    render_rich(ctx.get_help(), __name__)
 
     for name, cmd in sorted(main.commands.items()):
         _print_command_help(cmd, f"figrecipe {name}", ctx)

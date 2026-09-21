@@ -5,11 +5,16 @@
 # ----------------------------------------
 import os
 
+from .._utils._optional import missing_extra
+
 __FILE__ = "./src/scitex/plt/_im2grid.py"
 __DIR__ = os.path.dirname(__FILE__)
 # ----------------------------------------
 
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 
 def im2grid(image_paths, default_color=(255, 255, 255)):

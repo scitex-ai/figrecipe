@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **figrecipe's status, progress and CLI output now go through scitex-logging
+  instead of a bare `print`.** A `print` in library code writes unconditionally
+  to stdout, so a caller cannot silence, redirect or level it — the ecosystem's
+  PS-220 rule forbids it, and the tightened scitex-dev audit (v0.60.2) turned
+  figrecipe's 220 of them into a red gate on every PR. `_utils/_console.py` now
+  carries one transport per kind of output, each matching a carve-out the rule
+  recognises structurally rather than by comment: `get_logger` for diagnostics,
+  `get_console` for human-facing stdout (CLI results, report tables, demo runs —
+  same stream, plus a level), and `render_content` for the outputs whose exact
+  bytes are a published contract (`--version`, the completion script). Every
+  module emits through one of them; `console.info`/`.warning`/`.error` replaces
+  the prints, so output is filterable by level and redirectable by the caller.
+- **An optional dependency that is missing now names the extra to install.**
+  `_utils/_optional.py` wraps the hard imports of the extra-only distributions
+  (`PIL` → `[imaging]`, `django` → `[editor]`, `networkx` → `[graph]`,
+  `fastmcp` → `[mcp]`, the `scitex_*` readers → `[scitex]`) so a fresh install
+  without them reports *which* extra supplies the capability instead of a bare
+  `ModuleNotFoundError`, and the dependency shape is visible to a static reader
+  (PS-233). The guard does not degrade the capability: the error is re-raised, at
+  import time for a module-level import and at call time for a lazy one.
+
 ### Fixed
 - **The removed-artist check could not see the case it exists for, and missed
   most plotters besides.** `fr.save` warns when a figure holds fewer artists than

@@ -7,6 +7,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
+import scitex_logging as slogging
+
 from ._color import Color, normalize_color  # noqa: F401
 from ._constants import (
     ANCHOR_POINTS,
@@ -28,9 +30,8 @@ try:
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes

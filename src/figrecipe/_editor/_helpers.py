@@ -4,10 +4,13 @@
 Helper functions for the figure editor.
 """
 
-import logging
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger(__name__)
+import scitex_logging as slogging
+
+from .._utils._optional import missing_extra
+
+logger = slogging.getLogger(__name__)
 
 
 def get_form_values_from_style(style: Dict[str, Any]) -> Dict[str, Any]:
@@ -153,7 +156,10 @@ def render_with_overrides(
     import warnings
 
     from matplotlib.backends.backend_agg import FigureCanvasAgg
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from ._bbox import extract_bboxes
 
@@ -288,7 +294,10 @@ def render_with_overrides(
                 logger.exception(
                     "[render_with_overrides] Fallback render also failed: %s", e2
                 )
-                from PIL import Image as PILImage
+                try:
+                    from PIL import Image as PILImage
+                except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+                    raise missing_extra(exc) from exc
 
                 placeholder = PILImage.new("RGB", (400, 300), color=(240, 240, 240))
                 placeholder.save(buf, format="PNG")

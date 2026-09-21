@@ -10,8 +10,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
+import scitex_logging as slogging
 from matplotlib.backend_bases import MouseEvent
 from matplotlib.patches import FancyBboxPatch, Rectangle
+
+console = slogging.getConsole(f"{__name__}.console")
 
 if TYPE_CHECKING:
     from ._core import Diagram
@@ -229,7 +232,7 @@ class DiagramEditor:
             with open(self._save_path, "w") as f:
                 yaml.dump(recipe, f, default_flow_style=False, sort_keys=False)
 
-            print(f"Saved: {self._save_path}")
+            console.info(f"Saved: {self._save_path}")
             self._modified = False
             self._redraw()
 

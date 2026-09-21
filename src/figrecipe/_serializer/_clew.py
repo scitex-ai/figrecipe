@@ -17,11 +17,12 @@ never breaks figrecipe's real save/load (which stays fail-loud on data errors).
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import Union
 
-_logger = logging.getLogger(__name__)
+import scitex_logging as slogging
+
+_logger = slogging.getLogger(__name__)
 
 
 def _active_tracker():

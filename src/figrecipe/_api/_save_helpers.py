@@ -5,7 +5,12 @@
 from pathlib import Path
 from typing import Optional
 
+import scitex_logging as slogging
+
 from .._utils._grid import grid_id
+from .._utils._optional import missing_extra
+
+console = slogging.getConsole(f"{__name__}.console")
 
 # stx_* plotters that build their own make_axes_locatable marginals at draw
 # time and re-build them on replay. Their recorded axes is the POST-divide
@@ -73,7 +78,10 @@ def crop_to_content_bbox(
     ``_capture_axes_bboxes`` keeps working), or ``None`` on failure (the caller
     then falls back to the content-aware crop with a warning).
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from .._utils._crop import crop, mm_to_pixels
 
@@ -196,7 +204,10 @@ def _crop_to_axes_size(
     dict or None
         Crop offset dictionary if cropping was performed, None otherwise
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from .._utils._crop import mm_to_pixels
 
@@ -545,9 +556,9 @@ def save_hitmap(
             hitmap_img.save(hitmap_path)
 
         if verbose:
-            print(f"  Hitmap: {hitmap_path}")
+            console.info(f"  Hitmap: {hitmap_path}")
         return hitmap_path
     except Exception as e:
         if verbose:
-            print(f"  Hitmap generation failed: {e}")
+            console.error(f"  Hitmap generation failed: {e}")
         return None

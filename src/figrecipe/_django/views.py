@@ -3,11 +3,20 @@
 """Views for the figrecipe editor Django app."""
 
 import json
-import logging
 from pathlib import Path
 
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+import scitex_logging as slogging
+
+from .._utils._optional import missing_extra
+
+try:
+    from django.http import HttpResponse, JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+try:
+    from django.views.decorators.csrf import csrf_exempt
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from .handlers import (
     HANDLERS,
@@ -16,7 +25,7 @@ from .handlers import (
 )
 from .services import get_or_create_editor
 
-logger = logging.getLogger(__name__)
+logger = slogging.getLogger(__name__)
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static" / "figrecipe"
 
@@ -104,7 +113,10 @@ def editor_page(request):
     """Serve the React SPA inside the scitex-ui workspace shell."""
     import os
 
-    from django.template.loader import render_to_string
+    try:
+        from django.template.loader import render_to_string
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Try scitex-ui shell template first (standalone with workspace frame)
     try:

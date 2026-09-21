@@ -5,6 +5,8 @@
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .._utils._optional import missing_extra
+
 
 def solve_layout_to_mm(
     sources: List[str], layout: str = "horizontal", gap_mm: float = 5.0
@@ -25,7 +27,10 @@ def solve_layout_to_mm(
     dict
         Sources dict with mm positioning: {path: {"xy_mm": ..., "size_mm": ...}}
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Get sizes of all sources
     sizes = []
