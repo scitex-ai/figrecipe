@@ -18,7 +18,13 @@ import matplotlib
 matplotlib.use("Agg")  # before figrecipe: the save path renders
 
 import figrecipe as fr  # noqa: E402
+from figrecipe._api._save_helpers import _live_artist_count
+from figrecipe._params import DECORATION_METHODS
+from figrecipe._params import (
+    PLOTTING_METHODS as RECORDER_PLOTTING_METHODS,
+)
 from figrecipe._recorder._lifecycle import (
+    ARTIST_DECORATIONS,
     PLOTTING_METHODS,
     ArtistLifecycleWarning,
     RemovalReport,
@@ -169,6 +175,101 @@ class TestModuleHygiene:
         assert has_core_methods
 
 
+class TestArtistBearingDecorations:
+    """``ax.text()`` / ``ax.annotate()`` are DECORATIONS in the record, and they
+    create artists.
+
+    An ``AxesRecord`` holds ``calls`` and ``decorations`` as separate halves, and
+    the shipped slice was handed ``calls`` alone — which made the card's own
+    headline case (a text drawn, then removed) unreachable however wide the
+    vocabulary was. These are the decision-level counterparts of the save-path
+    tests below.
+    """
+
+    def test_text_raises_the_minimum_because_it_leaves_an_artist(self):
+        # Arrange -- a decoration that owns an artist counts like a plot call.
+        records = [FakeCall("plot"), FakeCall("text")]
+        # Act
+        minimum = minimum_artists_for(records)
+        # Assert
+        assert minimum == 2
+
+    def test_a_decoration_outside_the_live_containers_is_not_counted(self):
+        # Arrange -- ax.table() appends to ax.tables, which the live count does
+        # not cover, so counting it would warn on a figure that lost nothing.
+        records = [FakeCall("plot"), FakeCall("table")]
+        # Act
+        minimum = minimum_artists_for(records)
+        # Assert
+        assert minimum == 1
+
+
+class TestTheVocabularyCannotDriftFromTheRecorder:
+    """The detector must not keep its own copy of the recorder's vocabulary.
+
+    The first shipped slice listed 24 of the recorder's 49 plotters; the artist of
+    the other 26 could be removed and the save stayed silent. These tests make the
+    divergence a failure instead of a silent undercount.
+    """
+
+    def test_the_plotting_vocabulary_is_the_recorders_own(self):
+        # Arrange
+        recorded = set(RECORDER_PLOTTING_METHODS)
+        # Act
+        detected = set(PLOTTING_METHODS)
+        # Assert
+        assert detected == recorded
+
+    def test_every_counted_decoration_is_a_recorder_decoration(self):
+        # Arrange
+        recorded = set(DECORATION_METHODS)
+        # Act
+        counted = set(ARTIST_DECORATIONS)
+        # Assert -- a name the recorder does not file as a decoration could never
+        # arrive in the records this check reads.
+        assert counted <= recorded
+
+    def test_no_method_is_counted_in_both_vocabularies(self):
+        # Arrange -- a name in both halves would be counted twice, once per half.
+        overlapping = set(PLOTTING_METHODS).intersection(ARTIST_DECORATIONS)
+        # Act
+        doubled = sorted(overlapping - {"arrow"})
+        # Assert -- arrow is recorded as a decoration only, so it is listed once.
+        assert doubled == []
+
+
+class TestTheCountedDecorationsAddALiveArtist:
+    """The live-count counterpart of the vocabulary decision.
+
+    A name in :data:`ARTIST_DECORATIONS` whose artist the live count cannot see
+    would report a removal that never happened.
+    """
+
+    def test_text_lands_in_a_container_the_live_count_covers(self):
+        # Arrange
+        fig, ax = fr.subplots()
+        # Act
+        ax.text(0.5, 0.5, "T")
+        # Assert
+        assert _live_artist_count(fig.fig.get_axes()[0]) >= 1
+
+    def test_annotate_lands_in_a_container_the_live_count_covers(self):
+        # Arrange
+        fig, ax = fr.subplots()
+        # Act
+        ax.annotate("A", xy=(1, 1), xytext=(2, 2))
+        # Assert
+        assert _live_artist_count(fig.fig.get_axes()[0]) >= 1
+
+    def test_a_table_lands_nowhere_the_live_count_looks(self):
+        # Arrange
+        fig, ax = fr.subplots()
+        # Act
+        ax.table(cellText=[["a"]], loc="center")
+        # Assert -- measured 0: this is why `table` stays out of the vocabulary.
+        assert _live_artist_count(fig.fig.get_axes()[0]) == 0
+
+
 class TestSavePathWiring:
     """The detector must fire from a REAL save, not only when called directly.
 
@@ -200,6 +301,43 @@ class TestSavePathWiring:
             fr.save(fig, tmp_path / name, validate=False, verbose=False)
         return [w for w in caught if "fewer artists" in str(w.message)]
 
+    @staticmethod
+    def _save_with_removed_text(tmp_path, name):
+        """The card's headline case verbatim: draw a text, remove it, save."""
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        drawn = ax.text(0.5, 0.75, "PROBE", transform=ax.transAxes, fontsize=14)
+        fig.canvas.draw()
+        drawn.remove()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        return [w for w in caught if "fewer artists" in str(w.message)]
+
+    @staticmethod
+    def _save_with_a_text_still_shown(tmp_path, name):
+        """The same figure with nothing removed: the false-positive control."""
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        ax.text(0.5, 0.75, "PROBE", transform=ax.transAxes, fontsize=14)
+        fig.canvas.draw()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        return [w for w in caught if "fewer artists" in str(w.message)]
+
+    @staticmethod
+    def _save_with_removed_vlines(tmp_path, name):
+        """Remove a vlines collection, a plotter the first vocabulary omitted."""
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 2, 3], label="keep")
+        ruled = ax.vlines([1, 2], 0, 1)
+        ruled.remove()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        return [w for w in caught if "fewer artists" in str(w.message)]
+
     def test_a_real_save_warns_when_an_artist_was_removed(self, tmp_path):
         # Arrange
         name = "removed.png"
@@ -215,3 +353,29 @@ class TestSavePathWiring:
         hits = self._save_faithful_figure(tmp_path, name)
         # Assert -- a faithful figure must produce no lifecycle noise at all.
         assert hits == []
+
+    def test_a_real_save_warns_when_a_text_was_removed(self, tmp_path):
+        # Arrange -- the headline case: a DECORATION that owns the removed artist.
+        name = "text_removed.png"
+        # Act
+        hits = self._save_with_removed_text(tmp_path, name)
+        # Assert
+        assert len(hits) == 1
+
+    def test_a_real_save_is_silent_when_the_text_is_still_shown(self, tmp_path):
+        # Arrange -- the control that makes the line above mean something: the
+        # same figure, nothing removed, must stay quiet.
+        name = "text_kept.png"
+        # Act
+        hits = self._save_with_a_text_still_shown(tmp_path, name)
+        # Assert
+        assert hits == []
+
+    def test_a_real_save_warns_when_a_vlines_artist_was_removed(self, tmp_path):
+        # Arrange -- vlines is one of the 26 plotters the hand-copied vocabulary
+        # never listed, so this is the derivation change earning its keep.
+        name = "vlines_removed.png"
+        # Act
+        hits = self._save_with_removed_vlines(tmp_path, name)
+        # Assert
+        assert len(hits) == 1

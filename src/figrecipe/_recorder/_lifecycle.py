@@ -20,54 +20,94 @@ detector needs only facts both sides already have.
 The check is CONSERVATIVE by construction — it can miss a removal, it must not
 invent one:
 
-* every method in :data:`PLOTTING_METHODS` adds AT LEAST one artist to the axes,
-  so ``live_artists < len(plotting calls)`` means something that was drawn is no
-  longer there; and
-* the comparison is one-sided: more live artists than calls (decorations, ticks,
-  a user's own additions) is the normal case and says nothing, so it is not
-  reported.
+* every method in :data:`ARTIST_METHODS` adds AT LEAST one artist to the axes,
+  so ``live_artists < len(artist-producing records)`` means something that was
+  drawn is no longer there; and
+* the comparison is one-sided: more live artists than records (ticks, titles,
+  legends, a user's own additions) is the normal case and says nothing, so it is
+  not reported.
+
+BOTH halves of the record must be passed in. An ``AxesRecord`` keeps ``calls``
+(the data plotters) and ``decorations`` separate, and ``text`` / ``annotate`` /
+the reference lines are DECORATIONS that create their own artist: handing this
+module ``calls`` alone leaves the card's own headline case -- ``ax.text()`` then
+``t.remove()`` -- undetectable, whatever the vocabulary says.
 
 A false positive would be a bogus warning on every save, which would train users
 to ignore it; a false negative leaves the user where they are today.
 
-Stdlib only — no matplotlib import — so it runs under the repo's expression
-tests, and the caller passes plain counts.
+No matplotlib import — so it runs under the repo's expression tests — and the
+caller passes plain counts.
 """
 
 import warnings
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence
 
-#: Methods that always leave at least one artist on the axes. Anything that only
-#: configures existing artwork (``set_*``, ``legend``, ``grid``, the annotations
-#: of labels) is deliberately absent: counting those would overstate the minimum
-#: and turn this into a source of false alarms.
-PLOTTING_METHODS = frozenset(
+from .._params import PLOTTING_METHODS as _RECORDED_PLOTTING_METHODS
+
+#: Methods that always leave at least one data artist on the axes. DERIVED from
+#: the recorder's own vocabulary, never hand-copied: the first shipped slice of
+#: this check listed 24 of the recorder's 49 plotters, so the artist of the other
+#: 26 (``vlines``, ``hlines``, ``fill``, ``quiver``, ``psd``, ...) could be
+#: removed and the figure still passed. The recorder's list is the definition of
+#: "this call creates a data artist", so it is the only list that cannot drift
+#: away from what the record actually holds.
+PLOTTING_METHODS = frozenset(_RECORDED_PLOTTING_METHODS)
+
+#: DECORATIONS that also leave an artist the live count covers. These are
+#: recorded in the OTHER half of an ``AxesRecord`` (``decorations``, not
+#: ``calls``), which is why the caller must pass both halves -- with calls alone
+#: this whole vocabulary is unreachable, and the card's own headline case
+#: (``ax.text()`` ... ``t.remove()``) is a removed decoration.
+ARTIST_DECORATIONS = frozenset(
     {
-        "plot",
-        "scatter",
-        "bar",
-        "barh",
-        "hist",
-        "hist2d",
-        "imshow",
-        "matshow",
-        "fill_between",
-        "fill_betweenx",
-        "errorbar",
-        "stem",
-        "step",
-        "stackplot",
-        "boxplot",
-        "violinplot",
-        "pie",
-        "contour",
-        "contourf",
-        "pcolormesh",
-        "eventplot",
-        "specgram",
-        "hexbin",
-        "arrow",
+        "text",  # -> ax.texts
+        "annotate",  # -> ax.texts (plus one arrow patch)
+        "arrow",  # -> ax.patches
+        "axline",  # -> ax.lines
+        "axhline",  # -> ax.lines
+        "axvline",  # -> ax.lines
+        "axhspan",  # -> ax.patches
+        "axvspan",  # -> ax.patches
+        "broken_barh",  # -> ax.patches
+    }
+)
+
+#: Every recorded method whose artist the live count can see. A wrapper class
+#: counts a method once: ``_recorder`` files each name into exactly one of the
+#: two halves.
+ARTIST_METHODS = PLOTTING_METHODS | ARTIST_DECORATIONS
+
+#: Decorations deliberately NOT counted, each for a measured reason rather than
+#: for tidiness -- counting any of them would warn on a figure that lost nothing:
+#: ``table`` lands in ``ax.tables``, ``legend`` in ``ax.legend_``, and
+#: ``set_title`` / ``set_xlabel`` / the tick setters configure an axis object;
+#: none of those containers is in the live count. ``clabel`` draws a label only
+#: for a contour level that is actually labelled, so it is not a guaranteed one.
+NON_ARTIST_DECORATIONS = frozenset(
+    {
+        "table",
+        "legend",
+        "grid",
+        "axis",
+        "set_title",
+        "set_xlabel",
+        "set_ylabel",
+        "set_xlim",
+        "set_ylim",
+        "set_xscale",
+        "set_yscale",
+        "set_aspect",
+        "set_xticks",
+        "set_yticks",
+        "set_xticklabels",
+        "set_yticklabels",
+        "tick_params",
+        "margins",
+        "rotate_labels",
+        "stat_annotation",
+        "clabel",
     }
 )
 
@@ -81,20 +121,21 @@ class ArtistLifecycleWarning(UserWarning):
     """
 
 
-def minimum_artists_for(calls: Iterable[object]) -> Optional[int]:
-    """The fewest artists the given calls can account for.
+def minimum_artists_for(records: Iterable[object]) -> Optional[int]:
+    """The fewest artists the given records can account for.
 
-    Each call in :data:`PLOTTING_METHODS` adds one or more; anything else adds
-    none that can be asserted. ``None`` when there is nothing to compare against
-    (no plotting calls at all), so a figure with only decorations is never
-    flagged.
+    Each record in :data:`ARTIST_METHODS` adds one or more; anything else adds
+    none that can be asserted. Both halves of the axes record belong here — a
+    data ``call`` and an artist-bearing ``decoration`` alike. ``None`` when
+    there is nothing to compare against (no artist-producing record at all), so
+    a figure carrying only a title or a legend is never flagged.
     """
-    plotting = sum(
+    artist_records = sum(
         1
-        for call in calls
-        if getattr(call, "function", None) in PLOTTING_METHODS
+        for record in records
+        if getattr(record, "function", None) in ARTIST_METHODS
     )
-    return plotting if plotting > 0 else None
+    return artist_records if artist_records > 0 else None
 
 
 @dataclass(frozen=True)
@@ -115,21 +156,25 @@ class RemovalReport:
 
 def detect_removals(
     axes_key: str,
-    calls: Sequence[object],
+    records: Sequence[object],
     live_artists: int,
 ) -> Optional[RemovalReport]:
-    """The mismatch for one axes, or None when there is nothing to say."""
-    minimum = minimum_artists_for(calls)
+    """The mismatch for one axes, or None when there is nothing to say.
+
+    ``records`` is every artist-producing entry of that axes' record, from BOTH
+    halves (``calls`` and ``decorations``).
+    """
+    minimum = minimum_artists_for(records)
     if minimum is None or live_artists >= minimum:
         return None
     return RemovalReport(axes_key=axes_key, minimum=minimum, live=live_artists)
 
 
 def removals_in_figure(axes: Iterable[tuple]) -> List[RemovalReport]:
-    """Every axes mismatch, given ``(key, calls, live_artist_count)`` triples."""
+    """Every axes mismatch, given ``(key, records, live_artist_count)`` triples."""
     reports: List[RemovalReport] = []
-    for key, calls, live in axes:
-        report = detect_removals(key, calls, live)
+    for key, records, live in axes:
+        report = detect_removals(key, records, live)
         if report is not None:
             reports.append(report)
     return reports
@@ -149,13 +194,13 @@ def warn_removals(reports: Sequence[RemovalReport]) -> int:
     where = ", ".join(f"{r.axes_key} (≥{r.missing})" for r in reports[:5])
     warnings.warn(
         f"figrecipe: this figure holds fewer artists than its recorded calls "
-        f"require ({where}), so at least {shortfall} artist(s) were removed "
-        f"after being drawn and a replay will draw what this figure does not "
-        f"show. The figure is correct; the recipe is not faithful to it. The "
-        f"check is conservative (it can miss a removal, not invent one). To fix "
-        f"the recipe, draw conditional on the same decision that led to the "
-        f"removal (e.g. `if keep: ax.plot(...)`) or drop the call from the "
-        f"record. Nothing was changed for you.",
+        f"and decorations require ({where}), so at least {shortfall} artist(s) "
+        f"were removed after being drawn and a replay will draw what this "
+        f"figure does not show. The figure is correct; the recipe is not "
+        f"faithful to it. The check is conservative (it can miss a removal, not "
+        f"invent one). To fix the recipe, draw conditional on the same decision "
+        f"that led to the removal (e.g. `if keep: ax.plot(...)`) or drop the "
+        f"call from the record. Nothing was changed for you.",
         ArtistLifecycleWarning,
         stacklevel=3,
     )
@@ -163,8 +208,11 @@ def warn_removals(reports: Sequence[RemovalReport]) -> int:
 
 
 __all__ = [
-    "ArtistLifecycleWarning",
+    "ARTIST_DECORATIONS",
+    "ARTIST_METHODS",
+    "NON_ARTIST_DECORATIONS",
     "PLOTTING_METHODS",
+    "ArtistLifecycleWarning",
     "RemovalReport",
     "detect_removals",
     "minimum_artists_for",
