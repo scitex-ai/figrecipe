@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The removed-artist check could not see the case it exists for, and missed
+  most plotters besides.** `fr.save` warns when a figure holds fewer artists than
+  its recipe still draws, but the check was handed only the `calls` half of the
+  axes record — while `ax.text()`, `ax.annotate()` and the reference lines are
+  recorded as `decorations`. A text drawn and then removed (the shape this check
+  was written for) therefore passed silently. Both halves of the record are now
+  counted, and the plotting vocabulary is taken from the recorder's own list
+  rather than a copy holding 24 of its 49 names: the other 26 (`vlines`,
+  `hlines`, `fill`, `quiver`, `psd`, ...) could have their artist removed with no
+  warning at all. Methods whose artist the live count cannot see (`table`,
+  `legend`, the axis setters) stay deliberately excluded — counting them would
+  warn on a figure that lost nothing.
+
 ## [0.35.0] - 2026-09-19
 
 ### Added

@@ -384,14 +384,20 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     # removes, re-creates or hides an artist, and replay is not changed. The
     # check is conservative (a call's artist COUNT is not knowable, only a lower
     # bound), so it can miss a removal but never invents one.
+    #
+    # BOTH halves of the record go in. An AxesRecord splits `calls` (the data
+    # plotters) from `decorations`, and ax.text() / ax.annotate() / ax.axhline()
+    # are DECORATIONS that create their own artist -- passing `calls` alone made
+    # the card's own headline case (a text drawn then removed) unreachable.
     try:
         from .._recorder._lifecycle import detect_removals, warn_removals
 
         lifecycle_reports = []
         for key, mpl_ax in zip(fig.record.axes, fig.fig.get_axes()):
+            ax_record = fig.record.axes[key]
             report = detect_removals(
                 key,
-                fig.record.axes[key].calls,
+                list(ax_record.calls) + list(ax_record.decorations),
                 _live_artist_count(mpl_ax),
             )
             if report is not None:
