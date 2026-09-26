@@ -791,9 +791,6 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           </button>
         </div>
 
-        {/* WIP badge */}
-        <span className="badge badge-wip">{gettext("WIP")}</span>
-
         {/* Action buttons */}
         <div className="pane-header-buttons">
           <button
