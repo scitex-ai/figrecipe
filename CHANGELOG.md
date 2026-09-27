@@ -55,11 +55,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   user may toggle back on. A call that created several artists and lost only some
   of them keeps its record (the record cannot express half a call), as does a call
   that another surviving record references (`contour` → `clabel`), and the drop is
-  announced by name rather than performed silently. The count check above stays
-  the catch-all for the paths that record outside the artist funnel (`ax.bar()`,
-  `boxplot`, the legend wrapper). Measured over the repo's own gallery — all 49
-  demo plotters, faithful figures — zero calls dropped and zero warnings, the
-  same 49/49 as before the repair.
+  announced by name rather than performed silently. The drop is keyed on the
+  RECORD's identity, not on its recorded id: a recorded id is the user's own
+  `id=` kwarg whenever they pass one, so two calls can share it, and keyed on it
+  the later call's entry overwrote the earlier, removed one's — which silently
+  disabled the drop for exactly the "remove it, then re-plot under the same id"
+  case (`plot(id="dup")` → `remove()` → `plot(id="dup")` kept both calls; it
+  drops the removed one and validates at MSE 0.00 now). The count check above
+  stays the catch-all for the paths that record outside the artist funnel
+  (`ax.bar()`, `boxplot`, the legend wrapper). Measured over the repo's own
+  gallery — all 49 demo plotters, faithful figures — zero calls dropped and zero
+  warnings, the same 49/49 as before the repair. Not repaired, and measured
+  rather than assumed: `ax.cla()` drops the calls its axes recorded (the recipe
+  no longer claims them) but the figure still fails validation at MSE 428.51,
+  from a small high-contrast region and not from the removed artists — the
+  whole-image difference between the figure and its replay is 0.006 mean, 1/255
+  max, while validation reports 428.51 — so the remaining divergence is a
+  separate root cause, still open. An artist whose HANDLE is mutated after the
+  call (`set_linewidth`, `set_data`) is likewise untouched: only removals are
+  this slice's business.
 
 ## [0.35.0] - 2026-09-19
 

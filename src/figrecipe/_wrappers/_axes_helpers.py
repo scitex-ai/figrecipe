@@ -239,7 +239,7 @@ def record_call_with_color_capture(
     result_refs: Dict[int, str],
     referencing_methods: set,
     referenceable_methods: set,
-    artist_refs: Optional[Dict[str, list]] = None,
+    artist_refs: Optional[Dict[int, tuple]] = None,
 ) -> Any:
     """Record a call with color capture and result reference handling.
 
@@ -298,10 +298,12 @@ def record_call_with_color_capture(
         result_refs[builtins.id(result)] = call_record.id
 
     # Note the artists this call created (weakly), so the save path can tell
-    # whether the figure still holds them.
+    # whether the figure still holds them. The RECORD is the key, not its id:
+    # an id is the user's own `id=` kwarg when they pass one, so calls can
+    # share it (see note_call_artists).
     from .._recorder._artists import note_call_artists
 
-    note_call_artists(artist_refs, method_name, call_record.id, result)
+    note_call_artists(artist_refs, method_name, call_record, result)
 
     return call_record
 

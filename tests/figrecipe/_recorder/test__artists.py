@@ -19,7 +19,6 @@ Each test makes a single assertion (STX-TQ007); no mocks (PA-306).
 """
 
 import warnings
-import weakref
 from pathlib import Path
 
 import matplotlib
@@ -37,6 +36,7 @@ from figrecipe._recorder._artists import (  # noqa: E402
     flatten_artists,
     live_artist_ids,
     note_call_artists,
+    noted_artists,
     prune,
     referenced_call_ids,
 )
@@ -122,13 +122,15 @@ class TestWhichObjectsAreArtists:
 
 class TestLivenessDecision:
     def test_a_kept_artist_is_not_gone(self):
-        # Arrange
+        # Arrange -- the record is the registry key, so the SAME object must be
+        # used to note the artists and to read them back.
         fig, ax = fr.subplots()
         (line,) = ax.plot([1, 2], [1, 2])
+        record = FakeRecord("c", "plot")
         registry: dict = {}
-        note_call_artists(registry, "plot", "c", line)
+        note_call_artists(registry, "plot", record, line)
         # Act
-        gone = call_is_gone(registry["c"], live_artist_ids(fig))
+        gone = call_is_gone(noted_artists(registry, record), live_artist_ids(fig))
         # Assert
         assert gone is False
 
@@ -136,10 +138,12 @@ class TestLivenessDecision:
         # Arrange
         fig, ax = fr.subplots()
         (line,) = ax.plot([1, 2], [1, 2])
-        note_call_artists({}, "plot", "c", line)
+        record = FakeRecord("c", "plot")
+        registry: dict = {}
+        note_call_artists(registry, "plot", record, line)
         line.remove()
         # Act
-        gone = call_is_gone([weakref.ref(line)], live_artist_ids(fig))
+        gone = call_is_gone(noted_artists(registry, record), live_artist_ids(fig))
         # Assert
         assert gone is True
 
@@ -149,9 +153,11 @@ class TestLivenessDecision:
         fig, ax = fr.subplots()
         (line,) = ax.plot([1, 2], [1, 2])
         line.set_visible(False)
-        note_call_artists({}, "plot", "c", line)
+        record = FakeRecord("c", "plot")
+        registry: dict = {}
+        note_call_artists(registry, "plot", record, line)
         # Act
-        gone = call_is_gone([weakref.ref(line)], live_artist_ids(fig))
+        gone = call_is_gone(noted_artists(registry, record), live_artist_ids(fig))
         # Assert
         assert gone is False
 
@@ -160,11 +166,12 @@ class TestLivenessDecision:
         # here would delete data from the recipe.
         fig, ax = fr.subplots()
         lines = ax.plot([1, 2], [1, 2], [3, 4])
+        record = FakeRecord("c", "plot")
+        registry: dict = {}
+        note_call_artists(registry, "plot", record, lines)
         lines[0].remove()
         # Act
-        gone = call_is_gone(
-            [weakref.ref(x) for x in lines], live_artist_ids(fig)
-        )
+        gone = call_is_gone(noted_artists(registry, record), live_artist_ids(fig))
         # Assert
         assert gone is False
 
@@ -175,27 +182,30 @@ class TestRegistration:
         # last-write-wins, not a removal.
         fig, ax = fr.subplots()
         title = ax.set_title("t")
+        record = FakeRecord("c", "set_title")
         registry = {}
         # Act
-        note_call_artists(registry, "set_title", "c", title)
+        note_call_artists(registry, "set_title", record, title)
         # Assert
         assert registry == {}
 
     def test_a_non_artist_result_is_not_registered(self):
         # Arrange
+        record = FakeRecord("c", "plot")
         registry = {}
         # Act
-        note_call_artists(registry, "plot", "c", "not an artist")
+        note_call_artists(registry, "plot", record, "not an artist")
         # Assert
         assert registry == {}
 
     def test_an_unattached_artist_is_not_registered(self):
         # Arrange -- a wrapper returning something the axes never took must not
         # make its own call look removable.
+        record = FakeRecord("c", "text")
         registry = {}
         loose = Text(x=0, y=0, text="loose")
         # Act
-        note_call_artists(registry, "text", "c", loose)
+        note_call_artists(registry, "text", record, loose)
         # Assert
         assert registry == {}
 
@@ -203,24 +213,43 @@ class TestRegistration:
         # Arrange
         fig, ax = fr.subplots()
         (line,) = ax.plot([1, 2], [1, 2])
+        record = FakeRecord("c", "plot")
         registry = {}
         # Act
-        note_call_artists(registry, "plot", "c", line)
+        note_call_artists(registry, "plot", record, line)
+        refs = noted_artists(registry, record) or []
         # Assert -- a weakref, so the registry can never keep the artist alive.
-        assert registry["c"][0]() is line
+        assert refs[0]() is line
+
+    def test_two_records_sharing_an_id_are_registered_separately(self):
+        # Arrange -- a recorded id is the user's own `id=` kwarg whenever they
+        # pass one, so two calls can carry the SAME id; keying the registry on it
+        # let the later call's entry overwrite the earlier one's.
+        fig, ax = fr.subplots()
+        (drawn_first,) = ax.plot([1, 2], [1, 2], id="dup")
+        drawn_second = ax.plot([1, 2], [2, 1], id="dup")
+        record_a, record_b = FakeRecord("dup", "plot"), FakeRecord("dup", "plot")
+        registry: dict = {}
+        # Act
+        note_call_artists(registry, "plot", record_a, drawn_first)
+        note_call_artists(registry, "plot", record_b, drawn_second)
+        # Assert -- both survive, so neither call's liveness masks the other's.
+        assert len(registry) == 2
 
 
 class TestThePruneDecision:
     def test_a_call_whose_artists_are_gone_is_dropped(self):
-        # Arrange
+        # Arrange -- the SAME record object is noted and then pruned: the
+        # registry is keyed on the record, not on its (user-supplied) id.
         fig, ax = fr.subplots()
         (line,) = ax.plot([1, 2], [1, 2])
+        record = FakeRecord("c", "plot")
         registry = {}
-        note_call_artists(registry, "plot", "c", line)
+        note_call_artists(registry, "plot", record, line)
         line.remove()
         # Act
         kept, dropped = prune(
-            [FakeRecord("c", "plot")], registry, live_artist_ids(fig), set(), "r0c0", "calls"
+            [record], registry, live_artist_ids(fig), set(), "r0c0", "calls"
         )
         # Assert
         assert kept == [] and [d.call_id for d in dropped] == ["c"]
@@ -230,12 +259,13 @@ class TestThePruneDecision:
         # faithful recipe into an unreplayable one.
         fig, ax = fr.subplots()
         (line,) = ax.plot([1, 2], [1, 2])
+        record = FakeRecord("c", "plot")
         registry = {}
-        note_call_artists(registry, "plot", "c", line)
+        note_call_artists(registry, "plot", record, line)
         line.remove()
         # Act
         kept, _ = prune(
-            [FakeRecord("c", "plot")],
+            [record],
             registry,
             live_artist_ids(fig),
             {"c"},
@@ -384,6 +414,59 @@ class TestTheSavePathRepairsOtherPlotters:
             "keep_x.csv",
             "keep_y.csv",
         ]
+
+
+class TestTheSavePathRepairsAnIdThatIsReused:
+    """The card's "remove it, then re-plot under the same id" family.
+
+    A recorded id is the user's own ``id=`` kwarg whenever they pass one, so two
+    calls can carry the same id. With the registry keyed on that id the later
+    call's entry OVERWROTE the earlier one's, and the removed call stayed in the
+    recipe (measured: recipe kept both, the count check reported instead).
+    """
+
+    @staticmethod
+    def _removed_then_replotted(tmp_path, name):
+        fig, ax = fr.subplots()
+        (first,) = ax.plot([1, 2, 3], [1, 4, 9], id="dup")
+        fig.canvas.draw()
+        first.remove()
+        ax.plot([1, 2, 3], [2, 3, 4], id="dup")
+        fig.canvas.draw()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            png, yml, _ = fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        lifecycle = [
+            w for w in caught if issubclass(w.category, ArtistLifecycleWarning)
+        ]
+        return fig, png, Path(yml), lifecycle
+
+    def test_the_removed_call_does_not_survive_the_reused_id(self, tmp_path):
+        # Arrange
+        name = "j.png"
+        # Act
+        _, _, yml, _ = self._removed_then_replotted(tmp_path, name)
+        # Assert -- one plot call, not two: the removed one is gone.
+        assert _recipe(yml)["r0c0"] == (["plot"], [])
+
+    def test_the_reused_id_case_reports_the_repair(self, tmp_path):
+        # Arrange
+        name = "k.png"
+        # Act
+        _, _, _, lifecycle = self._removed_then_replotted(tmp_path, name)
+        # Assert -- the repair reports it rather than leaving it to the count.
+        assert len(lifecycle) == 1 and "dropped 1 recorded call" in str(
+            lifecycle[0].message
+        )
+
+    def test_the_reused_id_case_now_validates(self, tmp_path):
+        # Arrange
+        name = "l.png"
+        fig, png, yml, _ = self._removed_then_replotted(tmp_path, name)
+        # Act
+        result = validate_on_save(fig, yml, mse_threshold=100.0, image_path=png)
+        # Assert -- was MSE 5.00 (valid but wrong) with the removed call replayed.
+        assert result.mse == 0.0 and result.valid
 
 
 class TestNothingElseMoves:

@@ -28,7 +28,7 @@ class RecordingAxesMethods:
     _position: tuple
     _track: bool
     _result_refs: Dict[int, str]
-    _artist_refs: Dict[str, list]
+    _artist_refs: Dict[int, tuple]
     _RESULT_REFERENCING_METHODS: set
     _RESULT_REFERENCEABLE_METHODS: set
 

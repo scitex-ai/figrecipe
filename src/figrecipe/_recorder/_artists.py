@@ -111,9 +111,9 @@ def _attached(artist: Any) -> bool:
 
 
 def note_call_artists(
-    registry: Optional[Dict[str, list]],
+    registry: Optional[Dict[int, tuple]],
     method_name: str,
-    call_id: str,
+    record: Any,
     result: Any,
 ) -> None:
     """Remember, weakly, which artists a recorded call created.
@@ -125,6 +125,14 @@ def note_call_artists(
     The artists are held WEAKLY: a registry entry must never be the reason an
     artist outlives its figure, and a released artist is itself evidence that
     nothing on the figure holds it any more.
+
+    Keyed by the RECORD's identity, not by ``record.id``: a recorded id is the
+    user's own ``id=`` kwarg whenever they pass one, so two calls can share it
+    and a later call's entry would OVERWRITE the earlier call's -- silently
+    disabling the drop for exactly the "remove it, then re-plot under the same
+    id" case this repair exists for (measured: the removed call stayed in the
+    recipe). The record itself is held in the entry, so its address cannot be
+    reused while the entry lives.
     """
     if registry is None or method_name not in ARTIST_METHODS:
         return
@@ -137,17 +145,30 @@ def note_call_artists(
         except TypeError:
             continue  # not weak-referenceable -> unrepresentable, so KEEP the call
     if refs:
-        registry[call_id] = refs
+        registry[id(record)] = (record, refs)
 
 
-def call_is_gone(refs: Sequence[Any], live_ids: Set[int]) -> bool:
+def noted_artists(registry: Optional[Dict[int, tuple]], record: Any) -> Optional[list]:
+    """The artist weakrefs noted for ``record``, or None when it was not noted."""
+    if not registry:
+        return None
+    entry = registry.get(id(record))
+    return entry[1] if entry else None
+
+
+def call_is_gone(refs: Optional[Sequence[Any]], live_ids: Set[int]) -> bool:
     """True when NO artist this call created is still on the figure.
 
     ``live_ids`` is the identity set from :func:`live_artist_ids`. An alive
     artist is compared by identity WHILE the strong reference is held, so a
     reused ``id()`` can never be mistaken for the artist itself -- the hazard
     that rules out a plain ``id() -> artist`` map.
+
+    ``refs`` may be None or empty -- nothing was noted for this call. With no
+    evidence the answer is False: nothing is dropped on a guess.
     """
+    if not refs:
+        return False
     for ref in refs:
         artist = ref()
         if artist is None:
@@ -214,7 +235,7 @@ class DroppedCall:
 
 def prune(
     records: Sequence[Any],
-    registry: Dict[str, list],
+    registry: Dict[int, tuple],
     live_ids: Set[int],
     referenced_ids: Set[str],
     axes_key: str,
@@ -229,7 +250,7 @@ def prune(
     dropped: List[DroppedCall] = []
     for record in records:
         call_id = getattr(record, "id", None)
-        refs = registry.get(call_id) if call_id else None
+        refs = noted_artists(registry, record)
         if (
             refs
             and call_id not in referenced_ids
@@ -253,6 +274,7 @@ __all__ = [
     "call_is_gone",
     "flatten_artists",
     "live_artist_ids",
+    "noted_artists",
     "note_call_artists",
     "prune",
     "referenced_call_ids",
