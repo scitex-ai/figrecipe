@@ -1266,3 +1266,75 @@ msgstr "領域"
 #: frontend/src/components/Properties/Properties.tsx
 msgid "Nothing open yet? Pick a figure in Objects above, or enter data on the Data page."
 msgstr "まだ何も開いていません。上のオブジェクトから図を選ぶか、データページでデータを入力してください。"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Series"
+msgstr "系列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Value"
+msgstr "値"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Column"
+msgstr "列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Index"
+msgstr "番号"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Points"
+msgstr "点数"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "%s points"
+msgstr "%s 点"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Shape"
+msgstr "形状"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Range"
+msgstr "範囲"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Mean"
+msgstr "平均"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Levels"
+msgstr "レベル"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Cell"
+msgstr "セル"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Previous row"
+msgstr "前の行"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Next row"
+msgstr "次の行"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Previous column"
+msgstr "前の列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Next column"
+msgstr "次の列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Loading element details…"
+msgstr "要素の詳細を読み込み中…"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Tip: click another cell of the selected grid to inspect it."
+msgstr "ヒント：選択中のグリッドの別のセルをクリックすると検査できます。"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Row"
+msgstr "行"

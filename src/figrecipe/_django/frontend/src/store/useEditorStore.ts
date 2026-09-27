@@ -11,6 +11,7 @@ import type {
   CallRecord,
   ColumnDef,
   ElementDataLink,
+  ElementDetails,
   FileTreeItem,
   FilesResponse,
   HitmapResponse,
@@ -63,6 +64,15 @@ interface EditorState {
   // ── Selection ───────────────────────────────────────────
   selectedElement: string | null;
   selectedBbox: BBox | null;
+  /** Inspected details of the selected element (value, row/column,
+   *  series) — null while loading or when nothing is selected. */
+  elementDetails: ElementDetails | null;
+  /** Picked matrix cell (row/col) on an image/mesh element; null means
+   *  the whole element. Refetching details carries it as row/col. */
+  elementCell: { row: number; col: number } | null;
+  /** Known matrix shapes per element key (from details shape) — lets a
+   *  click on an already-selected matrix resolve its cell immediately. */
+  elementShapes: Record<string, { rows: number; cols: number }>;
 
   // ── Files ───────────────────────────────────────────────
   files: FileTreeItem[];
@@ -162,6 +172,7 @@ interface EditorState {
   sendToBack: (id: string) => void;
 
   selectElement: (id: string | null, bbox?: BBox, figureId?: string) => void;
+  setElementCell: (row: number, col: number) => void;
   switchFile: (path: string) => Promise<void>;
   switchTheme: (theme: string) => Promise<void>;
   updateOverrides: (overrides: StyleOverrides) => Promise<void>;
@@ -171,6 +182,7 @@ interface EditorState {
   // ── Sync actions ───────────────────────────────────────
   loadCalls: (axIndex: number) => Promise<void>;
   loadLabels: (axIndex: number) => Promise<void>;
+  loadElementDetails: () => Promise<void>;
   highlightDataForElement: (elementId: string | null) => void;
   refreshAfterMutation: () => Promise<void>;
 
@@ -207,6 +219,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   loading: false,
   selectedElement: null,
   selectedBbox: null,
+  elementDetails: null,
+  elementCell: null,
+  elementShapes: {},
   files: [],
   currentFile: null,
   workingDir: null,
@@ -482,6 +497,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedElement: elementId,
       selectedBbox: bbox ?? null,
       selectedFigureId: figureId ?? get().selectedFigureId,
+      // A new element starts un-detailed at the whole element: the cell
+      // belongs to the previous pick and must not leak into its details.
+      elementCell: null,
+      elementDetails: elementId ? get().elementDetails : null,
     });
     // Sync gap fix: load calls/labels and highlight data rows
     if (bbox?.ax_index !== undefined) {
@@ -489,6 +508,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       get().loadLabels(bbox.ax_index);
     }
     get().highlightDataForElement(elementId);
+    if (elementId) get().loadElementDetails();
+  },
+
+  setElementCell: (row, col) => {
+    if (!get().selectedElement) return;
+    set({ elementCell: { row, col } });
+    get().loadElementDetails();
   },
 
   switchFile: async (path) => get().addFigure(path),

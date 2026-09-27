@@ -7,6 +7,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { StatsOverlay } from "../StatsOverlay/StatsOverlay";
 import { AxesPositionSection } from "./AxesPositionSection";
+import { ElementDetails } from "./ElementDetails";
 import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
@@ -115,6 +116,7 @@ export function Properties() {
           <>
             {!selectedElement ? null : (
               <>
+                <ElementDetails />
                 {axIndex !== undefined && <LabelsSection axIndex={axIndex} />}
                 {axIndex !== undefined && (
                   <AxesPositionSection axIndex={axIndex} />
