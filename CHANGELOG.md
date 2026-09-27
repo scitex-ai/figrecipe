@@ -42,6 +42,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   warning at all. Methods whose artist the live count cannot see (`table`,
   `legend`, the axis setters) stay deliberately excluded — counting them would
   warn on a figure that lost nothing.
+- **A recorded call whose artist was removed no longer reaches the recipe.**
+  The check above reports the divergence; this closes it. At save time the
+  record is reconciled to the artists the live figure actually holds, so a figure
+  that draws an artist and then removes it saves a recipe that describes the
+  figure it saved — and `validate=True` no longer rejects a figure that is
+  correct (the card's headline case measured MSE 353.09 and an *error*; it is
+  0.00 and valid now, and a removed `vlines` goes from a silent MSE 48.72 to
+  0.00). An artist's liveness is read off the figure itself: `Artist.remove()` and
+  `ax.cla()` are removals, `set_visible(False)` is not — the artist is still the
+  axes' business, and dropping its call would delete the data behind a series a
+  user may toggle back on. A call that created several artists and lost only some
+  of them keeps its record (the record cannot express half a call), as does a call
+  that another surviving record references (`contour` → `clabel`), and the drop is
+  announced by name rather than performed silently. The count check above stays
+  the catch-all for the paths that record outside the artist funnel (`ax.bar()`,
+  `boxplot`, the legend wrapper). Measured over the repo's own gallery — all 49
+  demo plotters, faithful figures — zero calls dropped and zero warnings, the
+  same 49/49 as before the repair.
 
 ## [0.35.0] - 2026-09-19
 

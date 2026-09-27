@@ -239,8 +239,16 @@ def record_call_with_color_capture(
     result_refs: Dict[int, str],
     referencing_methods: set,
     referenceable_methods: set,
+    artist_refs: Optional[Dict[str, list]] = None,
 ) -> Any:
-    """Record a call with color capture and result reference handling."""
+    """Record a call with color capture and result reference handling.
+
+    ``artist_refs`` is the owning RecordingAxes' ``_artist_refs`` map: this is
+    the one funnel every recorded method passes through WITH its live result, so
+    it is where the artists a call created are noted, for the save-time
+    reconcile that drops calls whose artists left the figure (card
+    figrecipe-recipe-keeps-artists-removed-before-save-20260906).
+    """
     recorded_kwargs = kwargs.copy()
 
     # Capture colors for methods using color cycle
@@ -288,6 +296,12 @@ def record_call_with_color_capture(
         import builtins
 
         result_refs[builtins.id(result)] = call_record.id
+
+    # Note the artists this call created (weakly), so the save path can tell
+    # whether the figure still holds them.
+    from .._recorder._artists import note_call_artists
+
+    note_call_artists(artist_refs, method_name, call_record.id, result)
 
     return call_record
 

@@ -28,6 +28,7 @@ class RecordingAxesMethods:
     _position: tuple
     _track: bool
     _result_refs: Dict[int, str]
+    _artist_refs: Dict[str, list]
     _RESULT_REFERENCING_METHODS: set
     _RESULT_REFERENCEABLE_METHODS: set
 
@@ -362,6 +363,7 @@ class RecordingAxesMethods:
                 self._result_refs,
                 self._RESULT_REFERENCING_METHODS,
                 self._RESULT_REFERENCEABLE_METHODS,
+                self._artist_refs,
             )
 
         return result
@@ -420,6 +422,7 @@ class RecordingAxesMethods:
                 self._result_refs,
                 self._RESULT_REFERENCING_METHODS,
                 self._RESULT_REFERENCEABLE_METHODS,
+                self._artist_refs,
             )
 
         return result
