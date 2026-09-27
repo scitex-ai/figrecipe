@@ -52,7 +52,10 @@ def _rule_bodies(selector: str, css: str) -> list[str]:
     """Bodies of rules whose selector list contains exactly ``selector``."""
     bodies = []
     for selectors, body in re.findall(r"([^{}]+)\{([^}]*)\}", css):
-        names = [s.strip() for s in re.sub(r"/\*.*?\*/", "", selectors, flags=re.S).split(",")]
+        names = [
+            s.strip()
+            for s in re.sub(r"/\*.*?\*/", "", selectors, flags=re.S).split(",")
+        ]
         if selector in names:
             bodies.append(body)
     return bodies
@@ -77,11 +80,20 @@ def test_preview_reserves_hub_dock_height_with_standalone_fallback():
 def test_mobile_orders_preview_before_data():
     # Arrange
     block = _mobile_media_block(_MOBILE.read_text(encoding="utf-8"))
-    order = lambda sel: [int(m) for b in _rule_bodies(sel, block) for m in re.findall(r"order\s*:\s*(-?\d+)", b)]
+
+    def order(sel):
+        return [
+            int(m)
+            for b in _rule_bodies(sel, block)
+            for m in re.findall(r"order\s*:\s*(-?\d+)", b)
+        ]
+
     # Act
-    center, left = order(".split-pane-center"), order(".split-pane-left")
+    center, data = order(".split-pane-center"), order(".data-page")
     # Assert
-    assert center and left and center[0] < left[0], f"preview must come before Data on phones: {center} vs {left}"
+    assert (
+        center and data and center[0] < data[0]
+    ), f"preview must come before Data on phones: {center} vs {data}"
 
 
 def test_mobile_editor_body_scrolls_instead_of_squeezing():
@@ -90,9 +102,10 @@ def test_mobile_editor_body_scrolls_instead_of_squeezing():
     # Act
     bodies = _rule_bodies(".editor-body", block)
     # Assert
-    assert any(re.search(r"overflow-y\s*:\s*auto", b) and re.search(r"padding-bottom\s*:", b) for b in bodies), (
-        f"mobile .editor-body must scroll with end padding so no section is squeezed or hidden. Found: {bodies}"
-    )
+    assert any(
+        re.search(r"overflow-y\s*:\s*auto", b) and re.search(r"padding-bottom\s*:", b)
+        for b in bodies
+    ), f"mobile .editor-body must scroll with end padding so no section is squeezed or hidden. Found: {bodies}"
 
 
 def test_mobile_plot_type_rail_is_horizontal():

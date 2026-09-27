@@ -36,7 +36,7 @@
     overflow: visible;
   }
 
-  .split-pane-left,
+  .data-page,
   .split-pane-right {
     width: 100% !important;
     border-right: none !important;
@@ -51,7 +51,7 @@
     height: min(58vh, 440px);
     min-height: 240px;
   }
-  .split-pane-left {
+  .data-page {
     order: 2;
   }
   .plot-type-nav {
@@ -72,12 +72,12 @@
     display: none !important;
   }
 
-  .split-pane-left .pane-content,
+  .data-page .pane-content,
   .split-pane-right .pane-content {
     flex: 0 0 auto;
     overflow: visible;
   }
-  .split-pane-left .stx-app-data-table {
+  .data-page .stx-app-data-table {
     max-height: 45vh;
   }
 
@@ -93,24 +93,23 @@
   }
 
   /* ── Data toolbar: 44px targets, no desktop-only controls ── */
-  .split-pane-left .pane-header {
+  .data-page .pane-header {
     height: auto;
     min-height: 52px;
     padding: 4px 12px;
     gap: 8px;
   }
-  .split-pane-left .pane-header .panel-toggle-btn,
-  .split-pane-left .badge-wip,
-  .split-pane-left .pane-header-btn:disabled,
-  .split-pane-left .pane-header-btn:has(.fa-keyboard) {
+  .data-page .pane-header .panel-toggle-btn,
+  .data-page .badge-wip,
+  .data-page .pane-header-btn:disabled {
     display: none;
   }
-  .split-pane-left .data-dropdown-container {
+  .data-page .data-dropdown-container {
     flex: 1 1 auto;
     min-width: 0;
   }
-  .split-pane-left .pane-header-btn,
-  .split-pane-left .data-dropdown-toggle {
+  .data-page .pane-header-btn,
+  .data-page .data-dropdown-toggle {
     min-width: 44px;
     min-height: 44px;
   }
@@ -128,7 +127,7 @@
   .plot-type-nav__rail,
   .plot-type-nav .stx-app-selector-nav {
     flex-direction: row;
-    /* !important beats PlotTypeNav's inline 56px width. */
+    /* !important beats PlotTypeNav's inline 92px width. */
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;

@@ -151,7 +151,7 @@ export function PlotFromColumns({
             {interpolate(gettext("Plot type: %s"), [kindLabel(kind.id)])}
           </>
         ) : (
-          gettext("This plot type cannot be drawn from table columns yet; pick Line, Scatter, Bar, Dist or Stats.")
+          gettext("This plot type cannot be drawn from table columns yet; pick Line, Scatter, Bar, Distribution or Statistics.")
         )}
       </p>
 

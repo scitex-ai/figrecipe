@@ -29,6 +29,23 @@
   font-size: 12px;
   color: var(--vis-text-muted);
   opacity: 0.6;
+  max-width: 420px;
+}
+
+/* The three ways in: Import, Paste, Sample. Large stacked targets, so the
+   empty Data page reads as an invitation rather than a dead grid. */
+.datatable-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+  min-width: 240px;
+}
+
+.datatable-empty-cta {
+  justify-content: flex-start;
+  min-height: 40px;
+  font-size: 13px;
 }
 
 /* ── Tabs bar — vis_app .data-tabs-bar ───────────────── */

@@ -1,17 +1,21 @@
-/** Right pane — Properties/Details with vis_app pane-header. */
+/** Right pane — Objects tree above Details, with vis_app pane-header. */
 
 import { useEditorStore } from "../../store/useEditorStore";
+import { ObjectTree } from "../ObjectTree/ObjectTree";
 import { Properties } from "../Properties/Properties";
 import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface PropertiesPaneProps {
   onToggleCollapse?: () => void;
   collapsed?: boolean;
+  /** Jump to the full-width Data page (SigmaPlot-style worksheet). */
+  onRequestDataTab?: () => void;
 }
 
 export function PropertiesPane({
   onToggleCollapse,
   collapsed,
+  onRequestDataTab,
 }: PropertiesPaneProps) {
   const { selectedElement, selectedBbox } = useEditorStore();
 
@@ -54,8 +58,10 @@ export function PropertiesPane({
         </span>
       </div>
 
-      {/* Pane content */}
+      {/* Pane content — the tree stays visible so Details never opens on a
+          dead "select from the tree" with no tree on screen. */}
       <div className="pane-content">
+        <ObjectTree onRequestDataTab={onRequestDataTab ?? (() => {})} />
         <Properties />
       </div>
     </>

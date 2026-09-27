@@ -58,11 +58,15 @@ import {
   createTableSaveQueue,
   type TableSaveQueue,
 } from "./tableSaveQueue";
+import { SAMPLE_TABLE_CSV, SAMPLE_TABLE_FORMAT } from "./sampleData";
+import { parsePastedTable } from "./pasteData";
 import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 interface DataTablePaneProps {
   onToggleCollapse?: () => void;
   collapsed?: boolean;
+  /** Full-page mode (the Data tab): no collapse toggle, actions labeled. */
+  hideCollapse?: boolean;
 }
 
 /** User-facing name of an edit. Doubles as the undo entry's label and as the
@@ -120,7 +124,7 @@ function badgeFromTarget(target: EventTarget | null): HoverBadge | null {
   return { name, role };
 }
 
-export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProps) {
+export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse }: DataTablePaneProps) {
   const {
     datatableTabs,
     activeTabId,
@@ -721,26 +725,80 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
     }
   }, [showToast]);
 
+  const handleImportTextContent = useCallback(
+    async (content: string, format: string) => {
+      try {
+        // An import REPLACES the same stored table the save queue writes, so
+        // a pending edit must land first — otherwise it would overwrite the
+        // data the user just chose.
+        await saveQueue.idle();
+        await api.post("datatable/import", { content, format });
+        loadDatatable();
+        await refreshAfterMutation();
+      } catch (e) {
+        showToast(interpolate(gettext("Import failed: %s"), [e]), "error");
+        throw e;
+      }
+    },
+    [showToast, loadDatatable, refreshAfterMutation, saveQueue],
+  );
+
   const handleImportCsv = useCallback(
     async (file: File) => {
       try {
         const content = await file.text();
         const ext = file.name.split(".").pop()?.toLowerCase();
         const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
-        // An import REPLACES the same stored table the save queue writes, so a
-        // pending edit must land first — otherwise it would overwrite the file
-        // the user just chose.
-        await saveQueue.idle();
-        await api.post("datatable/import", { content, format });
+        await handleImportTextContent(content, format);
         showToast(gettext("Imported data"), "success");
-        loadDatatable();
-        refreshAfterMutation();
-      } catch (e) {
-        showToast(interpolate(gettext("Import failed: %s"), [e]), "error");
+      } catch {
+        /* handleImportTextContent already toasted the failure. */
       }
     },
-    [showToast, loadDatatable, refreshAfterMutation, saveQueue],
+    [showToast, handleImportTextContent],
   );
+
+  /** Paste CTA: spreadsheet cells arrive as TSV through the clipboard. */
+  const handlePasteData = useCallback(async () => {
+    let text: string;
+    try {
+      if (!navigator.clipboard?.readText) {
+        showToast(gettext("Pasting is unavailable in this browser"), "error");
+        return;
+      }
+      text = await navigator.clipboard.readText();
+    } catch (e) {
+      showToast(interpolate(gettext("Paste failed: %s"), [e]), "error");
+      return;
+    }
+    const pasted = parsePastedTable(text);
+    if (!pasted) {
+      showToast(
+        gettext("The clipboard holds no table — copy cells from a spreadsheet first"),
+        "error",
+      );
+      return;
+    }
+    try {
+      await handleImportTextContent(pasted.content, pasted.format);
+      showToast(
+        interpolate(gettext("Pasted %s rows"), [pasted.rows]),
+        "success",
+      );
+    } catch {
+      /* handleImportTextContent already toasted the failure. */
+    }
+  }, [showToast, handleImportTextContent]);
+
+  /** Sample-data CTA: the built-in table through the same import path. */
+  const handleSampleData = useCallback(async () => {
+    try {
+      await handleImportTextContent(SAMPLE_TABLE_CSV, SAMPLE_TABLE_FORMAT);
+      showToast(gettext("Sample data loaded"), "success");
+    } catch {
+      /* handleImportTextContent already toasted the failure. */
+    }
+  }, [showToast, handleImportTextContent]);
 
   const dataset = useMemo(
     () =>
@@ -756,20 +814,23 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
       <div className="pane-header">
         {/* Explicit collapse/expand control — a visible button, not a
             double-click gesture. Left panel: chevron points out when
-            expanded (collapse), in when collapsed (expand). */}
-        <button
-          className="pane-header-btn panel-toggle-btn"
-          type="button"
-          onClick={onToggleCollapse}
-          title={collapsed ? gettext("Expand data table") : gettext("Collapse data table")}
-          aria-label={collapsed ? gettext("Expand data table") : gettext("Collapse data table")}
-        >
-          <i
-            className={`fas ${
-              collapsed ? "fa-chevron-right" : "fa-chevron-left"
-            }`}
-          />
-        </button>
+            expanded (collapse), in when collapsed (expand). Hidden on the
+            full-width Data page, which has nothing to collapse into. */}
+        {!hideCollapse && (
+          <button
+            className="pane-header-btn panel-toggle-btn"
+            type="button"
+            onClick={onToggleCollapse}
+            title={collapsed ? gettext("Expand data table") : gettext("Collapse data table")}
+            aria-label={collapsed ? gettext("Expand data table") : gettext("Collapse data table")}
+          >
+            <i
+              className={`fas ${
+                collapsed ? "fa-chevron-right" : "fa-chevron-left"
+              }`}
+            />
+          </button>
+        )}
         {/* Data dropdown */}
         <div className="data-dropdown-container">
           <button className="data-dropdown-toggle" type="button">
@@ -791,7 +852,9 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           </button>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons — icon AND text, so no action is an icon-only
+            mystery. The pane is full-width on the Data page, so labels fit;
+            they hide under narrow widths via CSS. */}
         <div className="pane-header-buttons">
           <button
             className="pane-header-btn"
@@ -805,7 +868,8 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             disabled={undoStack.length === 0}
             type="button"
           >
-            <i className="fas fa-undo" />
+            <i className="fas fa-undo" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Undo")}</span>
           </button>
           <button
             className="pane-header-btn"
@@ -819,39 +883,39 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
             disabled={redoStack.length === 0}
             type="button"
           >
-            <i className="fas fa-redo" />
+            <i className="fas fa-redo" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Redo")}</span>
           </button>
           <button
             className="pane-header-btn"
             onClick={handleExportCsv}
             title={gettext("Export CSV")}
+            aria-label={gettext("Export CSV")}
             disabled={tabs.length === 0}
             type="button"
           >
-            <i className="fas fa-file-export" />
+            <i className="fas fa-file-export" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Export")}</span>
           </button>
           <button
             className="pane-header-btn"
             title={gettext("Sort (WIP)")}
+            aria-label={gettext("Sort (WIP)")}
             type="button"
             disabled
           >
-            <i className="fas fa-sort" />
+            <i className="fas fa-sort" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Sort")}</span>
           </button>
           <button
             className="pane-header-btn"
             title={gettext("Filter (WIP)")}
+            aria-label={gettext("Filter (WIP)")}
             type="button"
             disabled
           >
-            <i className="fas fa-filter" />
-          </button>
-          <button
-            className="pane-header-btn"
-            title={gettext("Keyboard shortcuts")}
-            type="button"
-          >
-            <i className="fas fa-keyboard" />
+            <i className="fas fa-filter" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Filter")}</span>
           </button>
         </div>
 
@@ -886,6 +950,49 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
         onMouseOver={handlePointerOver}
         onMouseOut={handlePointerOut}
       >
+        {tabs.length === 0 ? (
+          /* No tables: the starter grid used to sit here with nothing to do
+             in it. Name the three ways in instead. */
+          <div className="datatable-empty-state">
+            <i
+              className="fas fa-table datatable-empty-icon"
+              aria-hidden="true"
+            />
+            <div className="datatable-empty-title">
+              {gettext("No tables")}
+            </div>
+            <div className="datatable-empty-hint">
+              {gettext("Import a CSV file, paste cells from a spreadsheet, or load a sample table to begin.")}
+            </div>
+            <div className="datatable-empty-actions">
+              <button
+                type="button"
+                className="data-pane__btn datatable-empty-cta"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <i className="fas fa-file-import" aria-hidden="true" />
+                {gettext("Import CSV")}
+              </button>
+              <button
+                type="button"
+                className="data-pane__btn datatable-empty-cta"
+                onClick={() => void handlePasteData()}
+              >
+                <i className="fas fa-paste" aria-hidden="true" />
+                {gettext("Paste data")}
+              </button>
+              <button
+                type="button"
+                className="data-pane__btn datatable-empty-cta"
+                onClick={() => void handleSampleData()}
+              >
+                <i className="fas fa-wand-magic-sparkles" aria-hidden="true" />
+                {gettext("Load sample data")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         {tabs.length >= 1 && (
           <div className="datatable-panel__tabs">
             {tabs.map((tab, idx) => (
@@ -1063,6 +1170,8 @@ export function DataTablePane({ onToggleCollapse, collapsed }: DataTablePaneProp
           onCellSelect={handleCellSelect}
           onDataChange={handleDataChange}
         />
+          </>
+        )}
       </div>
     </>
   );
