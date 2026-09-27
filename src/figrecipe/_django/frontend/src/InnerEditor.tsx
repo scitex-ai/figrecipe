@@ -7,7 +7,7 @@
  *   - Canvas: Canvas | Objects + Details
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CanvasPane } from "./components/CanvasPane/CanvasPane";
 import { DataTablePane } from "./components/DataTablePane/DataTablePane";
 import { FigureViewer } from "./components/FigureViewer/FigureViewer";
@@ -129,46 +129,11 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
 
   // Shell resizer handles overflow via getMaxAllowedWidth() — no React propagation needed
 
-  // Ref for center pane (used by auto-collapse + context-zoom)
-  const centerRef = useRef<HTMLElement | null>(null);
-
-  // Center pane collapse — supports both double-click toggle AND
-  // auto-collapse when resizer pushes width below threshold.
-  const CENTER_MIN_WIDTH = 60;
-  const [centerCollapsed, setCenterCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("figrecipe-center-collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
-  const toggleCenter = useCallback(() => {
-    setCenterCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("figrecipe-center-collapsed", String(next));
-      } catch {}
-      return next;
-    });
-  }, []);
-
-  // Auto-collapse center pane when it gets too narrow (e.g. right panel resized)
-  useEffect(() => {
-    const el = centerRef.current;
-    if (!el || centerCollapsed) return;
-    const obs = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width < CENTER_MIN_WIDTH && !centerCollapsed) {
-          setCenterCollapsed(true);
-          try {
-            localStorage.setItem("figrecipe-center-collapsed", "true");
-          } catch {}
-        }
-      }
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [centerCollapsed]);
+  // NOTE: the center (Viewer/Canvas) pane intentionally has NO collapse
+  // toggle. A single-viewer pane has nothing to toggle between, and the
+  // collapsed 40px "VIEWER" tab plus the 20px minimal header strip were
+  // dead UI. The pane is always expanded; narrow screens fall back to the
+  // phone tab layout (see usePhoneLayout) instead of collapsing.
 
   // Create refs for cross-panel coordination (prevents pushing rightmost panel off-screen)
   const rightPanel = usePanelResize({
@@ -186,7 +151,6 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
     const host = bodyRef.current?.parentElement;
     if (!canvasEnabled && host) mountPanes(host);
   }, [canvasEnabled]);
-  const figureCollapsed = centerCollapsed && !phone;
   const detailsCollapsed = rightPanel.collapsed && !phone;
   const paneAttrs = (
     id: string,
@@ -291,92 +255,23 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
             {/* Plot type selector nav — fixed width, not resizable */}
             <PlotTypeNav paneAttrs={paneAttrs("plot", gettext("Plot"), 3)} />
 
-            {/* Pane 2 — Figure Viewer (rendered image, not canvas) */}
+            {/* Pane 2 — Figure Viewer (rendered image, not canvas).
+                Always expanded: no collapse toggle (single viewer = nothing
+                to toggle between). */}
             <main
-              ref={centerRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-center${figureCollapsed ? " collapsed" : ""}`}
+              className="split-pane split-pane-center"
               {...paneAttrs("figure", gettext("Figure"), 1)}
             >
-              {figureCollapsed ? (
-                <div className="pane-header">
-                  <span className="panel-title">
-                    <i className="fas fa-image" />
-                    {gettext("Viewer")}
-                  </span>
-                  <button
-                    className="pane-header-btn panel-toggle-btn"
-                    type="button"
-                    onClick={toggleCenter}
-                    title={gettext("Expand figure viewer")}
-                    aria-label={gettext("Expand figure viewer")}
-                  >
-                    <i className="fas fa-chevron-up" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="pane-header pane-header--minimal">
-                    <i className="fas fa-image" style={{ opacity: 0.5 }} />
-                    <button
-                      className="pane-header-btn panel-toggle-btn"
-                      type="button"
-                      onClick={toggleCenter}
-                      title={gettext("Collapse figure viewer")}
-                      aria-label={gettext("Collapse figure viewer")}
-                    >
-                      <i className="fas fa-chevron-down" />
-                    </button>
-                  </div>
-                  <FigureViewer />
-                </>
-              )}
+              <FigureViewer />
             </main>
           </>
         )}
 
         {activeTab === "canvas" && (
           <>
-            {/* Canvas pane */}
-            <main
-              ref={centerRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-center${centerCollapsed ? " collapsed" : ""}`}
-            >
-              {centerCollapsed ? (
-                <div className="pane-header">
-                  <span className="panel-title">
-                    <i className="fas fa-object-group" />
-                    {gettext("Canvas")}
-                  </span>
-                  <button
-                    className="pane-header-btn panel-toggle-btn"
-                    type="button"
-                    onClick={toggleCenter}
-                    title={gettext("Expand canvas")}
-                    aria-label={gettext("Expand canvas")}
-                  >
-                    <i className="fas fa-chevron-up" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="pane-header pane-header--minimal">
-                    <i
-                      className="fas fa-object-group"
-                      style={{ opacity: 0.5 }}
-                    />
-                    <button
-                      className="pane-header-btn panel-toggle-btn"
-                      type="button"
-                      onClick={toggleCenter}
-                      title={gettext("Collapse canvas")}
-                      aria-label={gettext("Collapse canvas")}
-                    >
-                      <i className="fas fa-chevron-down" />
-                    </button>
-                  </div>
-                  <CanvasPane />
-                </>
-              )}
+            {/* Canvas pane — always expanded, no collapse toggle. */}
+            <main className="split-pane split-pane-center">
+              <CanvasPane />
             </main>
           </>
         )}
