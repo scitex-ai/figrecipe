@@ -304,3 +304,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Element details: matrix cell stepper ────────────────── */
+
+.element-cell-stepper {
+  margin-top: 8px;
+}
+
+.element-cell-stepper__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.element-cell-stepper__pos {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--vis-text-muted);
+  font-variant-numeric: tabular-nums;
+}

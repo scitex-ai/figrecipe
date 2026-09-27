@@ -5,12 +5,15 @@ import type {
   AxesLabels,
   BBox,
   CallRecord,
+  ElementDetails,
   StatBracket,
 } from "../types/editor";
 import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
 type Get = () => {
   selectedFigureId: string | null;
+  selectedElement: string | null;
+  elementCell: { row: number; col: number } | null;
   elementDataMap: Record<string, { columns: string[]; rowIndices: number[] }>;
   loadPreview: () => Promise<void>;
   loadHitmap: () => Promise<void>;
@@ -60,6 +63,36 @@ export function createSyncActions(set: Set, get: Get) {
       const { elementDataMap } = get();
       const link = elementDataMap[elementId];
       set({ highlightedDataRows: link?.rowIndices ?? [] });
+    },
+
+    // ── Inspected details for a selected element ──────────
+    loadElementDetails: async () => {
+      const { selectedElement, elementCell } = get();
+      if (!selectedElement) {
+        set({ elementDetails: null });
+        return;
+      }
+      // A newer selection supersedes this fetch: only the latest pick may
+      // write, or a fast click-train shows stale values under a new element.
+      const wanted = selectedElement;
+      const cell = elementCell;
+      try {
+        let endpoint = `element_details?element=${encodeURIComponent(wanted)}`;
+        if (cell) endpoint += `&row=${cell.row}&col=${cell.col}`;
+        const data = await api.get<ElementDetails>(endpoint);
+        if (get().selectedElement !== wanted) return;
+        set((s: any) => {
+          const shapes = { ...s.elementShapes };
+          const shape = (data as ElementDetails | null)?.shape;
+          if (shape && shape.length === 2) {
+            shapes[wanted] = { rows: shape[0], cols: shape[1] };
+          }
+          return { elementDetails: data, elementShapes: shapes };
+        });
+      } catch {
+        if (get().selectedElement !== wanted) return;
+        set({ elementDetails: null });
+      }
     },
 
     // ── Refresh preview + bboxes + hitmap after mutation ──

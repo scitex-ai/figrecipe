@@ -1,9 +1,10 @@
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
- * Two tabs:
- *   - Plot: DataTable | PlotTypeNav | FigureViewer | Details
- *   - Canvas: Canvas | Details
+ * Three tabs (SigmaPlot-style: data entry lives on its own page):
+ *   - Plot: PlotTypeNav | FigureViewer | Objects + Details
+ *   - Data: full-width DataTablePane (import, paste, sample, edit)
+ *   - Canvas: Canvas | Objects + Details
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,7 +27,7 @@ import { useEditorStore } from "./store/useEditorStore";
 import { mountPanes, usePhoneLayout } from "./components/mobilePanes";
 import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
 
-type AppTab = "plot" | "canvas";
+type AppTab = "plot" | "data" | "canvas";
 
 interface InnerEditorProps {
   embedded?: boolean;
@@ -71,9 +72,12 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
     }
   })();
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
-    if (!canvasEnabled) return "plot";
     try {
-      return (localStorage.getItem("figrecipe-app-tab") as AppTab) || "plot";
+      const stored = localStorage.getItem("figrecipe-app-tab") as AppTab;
+      // "data" is valid on every host; "canvas" only where it is enabled.
+      if (stored === "data") return "data";
+      if (stored === "canvas" && canvasEnabled) return "canvas";
+      return "plot";
     } catch {
       return "plot";
     }
@@ -167,19 +171,6 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
   }, [centerCollapsed]);
 
   // Create refs for cross-panel coordination (prevents pushing rightmost panel off-screen)
-  const rightPanelRef = useRef<HTMLElement | null>(null);
-
-  const dataPanel = usePanelResize({
-    direction: "left",
-    minWidth: 40,
-    defaultWidth: 200,
-    storageKey: "figrecipe-data-width",
-    collapseKey: "figrecipe-data-collapsed",
-    // Reserve space for right panel + PlotTypeNav (fixed ~60px)
-    siblingRefs: [rightPanelRef],
-    reservedWidth: 60,
-  });
-
   const rightPanel = usePanelResize({
     direction: "right",
     minWidth: 40,
@@ -195,7 +186,6 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
     const host = bodyRef.current?.parentElement;
     if (!canvasEnabled && host) mountPanes(host);
   }, [canvasEnabled]);
-  const dataCollapsed = dataPanel.collapsed && !phone;
   const figureCollapsed = centerCollapsed && !phone;
   const detailsCollapsed = rightPanel.collapsed && !phone;
   const paneAttrs = (
@@ -206,11 +196,6 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
     canvasEnabled
       ? {}
       : { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order };
-
-  // Sync the shared ref with rightPanel's panelRef
-  useEffect(() => {
-    rightPanelRef.current = rightPanel.panelRef.current;
-  });
 
   return (
     <div className="inner-editor">
@@ -233,22 +218,33 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
       </header>
 
       {/* ── Tab Switcher ────────────────────────────── */}
-      <div className="inner-editor__tabs">
+      <div className="inner-editor__tabs" role="tablist">
+        <button
+          className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
+          onClick={() => setActiveTab("plot")}
+          role="tab"
+          aria-selected={activeTab === "plot"}
+        >
+          <i className="fas fa-chart-line" /> {gettext("Plot")}
+        </button>
+        <button
+          className={`inner-editor__tab${activeTab === "data" ? " inner-editor__tab--active" : ""}`}
+          onClick={() => setActiveTab("data")}
+          role="tab"
+          aria-selected={activeTab === "data"}
+          title={gettext("Data table — its own full-width page")}
+        >
+          <i className="fas fa-table" /> {gettext("Data")}
+        </button>
         {canvasEnabled && (
-          <>
-            <button
-              className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
-              onClick={() => setActiveTab("plot")}
-            >
-              <i className="fas fa-chart-line" /> {gettext("Plot")}
-            </button>
-            <button
-              className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
-              onClick={() => setActiveTab("canvas")}
-            >
-              <i className="fas fa-object-group" /> {gettext("Canvas")}
-            </button>
-          </>
+          <button
+            className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
+            onClick={() => setActiveTab("canvas")}
+            role="tab"
+            aria-selected={activeTab === "canvas"}
+          >
+            <i className="fas fa-object-group" /> {gettext("Canvas")}
+          </button>
         )}
       </div>
 
@@ -277,29 +273,23 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
         className="editor-body"
         {...(canvasEnabled ? {} : { "data-stx-panes": "figrecipe", "data-stx-panes-layout": "app" })}
       >
+        {activeTab === "data" && (
+          /* SigmaPlot-style worksheet: the data table gets its own
+             full-width page instead of a squeezed strip beside the viewer. */
+          <div
+            className="data-page"
+            {...paneAttrs("data", gettext("Data"), 2)}
+          >
+            <div className="data-page__inner">
+              <DataTablePane hideCollapse />
+            </div>
+          </div>
+        )}
+
         {activeTab === "plot" && (
           <>
-            {/* Pane 1 — Data Table */}
-            <aside
-              ref={dataPanel.panelRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-left${dataCollapsed ? " collapsed" : ""}`}
-              style={dataCollapsed ? undefined : { width: dataPanel.width }}
-              {...paneAttrs("data", gettext("Data"), 2)}
-            >
-              <h2 className="fr-section-title">{gettext("Data")}</h2>
-              <DataTablePane
-                onToggleCollapse={dataPanel.toggleCollapse}
-                collapsed={dataCollapsed}
-              />
-            </aside>
-
-            <div className="panel-resizer" {...dataPanel.resizerProps} />
-
             {/* Plot type selector nav — fixed width, not resizable */}
             <PlotTypeNav paneAttrs={paneAttrs("plot", gettext("Plot"), 3)} />
-
-            {/* Pass-through resizer — propagates to DataTable (PlotTypeNav stays fixed) */}
-            <div className="panel-resizer" {...dataPanel.resizerProps} />
 
             {/* Pane 2 — Figure Viewer (rendered image, not canvas) */}
             <main
@@ -406,6 +396,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
             <PropertiesPane
               onToggleCollapse={rightPanel.toggleCollapse}
               collapsed={detailsCollapsed}
+              onRequestDataTab={() => setActiveTab("data")}
             />
           </aside>
         </div>

@@ -246,6 +246,9 @@ export function PlacedFigure({
             figureRecipe={figure.path}
             onSelect={handleElementClick}
             onClear={clearElementSelection}
+            bboxes={figure.bboxes}
+            imgWidth={figure.imgSize.width}
+            imgHeight={figure.imgSize.height}
           />
         )}
         <PanelLetterOverlay

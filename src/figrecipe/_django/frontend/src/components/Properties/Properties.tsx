@@ -7,6 +7,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { StatsOverlay } from "../StatsOverlay/StatsOverlay";
 import { AxesPositionSection } from "./AxesPositionSection";
+import { ElementDetails } from "./ElementDetails";
 import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
@@ -50,7 +51,9 @@ export function Properties() {
 
   return (
     <div className="properties-panel">
-      {/* Selected element info — or empty state */}
+      {/* Selected element info — or an empty state that says what to do
+          next. The Objects tree above is always visible, so "from the tree"
+          now names something on screen. */}
       {selectedElement ? (
         <div className="selected-item-info">
           <div className="selected-item-header">{selectedElement}</div>
@@ -59,13 +62,19 @@ export function Properties() {
           )}
         </div>
       ) : (
-        <div className="selected-item-info">
-          <div className="selected-item-header">
-            <i className="fas fa-info-circle" style={{ opacity: 0.5 }} />{" "}
+        <div className="properties-panel__empty">
+          <i
+            className="fas fa-info-circle properties-empty-icon"
+            aria-hidden="true"
+          />
+          <div className="properties-empty-title">
             {gettext("No selection")}
           </div>
-          <div className="selected-item-label">
+          <div className="properties-empty-hint">
             {gettext("Select an item from the tree to view properties")}
+          </div>
+          <div className="properties-empty-hint">
+            {gettext("Nothing open yet? Pick a figure in Objects above, or enter data on the Data page.")}
           </div>
         </div>
       )}
@@ -107,6 +116,7 @@ export function Properties() {
           <>
             {!selectedElement ? null : (
               <>
+                <ElementDetails />
                 {axIndex !== undefined && <LabelsSection axIndex={axIndex} />}
                 {axIndex !== undefined && (
                   <AxesPositionSection axIndex={axIndex} />

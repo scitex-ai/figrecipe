@@ -486,7 +486,7 @@ document.addEventListener("stx-shell:files-changed", () => {
 bootstrapContextZoom(
   [
     {
-      selector: ".split-pane-left",
+      selector: ".data-page",
       storageKey: "figrecipe-table-zoom",
       min: 0.7,
       max: 1.6,

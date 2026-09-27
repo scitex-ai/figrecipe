@@ -1186,5 +1186,155 @@ msgstr "3. 調整して書き出す"
 msgid "Plot type: %s"
 msgstr "プロットの種類: %s"
 
-msgid "This plot type cannot be drawn from table columns yet; pick Line, Scatter, Bar, Dist or Stats."
+msgid "This plot type cannot be drawn from table columns yet; pick Line, Scatter, Bar, Distribution or Statistics."
 msgstr "この種類は表の列からはまだ描けません。折れ線・散布図・棒・分布・統計から選んでください。"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Data"
+msgstr "データ"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Data table — its own full-width page"
+msgstr "データ表 — 全幅の専用ページ"
+
+#: frontend/src/components/ObjectTree/ObjectTree.tsx
+msgid "Objects"
+msgstr "オブジェクト"
+
+#: frontend/src/components/ObjectTree/ObjectTree.tsx
+msgid "No figures yet."
+msgstr "図はまだありません。"
+
+#: frontend/src/components/ObjectTree/ObjectTree.tsx
+msgid "Open an example figure"
+msgstr "例の図を開く"
+
+#: frontend/src/components/ObjectTree/ObjectTree.tsx
+msgid "Go to Data"
+msgstr "データへ移動"
+
+#: frontend/src/components/ObjectTree/ObjectTree.tsx
+msgid "Enter data on its own full-width page"
+msgstr "全幅の専用ページでデータを入力"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Import a CSV file, paste cells from a spreadsheet, or load a sample table to begin."
+msgstr "CSVファイルをインポート、表計算ソフトからセルを貼り付け、またはサンプル表を読み込んで開始します。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Paste data"
+msgstr "データを貼り付け"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Load sample data"
+msgstr "サンプルデータを読み込む"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Sample data loaded"
+msgstr "サンプルデータを読み込みました"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Pasting is unavailable in this browser"
+msgstr "このブラウザでは貼り付けは利用できません"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Paste failed: %s"
+msgstr "貼り付けに失敗しました: %s"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "The clipboard holds no table — copy cells from a spreadsheet first"
+msgstr "クリップボードに表がありません — 先に表計算ソフトからセルをコピーしてください"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Pasted %s rows"
+msgstr "%s 行を貼り付けました"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Sort"
+msgstr "ソート"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Filter"
+msgstr "フィルター"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Regions"
+msgstr "領域"
+
+#: frontend/src/components/Properties/Properties.tsx
+msgid "Nothing open yet? Pick a figure in Objects above, or enter data on the Data page."
+msgstr "まだ何も開いていません。上のオブジェクトから図を選ぶか、データページでデータを入力してください。"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Series"
+msgstr "系列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Value"
+msgstr "値"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Column"
+msgstr "列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Index"
+msgstr "番号"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Points"
+msgstr "点数"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "%s points"
+msgstr "%s 点"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Shape"
+msgstr "形状"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Range"
+msgstr "範囲"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Mean"
+msgstr "平均"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Levels"
+msgstr "レベル"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Cell"
+msgstr "セル"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Previous row"
+msgstr "前の行"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Next row"
+msgstr "次の行"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Previous column"
+msgstr "前の列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Next column"
+msgstr "次の列"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Loading element details…"
+msgstr "要素の詳細を読み込み中…"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Tip: click another cell of the selected grid to inspect it."
+msgstr "ヒント：選択中のグリッドの別のセルをクリックすると検査できます。"
+
+#: frontend/src/components/Properties/ElementDetails.tsx
+msgid "Row"
+msgstr "行"

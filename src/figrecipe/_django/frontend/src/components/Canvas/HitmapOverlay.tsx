@@ -32,7 +32,9 @@ import {
   selectionAfterClear,
   selectionAfterHit,
 } from "./hitmapSelect";
+import { cellAtPoint, isMatrixElement } from "./matrixCell";
 import type { FocusPoint, Point } from "./hitmapSelect";
+import type { BBox } from "../../types/editor";
 
 interface Props {
   /** The recipe this overlay is drawn on. A raster depicts ONE recipe, so the
@@ -42,13 +44,19 @@ interface Props {
   onSelect: (elementId: string) => void;
   /** The selection must be dropped (empty background click or Escape). */
   onClear: () => void;
+  /** Element bboxes in figure-image px (for matrix cell resolution). */
+  bboxes: Record<string, BBox>;
+  imgWidth: number;
+  imgHeight: number;
 }
 
-export function HitmapOverlay({ figureRecipe, onSelect, onClear }: Props) {
+export function HitmapOverlay({ figureRecipe, onSelect, onClear, bboxes, imgWidth, imgHeight }: Props) {
   const hitmapImage = useEditorStore((s) => s.hitmapImage);
   const colorMap = useEditorStore((s) => s.colorMap);
   const hitmapRecipe = useEditorStore((s) => s.hitmapRecipe);
   const selectedElement = useEditorStore((s) => s.selectedElement);
+  const elementShapes = useEditorStore((s) => s.elementShapes);
+  const setElementCell = useEditorStore((s) => s.setElementCell);
 
   /** Whether the loaded raster is THIS figure's picture. Everything below is
    *  gated on it: the store keeps one raster for the whole canvas, and sampling
@@ -154,15 +162,35 @@ export function HitmapOverlay({ figureRecipe, onSelect, onClear }: Props) {
   const handleClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       const box = event.currentTarget.getBoundingClientRect();
-      const hit = keyAtBoxPoint(pointInBox(event, box), box);
+      const point = pointInBox(event, box);
+      const hit = keyAtBoxPoint(point, box);
       if (hit) {
+        // A click on the ALREADY-selected matrix picks its cell instead of
+        // re-selecting: one hitmap key covers the whole grid, so the cell
+        // comes from geometry (bbox + known shape), not colour.
+        if (hit === selectedElement && isMatrixElement(colorMap, hit)) {
+          const shape = elementShapes[hit];
+          const bbox = bboxes[hit];
+          const cell = cellAtPoint(
+            bbox,
+            { width: imgWidth, height: imgHeight },
+            { width: box.width, height: box.height },
+            point,
+            shape,
+          );
+          if (cell) {
+            event.stopPropagation();
+            setElementCell(cell.row, cell.col);
+            return;
+          }
+        }
         // Stop the click reaching PlacedFigure: its selectFigure() would wipe
         // the element selection we are making right now.
         event.stopPropagation();
       }
       applySelection(hit);
     },
-    [applySelection, keyAtBoxPoint, pointInBox],
+    [applySelection, keyAtBoxPoint, pointInBox, selectedElement, colorMap, elementShapes, bboxes, imgWidth, imgHeight, setElementCell],
   );
 
   /** A finger tap. Bound to pointerup, not click: with `touch-action` set, a
@@ -173,11 +201,30 @@ export function HitmapOverlay({ figureRecipe, onSelect, onClear }: Props) {
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (event.pointerType === "mouse") return;
       const box = event.currentTarget.getBoundingClientRect();
-      const hit = keyAtBoxPoint(pointInBox(event, box), box);
-      if (hit) event.stopPropagation();
+      const point = pointInBox(event, box);
+      const hit = keyAtBoxPoint(point, box);
+      if (hit) {
+        if (hit === selectedElement && isMatrixElement(colorMap, hit)) {
+          const shape = elementShapes[hit];
+          const bbox = bboxes[hit];
+          const cell = cellAtPoint(
+            bbox,
+            { width: imgWidth, height: imgHeight },
+            { width: box.width, height: box.height },
+            point,
+            shape,
+          );
+          if (cell) {
+            event.stopPropagation();
+            setElementCell(cell.row, cell.col);
+            return;
+          }
+        }
+        event.stopPropagation();
+      }
       applySelection(hit);
     },
-    [applySelection, keyAtBoxPoint, pointInBox],
+    [applySelection, keyAtBoxPoint, pointInBox, selectedElement, colorMap, elementShapes, bboxes, imgWidth, imgHeight, setElementCell],
   );
 
   const handlePointerMove = useCallback(
