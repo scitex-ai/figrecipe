@@ -474,7 +474,10 @@ class TestNothingElseMoves:
 
     def test_an_invisible_artist_keeps_its_record(self, tmp_path):
         # Arrange -- the divergence is real but it is NOT a removal; dropping the
-        # call would delete a series the user may toggle back on.
+        # call would delete a series the user may toggle back on. (The divergence
+        # itself is repaired by the save-time visibility annotation -- see
+        # test__visibility.py; what this control asserts is that the CALL stays,
+        # and that the removal repair stays quiet about it.)
         fig, ax = fr.subplots()
         ax.plot([1, 2, 3], [1, 4, 9], id="a")
         (hidden,) = ax.plot([1, 2, 3], [2, 3, 4], id="b")
