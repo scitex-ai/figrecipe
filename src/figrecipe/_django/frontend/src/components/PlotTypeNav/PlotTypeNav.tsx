@@ -49,8 +49,8 @@ export const PLOT_TYPES: SelectorNavItem[] = [
   { id: "line", icon: "fas fa-chart-line", label: gettext_noop("Line") },
   { id: "scatter", icon: "fas fa-braille", label: gettext_noop("Scatter") },
   { id: "categorical", icon: "fas fa-chart-bar", label: gettext_noop("Bar") },
-  { id: "distribution", icon: "fas fa-chart-column", label: gettext_noop("Dist") },
-  { id: "statistical", icon: "fas fa-square-root-variable", label: gettext_noop("Stats") },
+  { id: "distribution", icon: "fas fa-chart-column", label: gettext_noop("Distribution") },
+  { id: "statistical", icon: "fas fa-square-root-variable", label: gettext_noop("Statistics") },
   { id: "grid", icon: "fas fa-th", label: gettext_noop("Grid") },
   { id: "area", icon: "fas fa-chart-area", label: gettext_noop("Area") },
   { id: "contour", icon: "fas fa-layer-group", label: gettext_noop("Contour") },
@@ -158,7 +158,7 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
       const item = itemForFamily(family);
       return item
         ? rectOf(item)
-        : { top: 56, left: 0, right: 56, bottom: 96, width: 56, height: 40 };
+        : { top: 56, left: 0, right: 92, bottom: 96, width: 92, height: 40 };
     },
     [itemForFamily],
   );
@@ -340,7 +340,7 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
           activeId={plotFamily ?? galleryFamily ?? null}
           onSelect={selectFamily}
           indicator="left"
-          style={{ width: 56, minWidth: 56, maxWidth: 56 }}
+          style={{ width: 92, minWidth: 92, maxWidth: 92 }}
           footer={
             <span className="plot-type-nav__count">{placedFigures.length}</span>
           }

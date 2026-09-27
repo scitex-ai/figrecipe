@@ -4,14 +4,15 @@
  * app-specific.
  */
 
-/* Wrapper for the fixed-width rail. width:56 matches the SelectorNav so the
-   plot tab row layout is unchanged. */
+/* Wrapper for the fixed-width rail. Wide enough for full category names
+   ("Distribution", "Statistics") at a readable size — the 56px strip with
+   9px abbreviations read as tiny unlabeled icons. */
 .plot-type-nav {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 56px;
-  min-width: 56px;
+  width: 92px;
+  min-width: 92px;
   flex-shrink: 0;
   align-self: stretch;
 }
@@ -20,7 +21,24 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-width: 56px;
+  min-width: 92px;
+}
+
+/* Readable icon + full-name rows: bigger icons, 11px labels, 48px targets. */
+.plot-type-nav .stx-app-selector-nav__item {
+  min-height: 48px;
+  padding: 8px 4px;
+}
+
+.plot-type-nav .stx-app-selector-nav__item i {
+  font-size: 18px;
+}
+
+.plot-type-nav .stx-app-selector-nav__label {
+  font-size: 11px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .plot-type-nav__count {

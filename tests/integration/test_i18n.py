@@ -8,7 +8,6 @@ from pathlib import Path
 
 import django
 import pytest
-
 from scitex_app.i18n import (
     app_locale_dir,
     misplaced_locale_dirs,
@@ -21,8 +20,22 @@ JA_MESSAGES = Path(app_locale_dir(APP)) / "ja" / "LC_MESSAGES"
 
 #: Visible editor labels that must never reach a Japanese page in English.
 CHECKED_LABELS = [
-    "Plot", "Canvas", "Details", "No selection", "Start from an example", "No tables",
-    "Current", "Preset", "Layout", "View", "Export", "Undo", "Redo", "Line", "Scatter",
+    "Plot",
+    "Data",
+    "Canvas",
+    "Details",
+    "No selection",
+    "Start from an example",
+    "No tables",
+    "Current",
+    "Preset",
+    "Layout",
+    "View",
+    "Export",
+    "Undo",
+    "Redo",
+    "Line",
+    "Scatter",
 ]
 
 

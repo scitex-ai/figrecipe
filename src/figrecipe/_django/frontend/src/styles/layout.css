@@ -244,6 +244,28 @@
   overflow: hidden;
   max-width: 100%;
   width: 100%;
+  /* Inside scitex-hub a fixed site dock covers the viewport bottom; without
+     this reserve the dock sits on top of the lowest grid rows. Standalone
+     defines no --site-dock-height, so this is 0 there. */
+  padding-bottom: var(--site-dock-height, 0px);
+}
+
+/* ── SigmaPlot-style Data page (full-width worksheet) ── */
+
+.data-page {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--vis-bg-secondary);
+}
+
+.data-page__inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ── Split panes (vis_app split-view.css) ──────────────── */
@@ -445,6 +467,32 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pane-header-buttons::-webkit-scrollbar {
+  display: none;
+}
+
+/* Visible text beside pane-header icons — no icon-only mysteries. The label
+   hides where the pane is narrow (phones, squeezed splits); the title and
+   aria-label still name the action there. */
+.pane-header-btn__label {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pane-header-btn i + .pane-header-btn__label {
+  margin-left: 2px;
+}
+
+@media (max-width: 768px) {
+  .pane-header-btn__label {
+    display: none;
+  }
 }
 
 .pane-header-right {

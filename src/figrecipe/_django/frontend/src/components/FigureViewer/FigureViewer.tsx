@@ -78,6 +78,19 @@ export function FigureViewer() {
     );
   }
 
+  // A preview is on its way: say so. The bare dark surface used to read as a
+  // broken black viewer while the render was still in flight.
+  if (!previewImage) {
+    return (
+      <div className="figure-viewer figure-viewer--start">
+        <div className="gallery-start gallery-start--message">
+          <i className="fas fa-spinner fa-spin" aria-hidden="true" />
+          <p>{gettext("Preparing a figure…")}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="figure-viewer"

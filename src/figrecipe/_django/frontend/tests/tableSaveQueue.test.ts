@@ -300,11 +300,15 @@ ok("a user-file import waits for pending table edits to drain", () => {
   // Arrange: an import writes the SAME stored table, so an edit still in the
   // queue would otherwise land after it and overwrite the chosen file.
   const pane = read("components/DataTablePane/DataTablePane.tsx");
-  // Act / Assert
+  // Act / Assert: every import gesture (file, paste, sample) funnels through
+  // the one text-content path, and THAT path drains the queue first.
   assert.match(
     pane,
-    /const handleImportCsv = useCallback\(\s*async \(file: File\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post\("datatable\/import", \{ content, format \}\);/,
+    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string[^)]*\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post\("datatable\/import", \{ content, format \}\);/,
   );
+  assert.match(pane, /await handleImportTextContent\(content, format\);/);
+  assert.match(pane, /await handleImportTextContent\(pasted\.content, pasted\.format\);/);
+  assert.match(pane, /await handleImportTextContent\(SAMPLE_TABLE_CSV, SAMPLE_TABLE_FORMAT\);/);
 });
 
 // ── module hygiene ────────────────────────────────────────────────────────
