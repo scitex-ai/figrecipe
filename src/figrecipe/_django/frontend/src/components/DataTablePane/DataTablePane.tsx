@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table/DataTable";
-import { api } from "../../api/client";
+import { api, setRecipe } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";
 import { PlotFromColumns } from "./PlotFromColumns";
@@ -726,7 +726,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse }: Dat
   }, [showToast]);
 
   const handleImportTextContent = useCallback(
-    async (content: string, format: string) => {
+    async (content: string, format: string, retried = false) => {
       try {
         // An import REPLACES the same stored table the save queue writes, so
         // a pending edit must land first — otherwise it would overwrite the
@@ -736,6 +736,23 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse }: Dat
         loadDatatable();
         await refreshAfterMutation();
       } catch (e) {
+        // Fresh session, no recipe: the backend has no editor to attach the
+        // table to ("No recipe loaded"). Bootstrap a blank figure — the same
+        // first-run path as file creation — adopt it, and retry once, so the
+        // empty-state CTAs never dead-end on a first-run screen.
+        if (!retried && String(e).includes("No recipe loaded")) {
+          try {
+            const created = await api.post<{ file?: string }>("api/new", {});
+            if (created?.file) {
+              setRecipe(created.file);
+              await useEditorStore.getState().addFigure(created.file);
+              await handleImportTextContent(content, format, true);
+              return;
+            }
+          } catch {
+            /* fall through to the import failure toast below */
+          }
+        }
         showToast(interpolate(gettext("Import failed: %s"), [e]), "error");
         throw e;
       }

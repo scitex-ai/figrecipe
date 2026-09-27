@@ -304,7 +304,7 @@ ok("a user-file import waits for pending table edits to drain", () => {
   // the one text-content path, and THAT path drains the queue first.
   assert.match(
     pane,
-    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post\("datatable\/import", \{ content, format \}\);/,
+    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string[^)]*\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post\("datatable\/import", \{ content, format \}\);/,
   );
   assert.match(pane, /await handleImportTextContent\(content, format\);/);
   assert.match(pane, /await handleImportTextContent\(pasted\.content, pasted\.format\);/);

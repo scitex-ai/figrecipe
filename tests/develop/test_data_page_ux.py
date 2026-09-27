@@ -214,3 +214,14 @@ def test_new_strings_ship_with_japanese():
     ]
     # Assert
     assert missing == []
+
+
+def test_sample_import_bootstraps_recipe_on_fresh_session():
+    # Arrange
+    source = (
+        _FRONTEND / "components" / "DataTablePane" / "DataTablePane.tsx"
+    ).read_text(encoding="utf-8")
+    # Act: the import path retries once after api/new when no recipe is loaded.
+    has_retry = "api/new" in source and "No recipe loaded" in source
+    # Assert
+    assert has_retry
