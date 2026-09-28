@@ -1,11 +1,12 @@
 name: auto-merge-to-develop
-# PILOT: org-level reusable-workflow caller (scitex-ai/.github, 2026-07-10).
-# Triggers/permissions preserved verbatim from the prior local file.
-# GitHub reads check_suite-triggered workflows from the DEFAULT branch (main),
-# so this file must stay on main, acting only on PRs whose base is develop
-# (unchanged from before). Job body was byte-identical to the reusable
-# workflow at scitex-ai/.github/.github/workflows/auto-merge-to-develop.yml
-# (verified 2026-07-10) — a clean 1:1 extraction, no behavior change.
+
+# Org-level reusable-workflow caller (scitex-ai/.github; fleet CI
+# unification wave 2). Merge green PRs that TARGET develop, the moment
+# their checks complete - job body lives org-side so it cannot drift
+# per-repo. GitHub reads check_suite-triggered workflows from the
+# DEFAULT branch (main), so this caller stub must live on main; it acts
+# ONLY on PRs whose base is develop.
+
 on:
   check_suite:
     types: [completed]
@@ -16,6 +17,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  call:
+  automerge:
     uses: scitex-ai/.github/.github/workflows/auto-merge-to-develop.yml@main
     secrets: inherit

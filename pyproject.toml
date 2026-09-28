@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.35.1"
+version = "0.34.2"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -36,7 +36,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Visualization",
 ]
 dependencies = [
-    "matplotlib>=3.6.0",  # list font.family -> per-glyph fallback (CJK) needs 3.6
+    "matplotlib>=3.5.0",
     "numpy>=1.20.0",
     "pandas>=1.3.0",
     "PyYAML>=6.0.0",
@@ -44,12 +44,7 @@ dependencies = [
     "scipy>=1.7.0",
     "click>=8.0.0",
     "rich>=13.0.0",
-    # scitex-logging moves up from the `[scitex]` extra: every print/status
-    # line in the package now goes through its logger/console tier, so it is a
-    # hard requirement, not a scitex-suite nicety. Declaring it here is what
-    # lets the source import it unguarded.
-    "scitex-logging>=0.1.0",
-    "scitex-app>=0.25.0",
+    "scitex-app>=0.3.0",
     "scitex-config>=0.3.0",
     "scitex-dev>=0.12.2",
 ]
@@ -61,42 +56,16 @@ dev = [
     "pytest-xdist>=3.0.0",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    # >=0.54.0: tests/conftest.py imports scitex_dev.testing.make_pytest_configure.
-    # The floor moves in the SAME commit as the call — a lean install resolving an
-    # older scitex-dev would fail at conftest import, taking the WHOLE suite down,
-    # against a declaration saying the old version is fine. That failure would be
-    # indistinguishable from the guard working correctly.
-    "scitex-dev>=0.54.0",
+    "scitex-dev>=0.12.2",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
-    "scitex-app>=0.25.0",
-    # The editor is BUILT and exercised against ONE owner release, and every
-    # declaration names it: the frontend pins @scitex/ui v0.23.0
-    # (`scitexUi.version/tag/commit` in frontend/package.json, recorded in its
-    # package-lock) because its UI code imports owner SOURCE by deep path from
-    # that release's tree. This Python floor declares the same release, so an
-    # environment cannot resolve an owner tree the frontend was not built
-    # against; scitex_ui/standalone_shell.html, which figrecipe's
-    # standalone.html extends, ships in it. Verified to be a coherence
-    # requirement, not a capability one: v0.22.0 supplies every imported path
-    # and symbol too (audited 68/68). tests/scitexUiContract.test.ts fails if
-    # any declaration drifts from the others.
-    "scitex-ui>=0.23.0",
+    "scitex-app>=0.3.0",
+    "scitex-ui>=0.6.4",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
     "django>=4.2.0",
-    # Django's default TIME_ZONE is "America/Chicago", resolved via zoneinfo at
-    # settings-load time in the _django test fixtures (test.Client /
-    # override_settings). zoneinfo falls back to the tzdata package when the
-    # runner image has no system /usr/share/zoneinfo entry for that zone --
-    # the py3.11 CI leg failed deterministically with
-    # "ModuleNotFoundError: No module named 'tzdata'" at setup of
-    # test_settings.py for exactly this reason (py3.12/3.13 bake the system
-    # zone). Declaring it makes the Django test suite self-contained across
-    # runners instead of depending on which zones the image happens to carry.
-    "tzdata>=2024.1",
     "playwright>=1.40.0",
     "pytesseract>=0.3.0",
     "fastmcp>=2.0",
@@ -114,19 +83,8 @@ seaborn = [
     "pandas>=1.3.0",
 ]
 scitex = [
-    "scitex-app>=0.25.0",
-    # The editor is BUILT and exercised against ONE owner release, and every
-    # declaration names it: the frontend pins @scitex/ui v0.23.0
-    # (`scitexUi.version/tag/commit` in frontend/package.json, recorded in its
-    # package-lock) because its UI code imports owner SOURCE by deep path from
-    # that release's tree. This Python floor declares the same release, so an
-    # environment cannot resolve an owner tree the frontend was not built
-    # against; scitex_ui/standalone_shell.html, which figrecipe's
-    # standalone.html extends, ships in it. Verified to be a coherence
-    # requirement, not a capability one: v0.22.0 supplies every imported path
-    # and symbol too (audited 68/68). tests/scitexUiContract.test.ts fails if
-    # any declaration drifts from the others.
-    "scitex-ui>=0.23.0",
+    "scitex-app>=0.3.0",
+    "scitex-ui>=0.6.4",
     "scitex-logging",
     "scitex-pd",
     "scitex-stats",
@@ -139,19 +97,8 @@ editor = [
 app = [
     "django>=4.2.0",
     "Pillow>=9.0.0",
-    "scitex-app>=0.25.0",
-    # The editor is BUILT and exercised against ONE owner release, and every
-    # declaration names it: the frontend pins @scitex/ui v0.23.0
-    # (`scitexUi.version/tag/commit` in frontend/package.json, recorded in its
-    # package-lock) because its UI code imports owner SOURCE by deep path from
-    # that release's tree. This Python floor declares the same release, so an
-    # environment cannot resolve an owner tree the frontend was not built
-    # against; scitex_ui/standalone_shell.html, which figrecipe's
-    # standalone.html extends, ships in it. Verified to be a coherence
-    # requirement, not a capability one: v0.22.0 supplies every imported path
-    # and symbol too (audited 68/68). tests/scitexUiContract.test.ts fails if
-    # any declaration drifts from the others.
-    "scitex-ui>=0.23.0",
+    "scitex-app>=0.3.0",
+    "scitex-ui>=0.6.4",
 ]
 desktop = [
     "django>=4.2.0",
@@ -183,7 +130,7 @@ mcp = [
     "fastmcp>=2.0",
 ]
 all = [
-    "figrecipe[desktop,dev,docs,graph-interactive,mcp]",
+    "figrecipe[dev,docs,graph-interactive,mcp,desktop]",
     "pyyaml>=6.0.0",
     "Pillow>=9.0.0",
     "seaborn>=0.12.0",
@@ -203,10 +150,6 @@ figrecipe = "figrecipe"
 [project.entry-points."scitex_dev.skills"]
 figrecipe = "figrecipe"
 
-# pip install figrecipe == a SciTeX hub app (scitex_app.plugins).
-[project.entry-points."scitex.apps"]
-figrecipe = "figrecipe._django.apps:FigRecipeEditorConfig"
-
 [project.entry-points."scitex_dev.linter.plugins"]
 figure = "figrecipe._quality._linter_plugin:get_plugin"
 
@@ -215,10 +158,12 @@ mcp_parity_exempt = true
 
 [tool.scitex_dev.audit]
 # PS-168 (workflow-secret-env-prefix) — ONE name, exempted deliberately.
+# Mirrors the same exemption on develop (#330); keep the two in step.
 #
-# `PERSONAL_ACCESS_TOKEN` is not a name figrecipe chose. It is pinned by the
-# third-party CLA action, verified in its source rather than its README
-# (contributor-assistant/github-action@v2.6.1, src/octokit.ts):
+# `PERSONAL_ACCESS_TOKEN` is not a name figrecipe chose. The CLA action reads
+# it from the environment under exactly that name, verified in source rather
+# than in a README (scitex-ai/github-action, fork of
+# contributor-assistant/github-action@v2.6.1, src/octokit.ts):
 #
 #     const personalAccessToken = process.env.PERSONAL_ACCESS_TOKEN as string
 #
@@ -229,24 +174,29 @@ mcp_parity_exempt = true
 # `PERSONAL_ACCESS_TOKEN` (created 2026-03-11; repo secrets are
 # `CLAUDE_CODE_CREDENTIALS_JSON` + `PERSONAL_ACCESS_TOKEN`, org secrets none).
 #
-# Why not just rename the secret to the prefixed form? GitHub secret VALUES
-# are write-only — they cannot be read back — so re-creating this one under
+# Worth stating plainly, because it is what let the bug survive an audit: the
+# name this file now exempts is the one that EXISTS, while the name PS-168
+# accepted without complaint until today (`GH_PERSONAL_ACCESS_TOKEN`) is the
+# one that never existed. A naming rule cannot tell a real secret from an
+# imaginary one — it grades the spelling, not the referent.
+#
+# Why not rename the secret to the prefixed form instead? GitHub secret VALUES
+# are write-only — they cannot be read back — so re-creating this one as
 # `FIGRECIPE_PERSONAL_ACCESS_TOKEN` needs the token value, which only the
 # operator holds. Tracked as the root fix on card
 # figrecipe-cla-pat-secret-name-unprefixed.
 #
 # Why not point the workflow at a prefixed name now? An absent secret
 # interpolates to EMPTY rather than failing, and the action treats '' as
-# absent (`isPersonalAccessTokenPresent`), so a prefixed reference to a
-# secret that does not exist silently re-breaks the CLA gate — the exact
-# bug this branch fixes.
+# absent, so a prefixed reference to a secret that does not exist silently
+# re-breaks the CLA gate — the exact bug this branch fixes.
 ps168_secret_exceptions = ["PERSONAL_ACCESS_TOKEN"]
 
 [project.urls]
-Homepage = "https://github.com/scitex-ai/figrecipe"
+Homepage = "https://github.com/ywatanabe1989/figrecipe"
 Documentation = "https://figrecipe.readthedocs.io"
-Repository = "https://github.com/scitex-ai/figrecipe.git"
-Issues = "https://github.com/scitex-ai/figrecipe/issues"
+Repository = "https://github.com/ywatanabe1989/figrecipe.git"
+Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/figrecipe"]
@@ -257,25 +207,6 @@ exclude = [
     "src/figrecipe/_django/frontend/tsconfig*.json",
     "src/figrecipe/_django/frontend/vite.config.ts",
     "src/figrecipe/_django/frontend/eslint.config.js",
-]
-# Template Gallery assets are RUNTIME package data, resolved package-relative by
-# figrecipe._django.handlers.gallery. Stating the intent explicitly so the assets
-# never depend on an implicit default staying put: the blanket *.png / *.yaml /
-# *.csv / *.npz rules in .gitignore would drop every one of them if the build
-# ever fell back to VCS-ignore-driven file selection.
-# tests/develop/test__gallery_templates_packaged.py asserts the built wheel and
-# sdist actually carry these files, so this stanza cannot rot silently.
-artifacts = [
-    "src/figrecipe/_django/gallery_templates/**",
-    "src/figrecipe/_django/locale/**",
-]
-
-[tool.hatch.build.targets.sdist]
-# Same assets in the sdist, so a build-from-source install is not the odd one
-# out. Without this an sdist-based install could reproduce the empty-gallery bug.
-artifacts = [
-    "src/figrecipe/_django/gallery_templates/**",
-    "src/figrecipe/_django/locale/**",
 ]
 
 [tool.pytest.ini_options]

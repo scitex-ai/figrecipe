@@ -62,8 +62,11 @@ def cohens_d_ci(d: float, n_a: int, n_b: int, level: float = 0.95) -> tuple:
 def main(
     CONFIG=stx.session.INJECTED,
     logger=stx.session.INJECTED,
-):
-    OUT = Path(CONFIG.SDIR_OUT)
+) -> int:
+    out_dir = Path(CONFIG.SDIR_OUT)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    # Seeded locally (not the injected session RNG) so the annotation numbers
+    # in the prose above stay exactly reproducible.
     rng = np.random.default_rng(42)
 
     fig, axes = fr.subplots(1, 3, figsize=(180 / 25.4, 55 / 25.4))
@@ -184,8 +187,8 @@ def main(
     fig.colorbar(image, ax=ax._ax, label="Power [dB]")
 
     fig.add_panel_labels(["A", "B", "C"])
-    fr.save(fig, OUT / "six_stat_annotation.png", validate=False)
-    logger.info(f"Output: {OUT / 'six_stat_annotation.png'}")
+    fr.save(fig, out_dir / "six_stat_annotation.png", validate=False)
+    logger.info(f"Output: {out_dir / 'six_stat_annotation.png'}")
     return 0
 
 
