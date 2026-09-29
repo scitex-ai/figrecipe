@@ -74,6 +74,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separate root cause, still open. An artist whose HANDLE is mutated after the
   call (`set_linewidth`, `set_data`) is likewise untouched: only removals are
   this slice's business.
+- **An artist HIDDEN after being drawn is no longer drawn by the recipe.**
+  `line.set_visible(False)` before saving left the call in the record exactly as
+  it was made, so the replay painted an artist the saved PNG does not show — and
+  the DEFAULT `fr.save(fig, path)` path then RAISED on a figure that is correct
+  (measured 406.02, 1.8% of pixels changed; a hidden `axhline` 198.34 and a hidden
+  `ax.text()` 353.09, while a hidden `scatter` at 21.04 and a hidden `vlines` at
+  48.72 passed the pixel validator in silence with the recipe still wrong). At
+  save time the record gains the artist's FINAL visibility (`visible: false`), so
+  the replay builds the artist and leaves it unpainted, and all five go to MSE
+  0.00 — as do a hidden `fill_between` (2362.62 → 0.00) and a hidden `hist`
+  (20760.35 → 0.00). The call is kept, not dropped: a hidden artist still carries
+  the user's data, matplotlib keeps it in `ax.lines`, and hiding asks not to paint
+  a series, not to forget it. The same conservatism as the removal repair guards
+  the write — a call is annotated only when EVERY artist it made is still on the
+  figure and all of them are hidden (a half-hidden call is not expressible as one
+  `visible`), and only when the REPLAY honours the kwarg, decided from the
+  reproducer's own dispatch table plus matplotlib's own `Axes` signature rather
+  than from a list kept here. Measured, that refuses `pie` and `streamplot`
+  (closed signatures — the kwarg would make the recipe unreplayable) and the four
+  methods with a special replay handler (`boxplot`, `graph`, `stem`,
+  `violinplot`). What it does not reach is measured too, and unchanged: an artist
+  whose call records outside the recorder's artist funnel (a hidden `bar`,
+  9129.84, and a hidden `imshow`, 23248.60, are still replayed drawn), and a call
+  that hides only SOME of the artists it made (a hidden `errorbar` line while its
+  cap lines stay visible, 387.38 — no single `visible` value can describe it).
+  Nothing is written for a figure that hides nothing, and hide-then-show leaves
+  the recipe alone because the net live state is what it describes. Reported
+  without a warning, deliberately: hiding a series is a deliberate act and the
+  recipe now matches the figure, so a message per hidden artist would only dilute
+  the one the removal repair raises when a recipe has LOST data.
 
 ## [0.35.0] - 2026-09-19
 

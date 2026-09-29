@@ -308,6 +308,31 @@ def _reconcile_removed_artists(
     return dropped
 
 
+def _annotate_hidden_artists(rec_ax, ax_record, key: str, live_ids: set) -> list:
+    """Write each hidden artist's final visibility into its recorded call.
+
+    The removal repair above DROPS calls whose artists left the figure. This is
+    its counterpart for an artist the figure still holds but no longer PAINTS
+    (card figrecipe-hidden-artist-set-visible-false-not-recorded-20260927):
+    nothing is dropped -- the artist keeps its data and can be shown again -- and
+    the record gains ``visible: False``, so the replay draws the figure that was
+    saved instead of one the validator rejects. Returns the ``AnnotatedCall``
+    list; a no-op on an ordinary figure.
+    """
+    from .._recorder._visibility import annotate_hidden
+
+    registry = getattr(rec_ax, "_artist_refs", None) or {}
+    if not registry:
+        return []
+    annotated: list = []
+    for half, records in (
+        ("calls", ax_record.calls),
+        ("decorations", ax_record.decorations),
+    ):
+        annotated.extend(annotate_hidden(records, registry, live_ids, key, half))
+    return annotated
+
+
 def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     """Capture bounding boxes of all axes for alignment/snap functionality.
 
@@ -434,6 +459,16 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                     )
                 except Exception:
                     pass  # best-effort: a reconcile must not break a save
+                # ...and for the artists it still HOLDS but no longer paints, the
+                # record gains their final visibility (card
+                # figrecipe-hidden-artist-set-visible-false-not-recorded-20260927).
+                # Nothing is dropped here: a hidden artist still carries the
+                # user's data and can be shown again, so only the paint state is
+                # written down.
+                try:
+                    _annotate_hidden_artists(rec_ax, ax_record, key, _live_ids)
+                except Exception:
+                    pass  # best-effort: an annotation must not break a save
             matched_records.add(key)
 
     # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
