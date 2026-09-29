@@ -4,7 +4,12 @@
 
 from typing import Dict, List, Tuple
 
-import scitex_logging as slogging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 
 def _spring_layout(

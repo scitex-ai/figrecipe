@@ -5,8 +5,9 @@
 figrecipe emits its status, progress and CLI output through scitex-logging, so
 those lines carry the ecosystem's aligned ``INFO:``/``SUCC:``/``WARN:``/
 ``ERRO:`` prefixes and the same level-aware, filterable record every other
-SciTeX package produces. scitex-logging is a hard dependency of figrecipe, so
-there is no fallback path here: a bare ``import figrecipe`` always has it.
+SciTeX package produces. scitex-logging ships in figrecipe's ``[scitex]``
+extra, so the imports below are guarded: without the extra they re-raise
+with the install hint instead of a bare ``ModuleNotFoundError``.
 
 Three transports, each matching one of the carve-outs the ecosystem's PS-220
 rule recognises STRUCTURALLY (a `print` is spared only when a static reader can
@@ -46,6 +47,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ._optional import missing_extra
+
 __all__ = ["get_console", "get_logger", "render_content", "render_rich"]
 
 
@@ -57,7 +60,10 @@ def get_logger(name: str = "figrecipe") -> Any:
     name : str
         Logger name; pass ``__name__`` from the call site.
     """
-    import scitex_logging as slogging
+    try:
+        import scitex_logging as slogging
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     return slogging.getLogger(name)
 
@@ -75,7 +81,10 @@ def get_console(name: str = "figrecipe") -> Any:
     name : str
         Console name; pass ``__name__`` from the call site.
     """
-    import scitex_logging as slogging
+    try:
+        import scitex_logging as slogging
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     return slogging.getConsole(name)
 

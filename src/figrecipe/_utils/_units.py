@@ -10,7 +10,12 @@ Constants:
     - 1 inch = 72 points (PostScript points)
     - 1 mm = 72/25.4 points
 """
-import scitex_logging as slogging
+from ._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __all__ = [
     "mm_to_inch",

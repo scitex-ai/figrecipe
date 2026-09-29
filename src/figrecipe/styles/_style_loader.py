@@ -15,7 +15,12 @@ Usage:
     # Access individual style parameters
     line_width = STYLE.lines.trace_mm
 """
-import scitex_logging as slogging
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __all__ = [
     "load_style",

@@ -6,7 +6,10 @@ import json
 import time
 from pathlib import Path
 
-import scitex_logging as slogging
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from ..._utils._optional import missing_extra
 

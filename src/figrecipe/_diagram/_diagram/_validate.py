@@ -16,7 +16,12 @@ Rules (all enforced programmatically):
 
 from typing import TYPE_CHECKING
 
-import scitex_logging as slogging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 try:
     from scitex_logging import getLogger

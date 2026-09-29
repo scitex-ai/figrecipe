@@ -20,7 +20,14 @@ import os
 import sys
 from pathlib import Path
 
-import scitex_logging as slogging
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise ImportError(
+        "scitex-logging is required for this capability "
+        "but is not installed. Install it with: "
+        "pip install 'figrecipe[scitex]'"
+    ) from exc
 
 log = slogging.getLogger(__name__)
 console = slogging.getConsole(f"{__name__}.console")
