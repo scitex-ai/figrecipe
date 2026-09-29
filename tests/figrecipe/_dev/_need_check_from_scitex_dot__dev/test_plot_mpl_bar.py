@@ -5,11 +5,10 @@ import pytest
 pytest.importorskip("numpy")
 pytest.importorskip("matplotlib")
 
-import scitex_dev.plt as plt_mod  # noqa: E402
-
 
 def test_plt_module_has_dunder_path():
     # Arrange
+    plt_mod = pytest.importorskip("scitex_dev.plt")
     # Act
     # Assert
     assert hasattr(plt_mod, "__path__")
@@ -17,6 +16,7 @@ def test_plt_module_has_dunder_path():
 
 def test_plt_subpackages_importable():
     # Arrange
+    pytest.importorskip("scitex_dev.plt")
     # Act
     # Assert
     import scitex_dev.plt.demo_plotters  # noqa: F401
