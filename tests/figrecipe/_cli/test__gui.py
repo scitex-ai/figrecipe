@@ -410,6 +410,17 @@ class TestGuiConsumerBranding:
         assert os.environ.get("FIGRECIPE_APP_LABEL") == "Custom Title"
 
 
+@pytest.fixture
+def available_port():
+    """Allocate an actual ephemeral fixture port instead of sharing a constant."""
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    yield port
+
+
 class TestGuiMissingEditorExtra:
     """Bare `pip install figrecipe` lacks the [editor] extra; `figrecipe gui`
     must say how to install it instead of `No module named 'django'`."""
@@ -431,33 +442,37 @@ class TestGuiMissingEditorExtra:
         else:
             sys.modules["django"] = saved  # type: ignore[assignment]
 
-    def test_serve_names_pip(self, runner, _block_django):
+    def test_serve_names_pip(self, runner, _block_django, available_port):
         # Arrange
         del _block_django  # active via fixture
         # Act
-        r = runner.invoke(main, ["gui", "serve", "--port", "31999"])
+        r = runner.invoke(main, ["gui", "serve", "--port", str(available_port)])
         # Assert
         assert "pip install" in r.output, f"missing pip guidance: {r.output}"
 
-    def test_serve_names_editor_extra(self, runner, _block_django):
+    def test_serve_names_editor_extra(self, runner, _block_django, available_port):
         # Arrange
         del _block_django
         # Act
-        r = runner.invoke(main, ["gui", "serve", "--port", "31999"])
+        r = runner.invoke(main, ["gui", "serve", "--port", str(available_port)])
         # Assert
         assert "figrecipe[editor]" in r.output, f"missing extra name: {r.output}"
 
-    def test_serve_message_not_masked_by_editor_failed(self, runner, _block_django):
+    def test_serve_message_not_masked_by_editor_failed(
+        self, runner, _block_django, available_port
+    ):
         # Arrange -- regression: before the probe moved ahead of the caller's
         # generic `except Exception`, the missing-extra ImportError was
         # swallowed and the user saw the bare, unhelpful `Editor failed: ...`.
         del _block_django
         # Act
-        r = runner.invoke(main, ["gui", "serve", "--port", "31999"])
+        r = runner.invoke(main, ["gui", "serve", "--port", str(available_port)])
         # Assert
         assert "Editor failed" not in r.output, f"friendly message masked: {r.output}"
 
-    def test_open_auto_serve_path_is_gated_too(self, runner, _block_django, isolated_state):
+    def test_open_auto_serve_path_is_gated_too(
+        self, runner, _block_django, isolated_state, available_port
+    ):
         # Arrange -- a bare `figrecipe gui` resolves to `gui open` and
         # auto-serves a subprocess. The probe must fire BEFORE `_autoserve`, so
         # an extra-less install gets the friendly message immediately instead
@@ -465,7 +480,9 @@ class TestGuiMissingEditorExtra:
         del _block_django
         # Act -- `gui open` (non-desktop, non-dry-run) with no server running
         # takes exactly that path.
-        r = runner.invoke(main, ["gui", "open", "--port", "31998", "--no-browser"])
+        r = runner.invoke(
+            main, ["gui", "open", "--port", str(available_port), "--no-browser"]
+        )
         problems = []
         if "pip install" not in r.output:
             problems.append("no pip guidance")

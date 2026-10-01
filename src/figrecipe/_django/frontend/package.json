@@ -45,7 +45,7 @@
   },
   "scitexSdk": {
     "version": "0.3.0",
-    "commit": "9bf0851cbe0a5ab90b334c235fc08b7d0d4a4ebb",
-    "reason": "Canonical SDK app/UI ownership; this pinned unpublished source is required before consumer publication."
+    "commit": "9f5747a8ef5431e7412cdafa58f0dc0f3609a74d",
+    "reason": "Canonical SDK app/UI ownership at the immutable source published as scitex-sdk 0.3.0."
   }
 }

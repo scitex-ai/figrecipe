@@ -32,6 +32,7 @@ CHAT_APP = "figrecipe._django.apps.ScitexAppChatConfig"
 
 def test_missing_sdk_reports_gui_extra_without_losing_plugin_metadata():
     """A core install can plot; GUI discovery requires the actual SDK class."""
+    # Arrange
     result = subprocess.run(
         [
             sys.executable,
@@ -59,17 +60,22 @@ assert not settings.configured
         capture_output=True,
         text=True,
     )
+    # Act
+    # Assert
     assert result.returncode == 0, result.stderr
 
 
 class TestStartupWarning:
     def test_a_host_without_the_chat_app_is_warned_at_startup(self):
         # Arrange
+        # Arrange
         missing = lambda label: False  # noqa: E731 - the injected predicate
         # Act
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             emitted = FigRecipeEditorConfig._warn_if_chat_app_missing(missing)
+        # Assert
+        # Act
         # Assert
         assert emitted is True and CHAT_APP in str(caught[0].message)
 
@@ -78,6 +84,7 @@ class TestStartupWarning:
         # not installed. The first version of this fix caught that in its
         # defensive handler and therefore never warned at all; only mounting the
         # app end to end exposed it.
+        # Arrange
         def raising_registry(label):
             raise LookupError(f"No installed app with label {label!r}.")
 
@@ -86,9 +93,12 @@ class TestStartupWarning:
             warnings.simplefilter("always")
             emitted = FigRecipeEditorConfig._warn_if_chat_app_missing(raising_registry)
         # Assert
+        # Act
+        # Assert
         assert emitted is True and CHAT_APP in str(caught[0].message)
 
     def test_a_host_with_the_chat_app_is_not_warned(self):
+        # Arrange
         # Arrange
         present = lambda label: True  # noqa: E731
         # Act
@@ -96,9 +106,12 @@ class TestStartupWarning:
             warnings.simplefilter("error")  # any warning would raise here
             emitted = FigRecipeEditorConfig._warn_if_chat_app_missing(present)
         # Assert
+        # Act
+        # Assert
         assert emitted is False
 
     def test_the_warning_says_what_to_add_and_why(self):
+        # Arrange
         # Arrange
         missing = lambda label: False  # noqa: E731
         # Act
@@ -107,17 +120,31 @@ class TestStartupWarning:
             FigRecipeEditorConfig._warn_if_chat_app_missing(missing)
         message = str(caught[0].message) if caught else ""
         # Assert -- a warning that does not name the fix is not a contract.
+        # Act
+        # Assert
         assert "INSTALLED_APPS" in message and "chat" in message.lower()
 
 
 class TestTheContractHoldsWhereItCanDrift:
     def test_canonical_sdk_registration_preserves_the_legacy_chat_label(self):
+        # Arrange
+        contract = {}
+        # Act
         from figrecipe._django.apps import ScitexAppChatConfig
 
-        assert ScitexAppChatConfig.name == "scitex_sdk.app._chat"
-        assert ScitexAppChatConfig.label == "scitex_app"
+        contract["1: ScitexAppChatConfig.name == 'scitex_sdk.app._chat'"] = bool(
+            ScitexAppChatConfig.name == "scitex_sdk.app._chat"
+        )
+        contract["2: ScitexAppChatConfig.label == 'scitex_app'"] = bool(
+            ScitexAppChatConfig.label == "scitex_app"
+        )
+        # Assert
+        assert all(contract.values()), contract
 
-    def test_standalone_shell_works_when_retired_distribution_imports_are_forbidden(self):
+    def test_standalone_shell_works_when_retired_distribution_imports_are_forbidden(
+        self,
+    ):
+        # Arrange
         result = subprocess.run(
             [
                 sys.executable,
@@ -145,6 +172,8 @@ assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
             capture_output=True,
             text=True,
         )
+        # Act
+        # Assert
         assert result.returncode == 0, result.stderr
 
     def test_the_config_is_django_default_so_ready_actually_runs(self):
@@ -153,25 +182,36 @@ assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
         # marked default; otherwise it silently falls back to the BASE AppConfig
         # and ready() never runs. Mounting the package end to end showed exactly
         # that: no warning fired, and the Agg forcing in ready() was dead code.
+        # Arrange
         config = FigRecipeEditorConfig
         # Act
         is_default = config.default
+        # Assert
+        # Act
         # Assert
         assert is_default is True
 
     def test_the_editors_own_settings_register_both_apps(self):
         # Arrange
+        # Arrange
         source = SETTINGS.read_text(encoding="utf-8")
         # Act
-        registrations = [name for name in ("figrecipe._django", CHAT_APP) if name in source]
+        registrations = [
+            name for name in ("figrecipe._django", CHAT_APP) if name in source
+        ]
+        # Assert
+        # Act
         # Assert
         assert registrations == ["figrecipe._django", CHAT_APP], registrations
 
     def test_the_documented_mount_lists_both_apps(self):
+        # Arrange
         # Arrange
         doc = DOC.read_text(encoding="utf-8")
         # Act -- the shape that shipped the defect: the editor app alone.
         single_app_mount = 'INSTALLED_APPS += ["figrecipe._django"]'
         # Assert -- the doc names the chat app, and no longer documents the form
         # that loses it.
+        # Act
+        # Assert
         assert CHAT_APP in doc and single_app_mount not in doc

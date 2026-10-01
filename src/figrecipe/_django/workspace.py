@@ -7,7 +7,12 @@ context builder. The workspace request's URL is not the app's API mount.
 import os
 from pathlib import Path
 
-from django.middleware.csrf import get_token
+from figrecipe._utils._optional import missing_extra
+
+try:
+    from django.middleware.csrf import get_token
+except ImportError as exc:
+    raise missing_extra(exc) from exc
 
 from ._project_access import prepare_request
 
@@ -15,9 +20,9 @@ from ._project_access import prepare_request
 def build_workspace_context(request, current_project=None):
     """Resolve the SDK project rather than trusting a host's presentation object.
 
-Raises SDK AccessError/CapabilityUnavailable before rendering or file I/O.
-``current_project`` retains the generic host context-builder signature.
-"""
+    Raises SDK AccessError/CapabilityUnavailable before rendering or file I/O.
+    ``current_project`` retains the generic host context-builder signature.
+    """
     prepare_request(request)
     get_token(request)
     access = getattr(request, "_figrecipe_project", None)

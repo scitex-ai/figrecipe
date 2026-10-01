@@ -59,12 +59,15 @@ dev = [
     "scitex-sdk>=0.3.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    # The owning wheel exclusion control imports the actual build backend.
+    "hatchling",
     "pytest-xdist>=3.0.0",
     # The actual SDK i18n authoring controls read both shipped catalogs.
     "babel>=2.12",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    "scitex-dev>=0.12.2",
+    # The owning source audit requires the corrected published PS-220 corpus.
+    "scitex-dev>=0.62.1",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
     "scitex-logging",

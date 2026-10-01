@@ -193,7 +193,10 @@ def editor_page(request, view_path=""):
 @ensure_csrf_cookie
 def workspace_page(request):
     """Serve the same embedded editor content at any declared leaf mount."""
-    from django.shortcuts import render
+    try:
+        from django.shortcuts import render
+    except ImportError as exc:
+        raise missing_extra(exc) from exc
     from scitex_sdk import ui
 
     from .workspace import build_workspace_context

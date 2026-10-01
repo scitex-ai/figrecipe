@@ -19,7 +19,9 @@ def configure(frontend_dir: Path, package_dir: Path) -> None:
     package = json.loads(manifest.read_text())
     required = package["scitexSdk"]["version"]
     if owner.get("name") != "@scitex/sdk" or owner.get("version") != required:
-        raise ValueError("Installed SDK frontend package does not match the declared owner")
+        raise ValueError(
+            "Installed SDK frontend package does not match the declared owner"
+        )
     if "./ui/react/app/bridge" not in owner.get("exports", {}):
         raise ValueError("Installed SDK lacks the public React bridge export")
     package["dependencies"]["@scitex/sdk"] = "file:" + str(package_dir.resolve())
@@ -28,13 +30,24 @@ def configure(frontend_dir: Path, package_dir: Path) -> None:
 
 def main() -> int:
     try:
+        import scitex_logging as slogging
+    except ImportError as exc:
+        raise ImportError(
+            "Frontend setup diagnostics require scitex-logging. "
+            "Install it with: pip install 'figrecipe[scitex]'"
+        ) from exc
+    try:
         from scitex_sdk import get_frontend_package_dir
 
         configure(FRONTEND_DIR, get_frontend_package_dir())
     except (ImportError, OSError, ValueError, KeyError):
-        print("Frontend setup failed: install the declared scitex-sdk GUI owner, then retry.")
+        slogging.getLogger(__name__).error(
+            "Frontend setup failed: install the declared scitex-sdk GUI owner, then retry."
+        )
         return 1
-    print("Frontend SDK dependency configured. Run npm install, then npm run build.")
+    slogging.getPlainConsole(__name__).emit(
+        "Frontend SDK dependency configured. Run npm install, then npm run build."
+    )
     return 0
 
 

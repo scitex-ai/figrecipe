@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._bundle._figz &mdash; FigRecipe v0.28.12</title>
+  <title>figrecipe._bundle._figz &mdash; FigRecipe v0.36.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=29f6473e"></script>
+      <script src="../../../_static/documentation_options.js?v=5864e6e0"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -236,6 +236,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.align_panels"><code class="docutils literal notranslate"><span class="pre">align_panels()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.distribute_panels"><code class="docutils literal notranslate"><span class="pre">distribute_panels()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.align_smart"><code class="docutils literal notranslate"><span class="pre">align_smart()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.empty_cells"><code class="docutils literal notranslate"><span class="pre">empty_cells()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.layout_report"><code class="docutils literal notranslate"><span class="pre">layout_report()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.auto_tile_layout"><code class="docutils literal notranslate"><span class="pre">auto_tile_layout()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.gui"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.crop"><code class="docutils literal notranslate"><span class="pre">crop()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
@@ -244,6 +247,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_qr_to_figure"><code class="docutils literal notranslate"><span class="pre">add_qr_to_figure()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_figure_caption"><code class="docutils literal notranslate"><span class="pre">add_figure_caption()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_panel_captions"><code class="docutils literal notranslate"><span class="pre">add_panel_captions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.set_manuscript_mode"><code class="docutils literal notranslate"><span class="pre">set_manuscript_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.manuscript_mode"><code class="docutils literal notranslate"><span class="pre">manuscript_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.is_manuscript_mode"><code class="docutils literal notranslate"><span class="pre">is_manuscript_mode()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.panel_label"><code class="docutils literal notranslate"><span class="pre">panel_label()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz"><code class="docutils literal notranslate"><span class="pre">Figz</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.__init__"><code class="docutils literal notranslate"><span class="pre">Figz.__init__()</span></code></a></li>
@@ -296,9 +302,40 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.from_dict"><code class="docutils literal notranslate"><span class="pre">Diagram.from_dict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult"><code class="docutils literal notranslate"><span class="pre">StatResult</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.p_value"><code class="docutils literal notranslate"><span class="pre">StatResult.p_value</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.method"><code class="docutils literal notranslate"><span class="pre">StatResult.method</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.statistic"><code class="docutils literal notranslate"><span class="pre">StatResult.statistic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.statistic_name"><code class="docutils literal notranslate"><span class="pre">StatResult.statistic_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.dof"><code class="docutils literal notranslate"><span class="pre">StatResult.dof</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.effect_size"><code class="docutils literal notranslate"><span class="pre">StatResult.effect_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.effect_name"><code class="docutils literal notranslate"><span class="pre">StatResult.effect_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.ci"><code class="docutils literal notranslate"><span class="pre">StatResult.ci</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.ci_level"><code class="docutils literal notranslate"><span class="pre">StatResult.ci_level</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n"><code class="docutils literal notranslate"><span class="pre">StatResult.n</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n_subjects"><code class="docutils literal notranslate"><span class="pre">StatResult.n_subjects</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n_unit"><code class="docutils literal notranslate"><span class="pre">StatResult.n_unit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n_subjects_unit"><code class="docutils literal notranslate"><span class="pre">StatResult.n_subjects_unit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.extras"><code class="docutils literal notranslate"><span class="pre">StatResult.extras</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.stars"><code class="docutils literal notranslate"><span class="pre">StatResult.stars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.missing_fields"><code class="docutils literal notranslate"><span class="pre">StatResult.missing_fields()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.annotation"><code class="docutils literal notranslate"><span class="pre">StatResult.annotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.from_mapping"><code class="docutils literal notranslate"><span class="pre">StatResult.from_mapping()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.__init__"><code class="docutils literal notranslate"><span class="pre">StatResult.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.hints_for"><code class="docutils literal notranslate"><span class="pre">hints_for()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.known_figure_types"><code class="docutils literal notranslate"><span class="pre">known_figure_types()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry.BRACKET_ABOVE"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry.BRACKET_ABOVE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry.INLINE_TEXT"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry.INLINE_TEXT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry.COLORBAR_ANNOTATION"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry.COLORBAR_ANNOTATION</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.build_spec"><code class="docutils literal notranslate"><span class="pre">build_spec()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.build_spec_from_csv"><code class="docutils literal notranslate"><span class="pre">build_spec_from_csv()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.render_spec_to_bytes"><code class="docutils literal notranslate"><span class="pre">render_spec_to_bytes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.from_stats_plot_spec"><code class="docutils literal notranslate"><span class="pre">from_stats_plot_spec()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.termplot"><code class="docutils literal notranslate"><span class="pre">termplot()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.draw_graph"><code class="docutils literal notranslate"><span class="pre">draw_graph()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.smart_align"><code class="docutils literal notranslate"><span class="pre">smart_align()</span></code></a></li>
@@ -319,6 +356,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.flat"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.flat</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.record"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.record</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontsize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontsize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontweight"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontweight()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_resolved_font_family"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_resolved_font_family()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_theme_text_color()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.colorbar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.add_panel_labels"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.add_panel_labels()</span></code></a></li>
@@ -397,7 +436,7 @@
   <h1>Source code for figrecipe._bundle._figz</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Multi-panel figure bundle (.fig.zip) - container for Pltz panels.&quot;&quot;&quot;</span>
+<span class="sd">"""Multi-panel figure bundle (.fig.zip) - container for Pltz panels."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -411,15 +450,15 @@
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">._pltz</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pltz</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Figz&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Figz"</span><span class="p">]</span>
 
-<span class="n">_MANIFEST</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;bundle_type&quot;</span><span class="p">:</span> <span class="s2">&quot;FIGZ&quot;</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0&quot;</span><span class="p">,</span> <span class="s2">&quot;created_by&quot;</span><span class="p">:</span> <span class="s2">&quot;figrecipe&quot;</span><span class="p">}</span>
+<span class="n">_MANIFEST</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"bundle_type"</span><span class="p">:</span> <span class="s2">"FIGZ"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="s2">"1.0"</span><span class="p">,</span> <span class="s2">"created_by"</span><span class="p">:</span> <span class="s2">"figrecipe"</span><span class="p">}</span>
 
 
 <div class="viewcode-block" id="Figz">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Figz</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-panel figure bundle (.fig.zip).</span>
+<span class="w">    </span><span class="sd">"""Multi-panel figure bundle (.fig.zip).</span>
 
 <span class="sd">    Manages a ZIP file containing:</span>
 <span class="sd">        manifest.json  - bundle type declaration</span>
@@ -429,10 +468,10 @@
 
 <span class="sd">    Example</span>
 <span class="sd">    -------</span>
-<span class="sd">    &gt;&gt;&gt; figz = Figz.create(&quot;Figure1.fig.zip&quot;, &quot;Figure1&quot;)</span>
-<span class="sd">    &gt;&gt;&gt; figz.add_panel(&quot;A&quot;, pltz_path)</span>
-<span class="sd">    &gt;&gt;&gt; figz.add_panel(&quot;B&quot;, pltz_bytes)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; figz = Figz.create("Figure1.fig.zip", "Figure1")</span>
+<span class="sd">    &gt;&gt;&gt; figz.add_panel("A", pltz_path)</span>
+<span class="sd">    &gt;&gt;&gt; figz.add_panel("B", pltz_bytes)</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="Figz.__init__">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.__init__">[docs]</a>
@@ -443,17 +482,17 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Figz bundle not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Figz bundle not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
             <span class="n">namelist</span> <span class="o">=</span> <span class="n">zf</span><span class="o">.</span><span class="n">namelist</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">spec</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;spec.json&quot;</span><span class="p">))</span> <span class="k">if</span> <span class="s2">&quot;spec.json&quot;</span> <span class="ow">in</span> <span class="n">namelist</span> <span class="k">else</span> <span class="p">{}</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">"spec.json"</span><span class="p">))</span> <span class="k">if</span> <span class="s2">"spec.json"</span> <span class="ow">in</span> <span class="n">namelist</span> <span class="k">else</span> <span class="p">{}</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;style.json&quot;</span><span class="p">))</span> <span class="k">if</span> <span class="s2">&quot;style.json&quot;</span> <span class="ow">in</span> <span class="n">namelist</span> <span class="k">else</span> <span class="p">{}</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">"style.json"</span><span class="p">))</span> <span class="k">if</span> <span class="s2">"style.json"</span> <span class="ow">in</span> <span class="n">namelist</span> <span class="k">else</span> <span class="p">{}</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">p</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;panels&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">p</span><span class="p">[</span><span class="s2">"label"</span><span class="p">]:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"panels"</span><span class="p">,</span> <span class="p">[])</span>
         <span class="p">}</span>
 
 <div class="viewcode-block" id="Figz.create">
@@ -464,8 +503,8 @@
         <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">size_mm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Figz&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new empty .fig.zip bundle.</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Figz"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Create a new empty .fig.zip bundle.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -474,30 +513,30 @@
 <span class="sd">        name : str</span>
 <span class="sd">            Figure name / ID.</span>
 <span class="sd">        size_mm : dict, optional</span>
-<span class="sd">            Canvas size e.g. {&quot;width_mm&quot;: 170, &quot;height_mm&quot;: 120}.</span>
+<span class="sd">            Canvas size e.g. {"width_mm": 170, "height_mm": 120}.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Figz</span>
 <span class="sd">            Loaded Figz instance.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
         <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">spec</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;figure&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;caption&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">},</span>
-            <span class="s2">&quot;panels&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">"figure"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"caption"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+            <span class="s2">"panels"</span><span class="p">:</span> <span class="p">[],</span>
         <span class="p">}</span>
         <span class="n">style</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">size_mm</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;width_mm&quot;</span><span class="p">:</span> <span class="mi">170</span><span class="p">,</span> <span class="s2">&quot;height_mm&quot;</span><span class="p">:</span> <span class="mi">120</span><span class="p">},</span>
-            <span class="s2">&quot;background&quot;</span><span class="p">:</span> <span class="s2">&quot;#ffffff&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;theme&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;light&quot;</span><span class="p">},</span>
+            <span class="s2">"size"</span><span class="p">:</span> <span class="n">size_mm</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">"width_mm"</span><span class="p">:</span> <span class="mi">170</span><span class="p">,</span> <span class="s2">"height_mm"</span><span class="p">:</span> <span class="mi">120</span><span class="p">},</span>
+            <span class="s2">"background"</span><span class="p">:</span> <span class="s2">"#ffffff"</span><span class="p">,</span>
+            <span class="s2">"theme"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"light"</span><span class="p">},</span>
         <span class="p">}</span>
 
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
-            <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">&quot;manifest.json&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">_MANIFEST</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-            <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">&quot;spec.json&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-            <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">&quot;style.json&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">style</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+            <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">"manifest.json"</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">_MANIFEST</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">"spec.json"</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="s2">"style.json"</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">style</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
 
@@ -505,16 +544,16 @@
 <div class="viewcode-block" id="Figz.save">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save spec/style changes back to bundle.&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Save spec/style changes back to bundle."""</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
             <span class="n">entries</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">zf</span><span class="o">.</span><span class="n">namelist</span><span class="p">()}</span>
 
-        <span class="n">entries</span><span class="p">[</span><span class="s2">&quot;spec.json&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
-        <span class="n">entries</span><span class="p">[</span><span class="s2">&quot;style.json&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="n">entries</span><span class="p">[</span><span class="s2">"spec.json"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="n">entries</span><span class="p">[</span><span class="s2">"style.json"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
 
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
@@ -533,54 +572,54 @@
         <span class="n">position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a .plt.zip panel to this figure.</span>
+<span class="w">        </span><span class="sd">"""Add a .plt.zip panel to this figure.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        label : str</span>
-<span class="sd">            Panel label (e.g., &quot;A&quot;, &quot;B&quot;).</span>
+<span class="sd">            Panel label (e.g., "A", "B").</span>
 <span class="sd">        pltz_source : bytes, str, or Path</span>
 <span class="sd">            Panel bytes or path to a .plt.zip file.</span>
 <span class="sd">        position : dict, optional</span>
-<span class="sd">            Panel position e.g. {&quot;x_mm&quot;: 5, &quot;y_mm&quot;: 5}.</span>
+<span class="sd">            Panel position e.g. {"x_mm": 5, "y_mm": 5}.</span>
 <span class="sd">        size : dict, optional</span>
-<span class="sd">            Panel size e.g. {&quot;width_mm&quot;: 80, &quot;height_mm&quot;: 68}.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            Panel size e.g. {"width_mm": 80, "height_mm": 68}.</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pltz_source</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
             <span class="n">pltz_bytes</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">pltz_source</span><span class="p">)</span><span class="o">.</span><span class="n">read_bytes</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">pltz_bytes</span> <span class="o">=</span> <span class="n">pltz_source</span>
 
         <span class="c1"># Read all current entries</span>
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
             <span class="n">entries</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">zf</span><span class="o">.</span><span class="n">namelist</span><span class="p">()}</span>
 
         <span class="c1"># Store panel bytes</span>
-        <span class="n">entries</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;panels/</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">.plt.zip&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pltz_bytes</span>
+        <span class="n">entries</span><span class="p">[</span><span class="sa">f</span><span class="s2">"panels/</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">.plt.zip"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pltz_bytes</span>
 
         <span class="c1"># Update spec.panels</span>
         <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">:</span>
-            <span class="n">panel_info</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">}</span>
+            <span class="n">panel_info</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"label"</span><span class="p">:</span> <span class="n">label</span><span class="p">}</span>
             <span class="k">if</span> <span class="n">position</span><span class="p">:</span>
-                <span class="n">panel_info</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">position</span>
+                <span class="n">panel_info</span><span class="p">[</span><span class="s2">"position"</span><span class="p">]</span> <span class="o">=</span> <span class="n">position</span>
             <span class="k">if</span> <span class="n">size</span><span class="p">:</span>
-                <span class="n">panel_info</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span>
+                <span class="n">panel_info</span><span class="p">[</span><span class="s2">"size"</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">panel_info</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s2">&quot;panels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s2">"panels"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Update position/size if provided</span>
             <span class="k">if</span> <span class="n">position</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="s2">&quot;position&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">position</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="s2">"position"</span><span class="p">]</span> <span class="o">=</span> <span class="n">position</span>
             <span class="k">if</span> <span class="n">size</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="s2">&quot;size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s2">&quot;panels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="s2">"size"</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s2">"panels"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
-        <span class="n">entries</span><span class="p">[</span><span class="s2">&quot;spec.json&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="n">entries</span><span class="p">[</span><span class="s2">"spec.json"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
 
         <span class="c1"># Rebuild ZIP atomically</span>
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
@@ -596,14 +635,14 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">png_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">plot_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span>
+        <span class="n">plot_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"image"</span><span class="p">,</span>
         <span class="n">position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">hitmap_bytes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">hitmap_color_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">data_csv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a .plt.zip bundle from PNG bytes and embed it as a panel.</span>
+<span class="w">        </span><span class="sd">"""Create a .plt.zip bundle from PNG bytes and embed it as a panel.</span>
 
 <span class="sd">        Convenience wrapper around :meth:`add_panel` for the common case of</span>
 <span class="sd">        adding a pre-rendered PNG image as a panel.</span>
@@ -611,19 +650,19 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        label : str</span>
-<span class="sd">            Panel label (e.g., &quot;A&quot;, &quot;B&quot;).</span>
+<span class="sd">            Panel label (e.g., "A", "B").</span>
 <span class="sd">        png_bytes : bytes</span>
 <span class="sd">            PNG image data.</span>
 <span class="sd">        plot_type : str, optional</span>
-<span class="sd">            Plot type label stored in the panel&#39;s spec.json (default: &quot;image&quot;).</span>
+<span class="sd">            Plot type label stored in the panel's spec.json (default: "image").</span>
 <span class="sd">        position : dict, optional</span>
-<span class="sd">            Panel position e.g. {&quot;x_mm&quot;: 5, &quot;y_mm&quot;: 5}.</span>
+<span class="sd">            Panel position e.g. {"x_mm": 5, "y_mm": 5}.</span>
 <span class="sd">        size : dict, optional</span>
-<span class="sd">            Panel size e.g. {&quot;width_mm&quot;: 80, &quot;height_mm&quot;: 68}.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            Panel size e.g. {"width_mm": 80, "height_mm": 68}.</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">._pltz</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pltz</span>
 
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.plt.zip&quot;</span><span class="p">))</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">".plt.zip"</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">Pltz</span><span class="o">.</span><span class="n">from_png</span><span class="p">(</span>
                 <span class="n">png_bytes</span><span class="p">,</span>
@@ -642,26 +681,26 @@
 <div class="viewcode-block" id="Figz.remove_panel">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.remove_panel">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_panel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a panel (rebuilds ZIP).</span>
+<span class="w">        </span><span class="sd">"""Remove a panel (rebuilds ZIP).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        label : str</span>
 <span class="sd">            Panel label to remove.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">panel_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;panels/</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">.plt.zip&quot;</span>
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="n">panel_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"panels/</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">.plt.zip"</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
             <span class="n">entries</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="n">name</span><span class="p">:</span> <span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">zf</span><span class="o">.</span><span class="n">namelist</span><span class="p">()</span> <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="n">panel_key</span>
             <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s2">&quot;panels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="n">entries</span><span class="p">[</span><span class="s2">&quot;spec.json&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">[</span><span class="s2">"panels"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">entries</span><span class="p">[</span><span class="s2">"spec.json"</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
 
         <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">entries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">zf</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
@@ -673,11 +712,11 @@
 
 <div class="viewcode-block" id="Figz.get_panel">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.get_panel">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_panel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Pltz&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract panel as Pltz instance (via temp file).</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_panel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Pltz"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Extract panel as Pltz instance (via temp file).</span>
 
 <span class="sd">        Note: The caller is responsible for cleaning up the temp file</span>
-<span class="sd">        (accessible via the returned Pltz instance&#39;s .path attribute).</span>
+<span class="sd">        (accessible via the returned Pltz instance's .path attribute).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -688,14 +727,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        Pltz</span>
 <span class="sd">            Loaded Pltz instance for the panel.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">._pltz</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pltz</span>
 
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_panel_pltz</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Panel &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; not found in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Panel '</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">' not found in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.plt.zip&quot;</span><span class="p">))</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">".plt.zip"</span><span class="p">))</span>
         <span class="n">tmp</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Pltz</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span></div>
 
@@ -703,7 +742,7 @@
 <div class="viewcode-block" id="Figz.get_panel_pltz">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.get_panel_pltz">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_panel_pltz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">panel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get panel as raw bytes.</span>
+<span class="w">        </span><span class="sd">"""Get panel as raw bytes.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -714,10 +753,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        bytes or None</span>
 <span class="sd">            Raw .plt.zip bytes, or None if panel not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">panel_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;panels/</span><span class="si">{</span><span class="n">panel_id</span><span class="si">}</span><span class="s2">.plt.zip&quot;</span>
+<span class="sd">        """</span>
+        <span class="n">panel_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"panels/</span><span class="si">{</span><span class="n">panel_id</span><span class="si">}</span><span class="s2">.plt.zip"</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">panel_key</span> <span class="ow">in</span> <span class="n">zf</span><span class="o">.</span><span class="n">namelist</span><span class="p">():</span>
                     <span class="k">return</span> <span class="n">zf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">panel_key</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -728,20 +767,20 @@
 <div class="viewcode-block" id="Figz.list_panel_ids">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.list_panel_ids">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">list_panel_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;List panel labels in order.</span>
+<span class="w">        </span><span class="sd">"""List panel labels in order.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        list of str</span>
 <span class="sd">            Panel labels.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">panels</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="Figz.get_panel_data">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.get_panel_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_panel_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">panel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get panel&#39;s CSV data as DataFrame.</span>
+<span class="w">        </span><span class="sd">"""Get panel's CSV data as DataFrame.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -751,7 +790,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        DataFrame or None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_tempfile</span>
 
         <span class="n">pltz_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_panel_pltz</span><span class="p">(</span><span class="n">panel_id</span><span class="p">)</span>
@@ -760,7 +799,7 @@
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">._pltz</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pltz</span>
 
-        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">_tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.plt.zip&quot;</span><span class="p">))</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">_tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">".plt.zip"</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">tmp</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="n">pltz_bytes</span><span class="p">)</span>
             <span class="n">pltz</span> <span class="o">=</span> <span class="n">Pltz</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
@@ -773,12 +812,12 @@
 <div class="viewcode-block" id="Figz.render_preview">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe.Figz.render_preview">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">render_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return preview of first panel as PNG bytes.</span>
+<span class="w">        </span><span class="sd">"""Return preview of first panel as PNG bytes.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bytes or None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">panel_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_panel_ids</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">panel_ids</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -788,7 +827,7 @@
         <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="n">panel_ids</span><span class="p">:</span>
             <span class="n">pltz_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_panel_pltz</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">pltz_bytes</span><span class="p">:</span>
-                <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.plt.zip&quot;</span><span class="p">))</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mktemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">".plt.zip"</span><span class="p">))</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">tmp</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="n">pltz_bytes</span><span class="p">)</span>
                     <span class="n">pltz</span> <span class="o">=</span> <span class="n">Pltz</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>

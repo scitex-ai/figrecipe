@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-10-02
+
+### Added
+- Canonical SDK 0.3.0 app/UI ownership, public frontend exports, and project
+  capability checks across the standalone and hosted editor entry points.
+  Hosted file access resolves the SDK project provider and storage capability;
+  the caller's working directory does not authorize a project.
+
+### Changed
+- The frontend source pin now matches the immutable SDK source published as
+  0.3.0. Native npm, strict app/library builds and owning frontend controls run
+  before tag artifacts are built.
+- CI verifies the reused image digest and places each job's temporary files,
+  state and caches in its own runner scratch. The full owning dependencies must
+  install successfully, and end-to-end save/info assertions run with RUN_E2E=1.
+- Legacy plotting import checks now exercise FigRecipe's current plotting and
+  demo owners. The protocol and packaging controls retain their original
+  assertions and use the published scitex-dev 0.62.1 source audit.
+
 ### Changed
 - **figrecipe's status, progress and CLI output now go through scitex-logging
   instead of a bare `print`.** A `print` in library code writes unconditionally
@@ -30,6 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   import time for a module-level import and at call time for a lazy one.
 
 ### Fixed
+- QR diagnostics now load when the public QR capability is requested, so an
+  optional logging guard cannot import the plotting utility graph during bare
+  package startup. The same QR function and export remain available.
+- The Sphinx image-generator source uses the canonical console transport, so
+  rebuilding the shipped documentation retains the output contract.
 - **The removed-artist check could not see the case it exists for, and missed
   most plotters besides.** `fr.save` warns when a figure holds fewer artists than
   its recipe still draws, but the check was handed only the `calls` half of the

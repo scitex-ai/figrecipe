@@ -9,7 +9,12 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse
 
-from django.conf import settings
+from figrecipe._utils._optional import missing_extra
+
+try:
+    from django.conf import settings
+except ImportError as exc:
+    raise missing_extra(exc) from exc
 from scitex_sdk.host import AccessError, project_access
 
 from ._local_files import LocalFilesAdapter
