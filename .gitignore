@@ -885,3 +885,13 @@ src/*/_docs/
 
 ### Sphinx build cache (intermediate doctrees, never served)
 .doctrees/
+
+# Bundled Sphinx documentation assets are deliberate wheel data.
+# Images, fonts and source links are required by the generated HTML.
+!src/figrecipe/_sphinx_html/**
+# This 20 MB producer copy has no HTML/CSS/JS/source-link references.
+# The style-reference page serves scitex_style_anatomy.jpg instead.
+src/figrecipe/_sphinx_html/_static/style_anatomy.png
+# Sphinx intermediate state is not served.
+src/figrecipe/_sphinx_html/.doctrees/
+src/figrecipe/_sphinx_html/.buildinfo

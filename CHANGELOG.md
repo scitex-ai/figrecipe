@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the caller's working directory does not authorize a project.
 
 ### Changed
+- Include the generated documentation images, fonts and source links in the
+  wheel, so installed documentation resolves its actual served assets.
 - Load the optional-capability error helper before guarded logging imports, so
   unavailable logging reports the owning `figrecipe[scitex]` hint.
 - The frontend source pin now matches the immutable SDK source published as
