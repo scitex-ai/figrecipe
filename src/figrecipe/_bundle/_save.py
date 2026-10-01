@@ -10,7 +10,12 @@ import zipfile
 from pathlib import Path
 from typing import Optional, Union
 
-import scitex_logging as slogging
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from ._extract import (
     extract_data_from_record,

@@ -40,7 +40,10 @@ import json
 import shutil
 from pathlib import Path
 
-import scitex_logging as slogging
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 # The install hint is imported in the FAILURE path, not at module scope, on
 # purpose: this module is loaded BY PATH by two packaging tests

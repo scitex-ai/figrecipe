@@ -5,7 +5,14 @@
 import sys
 from pathlib import Path
 
-import scitex_logging as slogging
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise ImportError(
+        "scitex-logging is required for this capability "
+        "but is not installed. Install it with: "
+        "pip install 'figrecipe[scitex]'"
+    ) from exc
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))

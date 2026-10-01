@@ -8,7 +8,12 @@ Fixes container enclosure (R1), box overlaps (R2), and canvas bounds (R9).
 from itertools import combinations
 from typing import TYPE_CHECKING, Dict, List
 
-import scitex_logging as slogging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from ._geom import box_rect, rects_overlap
 

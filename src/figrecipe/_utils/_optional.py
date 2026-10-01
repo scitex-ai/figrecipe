@@ -15,6 +15,7 @@ import root   distribution       extra
 ``fastmcp``   ``fastmcp``        ``mcp``
 ``scitex_pd`` ``scitex-pd``      ``scitex``
 ``scitex_types`` ``scitex-types`` ``scitex``
+``scitex_logging`` ``scitex-logging`` ``scitex``
 ============  =================  ==========
 
 Every import of one of those libraries is wrapped in a ``try`` that catches
@@ -53,6 +54,7 @@ _OPTIONAL: dict[str, tuple[str, str]] = {
     "fastmcp": ("fastmcp", "mcp"),
     "scitex_pd": ("scitex-pd", "scitex"),
     "scitex_types": ("scitex-types", "scitex"),
+    "scitex_logging": ("scitex-logging", "scitex"),
 }
 
 
