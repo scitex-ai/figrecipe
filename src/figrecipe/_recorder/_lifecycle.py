@@ -207,6 +207,44 @@ def warn_removals(reports: Sequence[RemovalReport]) -> int:
     return shortfall
 
 
+def warn_reconciled(dropped: Sequence[object]) -> int:
+    """Report the calls the save-time reconcile removed from the recipe.
+
+    This is the loud half of the repair: the recipe is CHANGED, so saying
+    nothing would be a silent discard of the user's own calls. The message
+    states what went, why, that the recipe now matches the figure, and the one
+    thing the user can do differently -- the same action `warn_removals` names,
+    and deliberately not `track=False`, which was measured NOT to fix this case
+    (it makes the figure show what the recipe lacks, the same divergence with
+    the sides swapped).
+    """
+    dropped = list(dropped)
+    if not dropped:
+        return 0
+    where = ", ".join(
+        f"{getattr(d, 'axes_key', '?')}: {getattr(d, 'function', '?')}"
+        f"({getattr(d, 'call_id', '?')})"
+        for d in dropped[:5]
+    )
+    more = f" and {len(dropped) - 5} more" if len(dropped) > 5 else ""
+    warnings.warn(
+        f"figrecipe: dropped {len(dropped)} recorded call(s) from the recipe "
+        f"because the artist(s) they created are no longer on the figure "
+        f"({where}{more}). The saved figure does not show them, so the recipe no "
+        f"longer claims they were drawn -- the PNG and its recipe are faithful to "
+        f"each other again. To keep a call in the recipe, make the call "
+        f"conditional on the same decision that led to the removal (e.g. "
+        f"`if keep: ax.plot(...)`) instead of drawing and then removing it.",
+        ArtistLifecycleWarning,
+        # 4, not the 3 its sibling uses: this warning CHANGED the user's recipe,
+        # so it must point at the caller's own `fr.save(...)` line (measured:
+        # warn_reconciled -> _capture_axes_bboxes -> fr.save -> the caller), not
+        # at figrecipe's internal save helper.
+        stacklevel=4,
+    )
+    return len(dropped)
+
+
 __all__ = [
     "ARTIST_DECORATIONS",
     "ARTIST_METHODS",
@@ -217,6 +255,7 @@ __all__ = [
     "detect_removals",
     "minimum_artists_for",
     "removals_in_figure",
+    "warn_reconciled",
     "warn_removals",
 ]
 
