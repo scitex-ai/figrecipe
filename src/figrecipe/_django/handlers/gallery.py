@@ -40,7 +40,10 @@ import json
 import shutil
 from pathlib import Path
 
-import scitex_logging as slogging
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 # The install hint is imported in the FAILURE path, not at module scope, on
 # purpose: this module is loaded BY PATH by two packaging tests
@@ -347,7 +350,9 @@ def handle_gallery_demo(request, editor):
     if demo_recipe.exists():
         return JsonResponse({"recipe_path": demo_recipe.name, "seeded": False})
 
-    if _files_tree().workspace_has_a_recipe(working_dir):
+    if _files_tree().workspace_has_a_recipe(
+        working_dir, access=getattr(request, "_figrecipe_project", None)
+    ):
         return JsonResponse(
             {"recipe_path": None, "reason": "workspace already has recipes"}
         )

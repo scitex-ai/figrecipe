@@ -19,18 +19,19 @@ import { Toast } from "./components/common/Toast";
 // Element inspector now provided by scitex-ui (imported in main.tsx)
 import { useEmbeddedMessages } from "./hooks/useEmbeddedMessages";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { usePanelResize } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/usePanelResize";
-import { AlertBanner } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/alert-banner";
+import { usePanelResize } from "@scitex/sdk/ui/react/app/usePanelResize.ts";
+import { AlertBanner } from "@scitex/sdk/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
 import { mountPanes, usePhoneLayout } from "./components/mobilePanes";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type AppTab = "plot" | "data" | "canvas";
 
 interface InnerEditorProps {
   embedded?: boolean;
+  initialRecipe?: string;
   /**
    * Explicit figrecipe version for the header badge. Resolution order:
    * this prop (host/mount contract) -> #root[data-version] (standalone
@@ -40,7 +41,7 @@ interface InnerEditorProps {
   appVersion?: string;
 }
 
-export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) {
+export function InnerEditor({ embedded = false, appVersion, initialRecipe }: InnerEditorProps) {
   const {
     loading,
     loadPreview,
@@ -52,8 +53,6 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
     clearToast,
   } = useEditorStore();
 
-  // Hub mount is Plot only: Canvas composition stays in standalone figrecipe.
-  const canvasEnabled = !embedded;
   // figrecipe's own version for the header badge (distinct from the Hub global
   // header's Hub-version). Resolution: explicit prop -> #root[data-version] ->
   // build-derived __FIGRECIPE_VERSION__ (covers the #app-mount host path).
@@ -74,9 +73,8 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     try {
       const stored = localStorage.getItem("figrecipe-app-tab") as AppTab;
-      // "data" is valid on every host; "canvas" only where it is enabled.
       if (stored === "data") return "data";
-      if (stored === "canvas" && canvasEnabled) return "canvas";
+      if (stored === "canvas") return "canvas";
       return "plot";
     } catch {
       return "plot";
@@ -105,7 +103,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const hasRecipe = !!params.get("recipe");
+    const hasRecipe = !!(initialRecipe || params.get("recipe"));
 
     loadFiles();
     loadThemes();
@@ -115,7 +113,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
       loadHitmap();
       loadDatatable();
     }
-  }, [loadPreview, loadHitmap, loadFiles, loadThemes, loadDatatable]);
+  }, [initialRecipe, loadPreview, loadHitmap, loadFiles, loadThemes, loadDatatable]);
 
   // Global hooks (element inspector from scitex-ui, initialized in main.tsx)
   useKeyboardShortcuts();
@@ -149,17 +147,17 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
   const bodyRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const host = bodyRef.current?.parentElement;
-    if (!canvasEnabled && host) mountPanes(host);
-  }, [canvasEnabled]);
+    if (embedded && host) mountPanes(host);
+  }, [embedded, activeTab]);
   const detailsCollapsed = rightPanel.collapsed && !phone;
   const paneAttrs = (
     id: string,
     label: string,
     order: number,
   ): Record<string, string | number> =>
-    canvasEnabled
-      ? {}
-      : { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order };
+    embedded
+      ? { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order }
+      : {};
 
   return (
     <div className="inner-editor">
@@ -200,7 +198,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
         >
           <i className="fas fa-table" /> {gettext("Data")}
         </button>
-        {canvasEnabled && (
+        {(
           <button
             className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
             onClick={() => setActiveTab("canvas")}
@@ -235,7 +233,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
       <div
         ref={bodyRef}
         className="editor-body"
-        {...(canvasEnabled ? {} : { "data-stx-panes": "figrecipe", "data-stx-panes-layout": "app" })}
+        {...(embedded ? { "data-stx-panes": "figrecipe", "data-stx-panes-layout": "app" } : {})}
       >
         {activeTab === "data" && (
           /* SigmaPlot-style worksheet: the data table gets its own
@@ -270,7 +268,7 @@ export function InnerEditor({ embedded = false, appVersion }: InnerEditorProps) 
         {activeTab === "canvas" && (
           <>
             {/* Canvas pane — always expanded, no collapse toggle. */}
-            <main className="split-pane split-pane-center">
+            <main className="split-pane split-pane-center" {...paneAttrs("figure", gettext("Canvas"), 1)}>
               <CanvasPane />
             </main>
           </>

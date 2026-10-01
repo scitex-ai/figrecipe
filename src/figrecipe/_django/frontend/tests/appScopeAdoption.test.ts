@@ -33,13 +33,13 @@ function check(name: string, cond: boolean) {
 console.log("appScopeAdoption:");
 check(
   "imports mountProjectSelectorByScope from the SDK shell",
-  /mountProjectSelectorByScope[\s\S]*from\s*["']@scitex\/ui\/[^"']*\/ts\/shell/.test(
+  /mountProjectSelectorByScope[\s\S]*from\s*["']@scitex\/sdk\/ui\/ts\/shell/.test(
     code,
   ),
 );
 check(
   "imports PROJECT_SELECTOR_CHANGE from the SDK shell (not a fork)",
-  /PROJECT_SELECTOR_CHANGE[\s\S]*from\s*["']@scitex\/ui\/[^"']*\/ts\/shell/.test(
+  /PROJECT_SELECTOR_CHANGE[\s\S]*from\s*["']@scitex\/sdk\/ui\/ts\/shell/.test(
     code,
   ),
 );
@@ -49,13 +49,13 @@ check(
 );
 check(
   "does NOT import the raw ProjectSelector class (the fork path)",
-  !/import\s*[\s\S]*?\bProjectSelector\b[\s\S]*?from\s*["']@scitex\/ui\/[^"']*\/app\/project-selector/.test(
+  !/import\s*[\s\S]*?\bProjectSelector\b[\s\S]*?from\s*["']@scitex\/sdk\/ui\/react\/app\/project-selector/.test(
     code,
   ),
 );
 check(
   "inside a host, picks from the host's project provider and reloads on the pick",
-  /hostProjectProvider[\s\S]*from\s*["']@scitex\/ui\/[^"']*\/ts\/shell/.test(code) &&
+  /hostProjectProvider[\s\S]*from\s*["']@scitex\/sdk\/ui\/ts\/shell/.test(code) &&
     /navigate:\s*["']\?project=\{id\}["']/.test(code),
 );
 check(

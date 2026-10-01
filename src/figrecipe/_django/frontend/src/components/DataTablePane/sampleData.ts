@@ -6,7 +6,7 @@
  * no backend change is needed and what lands is exactly what an import would
  * store.
  *
- * Pure and dependency-free (no React, no DOM, no @scitex/ui), so it runs
+ * Pure and dependency-free (no React, no DOM, no @scitex/sdk/ui), so it runs
  * under `node --experimental-strip-types` like the other decision modules
  * here.
  */

@@ -12,7 +12,7 @@ import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type TabId = "current" | "preset" | "layout" | "view";
 

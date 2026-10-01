@@ -19,7 +19,7 @@
  *   from `idle`, ONLY `user-request` can start a seed. Every other event —
  *   including a successful seed arriving unbidden — is a no-op.
  *
- * Pure and dependency-free (no React, no DOM, no @scitex/ui), so it runs under
+ * Pure and dependency-free (no React, no DOM, no @scitex/sdk/ui), so it runs under
  * `node --experimental-strip-types` like the other decision modules here.
  */
 

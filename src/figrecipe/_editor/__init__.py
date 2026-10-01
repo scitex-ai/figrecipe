@@ -9,9 +9,13 @@ needed by Django handlers.
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-import scitex_logging as slogging
-
 from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 
 
 def _check_figure_has_content(fig) -> bool:
@@ -186,7 +190,9 @@ def gui(
 
     # Use shared standalone launcher from scitex-app
     try:
-        from scitex_app._standalone import run_standalone
+        from scitex_sdk.app import embed
+
+        run_standalone = embed.run_standalone
 
         # Pre-configure Django with figrecipe's settings (chat app, templates,
         # static dirs) before run_standalone, so _standalone.py skips its own

@@ -18,7 +18,12 @@ and best-effort — any failure is swallowed so it can never break import.
 
 from __future__ import annotations
 
-import scitex_logging as slogging
+from ._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 # Brands that should auto-apply the SCITEX house style on import.
 _SCITEX_BRANDS = frozenset({"scitex.plt"})

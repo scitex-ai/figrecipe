@@ -15,6 +15,7 @@ import root   distribution       extra
 ``fastmcp``   ``fastmcp``        ``mcp``
 ``scitex_pd`` ``scitex-pd``      ``scitex``
 ``scitex_types`` ``scitex-types`` ``scitex``
+``scitex_logging`` ``scitex-logging`` ``scitex``
 ============  =================  ==========
 
 Every import of one of those libraries is wrapped in a ``try`` that catches
@@ -48,10 +49,12 @@ from __future__ import annotations
 _OPTIONAL: dict[str, tuple[str, str]] = {
     "PIL": ("Pillow", "imaging"),
     "django": ("Django", "editor"),
+    "scitex_sdk": ("scitex-sdk", "editor"),
     "networkx": ("networkx", "graph"),
     "fastmcp": ("fastmcp", "mcp"),
     "scitex_pd": ("scitex-pd", "scitex"),
     "scitex_types": ("scitex-types", "scitex"),
+    "scitex_logging": ("scitex-logging", "scitex"),
 }
 
 

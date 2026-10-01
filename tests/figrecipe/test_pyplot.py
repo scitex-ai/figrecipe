@@ -106,11 +106,11 @@ def test_build_spec_line_produces_line_plot_entry():
     assert spec["plots"][0]["type"] == "line"
 
 
-def test_build_spec_from_csv_records_data_file():
+def test_build_spec_from_csv_records_data_file(tmp_path):
     # Arrange
     import figrecipe as fr
 
-    csv = "/tmp/_fr_spec_builder_test.csv"
+    csv = str(tmp_path / "_fr_spec_builder_test.csv")
     with open(csv, "w") as f:
         f.write("x,y\n0,1\n1,2\n")
 

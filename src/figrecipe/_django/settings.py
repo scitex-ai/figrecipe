@@ -10,6 +10,7 @@ import tempfile
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+SCITEX_APP_MODE = "standalone"
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
@@ -46,13 +47,16 @@ INSTALLED_APPS = [
 
 # Optional: scitex-ui shared components (static assets served via AppDirectoriesFinder)
 try:
-    import scitex_ui  # noqa: F401
+    from scitex_sdk import ui  # noqa: F401
 
-    INSTALLED_APPS.append("scitex_ui")
+    INSTALLED_APPS.append("scitex_sdk.ui")
 except ImportError:
     pass
 
-from scitex_app.i18n import i18n_settings, with_locale_middleware  # noqa: E402
+from scitex_sdk.app.i18n import (  # noqa: E402
+    i18n_settings,
+    with_locale_middleware,
+)
 
 MIDDLEWARE = with_locale_middleware(
     [
@@ -87,7 +91,7 @@ TEMPLATES = [
 # editor wants, because figrecipe stores nothing of its own.
 #
 # BUT NOTE WHAT ELSE IS INSTALLED. INSTALLED_APPS above registers
-# ScitexAppChatConfig (scitex_app._chat), whose ChatSession/ChatMessage views
+# ScitexAppChatConfig (scitex_sdk.app._chat), whose ChatSession/ChatMessage views
 # DO issue ORM queries, and the handler registry routes api/chat/* to them. On
 # 2026-09-06 that combination answered 500 on every call to
 # /api/chat/sessions/, with the Django settings diagnostic in the response

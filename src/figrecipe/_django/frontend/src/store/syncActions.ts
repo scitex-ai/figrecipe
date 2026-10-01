@@ -1,6 +1,6 @@
 /** Sync actions — element↔data linking, calls/labels, stat brackets. */
 
-import { api } from "../api/client";
+import { api, ApiSessionExpired } from "../api/client";
 import type {
   AxesLabels,
   BBox,
@@ -8,7 +8,7 @@ import type {
   ElementDetails,
   StatBracket,
 } from "../types/editor";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type Get = () => {
   selectedFigureId: string | null;
@@ -33,7 +33,8 @@ export function createSyncActions(set: Set, get: Get) {
         set((s: any) => ({
           calls: { ...s.calls, [String(axIndex)]: data.calls ?? [] },
         }));
-      } catch {
+      } catch (error) {
+        if (error instanceof ApiSessionExpired) return;
         set((s: any) => ({
           calls: { ...s.calls, [String(axIndex)]: [] },
         }));
@@ -89,7 +90,8 @@ export function createSyncActions(set: Set, get: Get) {
           }
           return { elementDetails: data, elementShapes: shapes };
         });
-      } catch {
+      } catch (error) {
+        if (error instanceof ApiSessionExpired) return;
         if (get().selectedElement !== wanted) return;
         set({ elementDetails: null });
       }
@@ -145,6 +147,7 @@ export function createSyncActions(set: Set, get: Get) {
         if (loadStatBrackets) loadStatBrackets();
         return data.bracket_id;
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return null;
         get().showToast(interpolate(gettext("Add bracket failed: %s"), [e]), "error");
         return null;
       }
@@ -183,6 +186,7 @@ export function createSyncActions(set: Set, get: Get) {
         if (loadStatBrackets) loadStatBrackets();
         return true;
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return false;
         get().showToast(interpolate(gettext("Remove bracket failed: %s"), [e]), "error");
         return false;
       }
@@ -225,6 +229,7 @@ export function createSyncActions(set: Set, get: Get) {
         }
         return true;
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return false;
         get().showToast(interpolate(gettext("Move legend failed: %s"), [e]), "error");
         return false;
       }

@@ -13,7 +13,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-import scitex_logging as slogging
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 logger = slogging.getLogger(__name__)
 
@@ -51,7 +56,7 @@ class EditorState:
         """
         if self._files_backend is None:
             try:
-                from scitex_app import get_files
+                from scitex_sdk.app import get_files
 
                 self._files_backend = get_files(root=str(self.working_dir))
             except ImportError:

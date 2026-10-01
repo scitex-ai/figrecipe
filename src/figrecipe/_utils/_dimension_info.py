@@ -16,7 +16,12 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-import scitex_logging as slogging
+from ._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 console = slogging.getConsole(f"{__name__}.console")
 

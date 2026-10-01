@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-10-02
+
+### Added
+- Canonical SDK 0.3.0 app/UI ownership, public frontend exports, and project
+  capability checks across the standalone and hosted editor entry points.
+  Hosted file access resolves the SDK project provider and storage capability;
+  the caller's working directory does not authorize a project.
+
+### Changed
+- Include the generated documentation images, fonts and source links in the
+  wheel, so installed documentation resolves its actual served assets.
+- Load the optional-capability error helper before guarded logging imports, so
+  unavailable logging reports the owning `figrecipe[scitex]` hint.
+- The frontend source pin now matches the immutable SDK source published as
+  0.3.0. Native npm, strict app/library builds and owning frontend controls run
+  before tag artifacts are built.
+- CI verifies the reused image digest and places each job's temporary files,
+  state and caches in its own runner scratch. The full owning dependencies must
+  install successfully, and end-to-end save/info assertions run with RUN_E2E=1.
+- Legacy plotting import checks now exercise FigRecipe's current plotting and
+  demo owners. The protocol and packaging controls retain their original
+  assertions and use the published scitex-dev 0.62.1 source audit.
+
 ### Changed
 - **figrecipe's status, progress and CLI output now go through scitex-logging
   instead of a bare `print`.** A `print` in library code writes unconditionally
@@ -30,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   import time for a module-level import and at call time for a lazy one.
 
 ### Fixed
+- QR diagnostics now load when the public QR capability is requested, so an
+  optional logging guard cannot import the plotting utility graph during bare
+  package startup. The same QR function and export remain available.
+- The Sphinx image-generator source uses the canonical console transport, so
+  rebuilding the shipped documentation retains the output contract.
 - **The removed-artist check could not see the case it exists for, and missed
   most plotters besides.** `fr.save` warns when a figure holds fewer artists than
   its recipe still draws, but the check was handed only the `calls` half of the
@@ -42,6 +70,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   warning at all. Methods whose artist the live count cannot see (`table`,
   `legend`, the axis setters) stay deliberately excluded — counting them would
   warn on a figure that lost nothing.
+- **A recorded call whose artist was removed no longer reaches the recipe.**
+  The check above reports the divergence; this closes it. At save time the
+  record is reconciled to the artists the live figure actually holds, so a figure
+  that draws an artist and then removes it saves a recipe that describes the
+  figure it saved — and `validate=True` no longer rejects a figure that is
+  correct (the card's headline case measured MSE 353.09 and an *error*; it is
+  0.00 and valid now, and a removed `vlines` goes from a silent MSE 48.72 to
+  0.00). An artist's liveness is read off the figure itself: `Artist.remove()` and
+  `ax.cla()` are removals, `set_visible(False)` is not — the artist is still the
+  axes' business, and dropping its call would delete the data behind a series a
+  user may toggle back on. A call that created several artists and lost only some
+  of them keeps its record (the record cannot express half a call), as does a call
+  that another surviving record references (`contour` → `clabel`), and the drop is
+  announced by name rather than performed silently. The drop is keyed on the
+  RECORD's identity, not on its recorded id: a recorded id is the user's own
+  `id=` kwarg whenever they pass one, so two calls can share it, and keyed on it
+  the later call's entry overwrote the earlier, removed one's — which silently
+  disabled the drop for exactly the "remove it, then re-plot under the same id"
+  case (`plot(id="dup")` → `remove()` → `plot(id="dup")` kept both calls; it
+  drops the removed one and validates at MSE 0.00 now). The count check above
+  stays the catch-all for the paths that record outside the artist funnel
+  (`ax.bar()`, `boxplot`, the legend wrapper). Measured over the repo's own
+  gallery — all 49 demo plotters, faithful figures — zero calls dropped and zero
+  warnings, the same 49/49 as before the repair. Not repaired, and measured
+  rather than assumed: `ax.cla()` drops the calls its axes recorded (the recipe
+  no longer claims them) but the figure still fails validation at MSE 428.51,
+  from a small high-contrast region and not from the removed artists — the
+  whole-image difference between the figure and its replay is 0.006 mean, 1/255
+  max, while validation reports 428.51 — so the remaining divergence is a
+  separate root cause, still open. An artist whose HANDLE is mutated after the
+  call (`set_linewidth`, `set_data`) is likewise untouched: only removals are
+  this slice's business.
+- **An artist HIDDEN after being drawn is no longer drawn by the recipe.**
+  `line.set_visible(False)` before saving left the call in the record exactly as
+  it was made, so the replay painted an artist the saved PNG does not show — and
+  the DEFAULT `fr.save(fig, path)` path then RAISED on a figure that is correct
+  (measured 406.02, 1.8% of pixels changed; a hidden `axhline` 198.34 and a hidden
+  `ax.text()` 353.09, while a hidden `scatter` at 21.04 and a hidden `vlines` at
+  48.72 passed the pixel validator in silence with the recipe still wrong). At
+  save time the record gains the artist's FINAL visibility (`visible: false`), so
+  the replay builds the artist and leaves it unpainted, and all five go to MSE
+  0.00 — as do a hidden `fill_between` (2362.62 → 0.00) and a hidden `hist`
+  (20760.35 → 0.00). The call is kept, not dropped: a hidden artist still carries
+  the user's data, matplotlib keeps it in `ax.lines`, and hiding asks not to paint
+  a series, not to forget it. The same conservatism as the removal repair guards
+  the write — a call is annotated only when EVERY artist it made is still on the
+  figure and all of them are hidden (a half-hidden call is not expressible as one
+  `visible`), and only when the REPLAY honours the kwarg, decided from the
+  reproducer's own dispatch table plus matplotlib's own `Axes` signature rather
+  than from a list kept here. Measured, that refuses `pie` and `streamplot`
+  (closed signatures — the kwarg would make the recipe unreplayable) and the four
+  methods with a special replay handler (`boxplot`, `graph`, `stem`,
+  `violinplot`). What it does not reach is measured too, and unchanged: an artist
+  whose call records outside the recorder's artist funnel (a hidden `bar`,
+  9129.84, and a hidden `imshow`, 23248.60, are still replayed drawn), and a call
+  that hides only SOME of the artists it made (a hidden `errorbar` line while its
+  cap lines stay visible, 387.38 — no single `visible` value can describe it).
+  Nothing is written for a figure that hides nothing, and hide-then-show leaves
+  the recipe alone because the net live state is what it describes. Reported
+  without a warning, deliberately: hiding a series is a deliberate act and the
+  recipe now matches the figure, so a message per hidden artist would only dilute
+  the one the removal repair raises when a recipe has LOST data.
 
 ## [0.35.0] - 2026-09-19
 

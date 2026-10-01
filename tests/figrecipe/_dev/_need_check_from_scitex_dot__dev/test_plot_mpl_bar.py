@@ -1,25 +1,23 @@
-"""Smoke tests for scitex_dev.plt (ported from umbrella)."""
+"""Plotting-package smoke controls ported from the retired umbrella namespace."""
 
-import pytest
-
-pytest.importorskip("numpy")
-pytest.importorskip("matplotlib")
-
-import scitex_dev.plt as plt_mod  # noqa: E402
+import figrecipe
 
 
 def test_plt_module_has_dunder_path():
     # Arrange
+    package = figrecipe
     # Act
+    package_path = getattr(package, "__path__", None)
     # Assert
-    assert hasattr(plt_mod, "__path__")
+    assert package_path is not None
 
 
 def test_plt_subpackages_importable():
     # Arrange
-    # Act
-    # Assert
-    import scitex_dev.plt.demo_plotters  # noqa: F401
-    import scitex_dev.plt.mpl  # noqa: F401
+    from figrecipe import pyplot
+    from figrecipe._dev import demo_plotters
 
-    assert True
+    # Act
+    imports = (pyplot.subplots is figrecipe.subplots, "bar" in demo_plotters.REGISTRY)
+    # Assert
+    assert imports == (True, True)

@@ -4,7 +4,12 @@
 
 Provides font availability checking and listing for publication-quality figures.
 """
-import scitex_logging as slogging
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __all__ = [
     "CJK_FONT_ENV",

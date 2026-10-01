@@ -51,16 +51,16 @@ on:
 env:
   SCITEX_CI_APPTAINER: ${{ vars.SCITEX_CI_APPTAINER }}
   SCITEX_CI_SIF: ${{ vars.SCITEX_CI_SIF }}
+  SCITEX_CI_SIF_SHA256: ${{ vars.SCITEX_CI_SIF_SHA256 }}
+  RUN_E2E: "1"
 
 jobs:
   test:
     # Job name kept verbatim — these are the required status checks on develop.
     name: pytest-matrix-on-ubuntu-py${{ matrix.python-version }}
     runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
-    # figrecipe's ~2460-test suite runs ~25-30 min even under xdist on the
-    # Spartan CPU node (coverage with concurrency=multiprocessing,thread limits
-    # the xdist speedup). 60 min leaves comfortable headroom on a busy node so
-    # the suite is never cancelled mid-run (the old 30-min cap killed it at 96%).
+    # The complete owning plotting, protocol and end-to-end suite runs under
+    # xdist and coverage. Keep the existing 60-minute gate for busy runners.
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -70,6 +70,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run tests in the reused CI SIF (apptainer exec — deps layered, not on the bare runner)
         run: bash .github/ci/exec-in-sif.sh run-in-sif.sh ${{ matrix.python-version }}
+      - name: Prepare owned Codecov Git configuration and caches
+        if: always() && matrix.python-version == '3.12'
+        run: |
+          set -euo pipefail
+          owned=$(mktemp -d "${RUNNER_TEMP:?}/figrecipe-codecov.XXXXXXXX")
+          mkdir -p "$owned/cache" "$owned/config" "$owned/tmp"
+          touch "$owned/gitconfig"
+          for pair in "GIT_CONFIG_GLOBAL=$owned/gitconfig" "XDG_CACHE_HOME=$owned/cache" "XDG_CONFIG_HOME=$owned/config" "TMPDIR=$owned/tmp"; do
+            printf '%s\n' "$pair" >> "${GITHUB_ENV:?}"
+          done
       - name: Upload coverage to Codecov
         if: always() && matrix.python-version == '3.12'
         uses: codecov/codecov-action@v5

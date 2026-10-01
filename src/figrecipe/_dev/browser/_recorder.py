@@ -18,7 +18,12 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
-import scitex_logging as slogging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from ._caption import hide_caption, show_caption
 from ._click_effect import inject_click_effect, remove_click_effect

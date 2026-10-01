@@ -2,7 +2,7 @@
  *
  * The pane shows the X/Y badges (PlotFromColumns) and the table side by side;
  * this decides which table column each badge points at and what clicking a
- * table column does to the badges. Kept free of React and the @scitex/ui alias
+ * table column does to the badges. Kept free of React and the @scitex/sdk/ui alias
  * so it runs under `node --experimental-strip-types` — the JSX only renders
  * what this module decides.
  */

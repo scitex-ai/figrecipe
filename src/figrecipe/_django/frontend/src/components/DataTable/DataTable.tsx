@@ -5,11 +5,11 @@
  */
 
 import { useCallback, useMemo, useRef } from "react";
-import { DataTable as StxDataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
-import type { Dataset } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
+import { DataTable as StxDataTable } from "@scitex/sdk/ui/react/app/data-table";
+import type { Dataset } from "@scitex/sdk/ui/react/app/data-table";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function DataTable() {
   const { datatableTabs, activeTabId, showToast, loadDatatable } =

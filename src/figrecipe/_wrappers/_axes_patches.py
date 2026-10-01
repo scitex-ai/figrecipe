@@ -222,6 +222,7 @@ def build_add_patch_wrapper(recording_axes):
                 recording_axes._result_refs,
                 recording_axes._RESULT_REFERENCING_METHODS,
                 recording_axes._RESULT_REFERENCEABLE_METHODS,
+                recording_axes._artist_refs,
             )
         return result
 

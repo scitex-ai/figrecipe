@@ -20,7 +20,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
-import scitex_logging as slogging
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 _logger = slogging.getLogger(__name__)
 

@@ -6,9 +6,13 @@ import json
 import time
 from pathlib import Path
 
-import scitex_logging as slogging
-
 from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 
 try:
     from django.http import FileResponse, JsonResponse
@@ -46,7 +50,7 @@ __all__ = [
 def handle_api_tree(request, editor):
     """List ALL files in working dir as a tree (no filtering)."""
     try:
-        from scitex_app import build_tree as _build_tree
+        from scitex_sdk.app import build_tree as _build_tree
     except ImportError:
         _build_tree = _local_build_tree
 
@@ -69,7 +73,7 @@ def handle_api_tree(request, editor):
 def handle_api_files(request, editor):
     """List recipe files in working dir as tree + flat list."""
     try:
-        from scitex_app import build_tree as _build_tree
+        from scitex_sdk.app import build_tree as _build_tree
     except ImportError:
         _build_tree = _local_build_tree
 
@@ -133,10 +137,12 @@ def handle_api_switch(request, editor):
 
     # Bootstrap editor if none exists (first file click)
     if editor is None:
+        from .._project_access import bind_editor, editor_key
         from ..services import get_or_create_editor
 
-        session_key = f"figrecipe_{full_path}"
+        session_key = editor_key(request, full_path)
         editor = get_or_create_editor(session_key, str(full_path))
+        bind_editor(request, editor)
 
     # Sync dark_mode from frontend if provided
     req_dark = data.get("dark_mode")
@@ -196,11 +202,13 @@ def handle_api_new(request, editor):
         working_dir, files = _get_working_dir_and_backend(request, editor)
 
         if editor is None:
+            from .._project_access import bind_editor, editor_key
             from ..services import EditorState, _editor_cache
 
-            session_key = f"figrecipe_new_{working_dir}"
+            session_key = editor_key(request, f"new_{working_dir}")
             cached = _editor_cache.get(session_key)
             editor = cached[0] if cached else EditorState(working_dir=working_dir)
+            bind_editor(request, editor)
             if not cached:
                 _editor_cache[session_key] = (editor, time.time())
 
@@ -211,6 +219,17 @@ def handle_api_new(request, editor):
                 break
             counter += 1
         file_path = working_dir / rel_path
+
+        from .._project_access import check_output
+
+        for output in (
+            file_path,
+            file_path.with_suffix(".png"),
+            file_path.with_suffix(".tex"),
+            file_path.with_suffix(".overrides.json"),
+            file_path.with_name(f"{file_path.stem}_data"),
+        ):
+            check_output(request, output)
 
         save(fig, file_path.with_suffix(".png"), validate=False, verbose=False)
         reproduced_fig, _ = reproduce(file_path)
@@ -244,6 +263,10 @@ def handle_api_new(request, editor):
             }
         )
     except Exception as e:
+        from scitex_sdk.host import AccessError
+
+        if isinstance(e, AccessError):
+            raise
         logger.exception("[FigRecipe] api_new failed")
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -440,10 +463,10 @@ def handle_api_file_content(request, editor, file_path):
     """Serve raw file content for Viewer pane (image, text, etc.)."""
     import mimetypes
 
-    working_dir = _find_default_working_dir()
+    working_dir = resolve_working_dir(request, editor)
     full_path = (working_dir / file_path).resolve()
     # Path traversal protection
-    if not str(full_path).startswith(str(working_dir.resolve())):
+    if not full_path.is_relative_to(working_dir.resolve()):
         return JsonResponse({"error": "Access denied"}, status=403)
     if not full_path.exists():
         return JsonResponse({"error": "File not found"}, status=404)

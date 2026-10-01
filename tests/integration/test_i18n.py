@@ -8,7 +8,7 @@ from pathlib import Path
 
 import django
 import pytest
-from scitex_app.i18n import (
+from scitex_sdk.app.i18n import (
     app_locale_dir,
     misplaced_locale_dirs,
     uncompiled_catalogs,

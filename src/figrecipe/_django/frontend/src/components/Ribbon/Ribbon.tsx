@@ -9,7 +9,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { RibbonButton } from "./RibbonButton";
 import { RibbonGroup } from "./RibbonGroup";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type TabId = "home" | "layout" | "style" | "view";
 

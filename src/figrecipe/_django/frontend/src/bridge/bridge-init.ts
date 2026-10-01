@@ -6,7 +6,7 @@
  */
 
 // scitex-ui app-level CSS (selector-nav, data-table, etc.)
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/css/app.css";
+import "@scitex/sdk/ui/css/app.css";
 
 // figrecipe-specific styles
 import "../styles/app-variables.css";

@@ -48,9 +48,9 @@ def sif_harness(tmp_path):
         _write_executable(
             stubs / tool,
             "#!/usr/bin/env bash\n"
-            "while [ $# -gt 0 ] && [ \"${1:0:1}\" = \"-\" ]; do shift; "
-            "[ \"${1:-}\" = \"19\" ] || [ \"${1:-}\" = \"3\" ] && shift || true; done\n"
-            "exec \"$@\"\n",
+            'while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do shift; '
+            '[ "${1:-}" = "19" ] || [ "${1:-}" = "3" ] && shift || true; done\n'
+            'exec "$@"\n',
         )
     for tool in ("uv", "pip", "nproc"):
         _write_executable(stubs / tool, "#!/usr/bin/env bash\nexit 0\n")
@@ -65,18 +65,21 @@ def sif_harness(tmp_path):
         f'printf \'%s\\n\' "$@" > "{record}"\n'
         'if [ "$1" = "-m" ] && [ "$2" = "pytest" ]; then '
         'exit "${STUB_PYTEST_EXIT:-0}"; fi\n'
+        'if [ "$1" = "-m" ] && [ "$2" = "venv" ]; then '
+        'mkdir -p "$3/bin"; cp "$0" "$3/bin/python"; fi\n'
         "exit 0\n",
     )
 
     run_id = f"pytest-{uuid.uuid4().hex[:8]}"
-    scratch = Path(f"/tmp/ci-figrecipe-3.12-{run_id}-1")
+    scratch = tmp_path / f"ci-figrecipe-3.12-{run_id}-1"
     env = {
         **os.environ,
         "PATH": f"{stubs}:{os.environ['PATH']}",
         "SIF_VENV": str(venv),
         "GITHUB_RUN_ID": run_id,
         "GITHUB_RUN_ATTEMPT": "1",
-        "SCRATCH_REAP_MIN_AGE_MIN": NO_REAPING,
+        "TMPDIR": str(tmp_path),
+        "FIGRECIPE_CI_WORKERS": "4",
         "STUB_PYTEST_EXIT": "0",
     }
     return {"env": env, "scratch": scratch, "record": record, "tmp": tmp_path}
@@ -165,6 +168,6 @@ class TestHandoffShape:
         # Arrange
         source = SCRIPT.read_text(encoding="utf-8")
         # Act
-        registered = "trap 'rm -rf \"$TMPDIR\"" in source
+        registered = 'trap \'rm -rf "$TMPDIR"' in source
         # Assert -- the cleanup this test exercises must remain in place.
         assert registered, source[-600:]

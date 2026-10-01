@@ -3,9 +3,13 @@
 """Download handlers: download CSV, download figure."""
 
 
-import scitex_logging as slogging
-
 from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 
 try:
     from django.http import HttpResponse, JsonResponse

@@ -17,7 +17,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 import {
   choiceKeyAction,
   chooserFocusIndex,

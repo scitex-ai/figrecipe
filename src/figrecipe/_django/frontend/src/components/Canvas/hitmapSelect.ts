@@ -3,7 +3,7 @@
  * The hitmap PNG paints one flat colour per plot element (matplotlib artists,
  * axes, text, …) and the backend ships a `color_map` of element key to rgb. A
  * click therefore resolves as: pointer -> raster pixel -> colour -> element key.
- * Every decision in that chain lives here, free of React and of the @scitex/ui
+ * Every decision in that chain lives here, free of React and of the @scitex/sdk/ui
  * alias, so it runs (and is asserted) under plain
  * `node --experimental-strip-types` — see tests/hitmapSelect.test.ts.
  * The overlay component is a thin shell that samples pixels and renders.

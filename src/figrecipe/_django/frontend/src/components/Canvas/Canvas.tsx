@@ -16,7 +16,7 @@ import { PlacedFigure } from "./PlacedFigure";
 import { HorizontalRuler, VerticalRuler } from "./Rulers";
 import { SnapGuides } from "./SnapGuides";
 import { useZoomPan } from "./useZoomPan";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 // ── Main Canvas ──────────────────────────────────────────────
 export function Canvas() {

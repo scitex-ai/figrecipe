@@ -10,7 +10,7 @@
 import { useEditorStore } from "../../store/useEditorStore";
 import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
 import { figureTreeItems } from "./objectTree";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface ObjectTreeProps {
   /** Jump to the full-width Data page (SigmaPlot-style worksheet). */

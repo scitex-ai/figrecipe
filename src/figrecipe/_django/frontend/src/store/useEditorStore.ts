@@ -1,7 +1,7 @@
 /** Central Zustand store — single source of truth for the editor. */
 
 import { create } from "zustand";
-import { api } from "../api/client";
+import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent } from "../api/client";
 import { DPI } from "../hooks/useSnap";
 import type { SnapGuide } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
@@ -27,7 +27,7 @@ import { createPersistActions } from "./persistActions";
 import { createSyncActions } from "./syncActions";
 import { rememberLastProject } from "./lastProjectMemory";
 import { newId } from "../utils/newId";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface ZoomControls {
   zoomIn: () => void;
@@ -78,6 +78,8 @@ interface EditorState {
   files: FileTreeItem[];
   currentFile: string | null;
   workingDir: string | null;
+  projectId: string | null;
+  projectName: string | null;
 
   // ── Data ────────────────────────────────────────────────
   datatableTabs: Record<string, TabData>;
@@ -225,6 +227,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   files: [],
   currentFile: null,
   workingDir: null,
+  projectId: null,
+  projectName: null,
   datatableTabs: {},
   activeTabId: null,
   elementDataMap: {},
@@ -329,6 +333,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   // ── Load actions ────────────────────────────────────────
   loadPreview: async () => {
+    const session = apiSessionId();
     set({ loading: true });
     try {
       const dark = get().darkMode;
@@ -368,10 +373,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }));
       }
     } catch (e) {
+      if (e instanceof ApiSessionExpired) return;
       console.error("[Editor] Failed to load preview:", e);
       get().showToast(gettext("Failed to load preview"), "error");
     } finally {
-      set({ loading: false });
+      if (isApiSessionCurrent(session)) set({ loading: false });
     }
   },
 
@@ -574,3 +580,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   plotFamily: null,
   setPlotFamily: (family) => set({ plotFamily: family }),
 }));
+
+/** Project content and undo targets belong to one mounted workspace. */
+export function resetEditorWorkspace(): void {
+  const { darkMode, snapEnabled, showRulers, rulerUnit, showHitmap } = useEditorStore.getState();
+  useEditorStore.setState({
+    ...useEditorStore.getInitialState(),
+    darkMode, snapEnabled, showRulers, rulerUnit, showHitmap,
+  }, true);
+}

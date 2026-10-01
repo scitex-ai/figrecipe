@@ -10,7 +10,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
-import scitex_logging as slogging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 from matplotlib.backend_bases import MouseEvent
 from matplotlib.patches import FancyBboxPatch, Rectangle
 

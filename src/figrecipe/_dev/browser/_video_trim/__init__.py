@@ -24,7 +24,12 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
-import scitex_logging as slogging
+from ...._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from ._detection import detect_markers
 from ._markers import (

@@ -15,7 +15,12 @@ This tool helps you understand and debug the relationship between:
 
 Very useful when you're confused about dimensions!
 """
-import scitex_logging as slogging
+from ._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __FILE__ = __file__
 

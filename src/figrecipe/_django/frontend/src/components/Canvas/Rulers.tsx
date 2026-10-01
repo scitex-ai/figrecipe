@@ -8,7 +8,7 @@
 
 import { useMemo } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export const RULER_SIZE = 60;
 const COLUMN_WIDTH_MM = 90; // 90mm = 1 column (journal standard)

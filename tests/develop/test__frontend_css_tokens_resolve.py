@@ -135,7 +135,7 @@ def scitex_ui_tokens() -> set[str]:
     external.
     """
     scitex_ui = pytest.importorskip(
-        "scitex_ui",
+        "scitex_sdk.ui",
         reason="scitex-ui not installed; shell-provided tokens unverifiable here",
     )
     css_root = Path(scitex_ui.get_static_dir()) / "css"

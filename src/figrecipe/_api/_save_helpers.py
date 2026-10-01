@@ -5,10 +5,14 @@
 from pathlib import Path
 from typing import Optional
 
-import scitex_logging as slogging
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from .._utils._grid import grid_id
-from .._utils._optional import missing_extra
 
 console = slogging.getConsole(f"{__name__}.console")
 
@@ -283,6 +287,56 @@ def _crop_to_axes_size(
     }
 
 
+def _reconcile_removed_artists(
+    rec_ax, ax_record, key: str, live_ids: set, referenced: set
+) -> list:
+    """Drop this axes' recorded calls whose artists have all left the figure.
+
+    Returns the ``DroppedCall`` list. A no-op when the axes recorded nothing
+    artist-bearing, so an ordinary figure's recipe is untouched -- that is the
+    property the no-removal controls assert.
+    """
+    from .._recorder._artists import prune
+
+    registry = getattr(rec_ax, "_artist_refs", None) or {}
+    if not registry:
+        return []
+    dropped: list = []
+    for half, records in (
+        ("calls", ax_record.calls),
+        ("decorations", ax_record.decorations),
+    ):
+        kept, gone = prune(records, registry, live_ids, referenced, key, half)
+        records[:] = kept  # in place: the record object is shared with the caller
+        dropped.extend(gone)
+    return dropped
+
+
+def _annotate_hidden_artists(rec_ax, ax_record, key: str, live_ids: set) -> list:
+    """Write each hidden artist's final visibility into its recorded call.
+
+    The removal repair above DROPS calls whose artists left the figure. This is
+    its counterpart for an artist the figure still holds but no longer PAINTS
+    (card figrecipe-hidden-artist-set-visible-false-not-recorded-20260927):
+    nothing is dropped -- the artist keeps its data and can be shown again -- and
+    the record gains ``visible: False``, so the replay draws the figure that was
+    saved instead of one the validator rejects. Returns the ``AnnotatedCall``
+    list; a no-op on an ordinary figure.
+    """
+    from .._recorder._visibility import annotate_hidden
+
+    registry = getattr(rec_ax, "_artist_refs", None) or {}
+    if not registry:
+        return []
+    annotated: list = []
+    for half, records in (
+        ("calls", ax_record.calls),
+        ("decorations", ax_record.decorations),
+    ):
+        annotated.extend(annotate_hidden(records, registry, live_ids, key, half))
+    return annotated
+
+
 def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     """Capture bounding boxes of all axes for alignment/snap functionality.
 
@@ -336,6 +390,28 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     # its own — so for a multi-subplot figure all subplots overwrote r0c0's bbox,
     # and r1c0/r2c0 ended up with no bbox at all. Marginal axes created via
     # make_axes_locatable are not wrapped, so they are correctly skipped here.
+    # Artist lifecycle, REPAIR half (card figrecipe-recipe-keeps-artists-removed-
+    # before-save-20260906). A call whose artist was removed after being drawn
+    # stays in the record, so the recipe replays what this figure does not show --
+    # and validation then rejects a figure that is CORRECT. Here, where a live
+    # axes sits next to its own record as the recipe is being written, the record
+    # is reconciled: a recorded call whose artists are ALL provably off the figure
+    # is dropped, so the recipe describes the figure that was saved.
+    #
+    # The pairing is the exact one above -- rec_ax knows its own `_ax` and
+    # `_position` -- NOT the positional zip the count check uses, because a
+    # MUTATING step must never act on a mis-paired axes.
+    _live_ids: Optional[set] = None
+    _referenced: set = set()
+    _reconciled: list = []
+    try:
+        from .._recorder._artists import live_artist_ids, referenced_call_ids
+
+        _live_ids = live_artist_ids(fig)
+        _referenced = referenced_call_ids(fig.record.axes.values())
+    except Exception:
+        pass
+
     matched_records = set()
     for row in fig.axes:
         for rec_ax in row:
@@ -375,6 +451,28 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                 }
             except Exception:
                 pass  # best-effort; reproducer leaves the style default alone
+            # Reconcile THIS axes' record to the artists it still shows. Both
+            # halves are pruned: ax.text() is a DECORATION that creates its own
+            # artist, and the card's headline case is a removed decoration.
+            if _live_ids is not None:
+                try:
+                    _reconciled.extend(
+                        _reconcile_removed_artists(
+                            rec_ax, ax_record, key, _live_ids, _referenced
+                        )
+                    )
+                except Exception:
+                    pass  # best-effort: a reconcile must not break a save
+                # ...and for the artists it still HOLDS but no longer paints, the
+                # record gains their final visibility (card
+                # figrecipe-hidden-artist-set-visible-false-not-recorded-20260927).
+                # Nothing is dropped here: a hidden artist still carries the
+                # user's data and can be shown again, so only the paint state is
+                # written down.
+                try:
+                    _annotate_hidden_artists(rec_ax, ax_record, key, _live_ids)
+                except Exception:
+                    pass  # best-effort: an annotation must not break a save
             matched_records.add(key)
 
     # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
@@ -401,7 +499,17 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     # are DECORATIONS that create their own artist -- passing `calls` alone made
     # the card's own headline case (a text drawn then removed) unreachable.
     try:
-        from .._recorder._lifecycle import detect_removals, warn_removals
+        from .._recorder._lifecycle import (
+            detect_removals,
+            warn_reconciled,
+            warn_removals,
+        )
+
+        # Report the repair first: the calls below are measured on the PRUNED
+        # record, so the count check now reports only what the reconcile could
+        # not repair (a call that made several artists and lost some of them,
+        # an axes whose artists were never registered, an inset sub-panel).
+        warn_reconciled(_reconciled)
 
         lifecycle_reports = []
         for key, mpl_ax in zip(fig.record.axes, fig.fig.get_axes()):

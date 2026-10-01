@@ -7,7 +7,7 @@ import { redo, undo } from "../../hooks/useUndoRedo";
 import { useEditorStore } from "../../store/useEditorStore";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
-import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function CanvasPane() {
   const {

@@ -5,8 +5,8 @@ import {
   PHONE_QUERY,
   mountPanes,
   showPane,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/app/panes";
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/css/app/panes.css";
+} from "@scitex/sdk/ui/ts/app/panes";
+import "@scitex/sdk/ui/css/app/panes.css";
 
 export type EditorPane = "figure" | "data" | "plot" | "details";
 

@@ -12,7 +12,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import type { ElementDetails as Details } from "../../types/editor";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 function formatValue(value: Details["value"]): string | number {
   if (Array.isArray(value)) {

@@ -5,9 +5,13 @@
 import json
 from pathlib import Path
 
-import scitex_logging as slogging
-
 from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 
 try:
     from django.http import JsonResponse
@@ -207,6 +211,16 @@ def handle_stats_import_plot_spec(request, editor):
         counter += 1
     rel = f"{stem}_{counter:03d}.yaml"
     target = Path(working_dir) / rel
+
+    from .._project_access import check_output
+
+    for output in (
+        target,
+        target.with_suffix(".png"),
+        target.with_suffix(".tex"),
+        target.with_name(f"{target.stem}_data"),
+    ):
+        check_output(request, output)
 
     fig, _ax = from_stats_plot_spec(spec)
     try:

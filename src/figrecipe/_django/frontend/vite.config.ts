@@ -3,7 +3,6 @@ import { dirname, resolve } from "path";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
-import { scitexUiAlias } from "./vite.scitexUiAlias";
 
 const __here = dirname(fileURLToPath(import.meta.url));
 
@@ -30,13 +29,12 @@ function deriveFigrecipeVersion(): string {
 
 const FIGRECIPE_VERSION = deriveFigrecipeVersion();
 
-/** `@scitex/ui` -> the owner repo root, shared with vite.config.lib.ts
- *  (see vite.scitexUiAlias.ts for the contract and the discovery order). */
+// Resolve canonical SDK exports without source aliases.
 export default defineConfig({
   plugins: [react()],
   base: "/static/figrecipe/",
   resolve: {
-    alias: scitexUiAlias(),
+    dedupe: ["react", "react-dom"],
   },
   // figrecipe's own version, derived from pyproject.toml at build time.
   // Referenced from the frontend as __FIGRECIPE_VERSION__ (the header's
@@ -51,13 +49,15 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     manifest: true,
+    cssCodeSplit: false,
     rollupOptions: {
+      input: { index: resolve(__here, "index.html"), workspace: resolve(__here, "src/workspace.ts") },
       // mermaid and graphviz are optional lazy-loaded viewers — not bundled
       external: ["mermaid", "@hpcc-js/wasm-graphviz"],
       output: {
-        entryFileNames: "assets/index.js",
+        entryFileNames: "assets/[name].js",
         chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+        assetFileNames: (asset) => asset.name === "style.css" ? "assets/index.css" : "assets/[name][extname]",
       },
     },
   },

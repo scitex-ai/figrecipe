@@ -31,6 +31,7 @@ except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
     raise missing_extra(exc) from exc
 
 from .urls import urlpatterns as _app_urlpatterns
+from scitex_sdk.urls import mount_urlpatterns
 
 urlpatterns = [
     # Must precede the app patterns: ``urls.py`` ends in a ``<path:endpoint>``
@@ -39,6 +40,9 @@ urlpatterns = [
     # Spliced, not ``include()``d, so route names stay un-namespaced exactly as
     # they were when ``urls.py`` was the root URLconf.
     *_app_urlpatterns,
+    # Preserve the established unqualified standalone names above; these
+    # reverse-only namespace alternatives use those identical relative views.
+    *mount_urlpatterns("", "figrecipe._django.urls"),
 ]
 
 # EOF

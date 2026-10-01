@@ -7,6 +7,14 @@ slice (coordinator decision 2026-09-17). The check is deliberately conservative:
 it may miss a removal, it must never invent one, because a bogus warning on every
 save teaches users to ignore the warning entirely.
 
+WHAT MOVED when the repair landed (card-20260906, fix/artist-lifecycle-save-time-
+reconcile): the three save-path tests below that used to assert the warn-only
+message now assert that the situation is REPORTED, because a save now also FIXES
+it -- the old text promised "a replay will draw what this figure does not show",
+which is no longer true once the call is dropped from the recipe. The count check
+keeps its own case here (a removal on a path the repair cannot reach), and the
+repair's behaviour is asserted in test__artists.py.
+
 Each test makes a single assertion (STX-TQ007); no mocks (PA-306).
 """
 
@@ -289,7 +297,7 @@ class TestSavePathWiring:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             fr.save(fig, tmp_path / name, validate=False, verbose=False)
-        return [w for w in caught if "fewer artists" in str(w.message)]
+        return [w for w in caught if issubclass(w.category, ArtistLifecycleWarning)]
 
     @staticmethod
     def _save_faithful_figure(tmp_path, name):
@@ -299,7 +307,7 @@ class TestSavePathWiring:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             fr.save(fig, tmp_path / name, validate=False, verbose=False)
-        return [w for w in caught if "fewer artists" in str(w.message)]
+        return [w for w in caught if issubclass(w.category, ArtistLifecycleWarning)]
 
     @staticmethod
     def _save_with_removed_text(tmp_path, name):
@@ -312,7 +320,7 @@ class TestSavePathWiring:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             fr.save(fig, tmp_path / name, validate=False, verbose=False)
-        return [w for w in caught if "fewer artists" in str(w.message)]
+        return [w for w in caught if issubclass(w.category, ArtistLifecycleWarning)]
 
     @staticmethod
     def _save_with_a_text_still_shown(tmp_path, name):
@@ -324,7 +332,7 @@ class TestSavePathWiring:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             fr.save(fig, tmp_path / name, validate=False, verbose=False)
-        return [w for w in caught if "fewer artists" in str(w.message)]
+        return [w for w in caught if issubclass(w.category, ArtistLifecycleWarning)]
 
     @staticmethod
     def _save_with_removed_vlines(tmp_path, name):
@@ -336,15 +344,28 @@ class TestSavePathWiring:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             fr.save(fig, tmp_path / name, validate=False, verbose=False)
-        return [w for w in caught if "fewer artists" in str(w.message)]
+        return [w for w in caught if issubclass(w.category, ArtistLifecycleWarning)]
 
-    def test_a_real_save_warns_when_an_artist_was_removed(self, tmp_path):
+    @staticmethod
+    def _save_with_a_removed_bar(tmp_path, name):
+        """Remove a bar patch: ax.bar() records outside the artist funnel."""
+        fig, ax = fr.subplots()
+        ax.bar([1], [1], id="b1")
+        ax.bar([2], [2], id="b2")
+        ax.patches[0].remove()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            fr.save(fig, tmp_path / name, validate=False, verbose=False)
+        return [w for w in caught if issubclass(w.category, ArtistLifecycleWarning)]
+
+    def test_a_real_save_reports_a_removed_artist(self, tmp_path):
         # Arrange
         name = "removed.png"
         # Act
         hits = self._save_with_removed_artist(tmp_path, name)
-        # Assert -- exactly one warning, not one per call or per axes.
-        assert len(hits) == 1
+        # Assert -- exactly one warning, not one per call or per axes, and it is
+        # the REPAIR's (see this module's docstring note on what moved here).
+        assert len(hits) == 1 and "fewer artists" not in str(hits[0].message)
 
     def test_a_real_save_is_silent_for_a_faithful_figure(self, tmp_path):
         # Arrange
@@ -354,13 +375,13 @@ class TestSavePathWiring:
         # Assert -- a faithful figure must produce no lifecycle noise at all.
         assert hits == []
 
-    def test_a_real_save_warns_when_a_text_was_removed(self, tmp_path):
+    def test_a_real_save_reports_a_removed_text(self, tmp_path):
         # Arrange -- the headline case: a DECORATION that owns the removed artist.
         name = "text_removed.png"
         # Act
         hits = self._save_with_removed_text(tmp_path, name)
-        # Assert
-        assert len(hits) == 1
+        # Assert -- reported, and now by the repair rather than by the count.
+        assert len(hits) == 1 and "fewer artists" not in str(hits[0].message)
 
     def test_a_real_save_is_silent_when_the_text_is_still_shown(self, tmp_path):
         # Arrange -- the control that makes the line above mean something: the
@@ -371,11 +392,23 @@ class TestSavePathWiring:
         # Assert
         assert hits == []
 
-    def test_a_real_save_warns_when_a_vlines_artist_was_removed(self, tmp_path):
+    def test_a_real_save_reports_a_removed_vlines_artist(self, tmp_path):
         # Arrange -- vlines is one of the 26 plotters the hand-copied vocabulary
         # never listed, so this is the derivation change earning its keep.
         name = "vlines_removed.png"
         # Act
         hits = self._save_with_removed_vlines(tmp_path, name)
         # Assert
-        assert len(hits) == 1
+        assert len(hits) == 1 and "fewer artists" not in str(hits[0].message)
+
+    def test_the_count_check_still_fires_where_the_repair_cannot_reach(
+        self, tmp_path
+    ):
+        # Arrange -- ax.bar() records through its own path, so no artist registry
+        # exists for it and the repair cannot drop the call; the count check is
+        # what still catches this removal. Both layers are wired from a save.
+        name = "bar_removed.png"
+        # Act
+        hits = self._save_with_a_removed_bar(tmp_path, name)
+        # Assert
+        assert len(hits) == 1 and "fewer artists" in str(hits[0].message)

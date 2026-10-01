@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { buildExportPayload } from "../../store/persistActions";
 import { useEditorStore } from "../../store/useEditorStore";
-import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface Props {
   onClose: () => void;

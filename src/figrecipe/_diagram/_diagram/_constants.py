@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Constants for diagram diagram rendering."""
-import scitex_logging as slogging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 # 9 canonical anchors (relative to box: 0-1 range)
 ANCHOR_POINTS = {

@@ -5,16 +5,15 @@
 import sys
 from pathlib import Path
 
-import scitex_logging as slogging
-
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 import numpy as np
 
 import figrecipe as fr
+from figrecipe._utils._console import get_console
 
-console = slogging.getConsole(f"{__name__}.console")
+console = get_console(__name__)
 
 OUT = Path(__file__).parent
 

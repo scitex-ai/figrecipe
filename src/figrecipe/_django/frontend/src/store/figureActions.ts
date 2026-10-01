@@ -1,6 +1,6 @@
 /** Figure composition actions — add/remove/select/move/align placed figures. */
 
-import { api } from "../api/client";
+import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent, setRecipe } from "../api/client";
 import { DPI, getPanelBboxes } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
 import { newId } from "../utils/newId";
@@ -10,7 +10,7 @@ import type {
   PreviewResponse,
   TabData,
 } from "../types/editor";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type Get = () => {
   placedFigures: PlacedFigure[];
@@ -41,11 +41,15 @@ export function createFigureActions(set: Set, get: Get) {
       const { placedFigures } = get();
       if (placedFigures.some((f) => f.path === path)) {
         const existing = placedFigures.find((f) => f.path === path);
-        if (existing) set({ selectedFigureId: existing.id });
+        if (existing) {
+          setRecipe(path);
+          set({ selectedFigureId: existing.id, currentFile: path });
+        }
         get().showToast(interpolate(gettext("Already on canvas: %s"), [path]), "info");
         return;
       }
 
+      let session = apiSessionId();
       set({ loading: true } as never);
       try {
         const data = await api.post<
@@ -84,6 +88,8 @@ export function createFigureActions(set: Set, get: Get) {
         const params = new URLSearchParams(window.location.search);
         const wd = data.working_dir || get().workingDir;
         const fullPath = wd ? `${wd}/${path}` : path;
+        setRecipe(fullPath);
+        session = apiSessionId();
         params.set("recipe", fullPath);
         window.history.replaceState(null, "", `?${params.toString()}`);
 
@@ -97,10 +103,11 @@ export function createFigureActions(set: Set, get: Get) {
         // raster depicts a different one and is inert on this figure.
         get().loadHitmap();
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
         console.error("[Editor] Failed to add figure:", e);
         get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
-        set({ loading: false } as never);
+        if (isApiSessionCurrent(session)) set({ loading: false } as never);
       }
     },
 
