@@ -1,56 +1,42 @@
 #!/usr/bin/env python3
-"""Configure figrecipe frontend build environment.
+"""Prepare normal npm installation against the installed SDK frontend package.
 
-Creates a symlink from ./scitex-ui-types → scitex_ui's static directory, so
-TypeScript (tsconfig paths) can find a pip-installed scitex-ui for a bare
-`scitex-ui/...` specifier.
-
-NOTE (dependency alignment): the frontend no longer imports that way. Every
-`@scitex/ui` import uses the deep source path the vite alias and tsconfig
-`paths` resolve against the sibling OWNER CHECKOUT, so neither this symlink nor
-its tsconfig mapping is part of the build; `tests/scitexUiContract.test.ts`
-fails if a bare `scitex-ui/...` specifier comes back. This script is kept for a
-manual, pip-only workflow and is not run by CI.
-
-Run once after install:
-    python configure.py
+Run ``python configure.py`` before ``npm install`` for a pip-installed SDK.
+The committed default dependency also supports the pinned sibling SDK checkout.
+No Python static path discovery or Vite alias is needed at build time.
 """
 
-import os
-import sys
+import json
 from pathlib import Path
 
-import scitex_logging as slogging
-
-log = slogging.getLogger(__name__)
-console = slogging.getConsole(f"{__name__}.console")
-
 FRONTEND_DIR = Path(__file__).parent
-LINK_NAME = FRONTEND_DIR / "scitex-ui-types"
+
+
+def configure(frontend_dir: Path, package_dir: Path) -> None:
+    """Validate the owning package before updating the local file dependency."""
+    owner = json.loads((package_dir / "package.json").read_text())
+    manifest = frontend_dir / "package.json"
+    package = json.loads(manifest.read_text())
+    required = package["scitexSdk"]["version"]
+    if owner.get("name") != "@scitex/sdk" or owner.get("version") != required:
+        raise ValueError("Installed SDK frontend package does not match the declared owner")
+    if "./ui/react/app/bridge" not in owner.get("exports", {}):
+        raise ValueError("Installed SDK lacks the public React bridge export")
+    package["dependencies"]["@scitex/sdk"] = "file:" + str(package_dir.resolve())
+    manifest.write_text(json.dumps(package, indent=2) + "\n")
 
 
 def main() -> int:
     try:
-        import scitex_ui
+        from scitex_sdk import get_frontend_package_dir
 
-        static_dir = scitex_ui.get_static_dir()
-    except ImportError:
-        log.error("ERROR: scitex-ui is not installed.")
-        log.error("  pip install scitex-ui")
+        configure(FRONTEND_DIR, get_frontend_package_dir())
+    except (ImportError, OSError, ValueError, KeyError):
+        print("Frontend setup failed: install the declared scitex-sdk GUI owner, then retry.")
         return 1
-
-    if not static_dir.is_dir():
-        log.error(f"ERROR: static dir not found: {static_dir}")
-        return 1
-
-    # Remove stale symlink
-    if LINK_NAME.is_symlink() or LINK_NAME.exists():
-        LINK_NAME.unlink()
-
-    os.symlink(str(static_dir), str(LINK_NAME))
-    console.info(f"OK: {LINK_NAME.name} -> {static_dir}")
+    print("Frontend SDK dependency configured. Run npm install, then npm run build.")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

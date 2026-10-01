@@ -23,19 +23,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:lib": "tsc && vite build --config vite.config.lib.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "configure": "python configure.py"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.0",
-    "@scitex/ui": "file:../../../../../scitex-ui"
-  },
-  "scitexUi": {
-    "version": "0.23.0",
-    "tag": "v0.23.0",
-    "commit": "e081f1def88d7c7a3d88af3601dd0e94e117e818",
-    "reason": "The editor imports owner source by deep path (ts/_base/gettext.ts, react/app/data-table, react/app/selector-nav, react/app/alert-banner, react/app/usePanelResize, react/app/bridge, ts/shell/*, ts/app/panes, ts/app/project-selector/types, css/*). 0.20.2 - the version the lock used to record - has none of the newer ones. tests/scitexUiContract.test.ts enforces this requirement against the sibling checkout."
+    "@scitex/sdk": "file:../../../../../scitex-sdk/src/scitex_sdk"
   },
   "peerDependencies": {
     "react": "^18.3.1",
@@ -47,5 +42,10 @@
     "@vitejs/plugin-react": "^4.3.0",
     "typescript": "^5.5.0",
     "vite": "^5.4.0"
+  },
+  "scitexSdk": {
+    "version": "0.3.0",
+    "commit": "9bf0851cbe0a5ab90b334c235fc08b7d0d4a4ebb",
+    "reason": "Canonical SDK app/UI ownership; this pinned unpublished source is required before consumer publication."
   }
 }

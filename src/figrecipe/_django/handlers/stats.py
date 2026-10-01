@@ -208,6 +208,16 @@ def handle_stats_import_plot_spec(request, editor):
     rel = f"{stem}_{counter:03d}.yaml"
     target = Path(working_dir) / rel
 
+    from .._project_access import check_output
+
+    for output in (
+        target,
+        target.with_suffix(".png"),
+        target.with_suffix(".tex"),
+        target.with_name(f"{target.stem}_data"),
+    ):
+        check_output(request, output)
+
     fig, _ax = from_stats_plot_spec(spec)
     try:
         save(fig, target.with_suffix(".png"), validate=False, verbose=False)

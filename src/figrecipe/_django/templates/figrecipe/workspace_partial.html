@@ -1,0 +1,22 @@
+{% load scitex_i18n scitex_static scitex_project_picker %}
+{% if stx_mount != None %}
+    {% if hosted %}
+        <meta name="stx-app-scope" content="project">
+        {% scitex_project_provider_meta %}
+    {% endif %}
+    <link rel="stylesheet" crossorigin href="{% app_static 'figrecipe/assets/index.css' %}">
+    <div id="app-mount"
+         class="figrecipe-workspace"
+         data-app-slug="figrecipe"
+         data-embedded="true"
+         data-stx-mount="{{ stx_mount }}"
+         data-app-version="{{ app_version }}"
+         data-working-dir="{{ working_dir }}"
+         data-project-id="{{ project_id }}"
+         data-project-name="{{ project_name }}"
+         data-recipe="{{ recipe }}"></div>
+    {% scitex_js_catalog "figrecipe._django" %}
+    <script type="module" crossorigin src="{% app_static 'figrecipe/assets/workspace.js' %}"></script>
+{% else %}
+    <div role="alert">FigRecipe's app mount is unavailable.</div>
+{% endif %}

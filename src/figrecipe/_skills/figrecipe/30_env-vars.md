@@ -13,7 +13,6 @@ tags: [figrecipe-env-vars, figrecipe]
 | `SCITEX_DARK` | Enable dark-mode palette for figures. | `false` | bool |
 | `SCITEX_RGB` | Force RGB (vs RGBA) output channel count. | `false` | bool |
 | `SCITEX_STATS_AVAILABLE` | Presence flag: set when `scitex_stats` importable; gates stats overlays. | unset | bool (presence) |
-| `SCITEX_UI_STATIC` | Static-asset dir (shared with scitex-ui) for embedded CSS / logos. | bundled | path |
 
 ## Feature flags
 

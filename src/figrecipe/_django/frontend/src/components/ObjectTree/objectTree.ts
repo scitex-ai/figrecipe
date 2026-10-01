@@ -5,7 +5,7 @@
  * figure, so Details always has something to point at and a click selects
  * the figure the viewer shows.
  *
- * Pure and dependency-free (no React, no DOM, no @scitex/ui), so it runs
+ * Pure and dependency-free (no React, no DOM, no @scitex/sdk/ui), so it runs
  * under `node --experimental-strip-types` like the other decision modules
  * here.
  */

@@ -15,7 +15,7 @@ import {
 } from "./columnPlotSelection";
 import { cloneSelection } from "./dataTableEdit";
 import { selectionAfterColumnClick } from "./dataColumnHighlight";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 function kindLabel(id: string): string {
   switch (id) {

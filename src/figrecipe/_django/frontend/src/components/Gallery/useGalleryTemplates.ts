@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
 import { mapWithConcurrency } from "../../utils/mapWithConcurrency";
 import { useEditorStore } from "../../store/useEditorStore";
-import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export interface GalleryTemplate {
   name: string;

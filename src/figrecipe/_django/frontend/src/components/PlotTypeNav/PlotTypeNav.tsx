@@ -23,8 +23,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { SelectorNav } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
-import type { SelectorNavItem } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/selector-nav";
+import { SelectorNav } from "@scitex/sdk/ui/react/app/selector-nav";
+import type { SelectorNavItem } from "@scitex/sdk/ui/react/app/selector-nav";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryPanel } from "../Gallery/GalleryPanel";
 import { CATEGORY_LABELS, useGalleryTemplates } from "../Gallery/useGalleryTemplates";
@@ -43,7 +43,7 @@ import {
 } from "../Gallery/variantChooser";
 import { kindForFamily } from "../DataTablePane/columnPlotSelection";
 import { showEditorPane } from "../mobilePanes";
-import { gettext, gettext_noop } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, gettext_noop } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export const PLOT_TYPES: SelectorNavItem[] = [
   { id: "line", icon: "fas fa-chart-line", label: gettext_noop("Line") },

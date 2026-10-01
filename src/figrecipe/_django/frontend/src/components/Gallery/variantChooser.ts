@@ -9,7 +9,7 @@
  * pointer, tap on a touch screen), where it may sit so it stays on screen, and
  * what each key does inside it.
  *
- * React-free, DOM-free and @scitex/ui-free on purpose: it is exercised by
+ * React-free, DOM-free and @scitex/sdk/ui-free on purpose: it is exercised by
  * `node --experimental-strip-types` (tests/variantChooser.test.ts), and a
  * module importing the app alias could not run there.
  */

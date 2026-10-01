@@ -347,7 +347,9 @@ def handle_gallery_demo(request, editor):
     if demo_recipe.exists():
         return JsonResponse({"recipe_path": demo_recipe.name, "seeded": False})
 
-    if _files_tree().workspace_has_a_recipe(working_dir):
+    if _files_tree().workspace_has_a_recipe(
+        working_dir, access=getattr(request, "_figrecipe_project", None)
+    ):
         return JsonResponse(
             {"recipe_path": None, "reason": "workspace already has recipes"}
         )

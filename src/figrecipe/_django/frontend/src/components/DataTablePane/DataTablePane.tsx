@@ -7,7 +7,7 @@
  * are testable under `node --experimental-strip-types`. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table/DataTable";
+import { DataTable } from "@scitex/sdk/ui/react/app/data-table/DataTable.tsx";
 import { api, setRecipe } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";
@@ -60,7 +60,7 @@ import {
 } from "./tableSaveQueue";
 import { SAMPLE_TABLE_CSV, SAMPLE_TABLE_FORMAT } from "./sampleData";
 import { parsePastedTable } from "./pasteData";
-import { gettext, ngettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface DataTablePaneProps {
   onToggleCollapse?: () => void;

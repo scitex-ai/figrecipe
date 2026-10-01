@@ -48,6 +48,7 @@ from __future__ import annotations
 _OPTIONAL: dict[str, tuple[str, str]] = {
     "PIL": ("Pillow", "imaging"),
     "django": ("Django", "editor"),
+    "scitex_sdk": ("scitex-sdk", "editor"),
     "networkx": ("networkx", "graph"),
     "fastmcp": ("fastmcp", "mcp"),
     "scitex_pd": ("scitex-pd", "scitex"),

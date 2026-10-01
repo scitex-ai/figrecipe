@@ -16,6 +16,8 @@ settings, the documented mount, and the startup warning that names the omission.
 Each test makes a single assertion (STX-TQ007); no mocks (PA-306).
 """
 
+import subprocess
+import sys
 import warnings
 from pathlib import Path
 
@@ -26,6 +28,38 @@ SETTINGS = REPO_ROOT / "src" / "figrecipe" / "_django" / "settings.py"
 DOC = REPO_ROOT / "docs" / "SCITEX_APP_INTEGRATION.md"
 
 CHAT_APP = "figrecipe._django.apps.ScitexAppChatConfig"
+
+
+def test_missing_sdk_reports_gui_extra_without_losing_plugin_metadata():
+    """A core install can plot; GUI discovery requires the actual SDK class."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import importlib.abc
+import sys
+class NoSDK(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'scitex_sdk' or fullname.startswith('scitex_sdk.'):
+            raise ModuleNotFoundError('SDK absent', name='scitex_sdk')
+sys.meta_path.insert(0, NoSDK())
+import figrecipe
+from django.conf import settings
+assert not settings.configured
+try:
+    from figrecipe._django.apps import FigRecipeEditorConfig
+except ImportError as exc:
+    assert 'scitex-sdk' in str(exc) and 'figrecipe[editor]' in str(exc)
+else:
+    raise AssertionError('GUI discovery must not fall back to plain AppConfig')
+assert not settings.configured
+""",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 class TestStartupWarning:
@@ -77,6 +111,42 @@ class TestStartupWarning:
 
 
 class TestTheContractHoldsWhereItCanDrift:
+    def test_canonical_sdk_registration_preserves_the_legacy_chat_label(self):
+        from figrecipe._django.apps import ScitexAppChatConfig
+
+        assert ScitexAppChatConfig.name == "scitex_sdk.app._chat"
+        assert ScitexAppChatConfig.label == "scitex_app"
+
+    def test_standalone_shell_works_when_retired_distribution_imports_are_forbidden(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                """
+import importlib.abc, os, sys
+class RetiredOwnerForbidden(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split('.')[0] in {'scitex_app', 'scitex_ui'}:
+            raise ModuleNotFoundError('retired owner forbidden', name=fullname)
+sys.meta_path.insert(0, RetiredOwnerForbidden())
+os.environ['DJANGO_SETTINGS_MODULE']='figrecipe._django.settings'
+import django
+django.setup()
+from django.template.loader import render_to_string
+from django.apps import apps
+html=render_to_string('figrecipe/standalone.html', {'working_dir':''})
+assert html.count('rel="icon"')==1
+assert '/static/scitex_sdk/ui/' in html
+assert apps.get_app_config('scitex_app').name=='scitex_sdk.app._chat'
+assert apps.get_app_config('scitex_ui').name=='scitex_sdk.ui'
+assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
+""",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+
     def test_the_config_is_django_default_so_ready_actually_runs(self):
         # Arrange -- apps.py defines TWO AppConfig subclasses, and Django only
         # picks one for the "figrecipe._django" INSTALLED_APPS entry when it is

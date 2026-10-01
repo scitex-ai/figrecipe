@@ -5,7 +5,7 @@
  * delimiter and validates the shape before anything is POSTed, so a stray
  * single cell cannot create a one-column table that reads as broken.
  *
- * Pure and dependency-free (no React, no DOM, no @scitex/ui), so it runs
+ * Pure and dependency-free (no React, no DOM, no @scitex/sdk/ui), so it runs
  * under `node --experimental-strip-types` like the other decision modules
  * here.
  */

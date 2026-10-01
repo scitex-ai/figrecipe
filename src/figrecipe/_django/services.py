@@ -51,7 +51,7 @@ class EditorState:
         """
         if self._files_backend is None:
             try:
-                from scitex_app import get_files
+                from scitex_sdk.app import get_files
 
                 self._files_backend = get_files(root=str(self.working_dir))
             except ImportError:

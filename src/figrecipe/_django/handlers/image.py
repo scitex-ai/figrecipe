@@ -141,11 +141,22 @@ def handle_load_recipe(request, editor):
         return JsonResponse({"error": "Missing recipe_content"}, status=400)
 
     try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        access = getattr(request, "_figrecipe_project", None)
+        working_dir = getattr(request, "_figrecipe_working_dir", None)
+        if access is not None:
+            from ruamel.yaml import YAML
+            from .._project_recipe import validate_data
+
+            validate_data(access, YAML(typ="safe").load(recipe_content), working_dir)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False, dir=working_dir if access else None) as f:
             f.write(recipe_content)
             temp_path = f.name
+        try:
+            fig, _ = fr.reproduce(temp_path)
+        finally:
+            from pathlib import Path
 
-        fig, _ = fr.reproduce(temp_path)
+            Path(temp_path).unlink(missing_ok=True)
         editor.fig = fig
         editor._hitmap_generated = False
         editor._color_map = {}

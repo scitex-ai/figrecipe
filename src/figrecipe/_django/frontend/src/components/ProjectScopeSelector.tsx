@@ -4,7 +4,7 @@
  * figrecipe declares `"scope": "project"` in its manifest; the scitex-app host
  * stamps `<meta name="stx-app-scope" content="project">` into the embedded
  * workspace page. This component consumes the SDK gate
- * (`mountProjectSelectorByScope` from `@scitex/ui/.../ts/shell`) instead of
+ * (`mountProjectSelectorByScope` from `@scitex/sdk/ui/.../ts/shell`) instead of
  * forking the selector: it renders the app-local project picker ONLY when the
  * page is project-scoped, and renders nothing on user-scoped or standalone
  * pages (no marker -> the SDK returns null). The no-header-switcher ruling
@@ -23,7 +23,7 @@ import {
   hostProjectProvider,
   mountProjectSelectorByScope,
   PROJECT_SELECTOR_CHANGE,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell";
+} from "@scitex/sdk/ui/ts/shell";
 import { setWorkingDir } from "../api/client";
 import { useEditorStore } from "../store/useEditorStore";
 import { buildProjectOptions } from "../store/projectOptions";
@@ -32,11 +32,11 @@ import {
   getRecentProjects,
 } from "../store/recentProjects";
 import { rememberLastProject } from "../store/lastProjectMemory";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function ProjectScopeSelector() {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { workingDir, loadFiles, loadPreview, loadDatatable, loadHitmap } =
+  const { workingDir, projectId, loadFiles, loadPreview, loadDatatable, loadHitmap } =
     useEditorStore();
 
   // Inside a host (the hub) that serves a project list, pick from the host's
@@ -50,6 +50,7 @@ export function ProjectScopeSelector() {
     const selector = mountProjectSelectorByScope({
       container: host,
       scope: "project",
+      current: projectId,
       navigate: "?project={id}",
       placeholder: gettext("Select project"),
     });
@@ -57,7 +58,7 @@ export function ProjectScopeSelector() {
       selector?.destroy();
       el.innerHTML = "";
     };
-  }, []);
+  }, [projectId]);
 
   // (Re)mount the scope-gated selector whenever the current project or the
   // recent list changes. The SDK is imperative and self-contained: it reads

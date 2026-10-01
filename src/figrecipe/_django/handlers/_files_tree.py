@@ -92,7 +92,7 @@ def _is_figrecipe_yaml_rel(rel_path: str, files_backend) -> bool:
         return False
 
 
-def workspace_has_a_recipe(working_dir, max_depth: int = 3) -> bool:
+def workspace_has_a_recipe(working_dir, max_depth: int = 3, *, access=None) -> bool:
     """True when ``working_dir`` already holds at least one figrecipe recipe.
 
     Bounded on purpose (depth and file count): this runs on the first paint
@@ -120,7 +120,15 @@ def workspace_has_a_recipe(working_dir, max_depth: int = 3) -> bool:
             inspected += 1
             if inspected > 200:
                 return False
-            if _is_figrecipe_yaml(here / name):
+            candidate = here / name
+            if access is not None:
+                from scitex_sdk.host import AccessError
+
+                try:
+                    candidate = access.path(candidate)
+                except (AccessError, OSError, ValueError):
+                    continue
+            if _is_figrecipe_yaml(candidate):
                 return True
     return False
 
@@ -151,6 +159,9 @@ def resolve_working_dir(request, editor):
     the recipe into the SERVER's directory while ``api/switch`` looked for
     it in the USER's. See the module docstring in ``handlers/gallery.py``.
     """
+    scoped = getattr(request, "_figrecipe_working_dir", None)
+    if scoped is not None:
+        return scoped
     working_dir = getattr(editor, "working_dir", None) if editor else None
     wd_param = request.GET.get("working_dir")
     if wd_param:
@@ -166,10 +177,16 @@ def _get_working_dir_and_backend(request, editor):
     """Resolve working directory and files backend from request context."""
     working_dir = resolve_working_dir(request, editor)
 
+    access = getattr(request, "_figrecipe_project", None)
+    if access is not None:
+        from .._project_access import ProjectFiles
+
+        return working_dir, ProjectFiles(access, working_dir)
+
     files_backend = editor.files if editor else None
     if files_backend is None:
         try:
-            from scitex_app import get_files
+            from scitex_sdk.app import get_files
 
             files_backend = get_files(root=str(working_dir))
         except ImportError:

@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   gettext,
   interpolate,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+} from "@scitex/sdk/ui/ts/_base/gettext.ts";
 import { useEditorStore } from "../../store/useEditorStore";
 import { showEditorPane } from "../mobilePanes";
 import {

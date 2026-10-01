@@ -17,7 +17,14 @@
     "Export to PNG, SVG, PDF formats",
     "Style/theme presets for journals"
   ],
-  "allowed_extensions": [".py", ".csv", ".json", ".yaml", ".figz", ".pltz"],
+  "allowed_extensions": [
+    ".py",
+    ".csv",
+    ".json",
+    ".yaml",
+    ".figz",
+    ".pltz"
+  ],
   "wip": false,
   "standalone": true,
   "standalone_command": "figrecipe gui",
@@ -25,11 +32,19 @@
   "frontend_type": "react",
   "embedded_package": true,
   "scope": "project",
+  "partial_template": "figrecipe/workspace_partial.html",
+  "context_builder": "figrecipe._django.workspace.build_workspace_context",
   "bridge": {
-    "entry": "src/bridge/bridge-init.ts",
+    "entry": "src/workspace.ts",
     "source_root": "src"
   },
   "dependencies": {
-    "python": ["scitex", "scitex-app", "scitex-ui", "matplotlib", "numpy", "scipy"]
+    "python": [
+      "scitex",
+      "matplotlib",
+      "numpy",
+      "scipy",
+      "scitex-sdk"
+    ]
   }
 }

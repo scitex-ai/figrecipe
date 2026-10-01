@@ -5,12 +5,15 @@ import warnings
 from .._utils._optional import missing_extra
 
 try:
-    from scitex_app._django import ScitexAppConfig
-except ImportError:
-    try:
-        from django.apps import AppConfig as ScitexAppConfig
-    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
-        raise missing_extra(exc) from exc
+    from scitex_sdk.app import embed
+
+    ScitexAppConfig = embed.ScitexAppConfig
+    if ScitexAppConfig is None:
+        raise ImportError("The FigRecipe GUI requires Django")
+except ImportError as exc:  # supplied by a figrecipe GUI extra
+    # Discovery must retain the embedding superclass and manifest contract.
+    # A plain Django fallback would silently publish a plugin without metadata.
+    raise missing_extra(exc) from exc
 
 
 class FigRecipeEditorConfig(ScitexAppConfig):
@@ -45,7 +48,7 @@ class FigRecipeEditorConfig(ScitexAppConfig):
     def _warn_if_chat_app_missing(is_installed=None) -> bool:
         """Say so when a host mounted the editor WITHOUT the chat app.
 
-        The handler registry routes ``api/chat/*`` to ``scitex_app._chat``'s
+        The handler registry routes ``api/chat/*`` to ``scitex_sdk.app._chat``'s
         views, and those MODELS are registered by a second app entry
         (``figrecipe._django.apps.ScitexAppChatConfig``, label ``scitex_app``).
         The documented mount named only ``figrecipe._django``, so a host could
@@ -102,12 +105,12 @@ class FigRecipeEditorConfig(ScitexAppConfig):
 
 
 class ScitexAppChatConfig(ScitexAppConfig):
-    """AppConfig that registers scitex_app._chat models under 'scitex_app' label.
+    """AppConfig that registers scitex_sdk.app._chat models under 'scitex_app' label.
 
     The ChatSession and ChatMessage models declare app_label='scitex_app',
     so this config uses that label for Django model discovery.
     """
 
-    name = "scitex_app._chat"
+    name = "scitex_sdk.app._chat"
     label = "scitex_app"
     verbose_name = "SciTeX Chat Sessions"

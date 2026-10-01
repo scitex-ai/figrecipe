@@ -186,7 +186,9 @@ def gui(
 
     # Use shared standalone launcher from scitex-app
     try:
-        from scitex_app._standalone import run_standalone
+        from scitex_sdk.app import embed
+
+        run_standalone = embed.run_standalone
 
         # Pre-configure Django with figrecipe's settings (chat app, templates,
         # static dirs) before run_standalone, so _standalone.py skips its own

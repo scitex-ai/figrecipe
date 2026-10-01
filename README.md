@@ -82,6 +82,10 @@ FigRecipe treats recipe, data, and style as first-class attributes of every figu
 
 Requires Python >= 3.10.
 
+This coordinated source candidate requires the reviewed `scitex-sdk>=0.3.0`
+owner. Install its reviewed wheel or checkout first while that release is
+pending; the following registry commands describe the published package.
+
 ```bash
 uv pip install "figrecipe[all]"
 ```
@@ -93,7 +97,7 @@ uv pip install "figrecipe[all]"
 |-------|----------|---------|
 | `editor` | GUI editor (Django + Pillow) | `uv pip install "figrecipe[editor]"` |
 | `desktop` | Standalone desktop shell (pywebview/Qt) | `uv pip install "figrecipe[desktop]"` |
-| `app` | Embedded app runtime (Django + Pillow + scitex-app) | `uv pip install "figrecipe[app]"` |
+| `app` | Embedded app runtime (Django + Pillow + scitex-sdk) | `uv pip install "figrecipe[app]"` |
 | `seaborn` | Seaborn recording wrapper | `uv pip install "figrecipe[seaborn]"` |
 | `imaging` | Image utilities (Pillow) | `uv pip install "figrecipe[imaging]"` |
 | `graph` | Diagram graph backend (networkx) | `uv pip install "figrecipe[graph]"` |
@@ -112,9 +116,8 @@ FigRecipe is the **first app built on the SciTeX platform** -- it proves the app
 
 ```mermaid
 flowchart TD
-    A[scitex orchestrator<br/>re-exports figrecipe as scitex.plt] --> B[scitex-app<br/>runtime SDK]
-    A --> C[scitex-ui<br/>React/TS components]
-    A --> D[figrecipe<br/>reference app]
+    A[scitex orchestrator<br/>re-exports figrecipe as scitex.plt] --> D[figrecipe<br/>reference app]
+    D --> B[scitex-sdk<br/>app runtime + UI components]
     D --> E[figrecipe<br/>standalone package]
     D --> F[figrecipe._django<br/>cloud embedding]
     E --> G[Figure engine<br/>recipes + provenance]
@@ -126,7 +129,11 @@ flowchart TD
 
 **What this package owns:** Figure creation, reproduction, and composition engine; YAML recipe format and data provenance; Diagram system (box-and-arrow with mm-based coordinates); GUI editor; Django integration.
 
-**What this package does NOT own:** App runtime SDK (inherits from [scitex-app](https://github.com/ywatanabe1989/scitex-app)); UI components (consumes from [scitex-ui](https://github.com/ywatanabe1989/scitex-ui)); Templates (managed by [scitex](https://github.com/ywatanabe1989/scitex-python)).
+The shared app runtime and UI components come from
+[scitex-sdk](https://github.com/scitex-ai/scitex-sdk) through
+`scitex_sdk.app`, `scitex_sdk.ui`, and `@scitex/sdk/ui/...`. FigRecipe owns its
+workspace templates and editor behavior. The candidate preserves standalone
+and generic plugin integration; legacy Hub route cutover remains coordinated.
 
 ---
 

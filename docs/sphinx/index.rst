@@ -22,13 +22,14 @@ scitex-cloud. The orchestrator re-exports it as ``scitex.plt``.
 .. code-block:: text
 
    scitex (orchestrator) -- re-exports figrecipe as scitex.plt
-     |-- scitex-app        -- runtime SDK (FigRecipe inherits ScitexAppConfig)
-     |-- scitex-ui         -- React/TS components (FigRecipe consumes these)
+     |-- scitex-sdk        -- shared app runtime and UI components
      +-- figrecipe (this package) -- reference app
 
 - **scitex** (`docs <https://scitex-python.readthedocs.io/>`_): Orchestrator that re-exports ``scitex.plt``
-- **scitex-app** (`docs <https://scitex-app.readthedocs.io/>`_): Runtime SDK providing ``ScitexAppConfig``
-- **scitex-ui** (`docs <https://scitex-ui.readthedocs.io/>`_): Shared frontend components consumed by FigRecipe
+- **scitex-sdk** (`source <https://github.com/scitex-ai/scitex-sdk>`_): Shared
+  ``scitex_sdk.app`` runtime and ``scitex_sdk.ui`` Python/frontend components.
+  The coordinated candidate requires the reviewed, unpublished SDK 0.3 owner.
+  FigRecipe retains its own workspace templates, editor and project authority.
 
 .. toctree::
    :maxdepth: 2

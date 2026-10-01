@@ -1,6 +1,10 @@
-{% extends "scitex_ui/standalone_shell.html" %}
-{% load scitex_i18n scitex_static %}
+{% extends "scitex_sdk/ui/standalone_shell.html" %}
+{% load scitex_i18n scitex_static scitex_project_picker %}
 {% block extra_css %}
+    {% if hosted %}
+        <meta name="stx-app-scope" content="project">
+        {% scitex_project_provider_meta %}
+    {% endif %}
     <link rel="stylesheet"
           crossorigin
           href="{% app_static 'figrecipe/assets/index.css' %}">
@@ -8,6 +12,7 @@
 {% block app_content %}
     <div id="root"
          data-working-dir="{{ working_dir|default:'' }}"
+         data-hosted="{{ hosted|yesno:'true,false' }}"
          data-app-name="figrecipe"
          data-version="{{ app_version|default:'' }}"></div>
 {% endblock %}

@@ -2,7 +2,7 @@
  *
  * Every function is pure: the pane owns the React state and the persistence,
  * these decide what the next table looks like, what a change is called, and
- * what undo has to remember. Kept free of React and the @scitex/ui alias so it
+ * what undo has to remember. Kept free of React and the @scitex/sdk/ui alias so it
  * runs under `node --experimental-strip-types`.
  */
 
@@ -44,7 +44,7 @@ export interface TableModel {
   rows: CellValue[][];
 }
 
-/** The shape @scitex/ui's DataTable takes, described structurally so this
+/** The shape @scitex/sdk/ui's DataTable takes, described structurally so this
  *  module does not have to import the component. */
 export interface TableDataset {
   columns: string[];
@@ -124,7 +124,7 @@ export function tablesEqual(a: TableModel, b: TableModel): boolean {
   });
 }
 
-/** The @scitex/ui DataTable input for a model. */
+/** The @scitex/sdk/ui DataTable input for a model. */
 export function datasetFromTable(table: TableModel): TableDataset {
   return {
     columns: table.columns.map((c) => c.name),

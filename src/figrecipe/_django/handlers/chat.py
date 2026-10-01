@@ -8,13 +8,13 @@ standalone editor runs with no database -- see ``_database_is_configured``.
 """
 
 # Chat: single source of truth from scitex-app (no figrecipe-specific fallback).
-# `scitex_app.chat` is a lazily-exposed package attribute (PEP 562
-# `__getattr__`), not a real importable submodule -- `from scitex_app.chat
+# `scitex_sdk.app.chat` is a lazily-exposed package attribute (PEP 562
+# `__getattr__`), not a real importable submodule -- `from scitex_sdk.app.chat
 # import X` raises ModuleNotFoundError since that form requires the import
-# system to resolve `scitex_app.chat` as an actual submodule. `from
+# system to resolve `scitex_sdk.app.chat` as an actual submodule. `from
 # scitex_app import chat` works: it falls back to attribute lookup on the
-# already-imported `scitex_app` package.
-from scitex_app import chat as _chat
+# already-imported `scitex_sdk.app` package.
+from scitex_sdk.app import chat as _chat
 
 from ..._utils._optional import missing_extra
 

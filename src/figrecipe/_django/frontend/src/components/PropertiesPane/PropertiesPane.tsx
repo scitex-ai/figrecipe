@@ -3,7 +3,7 @@
 import { useEditorStore } from "../../store/useEditorStore";
 import { ObjectTree } from "../ObjectTree/ObjectTree";
 import { Properties } from "../Properties/Properties";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface PropertiesPaneProps {
   onToggleCollapse?: () => void;

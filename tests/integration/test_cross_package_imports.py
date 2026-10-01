@@ -22,10 +22,10 @@ import pytest
 
 # ===== AUTO-GENERATED: cross-package imports =====
 CROSS_PACKAGE_IMPORTS = [
-    "scitex_app",
-    "scitex_app._django",
-    "scitex_app._standalone",
-    "scitex_app.i18n",
+    "scitex_sdk.app",
+    "scitex_sdk.app._django",
+    "scitex_sdk.app._standalone",
+    "scitex_sdk.app.i18n",
     "scitex_browser.debugging",
     "scitex_config",
     "scitex_config._ecosystem",
@@ -39,7 +39,7 @@ CROSS_PACKAGE_IMPORTS = [
     "scitex_logging",
     "scitex_pd",
     "scitex_types",
-    "scitex_ui",
+    "scitex_sdk.ui",
 ]
 # ===== END AUTO-GENERATED =====
 
