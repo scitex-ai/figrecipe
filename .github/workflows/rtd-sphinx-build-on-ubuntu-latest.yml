@@ -16,6 +16,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Prepare job-owned state and caches
+        run: |
+          set -euo pipefail
+          owned=$(mktemp -d "${RUNNER_TEMP:?}/figrecipe-context.XXXXXXXX")
+          mkdir -p "$owned/tmp" "$owned/cache" "$owned/config" "$owned/scitex" "$owned/mpl"
+          for pair in "SCITEX_DIR=$owned/scitex" "TMPDIR=$owned/tmp" "XDG_CACHE_HOME=$owned/cache" "XDG_CONFIG_HOME=$owned/config" "MPLCONFIGDIR=$owned/mpl" "MPLBACKEND=Agg" "PIP_CACHE_DIR=$owned/cache/pip" "UV_CACHE_DIR=$owned/cache/uv" "PYTHONPYCACHEPREFIX=$owned/cache/pycache" "RUN_E2E=1"; do
+            printf '%s\n' "$pair" >> "${GITHUB_ENV:?}"
+          done
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

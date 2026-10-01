@@ -1,139 +1,63 @@
 #!/usr/bin/env bash
-# Runs INSIDE the reused scitex-ci SIF (apptainer exec). $1 = python version.
-#
-# WHY a layered install (not the bare PYTHONPATH=src trick scitex-dev uses):
-# the shared ci-cpu.sif bakes scitex-dev[all,dev] DEPS, NOT figrecipe's —
-# matplotlib / graphviz / seaborn / django / Pillow / networkx / playwright /
-# pytesseract / scitex-app / scitex-ui are absent from the SIF. So we install
-# THIS checkout + its [all,dev] extras (WITH dependency resolution) into a
-# writable --target dir and prepend that on PYTHONPATH. The SIF still supplies
-# the heavy shared base (pip/uv, the python interpreters, scitex-dev's deps),
-# so only figrecipe's own thin dep set is fetched per run.
-#
-# --target (not a plain `-e .`): the SIF's /opt/venv-* are root-owned + RO and
-# the HPC compute-node HOME is RO inside the container, so a normal site install
-# fails Permission denied. A writable target on node-local /tmp sidesteps both.
-#
-# Fail-loud: a missing interpreter or a failed install is a hard error.
+# FigRecipe's real owning suite runs in the digest-verified reused image.
+# The outer wrapper binds fresh RUNNER_TEMP scratch over container /tmp.
 set -euo pipefail
-
 V="${1:?python version arg required (3.11/3.12/3.13)}"
-VENV="/opt/venv-$V"
-test -x "$VENV/bin/python" || {
-    echo "::error::baked python missing in $VENV — rebuild the SIF: scitex-container apptainer build ci-cpu"
-    exit 1
-}
-
+VENV="${SIF_VENV:-/opt/venv-$V}"
+PY="$VENV/bin/python"
+[ -x "$PY" ] || { echo "::error::baked Python missing: $PY"; exit 1; }
 export LC_ALL=C.UTF-8 LANG=C.UTF-8
-
-# Real writable scratch. The runner profile exports TMPDIR=~/.cache/tmp, a host
-# path that does NOT resolve inside the container; tests (tmp_path) and the
-# install target both need a working, writable tmp. Node-local /tmp is writable
-# + ephemeral and per-version-isolated so concurrent matrix legs don't collide.
-#
-# RUN-UNIQUE, not just version-unique (incident 2026-07-12): a fixed
-# /tmp/ci-figrecipe-$V path let a killed/OOM'd worker from a PRIOR run leave a
-# file handle open in there, so the next run's `rm -rf` on that same fixed
-# path failed loud with "Directory not empty" and took the whole leg down —
-# hit twice in one day, on two different python legs, during the v0.30.0
-# release. Suffixing with the run id makes this run's path impossible to
-# collide with any leftover from a previous one; the stale-path cleanup below
-# is now best-effort so a still-stuck prior directory WARNS instead of
-# aborting a run that no longer depends on it.
 RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
-TMPDIR="/tmp/ci-figrecipe-$V-$RUN_TAG"
+TMPDIR="${TMPDIR:?verified wrapper or owning test must supply scratch}/ci-figrecipe-$V-$RUN_TAG"
 export TMPDIR
-rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
-mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
-
-# The HPC compute-node $HOME is READ-ONLY inside the container, so uv/pip cannot
-# create their default caches under ~/.cache — point them at the writable
-# scratch instead (else `uv pip install` dies: "failed to create directory
-# ~/.cache/uv: File exists / read-only").
-export UV_CACHE_DIR="$TMPDIR/uv-cache"
-export XDG_CACHE_HOME="$TMPDIR"
-export PIP_CACHE_DIR="$TMPDIR/pip-cache"
-
-# Headless matplotlib — no DISPLAY on the compute node; force the Agg backend so
-# pyplot imports + figure rendering in the test suite never try to open a GUI.
-export MPLBACKEND=Agg
-
-# Dedicated, stable matplotlib config/cache dir for this matrix leg. Without
-# pinning it, MPLCONFIGDIR defaults to $XDG_CACHE_HOME/matplotlib which is COLD
-# every CI run; the xdist workers (one per core, see below) then each cold-start
-# matplotlib and RACE to build fontList.json in that shared dir.
-# A partial/contended cache makes some renders fall back to a different font, so
-# figrecipe's reproducibility tests (validate_recipe renders the SAME recipe
-# twice and compares) see render1 != render2 → spurious MSE-over-threshold
-# failures (e.g. TestValidateRecipe, max channel diff 255). One stable dir +
-# a single warm-up below (build the cache ONCE, pre-fork) removes the race.
-export MPLCONFIGDIR="$TMPDIR/mpl"
-mkdir -p "$MPLCONFIGDIR"
-
-# A VIRTUAL_ENV leaked from the runner profile (~/.env-3.11) is a broken symlink
-# in here; unset it so no tool (uv, pip) tries to follow it.
+trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+rm -rf "${TMPDIR:?FigRecipe scratch is empty}"
+mkdir -p "$TMPDIR/uv-cache" "$TMPDIR/pip-cache" "$TMPDIR/scitex" \
+    "$TMPDIR/pycache" "$TMPDIR/mpl" "$TMPDIR/config"
+export SCITEX_DIR="$TMPDIR/scitex" PYTHONPYCACHEPREFIX="$TMPDIR/pycache"
+export UV_CACHE_DIR="$TMPDIR/uv-cache" PIP_CACHE_DIR="$TMPDIR/pip-cache"
+export XDG_CACHE_HOME="$TMPDIR" XDG_CONFIG_HOME="$TMPDIR/config"
+export MPLBACKEND=Agg MPLCONFIGDIR="$TMPDIR/mpl" RUN_E2E=1
 unset VIRTUAL_ENV || true
-
-# venv bin on PATH (this matrix leg's python3 + pip); PYTHONPATH points at the
-# writable target so imports + coverage use the freshly-installed checkout.
-export PATH="$VENV/bin:$PATH"
-
-echo "py=$("$VENV/bin/python" -V) target=$TMPDIR/site"
-
-# Install figrecipe + its [all,dev] extras WITH deps into the writable target.
-# Fallback chain mirrors figrecipe's historical bare-uv/pip workflow so a
-# packaging hiccup in an optional extra doesn't strand CI: [all,dev] → [dev] →
-# bare. uv first (fast resolver), pip as a final safety net.
-uv pip install --python "$VENV/bin/python" --target="$TMPDIR/site" -e ".[all,dev]" ||
-    uv pip install --python "$VENV/bin/python" --target="$TMPDIR/site" -e ".[dev]" ||
-    uv pip install --python "$VENV/bin/python" --target="$TMPDIR/site" -e "." ||
-    pip install --target="$TMPDIR/site" -e ".[dev]"
-
-export PYTHONPATH="$TMPDIR/site:$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
-
-# Parallelise with pytest-xdist (baked in [dev]/[all,dev] as pytest-xdist>=3).
-# figrecipe's suite is ~2460 tests; single-process it overran the job's old
-# 30-min cap (2300 passed in ~28 min, cancelled at 96%). Each xdist worker is
-# a SEPARATE PROCESS, so matplotlib's global rcParams / pyplot state and the
-# figrecipe style-stack are naturally isolated per worker — the safe way to
-# parallelise a matplotlib-heavy suite.
-#
-# Worker count: use ALL cores. Each matrix leg now runs on its own dedicated
-# self-hosted node (one runner per node: figrecipe-01/02/03), so there is no
-# co-tenant to yield half the box to — the old nproc//2 cap left 2x the cores
-# idle. nice/ionice (below) handles the "yield to higher-priority work if the
-# node is ever shared" concern instead of statically reserving half the CPUs.
-# Floor 4. pyproject addopts carries `-v`; override to `-q` here — 2460 verbose
-# lines x workers bloats the CI log and adds measurable overhead.
-NPROC="$(nproc 2>/dev/null || echo 4)"
-WORKERS=$NPROC
-[ "$WORKERS" -lt 4 ] && WORKERS=4
-echo "xdist workers=$WORKERS (nproc=$NPROC)"
-
-# Warm the matplotlib font cache ONCE, single-process, before xdist forks the
-# workers. This builds $MPLCONFIGDIR/fontlist-*.json a single time so every
-# worker reads a complete, consistent cache instead of racing to build it
-# concurrently (the source of the render1!=render2 reproducibility flakes).
-# Fail-loud: if matplotlib can't even build its font cache, CI must surface it.
-python -c "import matplotlib; matplotlib.use('Agg'); from matplotlib import font_manager; font_manager.fontManager; import matplotlib.pyplot as plt; f=plt.figure(); f.canvas.draw(); print('mpl font cache warmed at', matplotlib.get_cachedir())"
-
-# Distribution: `--dist load` (per-TEST round-robin), NOT `--dist loadscope`.
-# loadscope pins an entire MODULE's tests to ONE worker — and figrecipe's heavy
-# suites are big SINGLE modules (e.g. tests/integration/test_all_plotters_*.py
-# parametrize one test over all 47 plotters, ~28 s each). loadscope therefore
-# ran all ~50+ cases of such a module SERIALLY on one worker (~25 min) while the
-# rest idled. There are NO module/session/class-scoped fixtures in those heavy
-# modules and the root conftest's autouse `_close_figures` resets pyplot state
-# after EVERY test, so loadscope's "same worker per module" buys nothing here —
-# it only serialized. `load` spreads the parametrized cases across ALL workers.
-#
-# nice -n 19 ionice -c 3: run at the lowest CPU + idle I/O priority so that if
-# this node is ever shared with interactive/dev work, CI grabs otherwise-idle
-# cores but YIELDS the CPU and disk to any higher-priority process — "all
-# available CPUs, with priority handling". exec replaces the shell with nice,
-# which execs ionice, which execs python (still PID-traceable, signals/exit
-# code propagate to the runner step).
-exec nice -n 19 ionice -c 3 \
-    python -m pytest tests/ -n "$WORKERS" --dist load -q \
+# The candidate must stay installed for fixtures that deliberately drop
+# PYTHONPATH; an overlay would expose the older baked distribution instead.
+"$PY" -m venv "$TMPDIR/venv"
+PY="$TMPDIR/venv/bin/python"
+export PATH="$TMPDIR/venv/bin:$VENV/bin:$PATH"
+uv pip install --python "$PY" -e ".[all,dev]"
+export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
+# Warm the real font cache once before independent plotting workers start.
+"$PY" -c "import matplotlib; matplotlib.use('Agg'); from matplotlib import font_manager; font_manager.fontManager; import matplotlib.pyplot as plt; f=plt.figure(); f.canvas.draw(); plt.close(f); print('mpl font cache warmed at', matplotlib.get_cachedir())"
+WORKERS="${FIGRECIPE_CI_WORKERS:-}"
+if [ -z "$WORKERS" ]; then
+    WORKERS="$("$PY" - <<'PYWORKERS'
+import math, os
+from pathlib import Path
+limits = [os.cpu_count() or 1]
+if hasattr(os, 'sched_getaffinity'):
+    limits.append(len(os.sched_getaffinity(0)))
+try:
+    quota, period = Path('/sys/fs/cgroup/cpu.max').read_text().split()
+    if quota != 'max':
+        limits.append(max(1, math.floor(int(quota) / int(period))))
+except (FileNotFoundError, PermissionError, ValueError, ZeroDivisionError):
+    pass
+print(max(1, min(limits)))
+PYWORKERS
+)"
+fi
+case "$WORKERS" in
+    ''|*[!0-9]*|0) echo "::error::invalid FigRecipe worker count"; exit 1 ;;
+esac
+echo "FigRecipe owning xdist workers=$WORKERS"
+# Keep the shell alive: EXIT removes this job's scratch for success or failure.
+# Forward cancellation to the real test process before waiting and cleaning up.
+nice -n 19 ionice -c 3 "$PY" -m pytest tests/ -n "$WORKERS" --dist load -q \
     --cov=src/figrecipe --cov-report=xml --cov-report=term \
-    -p no:cacheprovider
+    -p no:cacheprovider &
+PYTEST_PID=$!
+forward_signal() { kill -TERM "$PYTEST_PID" 2>/dev/null || true; }
+trap forward_signal TERM INT
+status=0
+wait "$PYTEST_PID" || status=$?
+exit "$status"

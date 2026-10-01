@@ -9,6 +9,53 @@
   overflow: hidden;
 }
 
+/* ── App header (figrecipe-owned) — canonical .stx-app-header ────────────
+   Flex row: title, then the shared project-selector slot, then app actions.
+   The slot CSS itself (.stx-app-header__slot--project-selector) comes from
+   scitex-ui all.css (pins the selector left-after-title on desktop, and
+   full-width on phones via its own media query). We only own the base row,
+   the title, and the actions spacer. ─────────────────────────────────── */
+
+.stx-app-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 8px;
+  background: var(--vis-bg-secondary);
+  border-bottom: 1px solid var(--vis-border);
+  flex-shrink: 0;
+}
+
+.stx-app-header__title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* figrecipe's own version badge (from #root[data-version] = figrecipe.__version__).
+   Quiet, secondary, right after the title; distinct from the Hub global header's
+   Hub-version. Hidden by JSX when the host stamps no data-version. */
+.stx-app-header__version {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vis-text-secondary, var(--text-secondary, #aaa));
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+}
+
+.stx-app-header__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ── App Tab Switcher (Plot | Canvas) ─────────────────── */
 
 .inner-editor__tabs {
@@ -21,6 +68,26 @@
   background: var(--vis-bg-secondary);
   border-bottom: 1px solid var(--vis-border);
   flex-shrink: 0;
+}
+
+/* figrecipe's app-local project selector (TODO 145/147). Now inside the
+   canonical .stx-app-header__slot--project-selector wrapper (scitex-ui CSS
+   pins it left-after-title on desktop, full-width on phones). The wrapper
+   owns margin/align — we only cap the selector's own width on desktop so
+   the trigger doesn't balloon past the title. */
+.project-scope-selector {
+  max-width: 260px;
+}
+.project-scope-selector .stx-app-project-selector__trigger {
+  max-width: 100%;
+  height: 28px;
+  font-size: 12px;
+}
+.project-scope-selector .stx-app-project-selector__current,
+.project-scope-selector .stx-app-project-selector__placeholder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .inner-editor__tab {
@@ -52,6 +119,64 @@
   border-bottom-color: var(--accent-primary);
 }
 
+/* ── First-visit steps strip ─────────────────────────── */
+
+.fr-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  background: var(--vis-accent-bg, rgba(88, 166, 255, 0.1));
+  border-bottom: 1px solid var(--vis-border);
+  color: var(--vis-text-primary);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.fr-steps__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fr-steps__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vis-text-muted);
+  cursor: pointer;
+}
+
+.fr-steps__close:hover {
+  background: var(--vis-bg-hover);
+  color: var(--vis-text-primary);
+}
+
+@media (max-width: 768px) {
+  .fr-steps {
+    padding: 8px 4px 8px 16px;
+    font-size: 13px;
+  }
+  .fr-steps__list {
+    flex-direction: column;
+  }
+  .fr-steps__close {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 /* ── Figure Viewer (Plot tab — shows rendered figure) ─── */
 
 .figure-viewer {
@@ -65,20 +190,52 @@
   position: relative;
 }
 
-.figure-viewer--empty {
-  flex-direction: column;
-  gap: 12px;
-  color: var(--vis-text-muted);
-  font-size: 13px;
-}
-
-.figure-viewer--empty i {
-  font-size: 32px;
-  opacity: 0.3;
+/* Nothing open yet: the pane holds the start gallery, which scrolls and fills
+ * the width. The old centred-label rules are gone with the label they styled
+ * (`figure-viewer--empty`) — centring a grid vertically strands it below the
+ * fold on a short viewport. */
+.figure-viewer--start {
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .figure-viewer img {
   transition: none;
+}
+
+/* Save/export control on the Plot-tab figure surface (standalone item #4).
+ * Absolutely positioned over the figure so it never disturbs the centred
+ * preview or the start-gallery layout; appears only when a figure is shown. */
+.figure-viewer__export {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--vis-border, #30363d);
+  border-radius: 6px;
+  background: var(--vis-bg-secondary, #21262d);
+  color: var(--vis-text-primary, #e6edf3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+.figure-viewer__export:hover {
+  border-color: var(--accent-primary);
+  color: #fff;
+  background: var(--vis-bg-tertiary, rgba(255, 255, 255, 0.06));
+}
+.figure-viewer__export i {
+  font-size: 12px;
 }
 
 .editor-body {
@@ -87,6 +244,28 @@
   overflow: hidden;
   max-width: 100%;
   width: 100%;
+  /* Inside scitex-hub a fixed site dock covers the viewport bottom; without
+     this reserve the dock sits on top of the lowest grid rows. Standalone
+     defines no --site-dock-height, so this is 0 there. */
+  padding-bottom: var(--site-dock-height, 0px);
+}
+
+/* ── SigmaPlot-style Data page (full-width worksheet) ── */
+
+.data-page {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--vis-bg-secondary);
+}
+
+.data-page__inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ── Split panes (vis_app split-view.css) ──────────────── */
@@ -111,6 +290,10 @@
   min-width: 40px;
   background: var(--vis-bg-primary);
   position: relative;
+  /* Inside scitex-hub a fixed site dock covers the viewport bottom; standalone has no dock, so this is 0. */
+  scroll-margin-bottom: calc(
+    var(--site-dock-height, 0px) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 .split-pane-right {
@@ -284,6 +467,32 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pane-header-buttons::-webkit-scrollbar {
+  display: none;
+}
+
+/* Visible text beside pane-header icons — no icon-only mysteries. The label
+   hides where the pane is narrow (phones, squeezed splits); the title and
+   aria-label still name the action there. */
+.pane-header-btn__label {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pane-header-btn i + .pane-header-btn__label {
+  margin-left: 2px;
+}
+
+@media (max-width: 768px) {
+  .pane-header-btn__label {
+    display: none;
+  }
 }
 
 .pane-header-right {

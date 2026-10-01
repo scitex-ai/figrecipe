@@ -1,7 +1,7 @@
 /** Central Zustand store — single source of truth for the editor. */
 
 import { create } from "zustand";
-import { api } from "../api/client";
+import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent } from "../api/client";
 import { DPI } from "../hooks/useSnap";
 import type { SnapGuide } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
@@ -11,6 +11,7 @@ import type {
   CallRecord,
   ColumnDef,
   ElementDataLink,
+  ElementDetails,
   FileTreeItem,
   FilesResponse,
   HitmapResponse,
@@ -24,12 +25,25 @@ import type {
 import { createFigureActions } from "./figureActions";
 import { createPersistActions } from "./persistActions";
 import { createSyncActions } from "./syncActions";
+import { rememberLastProject } from "./lastProjectMemory";
+import { newId } from "../utils/newId";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface ZoomControls {
   zoomIn: () => void;
   zoomOut: () => void;
   zoomToFit: () => void;
   resetView: () => void;
+}
+
+/** The canvas viewport. Session-scoped state, not component state: switching
+ *  editor tabs unmounts the canvas, and the user's view must survive that
+ *  (operator acceptance 7694: "preserve the new viewport across tab changes
+ *  during the session"). */
+export interface CanvasView {
+  zoom: number;
+  panX: number;
+  panY: number;
 }
 
 interface EditorState {
@@ -41,16 +55,31 @@ interface EditorState {
   // ── Legacy ──────────────────────────────────────────────
   hitmapImage: string | null;
   colorMap: Record<string, unknown>;
+  /** The recipe the loaded hitmap depicts. A raster is rendered for ONE recipe,
+   *  so this is what makes it per-figure instead of global: an overlay only
+   *  samples the raster whose recipe is its own figure's (hitmapMatchesFigure). */
+  hitmapRecipe: string | null;
   loading: boolean;
 
   // ── Selection ───────────────────────────────────────────
   selectedElement: string | null;
   selectedBbox: BBox | null;
+  /** Inspected details of the selected element (value, row/column,
+   *  series) — null while loading or when nothing is selected. */
+  elementDetails: ElementDetails | null;
+  /** Picked matrix cell (row/col) on an image/mesh element; null means
+   *  the whole element. Refetching details carries it as row/col. */
+  elementCell: { row: number; col: number } | null;
+  /** Known matrix shapes per element key (from details shape) — lets a
+   *  click on an already-selected matrix resolve its cell immediately. */
+  elementShapes: Record<string, { rows: number; cols: number }>;
 
   // ── Files ───────────────────────────────────────────────
   files: FileTreeItem[];
   currentFile: string | null;
   workingDir: string | null;
+  projectId: string | null;
+  projectName: string | null;
 
   // ── Data ────────────────────────────────────────────────
   datatableTabs: Record<string, TabData>;
@@ -89,6 +118,16 @@ interface EditorState {
 
   // ── Zoom / Debug / Rulers / Toast ──────────────────────
   zoomControls: ZoomControls | null;
+  /** Last canvas viewport (zoom/pan) — kept here so a tab change, which
+   *  unmounts the canvas, restores the view the user was working in. */
+  canvasView: CanvasView | null;
+  setCanvasView: (view: CanvasView) => void;
+  /** Which figure set the view was last AUTO-FITTED for. Session-scoped on
+   *  purpose: the canvas unmounts on every tab switch, so a component ref cannot
+   *  remember "already fitted" — it reset and the remount refit threw the
+   *  restored viewport away (measured live; acceptance 7694). */
+  canvasFitKey: string | null;
+  setCanvasFitKey: (key: string) => void;
   showHitmap: boolean;
   showRulers: boolean;
   rulerUnit: "mm" | "inch";
@@ -99,7 +138,10 @@ interface EditorState {
   loadHitmap: () => Promise<void>;
   loadFiles: () => Promise<void>;
   loadThemes: () => Promise<void>;
-  loadDatatable: () => Promise<void>;
+  /** @param options.isCurrent — apply the server's table only when this still
+   *  returns true after the read (the Data pane uses it to ignore a response a
+   *  newer edit has overtaken). */
+  loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
   addFigure: (path: string) => Promise<void>;
@@ -132,6 +174,7 @@ interface EditorState {
   sendToBack: (id: string) => void;
 
   selectElement: (id: string | null, bbox?: BBox, figureId?: string) => void;
+  setElementCell: (row: number, col: number) => void;
   switchFile: (path: string) => Promise<void>;
   switchTheme: (theme: string) => Promise<void>;
   updateOverrides: (overrides: StyleOverrides) => Promise<void>;
@@ -141,6 +184,7 @@ interface EditorState {
   // ── Sync actions ───────────────────────────────────────
   loadCalls: (axIndex: number) => Promise<void>;
   loadLabels: (axIndex: number) => Promise<void>;
+  loadElementDetails: () => Promise<void>;
   highlightDataForElement: (elementId: string | null) => void;
   refreshAfterMutation: () => Promise<void>;
 
@@ -159,6 +203,10 @@ interface EditorState {
   toggleRulerUnit: () => void;
   showToast: (msg: string, type?: "info" | "success" | "error") => void;
   clearToast: () => void;
+
+  /** Plot family picked in the rail; the Data pane plots with it. */
+  plotFamily: string | null;
+  setPlotFamily: (family: string | null) => void;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -169,12 +217,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedFigureIds: [],
   hitmapImage: null,
   colorMap: {},
+  hitmapRecipe: null,
   loading: false,
   selectedElement: null,
   selectedBbox: null,
+  elementDetails: null,
+  elementCell: null,
+  elementShapes: {},
   files: [],
   currentFile: null,
   workingDir: null,
+  projectId: null,
+  projectName: null,
   datatableTabs: {},
   activeTabId: null,
   elementDataMap: {},
@@ -192,6 +246,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   snapEnabled: true,
   activeSnapGuides: [],
   zoomControls: null,
+  canvasView: null,
+  canvasFitKey: null,
   showHitmap: false,
   showRulers: true,
   rulerUnit:
@@ -239,7 +295,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!clipboard) return;
     const newFig: PlacedFigure = {
       ...clipboard,
-      id: crypto.randomUUID(),
+      id: newId(),
       x: clipboard.x + 20,
       y: clipboard.y + 20,
       groupId: undefined,
@@ -277,6 +333,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   // ── Load actions ────────────────────────────────────────
   loadPreview: async () => {
+    const session = apiSessionId();
     set({ loading: true });
     try {
       const dark = get().darkMode;
@@ -291,7 +348,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const recipePath =
           currentFile ?? recipeParam.split("/").pop() ?? "preview";
         const fig: PlacedFigure = {
-          id: crypto.randomUUID(),
+          id: newId(),
           path: recipePath,
           x: 0,
           y: 0,
@@ -316,17 +373,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }));
       }
     } catch (e) {
+      if (e instanceof ApiSessionExpired) return;
       console.error("[Editor] Failed to load preview:", e);
-      get().showToast("Failed to load preview", "error");
+      get().showToast(gettext("Failed to load preview"), "error");
     } finally {
-      set({ loading: false });
+      if (isApiSessionCurrent(session)) set({ loading: false });
     }
   },
 
   loadHitmap: async () => {
+    // The raster the server renders depicts the recipe IT has open, and the
+    // frontend mirrors that as currentFile — falling back to the selected
+    // figure's own recipe while the files list is still resolving. Captured
+    // BEFORE the request: a response that lands after the user opened something
+    // else must not re-label itself as that figure's picture.
+    const forRecipe =
+      get().currentFile ??
+      get().placedFigures.find((f) => f.id === get().selectedFigureId)?.path ??
+      null;
     try {
       const data = await api.get<HitmapResponse>("hitmap");
-      set({ hitmapImage: data.image, colorMap: data.color_map });
+      set({ hitmapImage: data.image, colorMap: data.color_map, hitmapRecipe: forRecipe });
     } catch (e) {
       console.error("[Editor] Failed to load hitmap:", e);
     }
@@ -335,10 +402,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   loadFiles: async () => {
     try {
       const data = await api.get<FilesResponse>("api/files");
+      const workingDir = data.working_dir ?? null;
+      // TODO 142/149: remember the project FigRecipe just opened as an
+      // app-local preference, kept separate from the hub's global
+      // "Current Project" state (namespaced localStorage key).
+      rememberLastProject(workingDir);
       set({
         files: data.tree,
         currentFile: data.current_file,
-        workingDir: data.working_dir ?? null,
+        workingDir,
       });
     } catch (e) {
       console.error("[Editor] Failed to load files:", e);
@@ -354,7 +426,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
 
-  loadDatatable: async () => {
+  loadDatatable: async (options?) => {
     try {
       const data = await api.get<{
         columns: ColumnDef[];
@@ -364,9 +436,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           { columns: string[]; row_indices: number[] }
         >;
       }>("datatable/data");
+      // A read that began before a newer edit must not put the older table back
+      // on screen: the Data pane's save queue says whether this response is
+      // still current, and the newest edit answers for the table anyway.
+      const { isCurrent } = options ?? {};
+      if (isCurrent && !isCurrent()) return;
       const tab: TabData = {
         id: "main",
-        label: "Data",
+        label: gettext("Data"),
         columns: data.columns ?? [],
         rows: data.rows ?? [],
       };
@@ -426,6 +503,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedElement: elementId,
       selectedBbox: bbox ?? null,
       selectedFigureId: figureId ?? get().selectedFigureId,
+      // A new element starts un-detailed at the whole element: the cell
+      // belongs to the previous pick and must not leak into its details.
+      elementCell: null,
+      elementDetails: elementId ? get().elementDetails : null,
     });
     // Sync gap fix: load calls/labels and highlight data rows
     if (bbox?.ax_index !== undefined) {
@@ -433,6 +514,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       get().loadLabels(bbox.ax_index);
     }
     get().highlightDataForElement(elementId);
+    if (elementId) get().loadElementDetails();
+  },
+
+  setElementCell: (row, col) => {
+    if (!get().selectedElement) return;
+    set({ elementCell: { row, col } });
+    get().loadElementDetails();
   },
 
   switchFile: async (path) => get().addFigure(path),
@@ -469,6 +557,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   toggleHitmap: () => set((s) => ({ showHitmap: !s.showHitmap })),
+  setCanvasView: (view) => set({ canvasView: view }),
+  setCanvasFitKey: (key) => set({ canvasFitKey: key }),
   toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
   toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),
   toggleRulerUnit: () =>
@@ -486,4 +576,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   clearToast: () => set({ toast: null }),
+
+  plotFamily: null,
+  setPlotFamily: (family) => set({ plotFamily: family }),
 }));
+
+/** Project content and undo targets belong to one mounted workspace. */
+export function resetEditorWorkspace(): void {
+  const { darkMode, snapEnabled, showRulers, rulerUnit, showHitmap } = useEditorStore.getState();
+  useEditorStore.setState({
+    ...useEditorStore.getInitialState(),
+    darkMode, snapEnabled, showRulers, rulerUnit, showHitmap,
+  }, true);
+}

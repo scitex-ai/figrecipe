@@ -40,7 +40,6 @@ from ._branding import rebrand_text as _rebrand_text
 # imports keep working with a single-fire DeprecationWarning pointing at the
 # new path. See figrecipe._compat for details.
 from ._compat import install_module_aliases as _install_module_aliases
-from ._qr import add_qr_to_figure
 
 _install_module_aliases()
 del _install_module_aliases
@@ -129,6 +128,8 @@ except ImportError:  # pragma: no cover — only on ancient Pythons
 # attribute) for every public name; each entry imports lazily on first use.
 # =============================================================================
 _LAZY_ATTRS: dict[str, tuple[str, str]] = {
+    # QR diagnostics and their optional logger load only when QR is requested.
+    "add_qr_to_figure": ("._qr", "add_qr_to_figure"),
     # ._api._public
     "crop": ("._api._public", "crop"),
     "extract_data": ("._api._public", "extract_data"),
@@ -196,6 +197,8 @@ _LAZY_ATTRS: dict[str, tuple[str, str]] = {
     "KIND_ALIASES": ("._spec_builders", "KIND_ALIASES"),
     # ._render
     "render_spec_to_bytes": ("._render", "render_spec_to_bytes"),
+    # ._integrations._stats_plot_spec (neutral stats plot spec -> editable recipe)
+    "from_stats_plot_spec": ("._integrations._stats_plot_spec", "from_stats_plot_spec"),
     # ._utils._nice_lim  (issue #140)
     "nice_lim": ("._utils._nice_lim", "nice_lim"),
     # ._utils._termplot
@@ -252,6 +255,23 @@ def __getattr__(name: str):
         value = importlib.import_module(_MODULE_ALIASES[name], __name__)
         globals()[name] = value
         return value
+
+    # figrecipe is often injected in place of matplotlib.pyplot. It answers to
+    # `subplots`, which convinces a script it holds pyplot, so the next pyplot
+    # call lands here. Say what to use instead rather than "no attribute" —
+    # see ._pyplot_surface for why most of these are NOT proxied.
+    from ._pyplot_surface import pyplot_guidance, pyplot_proxy
+
+    proxied = pyplot_proxy(name)
+    if proxied is not None:
+        globals()[name] = proxied
+        return proxied
+    hint = pyplot_guidance(name)
+    if hint is not None:
+        raise AttributeError(
+            f"module {__name__!r} has no attribute {name!r}. figrecipe is a "
+            f"partial pyplot substitution: {hint}."
+        )
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -341,6 +361,7 @@ __all__ = [
     "ALL_KINDS",
     "KIND_ALIASES",
     "render_spec_to_bytes",
+    "from_stats_plot_spec",
     "termplot",
     # Graph / style / editor helpers
     "draw_graph",

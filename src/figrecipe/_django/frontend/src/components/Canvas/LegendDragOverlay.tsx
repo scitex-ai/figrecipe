@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface Props {
   /** Legend bbox in image pixels (x, y = top-left). */
@@ -69,7 +70,7 @@ export function LegendDragOverlay({ bbox, zoom, onDragEnd }: Props) {
         cursor: "move",
       }}
       onMouseDown={handleMouseDown}
-      title="Drag to move legend"
+      title={gettext("Drag to move legend")}
     />
   );
 }

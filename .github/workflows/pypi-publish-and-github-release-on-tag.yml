@@ -1,6 +1,21 @@
 name: release
 
-# Tag-driven release pipeline — SELF-HOSTED (Spartan CPU) via the scitex-ci SIF.
+# Tag-driven release pipeline — SELF-HOSTED via the CI SIF, destination set by
+# the repo Actions Variable CI_RUNS_ON.
+#
+# THE FALLBACK IS `ubuntu-latest` AND THAT IS DELIBERATE. It used to be
+# `["self-hosted","Linux","X64","scitex-ci"]` — a label carried only by the
+# Spartan runners, all four of which were measured OFFLINE on 2026-08-15. An
+# unset CI_RUNS_ON therefore queued a RELEASE against a label no online runner
+# served: forever, silently, because GitHub queues an unmatchable job instead of
+# rejecting it.
+#
+# This job cannot actually run on a hosted runner — exec-in-sif.sh requires an
+# apptainer and the CI SIF, and says so as a hard error. So the fallback buys a
+# FAST, LOUD failure instead of a hang. For a release that is the whole
+# difference: a tag push that errors in a minute gets fixed, while a tag push
+# that sits in "queued" looks like a slow queue on exactly the day someone is
+# waiting for the artifact.
 #
 # The intended operator flow is:
 #
@@ -11,10 +26,11 @@ name: release
 #   1. test          — matrix pytest INSIDE the SIF. Must pass or the pipeline
 #                      halts; nothing is published until tests are green on the
 #                      tagged commit.
-#   2. build         — wheel + sdist built INSIDE the SIF, uploaded as artifact.
+#   2. build         — after real tests and strict native frontend controls,
+#                      wheel + sdist built INSIDE the SIF, uploaded as artifact.
 #   3. publish       — PyPI via MANUAL OIDC trusted publishing INSIDE the SIF.
 #   4. release       — GitHub Release with CHANGELOG notes + artifacts.
-#   5. sync-main     — open a develop→main PR (admin-merge) so main
+#   5. sync-main     — open a develop→main PR with a normal merge so main
 #                      always equals the latest released commit. Skipped
 #                      if main already matches.
 #
@@ -53,10 +69,85 @@ on:
 env:
   SCITEX_CI_APPTAINER: ${{ vars.SCITEX_CI_APPTAINER }}
   SCITEX_CI_SIF: ${{ vars.SCITEX_CI_SIF }}
+  SCITEX_CI_SIF_SHA256: ${{ vars.SCITEX_CI_SIF_SHA256 }}
+  RUN_E2E: "1"
 
 jobs:
+  frontend:
+    name: frontend-build-on-ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, scitex-ci]
+    timeout-minutes: 15
+    steps:
+      - name: Resolve immutable release tag
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            v="${GITHUB_REF#refs/tags/}"
+          else
+            v="${{ inputs.version }}"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Prepare job-owned state and caches
+        run: |
+          set -euo pipefail
+          owned=$(mktemp -d "${RUNNER_TEMP:?}/figrecipe-context.XXXXXXXX")
+          mkdir -p "$owned/tmp" "$owned/cache" "$owned/config" "$owned/scitex" "$owned/mpl"
+          for pair in "SCITEX_DIR=$owned/scitex" "TMPDIR=$owned/tmp" "XDG_CACHE_HOME=$owned/cache" "XDG_CONFIG_HOME=$owned/config" "MPLCONFIGDIR=$owned/mpl" "MPLBACKEND=Agg" "PIP_CACHE_DIR=$owned/cache/pip" "UV_CACHE_DIR=$owned/cache/uv" "PYTHONPYCACHEPREFIX=$owned/cache/pycache" "RUN_E2E=1"; do
+            printf '%s\n' "$pair" >> "${GITHUB_ENV:?}"
+          done
+      - name: Check out figrecipe
+        uses: actions/checkout@v4
+        with:
+          path: figrecipe
+          ref: ${{ steps.ver.outputs.version }}
+      - name: Check out the pinned canonical SDK owner
+        uses: actions/checkout@v4
+        with:
+          repository: scitex-ai/scitex-sdk
+          # Immutable library source genuinely published as scitex-sdk 0.3.0.
+          ref: 9f5747a8ef5431e7412cdafa58f0dc0f3609a74d
+          path: scitex-sdk
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.2"
+      - name: Assert the checkout is the declared SDK source and version
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        env:
+          SCITEX_SDK_DIR: ${{ github.workspace }}/scitex-sdk
+        run: |
+          set -euo pipefail
+          declared_commit="$(node -p "require('./package.json').scitexSdk.commit")"
+          declared_version="$(node -p "require('./package.json').scitexSdk.version")"
+          actual_commit="$(git -C "$SCITEX_SDK_DIR" rev-parse HEAD)"
+          owner_version="$(node -p "require(process.env.SCITEX_SDK_DIR + '/src/scitex_sdk/package.json').version")"
+          test "$actual_commit" = "$declared_commit" || { echo "::error::SDK source pin mismatch"; exit 1; }
+          test "$owner_version" = "$declared_version" || { echo "::error::SDK frontend version mismatch"; exit 1; }
+      - name: Prepare job-owned npm configuration
+        run: |
+          touch "${TMPDIR:?}/npm-userconfig" "${TMPDIR:?}/npm-globalconfig"
+          printf '%s\n' "npm_config_cache=${XDG_CACHE_HOME:?}/npm" "npm_config_logs_dir=${XDG_CACHE_HOME:?}/npm-logs" "npm_config_userconfig=${TMPDIR:?}/npm-userconfig" "npm_config_globalconfig=${TMPDIR:?}/npm-globalconfig" >> "${GITHUB_ENV:?}"
+      - name: Install frontend deps
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: npm ci --no-audit --no-fund
+      - name: Validate public exports, symbols, Python floor and lock
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: node --experimental-strip-types tests/scitexSdkContract.test.ts
+      - name: Run the native frontend controls
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: |
+          set -euo pipefail
+          for test_file in tests/*.test.*; do
+            node --experimental-strip-types "$test_file"
+          done
+      - name: Strict TypeScript and production build
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: npm run build
+      - name: Strict library build
+        working-directory: figrecipe/src/figrecipe/_django/frontend
+        run: npm run build:lib
+
   test:
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     strategy:
       fail-fast: false
       matrix:
@@ -85,8 +176,8 @@ jobs:
         run: bash .github/ci/exec-in-sif.sh run-in-sif.sh ${{ matrix.python-version }}
 
   build:
-    needs: test
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    needs: [test, frontend]
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -107,7 +198,7 @@ jobs:
       # build-in-sif.sh installs the `build` frontend into a writable --target
       # inside the SIF, then `python -m build` → dist/. fail-loud on empty dist.
       - name: Build wheel + sdist in the CI SIF (apptainer exec)
-        run: bash .github/ci/exec-in-sif.sh build-in-sif.sh 3.12
+        run: bash .github/ci/exec-in-sif.sh build-in-sif.sh 3.12 ${{ steps.ver.outputs.version }}
       # upload-artifact is a JS action — runs fine on the self-hosted runner.
       - uses: actions/upload-artifact@v4
         with:
@@ -116,7 +207,7 @@ jobs:
 
   publish:
     needs: build
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     environment:
       name: pypi
       url: https://pypi.org/p/figrecipe
@@ -128,6 +219,8 @@ jobs:
       # Need the repo checked out so .github/ci/exec-in-sif.sh +
       # publish-in-sif.sh are on disk (the build job uploaded only dist/).
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.version }}
       - uses: actions/download-artifact@v4
         with:
           name: dist
@@ -142,7 +235,7 @@ jobs:
 
   release:
     needs: [build, publish]
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     permissions:
       contents: write
     steps:
@@ -165,21 +258,33 @@ jobs:
           if [ ! -s release-notes.md ]; then
             echo "Release v${VERSION}. See CHANGELOG.md for details." > release-notes.md
           fi
+      # The `release` job runs on the self-hosted Spartan runner, where
+      # $HOME=/home/ywatanabe is shared with the operator's account. `gh` loads
+      # that account's machine-local config at startup, and there it ABORTS:
+      #   failed to create root command: failed to read configuration:
+      #   invalid config file /home/ywatanabe/.config/gh/config.yml: invalid yaml
+      # That happens during config-load, BEFORE gh ever reads GH_TOKEN -- which
+      # is why the token below (already the correct built-in one) never helped,
+      # and why no PAT would help either. The cure is to stop depending on the
+      # runner's `gh` at all: this JS action calls the GitHub Releases API
+      # directly with the built-in per-run ${{ github.token }} that Actions
+      # injects (the job already grants `permissions: contents: write`).
+      # Same fix as scitex-ui#68 / scitex-writer / scitex-todo / scitex-dev /
+      # scitex-agent-container (ci-gh-selfhosted-release-guard).
       - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ needs.build.outputs.version }}" \
-            --title "${{ needs.build.outputs.version }}" \
-            --notes-file release-notes.md \
-            dist/*
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          name: ${{ needs.build.outputs.version }}
+          body_path: release-notes.md
+          files: dist/*
+          fail_on_unmatched_files: true
 
   sync-main:
     # Open develop→main PR so main always equals the latest released
-    # commit. Branch-protected mains require PR review; this job tries
-    # admin-merge but leaves the PR open if that isn't allowed.
+    # commit. A normal protected merge leaves the PR open until gates pass.
     needs: publish
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
     permissions:
       contents: write
       pull-requests: write
@@ -191,6 +296,15 @@ jobs:
       - name: Open develop→main PR if diverged
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same self-hosted $HOME=/home/ywatanabe problem as the release job:
+          # gh aborts while parsing the operator's machine-local
+          # ~/.config/gh/config.yml ("invalid yaml") before it ever reads
+          # GH_TOKEN. These are genuine gh-CLI operations (pr list/create/merge)
+          # with no drop-in JS action, so rather than remove gh we point it at a
+          # per-job config dir -- exactly as scitex-math#5 does for
+          # GIT_CONFIG_GLOBAL. gh then starts clean and authenticates from the
+          # built-in GH_TOKEN above. No PAT involved.
+          GH_CONFIG_DIR: ${{ runner.temp }}/gh
         run: |
           set -e
           git fetch origin main
@@ -209,5 +323,5 @@ jobs:
           else
             echo "Reusing existing PR #${EXISTING}"
           fi
-          gh pr merge "$EXISTING" --merge --admin \
-            || echo "Admin merge unavailable; PR left open for manual merge."
+          gh pr merge "$EXISTING" --merge \
+            || echo "Normal merge gates pending; PR left open for review."

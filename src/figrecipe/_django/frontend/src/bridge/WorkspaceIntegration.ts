@@ -7,6 +7,8 @@
 
 import { onEvent } from "./EventBus";
 import { switchRecipeFile } from "./MountPoint";
+import { api } from "../api/client";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 /** Cleanup functions for event subscriptions. */
 const cleanups: Array<() => void> = [];
@@ -39,7 +41,7 @@ export function wireWorkspaceBridge(visEditor: any): void {
   cleanups.push(
     onEvent("propertyChange", ({ key, value }) => {
       console.log("[Bridge] figrecipe property changed:", key, value);
-      visEditor.updateStatusBar?.(`Property ${key} updated`);
+      visEditor.updateStatusBar?.(interpolate(gettext("Property %s updated"), [key]));
     }),
   );
 
@@ -54,7 +56,7 @@ export function wireWorkspaceBridge(visEditor: any): void {
         "rows",
       );
       visEditor.updateStatusBar?.(
-        `Data: ${columns.length} columns, ${rowCount} rows`,
+        interpolate(gettext("Data: %s columns, %s rows"), [columns.length, rowCount]),
       );
     }),
   );
@@ -63,7 +65,7 @@ export function wireWorkspaceBridge(visEditor: any): void {
   cleanups.push(
     onEvent("statBracketAdd", (bracket) => {
       console.log("[Bridge] figrecipe stat bracket added:", bracket.bracket_id);
-      visEditor.updateStatusBar?.(`Stat bracket added: ${bracket.stars}`);
+      visEditor.updateStatusBar?.(interpolate(gettext("Stat bracket added: %s"), [bracket.stars]));
     }),
   );
 
@@ -114,26 +116,17 @@ export async function runStatAndRenderBracket(
   bracket_id: string;
   preview: string;
 }> {
-  const statResp = await fetch("/apps/figrecipe/figrecipe/stats/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ test_name: testName, groups }),
-  });
-  const { result, annotation } = await statResp.json();
+  const { result, annotation } = await api.post<{ result: any; annotation: any }>(
+    "stats/run", { test_name: testName, groups },
+  );
 
-  const bracketResp = await fetch(
-    "/apps/figrecipe/figrecipe/stats/add_bracket",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+  const { bracket_id, preview } = await api.post<{ bracket_id: string; preview: string }>(
+    "stats/add_bracket", {
         annotation,
         ax_index: axIndex,
         group_positions: groupPositions,
-      }),
     },
   );
-  const { bracket_id, preview } = await bracketResp.json();
 
   console.log(
     `[Bridge] Stat → bracket: ${testName} → ${annotation.stars} (${bracket_id})`,

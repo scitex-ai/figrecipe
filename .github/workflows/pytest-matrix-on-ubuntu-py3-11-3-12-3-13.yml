@@ -1,0 +1,89 @@
+name: tests
+
+# Self-hosted (Spartan CPU) pytest matrix.
+#
+# SIF-based self-hosted CI (operator standardization 2026-06-18). The `tests`
+# job runs INSIDE the pre-built, reused scitex-ci SIF (`apptainer exec
+# ci-cpu.sif`) on the Spartan CPU runner, instead of the old bare-runner
+# `actions/setup-python@v5 + pip install` steps. Those steps required a
+# Python tool cache + apt (for fd) that a bare Spartan compute node does NOT
+# have, so the job failed at init (steps=0) and every run sat queued forever
+# behind an OFFLINE, wrong-labelled runner.
+#
+# The shared ci-cpu.sif bakes python 3.11/3.12/3.13 + uv + fd +
+# scitex-dev[all,dev] DEPS (NOT figrecipe's own — matplotlib/seaborn/django/
+# Pillow/networkx/etc.), so the job layers THIS checkout + its [all,dev]
+# extras WITH dependency resolution into a writable --target dir inside the
+# SIF (see .github/ci/run-in-sif.sh). fd is baked, so `audit.require-fd: true`
+# (.scitex/dev/config.yaml) passes without the old apt-get fd-find step.
+# fail-loud: a missing SIF/shim is a HARD error, never a bare-runner fallback.
+#
+# runs-on driven by repo Actions Variable CI_RUNS_ON; SIF + apptainer paths
+# come from SCITEX_CI_SIF / SCITEX_CI_APPTAINER. Hosted workflows (import-smoke,
+# quality-audit, rtd, publish) stay on ubuntu-latest — untouched.
+#
+# THE FALLBACK IS `ubuntu-latest`, DELIBERATELY, and it does not mean this job
+# works there. It cannot: exec-in-sif.sh needs an apptainer and the CI SIF, and
+# a hosted runner has neither — so an unset CI_RUNS_ON produces a FAST, LOUD
+# failure naming exactly what was missing.
+#
+# That is the point. The fallback used to be `["self-hosted","Linux","X64",
+# "scitex-ci"]`, a label carried ONLY by the Spartan runners. Measured
+# 2026-08-15: all four of those were offline while the four scitex-*-org-cpu
+# machines were up. An unset variable therefore queued the job against a label
+# no online runner served — forever, with no error anywhere, because GitHub
+# queues an unmatchable job rather than rejecting it.
+#
+# So the choice is not "fast vs slow", it is "loud failure vs silent hang", and
+# a silent hang is the one failure mode nobody investigates in time. Do not
+# "fix" this back to a self-hosted label: the variable is where the working
+# destination belongs, and the fallback exists only for when the variable is
+# absent.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 7 * * *"  # nightly 07:00 UTC
+  workflow_dispatch:
+
+env:
+  SCITEX_CI_APPTAINER: ${{ vars.SCITEX_CI_APPTAINER }}
+  SCITEX_CI_SIF: ${{ vars.SCITEX_CI_SIF }}
+  SCITEX_CI_SIF_SHA256: ${{ vars.SCITEX_CI_SIF_SHA256 }}
+  RUN_E2E: "1"
+
+jobs:
+  test:
+    # Job name kept verbatim — these are the required status checks on develop.
+    name: pytest-matrix-on-ubuntu-py${{ matrix.python-version }}
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    # The complete owning plotting, protocol and end-to-end suite runs under
+    # xdist and coverage. Keep the existing 60-minute gate for busy runners.
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests in the reused CI SIF (apptainer exec — deps layered, not on the bare runner)
+        run: bash .github/ci/exec-in-sif.sh run-in-sif.sh ${{ matrix.python-version }}
+      - name: Prepare owned Codecov Git configuration and caches
+        if: always() && matrix.python-version == '3.12'
+        run: |
+          set -euo pipefail
+          owned=$(mktemp -d "${RUNNER_TEMP:?}/figrecipe-codecov.XXXXXXXX")
+          mkdir -p "$owned/cache" "$owned/config" "$owned/tmp"
+          touch "$owned/gitconfig"
+          for pair in "GIT_CONFIG_GLOBAL=$owned/gitconfig" "XDG_CACHE_HOME=$owned/cache" "XDG_CONFIG_HOME=$owned/config" "TMPDIR=$owned/tmp"; do
+            printf '%s\n' "$pair" >> "${GITHUB_ENV:?}"
+          done
+      - name: Upload coverage to Codecov
+        if: always() && matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false

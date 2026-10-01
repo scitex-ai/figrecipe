@@ -10,12 +10,21 @@ import zipfile
 from pathlib import Path
 from typing import Optional, Union
 
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 from ._extract import (
     extract_data_from_record,
     extract_spec_from_record,
     extract_style_from_record,
 )
 from ._paths import DATA_FILENAME, EXPORTS_DIR, SPEC_FILENAME, STYLE_FILENAME
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def save_bundle(
@@ -154,11 +163,11 @@ def save_bundle(
                     zf.write(file, arcname)
 
     if verbose:
-        print(f"Saved bundle: {path}")
-        print(f"  (extracts to: {path.stem}/)")
+        console.info(f"Saved bundle: {path}")
+        console.info(f"  (extracts to: {path.stem}/)")
         with zipfile.ZipFile(path, "r") as zf:
             for info in zf.infolist():
                 if not info.is_dir():
-                    print(f"  {info.filename}: {info.file_size} bytes")
+                    console.info(f"  {info.filename}: {info.file_size} bytes")
 
     return path

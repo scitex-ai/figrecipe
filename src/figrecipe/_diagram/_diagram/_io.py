@@ -4,14 +4,21 @@
 
 from typing import TYPE_CHECKING, Any, Dict
 
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
 try:
     from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ._core import Diagram
@@ -225,7 +232,10 @@ def save_diagram_recipe(
 
 def _add_watermark(path, dpi=200):
     """Stamp 'Plotted by {BRAND_NAME}' on bottom-right of a saved image."""
-    from PIL import Image, ImageDraw, ImageFont
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from figrecipe._branding import BRAND_NAME
 

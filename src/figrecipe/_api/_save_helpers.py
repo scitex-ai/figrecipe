@@ -5,7 +5,16 @@
 from pathlib import Path
 from typing import Optional
 
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 from .._utils._grid import grid_id
+
+console = slogging.getConsole(f"{__name__}.console")
 
 # stx_* plotters that build their own make_axes_locatable marginals at draw
 # time and re-build them on replay. Their recorded axes is the POST-divide
@@ -73,12 +82,15 @@ def crop_to_content_bbox(
     ``_capture_axes_bboxes`` keeps working), or ``None`` on failure (the caller
     then falls back to the content-aware crop with a warning).
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from .._utils._crop import crop, mm_to_pixels
 
     try:
-        l, b, w, h = (float(v) for v in content_bbox)
+        left, bottom, width, height = (float(v) for v in content_bbox)
     except (TypeError, ValueError):
         return None
 
@@ -86,11 +98,17 @@ def crop_to_content_bbox(
         img_w, img_h = img.size
 
     # content_bbox is matplotlib y-up; PIL crop box is y-down (origin top-left).
-    # top edge in mpl fraction = b + h ; bottom edge = b.
-    left_px = round(l * img_w) - mm_to_pixels(margins_mm["left"], dpi)
-    right_px = round((l + w) * img_w) + mm_to_pixels(margins_mm["right"], dpi)
-    upper_px = round((1.0 - (b + h)) * img_h) - mm_to_pixels(margins_mm["top"], dpi)
-    lower_px = round((1.0 - b) * img_h) + mm_to_pixels(margins_mm["bottom"], dpi)
+    # top edge in mpl fraction = bottom + height; bottom edge = bottom.
+    left_px = round(left * img_w) - mm_to_pixels(margins_mm["left"], dpi)
+    right_px = round((left + width) * img_w) + mm_to_pixels(
+        margins_mm["right"], dpi
+    )
+    upper_px = round((1.0 - (bottom + height)) * img_h) - mm_to_pixels(
+        margins_mm["top"], dpi
+    )
+    lower_px = round((1.0 - bottom) * img_h) + mm_to_pixels(
+        margins_mm["bottom"], dpi
+    )
 
     if right_px - left_px <= 0 or lower_px - upper_px <= 0:
         return None
@@ -190,7 +208,10 @@ def _crop_to_axes_size(
     dict or None
         Crop offset dictionary if cropping was performed, None otherwise
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from .._utils._crop import mm_to_pixels
 
@@ -266,6 +287,56 @@ def _crop_to_axes_size(
     }
 
 
+def _reconcile_removed_artists(
+    rec_ax, ax_record, key: str, live_ids: set, referenced: set
+) -> list:
+    """Drop this axes' recorded calls whose artists have all left the figure.
+
+    Returns the ``DroppedCall`` list. A no-op when the axes recorded nothing
+    artist-bearing, so an ordinary figure's recipe is untouched -- that is the
+    property the no-removal controls assert.
+    """
+    from .._recorder._artists import prune
+
+    registry = getattr(rec_ax, "_artist_refs", None) or {}
+    if not registry:
+        return []
+    dropped: list = []
+    for half, records in (
+        ("calls", ax_record.calls),
+        ("decorations", ax_record.decorations),
+    ):
+        kept, gone = prune(records, registry, live_ids, referenced, key, half)
+        records[:] = kept  # in place: the record object is shared with the caller
+        dropped.extend(gone)
+    return dropped
+
+
+def _annotate_hidden_artists(rec_ax, ax_record, key: str, live_ids: set) -> list:
+    """Write each hidden artist's final visibility into its recorded call.
+
+    The removal repair above DROPS calls whose artists left the figure. This is
+    its counterpart for an artist the figure still holds but no longer PAINTS
+    (card figrecipe-hidden-artist-set-visible-false-not-recorded-20260927):
+    nothing is dropped -- the artist keeps its data and can be shown again -- and
+    the record gains ``visible: False``, so the replay draws the figure that was
+    saved instead of one the validator rejects. Returns the ``AnnotatedCall``
+    list; a no-op on an ordinary figure.
+    """
+    from .._recorder._visibility import annotate_hidden
+
+    registry = getattr(rec_ax, "_artist_refs", None) or {}
+    if not registry:
+        return []
+    annotated: list = []
+    for half, records in (
+        ("calls", ax_record.calls),
+        ("decorations", ax_record.decorations),
+    ):
+        annotated.extend(annotate_hidden(records, registry, live_ids, key, half))
+    return annotated
+
+
 def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     """Capture bounding boxes of all axes for alignment/snap functionality.
 
@@ -319,6 +390,28 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     # its own — so for a multi-subplot figure all subplots overwrote r0c0's bbox,
     # and r1c0/r2c0 ended up with no bbox at all. Marginal axes created via
     # make_axes_locatable are not wrapped, so they are correctly skipped here.
+    # Artist lifecycle, REPAIR half (card figrecipe-recipe-keeps-artists-removed-
+    # before-save-20260906). A call whose artist was removed after being drawn
+    # stays in the record, so the recipe replays what this figure does not show --
+    # and validation then rejects a figure that is CORRECT. Here, where a live
+    # axes sits next to its own record as the recipe is being written, the record
+    # is reconciled: a recorded call whose artists are ALL provably off the figure
+    # is dropped, so the recipe describes the figure that was saved.
+    #
+    # The pairing is the exact one above -- rec_ax knows its own `_ax` and
+    # `_position` -- NOT the positional zip the count check uses, because a
+    # MUTATING step must never act on a mis-paired axes.
+    _live_ids: Optional[set] = None
+    _referenced: set = set()
+    _reconciled: list = []
+    try:
+        from .._recorder._artists import live_artist_ids, referenced_call_ids
+
+        _live_ids = live_artist_ids(fig)
+        _referenced = referenced_call_ids(fig.record.axes.values())
+    except Exception:
+        pass
+
     matched_records = set()
     for row in fig.axes:
         for rec_ax in row:
@@ -358,6 +451,28 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                 }
             except Exception:
                 pass  # best-effort; reproducer leaves the style default alone
+            # Reconcile THIS axes' record to the artists it still shows. Both
+            # halves are pruned: ax.text() is a DECORATION that creates its own
+            # artist, and the card's headline case is a removed decoration.
+            if _live_ids is not None:
+                try:
+                    _reconciled.extend(
+                        _reconcile_removed_artists(
+                            rec_ax, ax_record, key, _live_ids, _referenced
+                        )
+                    )
+                except Exception:
+                    pass  # best-effort: a reconcile must not break a save
+                # ...and for the artists it still HOLDS but no longer paints, the
+                # record gains their final visibility (card
+                # figrecipe-hidden-artist-set-visible-false-not-recorded-20260927).
+                # Nothing is dropped here: a hidden artist still carries the
+                # user's data and can be shown again, so only the paint state is
+                # written down.
+                try:
+                    _annotate_hidden_artists(rec_ax, ax_record, key, _live_ids)
+                except Exception:
+                    pass  # best-effort: an annotation must not break a save
             matched_records.add(key)
 
     # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
@@ -369,6 +484,62 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
         for key, mpl_ax in zip(remaining, mpl_axes):
             if key.startswith("ax_mm_"):
                 fig.record.axes[key].bbox = _to_cropped(mpl_ax.get_position())
+
+    # Artist lifecycle (card figrecipe-recipe-keeps-artists-removed-before-save-20260906).
+    # A call whose artist was removed after being drawn STAYS in the record, so a
+    # replay draws what this figure does not show. This is the one place where a
+    # live axes sits next to its record at the moment the recipe is written, so
+    # it is where the mismatch can be noticed -- and only noticed: nothing here
+    # removes, re-creates or hides an artist, and replay is not changed. The
+    # check is conservative (a call's artist COUNT is not knowable, only a lower
+    # bound), so it can miss a removal but never invents one.
+    #
+    # BOTH halves of the record go in. An AxesRecord splits `calls` (the data
+    # plotters) from `decorations`, and ax.text() / ax.annotate() / ax.axhline()
+    # are DECORATIONS that create their own artist -- passing `calls` alone made
+    # the card's own headline case (a text drawn then removed) unreachable.
+    try:
+        from .._recorder._lifecycle import (
+            detect_removals,
+            warn_reconciled,
+            warn_removals,
+        )
+
+        # Report the repair first: the calls below are measured on the PRUNED
+        # record, so the count check now reports only what the reconcile could
+        # not repair (a call that made several artists and lost some of them,
+        # an axes whose artists were never registered, an inset sub-panel).
+        warn_reconciled(_reconciled)
+
+        lifecycle_reports = []
+        for key, mpl_ax in zip(fig.record.axes, fig.fig.get_axes()):
+            ax_record = fig.record.axes[key]
+            report = detect_removals(
+                key,
+                list(ax_record.calls) + list(ax_record.decorations),
+                _live_artist_count(mpl_ax),
+            )
+            if report is not None:
+                lifecycle_reports.append(report)
+        warn_removals(lifecycle_reports)
+    except Exception:
+        pass  # best-effort, like the captures above: an audit must not break a save
+
+
+def _live_artist_count(mpl_ax) -> int:
+    """Artists the axes currently shows, over the containers plotting appends to.
+
+    ``texts`` intentionally includes figrecipe's own decorations (panel letters,
+    stats brackets, captions), which only ever INFLATES the count — and an
+    inflated count makes the removal check quieter, never noisier.
+    """
+    total = 0
+    for container in ("lines", "collections", "patches", "texts", "images"):
+        try:
+            total += len(getattr(mpl_ax, container, None) or [])
+        except Exception:
+            continue
+    return total
 
 
 def _capture_content_layout(fig) -> None:
@@ -493,9 +664,9 @@ def save_hitmap(
             hitmap_img.save(hitmap_path)
 
         if verbose:
-            print(f"  Hitmap: {hitmap_path}")
+            console.info(f"  Hitmap: {hitmap_path}")
         return hitmap_path
     except Exception as e:
         if verbose:
-            print(f"  Hitmap generation failed: {e}")
+            console.error(f"  Hitmap generation failed: {e}")
         return None

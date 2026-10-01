@@ -14,7 +14,12 @@ Usage:
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastmcp import FastMCP
+from .._utils._optional import missing_extra
+
+try:
+    from fastmcp import FastMCP
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from .._branding import get_mcp_instructions, get_mcp_server_name
 from ._diagram_tools import register_diagram_tools
@@ -477,7 +482,7 @@ def get_spec_schema() -> str:
 @mcp.tool
 async def skills_list() -> Dict[str, Any]:
     """List available skill pages for figrecipe."""
-    from scitex_dev.skills import list_skills
+    from scitex_dev.ecosystem import list_skills
 
     return list_skills(package="figrecipe")
 
@@ -485,7 +490,7 @@ async def skills_list() -> Dict[str, Any]:
 @mcp.tool
 async def skills_get(name: Optional[str] = None) -> Dict[str, Any]:
     """Get a figrecipe skill page by name (or list when name is None)."""
-    from scitex_dev.skills import get_skill
+    from scitex_dev.ecosystem import get_skill
 
     return get_skill(package="figrecipe", name=name)
 

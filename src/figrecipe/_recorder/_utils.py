@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for recorder argument processing."""
 
+import warnings
 from typing import Any, Dict, List
 
 import numpy as np
@@ -45,6 +46,91 @@ def process_args(
     return processed
 
 
+#: Sequence types that are safe to materialise at record time because reading
+#: them does not CONSUME them — iterate twice and you get the same values. They
+#: are not list/tuple, so they miss every array branch below and would otherwise
+#: reach the ``str(value)`` fallback and be recorded as text.
+RE_ITERABLE_SEQUENCES = (range, type({}.keys()), type({}.values()))
+
+
+class UnrecordableArgumentError(TypeError):
+    """An argument cannot be recorded faithfully, and guessing would be worse.
+
+    Raised at RECORD time — the only moment the caller can still fix it — rather
+    than letting the value reach the recipe as text that no replay can undo.
+    """
+
+
+class UnrecordableArgumentWarning(UserWarning):
+    """An argument is being stored as its TEXT because nothing else is possible.
+
+    Cards figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906:
+    a value the recorder cannot serialize was quietly replaced by ``str(value)``,
+    so the recipe replays a STRING where the call passed an object — the figure
+    is right and its description is wrong, which is the silent half of the
+    failure this project exists to prevent. Announcing it at record time is the
+    whole fix: the caller is the only one who knows what should be passed
+    instead.
+
+    Why a WARNING here and an ERROR for the one-shot iterator
+    (:class:`UnrecordableArgumentError`): a generator has no faithful recording
+    at all, so continuing would be a lie either way. A text repr, by contrast,
+    replays deterministically and is sometimes exactly what the caller passed (a
+    string-like object) — refusing outright would break those figures. The defect
+    was the SILENCE, so the fix is to speak.
+    """
+
+
+def _refuse_one_shot_iterator(name: str, value: Any) -> None:
+    """Refuse a one-shot iterator instead of silently recording its repr.
+
+    A generator / ``map`` / ``filter`` / ``zip`` cannot be recorded faithfully,
+    and neither available option is acceptable silently:
+
+    - materialising it here would CONSUME it, so the caller's own plot call
+      would receive an exhausted iterator and draw nothing. The recipe would be
+      right and the figure empty — we would have broken the picture to fix its
+      description.
+    - recording ``str(value)`` stores ``<generator object ...>``, which no
+      replay can turn back into data. The figure is drawn but not reproducible,
+      which is the exact failure figrecipe exists to prevent.
+
+    So we stop and say what to do about it. ``list(...)`` at the call site costs
+    the caller one word and makes the argument recordable and re-iterable.
+    """
+    if isinstance(value, (str, bytes, bytearray)):
+        return
+    if hasattr(value, "__len__"):
+        return
+    if not hasattr(value, "__iter__") or not hasattr(value, "__next__"):
+        return
+    raise UnrecordableArgumentError(
+        f"figrecipe cannot record argument {name!r}: it is a one-shot iterator "
+        f"({type(value).__name__}), which can be read only once. Recording it "
+        f"would either consume the data before your plot draws it, or store an "
+        f"unusable placeholder that replay cannot turn back into numbers. "
+        f"Wrap it at the call site — e.g. list({name}) — so the values can be "
+        f"both plotted and recorded."
+    )
+
+
+def _all_datetime_like(value) -> bool:
+    """True if every element is a date/datetime (stdlib, pandas or numpy).
+
+    ``np.asarray`` gives such a list ``object`` dtype, which hides that it is a
+    date series; converting explicitly to ``datetime64[ns]`` keeps it data.
+    """
+    import datetime as _dt
+
+    for item in value:
+        if isinstance(item, (np.datetime64, _dt.date, _dt.datetime)):
+            continue
+        if type(item).__name__ == "Timestamp":  # pandas, without importing it
+            continue
+        return False
+    return True
+
+
 def _process_single_arg(
     name: str,
     value: Any,
@@ -73,13 +159,41 @@ def _process_single_arg(
         return _process_array_list(name, value, to_serializable)
 
     if isinstance(value, (list, tuple)) and len(value) > 0:
-        # Check if it's a list of numbers that can be converted to array
+        # A list of numbers -- or of dates -- is data and takes the array path.
+        # "M"/"m" (datetime64/timedelta64) were missing here, so a one-point
+        # date series like ``[np.datetime64("2026-08-08")]`` fell through to
+        # the str() fallback and was recorded as the TEXT
+        # "[np.datetime64('2026-08-08')]"; replay then failed with "Failed to
+        # convert value(s) to axis units" and the figure did not reproduce
+        # (measured 2026-09-04; the 58-point array on the same axes replayed
+        # fine because ndarrays never took this branch).
         try:
             arr = np.asarray(value)
-            if arr.dtype.kind in ("i", "f", "u", "b"):  # numeric types
+            if arr.dtype.kind in ("i", "f", "u", "b", "M", "m"):
+                return _process_ndarray(name, arr, should_store_inline, to_serializable)
+            if arr.dtype.kind == "O" and _all_datetime_like(value):
+                arr = np.asarray(value, dtype="datetime64[ns]")
                 return _process_ndarray(name, arr, should_store_inline, to_serializable)
         except (ValueError, TypeError):
             pass
+
+    if isinstance(value, RE_ITERABLE_SEQUENCES):
+        # `range` (and friends) reach here as themselves, match none of the
+        # branches above, and would fall to _process_scalar's str() — recorded
+        # as the TEXT "range(0, 10)". Replay then hands matplotlib a string
+        # where a format spec is legal, so `ax.plot(range(10), ys)` cannot be
+        # saved at all. These types are RE-iterable, so materialising them is
+        # free and invisible to the caller; re-dispatch so they take the same
+        # proven path as the equivalent list.
+        return _process_single_arg(
+            name,
+            list(value),
+            should_store_inline,
+            to_serializable,
+            is_serializable_func,
+        )
+
+    _refuse_one_shot_iterator(name, value)
 
     # Scalar or other serializable value
     return _process_scalar(name, value, is_serializable_func)
@@ -143,8 +257,12 @@ def _process_array_list(
             "_is_array_list": True,
         }
 
-    dtypes = [str(arr.dtype) for arr in value]
-    dtype_str = dtypes[0] if len(set(dtypes)) == 1 else dtypes
+    # Record the ACTUAL stored dtype (stacked's), not the original per-array
+    # dtype: a jagged int array is NaN-padded to float64 BEFORE it hits the CSV,
+    # so recording the original int64 made load_array crash on the "nan" cells.
+    # For equal-length arrays stacked keeps the input dtype, so this is a no-op
+    # there. (card figrecipe-csv-roundtrip-writer-reader-asymmetry #4)
+    dtype_str = str(stacked.dtype)
 
     # Mark for file storage (same pattern as single arrays)
     return {
@@ -159,7 +277,12 @@ def _process_array_list(
 
 
 def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, Any]:
-    """Process scalar or other value."""
+    """Process scalar or other value.
+
+    A value nothing else could handle is stored as its text — but never
+    SILENTLY: see :class:`UnrecordableArgumentWarning`, which is the fix for
+    card figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906.
+    """
     # numpy scalars (np.int64, np.float64, np.bool_, …) are not natively
     # serializable. np.float64 happens to subclass Python float so it slips
     # through, but np.int64 does NOT subclass int -> it falls to the str(value)
@@ -170,14 +293,42 @@ def _process_scalar(name: str, value: Any, is_serializable_func) -> Dict[str, An
     if isinstance(value, np.generic):
         value = value.item()
     try:
-        return {
-            "name": name,
-            "data": value if is_serializable_func(value) else str(value),
-        }
+        if is_serializable_func(value):
+            # The good path: numbers, strings, bools — nothing to announce.
+            return {"name": name, "data": value}
+        text = str(value)
     except (TypeError, ValueError):
-        return {"name": name, "data": str(value)}
+        text = str(value)
+    _warn_text_recorded(name, value, text)
+    return {"name": name, "data": text}
 
 
-__all__ = ["process_args"]
+def _warn_text_recorded(name: str, value: Any, text: str) -> None:
+    """Say that an argument is going into the recipe as TEXT.
+
+    Not an error: the text replays deterministically, and for a string-like
+    object it may be what the caller meant. But a recipe that passes a string
+    where the figure was drawn from an object is not faithful, and only the
+    caller can decide what to pass instead — so the warning names the argument,
+    its type, and the remedy.
+    """
+    warnings.warn(
+        f"figrecipe is recording argument {name!r} as TEXT: "
+        f"{type(value).__name__} is not serializable, so the recipe stores "
+        f"{text!r} and a replay will pass that string where this call passed an "
+        f"object. The figure is correct; its recipe is not faithful. Pass "
+        f"something recordable at the call site (e.g. list(...)/np.asarray(...) "
+        f"of the values, or the string you actually mean) to remove this warning.",
+        UnrecordableArgumentWarning,
+        stacklevel=3,
+    )
+
+
+__all__ = [
+    "RE_ITERABLE_SEQUENCES",
+    "UnrecordableArgumentError",
+    "UnrecordableArgumentWarning",
+    "process_args",
+]
 
 # EOF

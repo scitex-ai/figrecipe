@@ -1,0 +1,156 @@
+/** GalleryStart — the Plot canvas before anything is open.
+ *
+ * This replaces a dead end. The empty canvas used to read "Select a recipe
+ * file to view the figure", which names a thing the visitor does not have:
+ * a brand-new project has no recipes, so the instruction cannot be followed
+ * and the tool never shows what it makes. Showing the shipped templates
+ * instead makes the empty state the fastest way IN — every tile is a real
+ * figure, and one click opens its recipe as an ordinary editable file.
+ *
+ * The tiles come from the same gallery the plot-type nav opens, so a template
+ * added there appears here with no second registration.
+ *
+ * EXPLICIT, never automatic (card figrecipe-data-column-and-plot-variant-ux-20260916,
+ * spec scitex-hub PR 923: "Create or import a project explicitly; never
+ * silently select an example"). This surface used to POST `api/gallery/demo`
+ * on mount, and the server seeds a demo recipe plus its data directory into the
+ * workspace — so merely opening a project wrote example artifacts the user
+ * never asked for. The offer and the seeding are now two steps: the button
+ * below is the only thing that can start a seed (see ./exampleSeed), and the
+ * tiles remain one click away either way.
+ */
+
+import { useState } from "react";
+import { useGalleryTemplates, flattenTemplates } from "./useGalleryTemplates";
+import { visibleStartTemplates } from "./visibleStartTemplates";
+import {
+  isSeeding as isSeedingState,
+  nextSeedState,
+  offersExampleSeed,
+  type SeedState,
+} from "./exampleSeed";
+import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+
+export function GalleryStart() {
+  const { data, loading, failed, thumbnails, addTemplate, openDemoFigure } =
+    useGalleryTemplates();
+  // TODO 131 — reduce the number of options shown at once. This fallback only
+  // renders when no figure is on the canvas (the plot-type rail is ALWAYS
+  // present beside it), so dumping all ~18 template tiles here puts two
+  // parallel "which plot?" choosers side by side on one screen. The tiles are
+  // kept one click away behind a disclosure instead of all shown at once; the
+  // rail remains the persistent primary entry.
+  const [examplesExpanded, setExamplesExpanded] = useState(false);
+  // Nothing has asked for the example figure yet, and nothing will on its own.
+  const [seed, setSeed] = useState<SeedState>("idle");
+
+  /** The one path into the demo figure: a deliberate click. */
+  const openExampleFigure = () => {
+    setSeed((state) => nextSeedState(state, "user-request"));
+    void openDemoFigure().then((opened) => {
+      setSeed((state) =>
+        nextSeedState(state, opened ? "seed-opened" : "seed-declined"),
+      );
+    });
+  };
+
+  if (seed === "open") return null;
+
+  if (loading || isSeedingState(seed)) {
+    return (
+      <div className="gallery-start gallery-start--message">
+        <i className="fas fa-spinner fa-spin" />
+        <p>{gettext("Preparing a figure…")}</p>
+      </div>
+    );
+  }
+
+  // Never render a blank pane. A failure and an empty gallery are different
+  // situations and each gets its own words, because "nothing here" with no
+  // explanation is exactly the dead end this component exists to remove.
+  if (failed) {
+    return (
+      <div className="gallery-start gallery-start--message">
+        <i className="fas fa-triangle-exclamation" />
+        <p>{gettext("Could not load the example gallery.")}</p>
+        <p className="gallery-start-hint">
+          {gettext("Select a recipe file from the tree to view its figure.")}
+        </p>
+      </div>
+    );
+  }
+
+  const templates = flattenTemplates(data);
+
+  if (templates.length === 0) {
+    return (
+      <div className="gallery-start gallery-start--message">
+        <i className="fas fa-image" />
+        <p>{gettext("No example figures are available in this install.")}</p>
+        <p className="gallery-start-hint">
+          {gettext("Select a recipe file from the tree to view its figure.")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="gallery-start">
+      <div className="gallery-start-head">
+        <h2 className="gallery-start-title">{gettext("Start from an example")}</h2>
+        <p className="gallery-start-subtitle">
+          {gettext("Click a figure to open its recipe — then edit the data, the style and the layout, and export it publication-ready.")}
+        </p>
+      </div>
+
+      {/* The example figure is OFFERED here and only opened on this click. The
+          server seeds its recipe and data into the project, so it must never
+          happen because the pane rendered. */}
+      {offersExampleSeed(seed) && (
+        <button
+          type="button"
+          className="gallery-start-demo"
+          onClick={openExampleFigure}
+          title={gettext("Add an example recipe and its data to this project")}
+        >
+          <i className="fas fa-wand-magic-sparkles" />
+          {gettext("Open an example figure")}
+        </button>
+      )}
+
+      {examplesExpanded ? (
+        <div className="gallery-start-grid">
+          {visibleStartTemplates(templates, examplesExpanded).map((tmpl) => (
+            <button
+              key={tmpl.name}
+              type="button"
+              className="gallery-start-item"
+              onClick={() => addTemplate(tmpl)}
+              title={interpolate(gettext("Open the %s example"), [tmpl.label])}
+            >
+              <span className="gallery-start-thumb">
+                {thumbnails[tmpl.name] ? (
+                  <img src={thumbnails[tmpl.name]} alt={tmpl.label} />
+                ) : (
+                  <i className={`fas ${tmpl.icon} gallery-icon-placeholder`} />
+                )}
+              </span>
+              <span className="gallery-start-label">{tmpl.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="gallery-start-expand"
+          onClick={() => setExamplesExpanded(true)}
+          title={gettext("Show example figures")}
+          aria-expanded={false}
+        >
+          <i className="fas fa-images" />
+          {interpolate(ngettext("Show %s example", "Show %s examples", templates.length), [templates.length])}
+        </button>
+      )}
+    </div>
+  );
+}

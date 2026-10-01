@@ -52,11 +52,19 @@ ls -l dist
 # RUN-UNIQUE (incident 2026-07-12, same fix as run-in-sif.sh/build-in-sif.sh):
 # suffix with the run id so this run's path can never collide with a stuck
 # leftover from a prior run; old-path cleanup is best-effort, not fatal.
+# The run-unique name fixed a collision and created a LEAK: the `rm -rf` below
+# runs at START on the path this run is about to CREATE, so it never removes the
+# PREVIOUS run's directory. See the long note in run-in-sif.sh — 270G of orphaned
+# scratch on scitex-02, 2026-08-09. Same fix here.
 RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
-TMPDIR="/tmp/publish-figrecipe-$V-$RUN_TAG"
+TMPDIR="${TMPDIR:?verified wrapper must supply owned scratch}/publish-figrecipe-$V-$RUN_TAG"
 export TMPDIR
+trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
-mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
+mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache" "$TMPDIR/scitex" "$TMPDIR/pycache"
+export SCITEX_DIR="$TMPDIR/scitex" PYTHONPYCACHEPREFIX="$TMPDIR/pycache"
+
+# Cleanup is limited to this invocation's fresh owned scratch.
 export UV_CACHE_DIR="$TMPDIR/uv-cache"
 export XDG_CACHE_HOME="$TMPDIR"
 export PIP_CACHE_DIR="$TMPDIR/pip-cache"

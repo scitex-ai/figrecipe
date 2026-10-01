@@ -9,6 +9,8 @@ import ReactDOM from "react-dom/client";
 // React app content (Plot/Canvas editor — NOT shell)
 import { InnerEditor } from "./InnerEditor";
 import { useEditorStore } from "./store/useEditorStore";
+import { apiUrl, csrfToken, setApiBase, setWorkingDir } from "./api/client";
+import { mountPrefix } from "@scitex/sdk/ui/ts/_base/mount.ts";
 
 // Styles (app-specific)
 import "./styles/app-variables.css";
@@ -23,62 +25,68 @@ import "./styles/mobile.css";
 
 // scitex-ui CSS — single bundle import (shell + app + utils)
 // @ts-ignore
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/css/all.css";
+import "@scitex/sdk/ui/css/all.css";
 
 // Element inspector — debug overlay (Alt+I to toggle)
 // @ts-ignore
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/utils/element-inspector";
+import "@scitex/sdk/ui/ts/utils/element-inspector.ts";
 
 // Context-aware zoom — app-specific panes only (shell panes use vanilla TS zoom)
-import { bootstrapContextZoom } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/utils/context-zoom";
+import { bootstrapContextZoom } from "@scitex/sdk/ui/ts/utils/context-zoom.ts";
 
 // Vanilla TS workspace shell — panel resizer initialization
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-panel-resizer";
+import "@scitex/sdk/ui/ts/shell/workspace-panel-resizer/index.ts";
 
 // Vanilla TS shell terminal — unified factory with adapter pattern
-import { initTerminal } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/terminal";
-import type { TerminalConnectionAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/terminal";
+import { initTerminal } from "@scitex/sdk/ui/ts/shell/terminal/index.ts";
+import type { TerminalConnectionAdapter } from "@scitex/sdk/ui/ts/shell/terminal/index.ts";
 
 // Vanilla TS shell file tree — WorkspaceFilesTree (full-featured, adapter-based)
-import { WorkspaceFilesTree } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree";
-import type { FileTreeAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree";
+import { WorkspaceFilesTree } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
+import type { FileTreeAdapter } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
 
 // Vanilla TS shell toolbar + keyboard shortcuts
 import {
   ToolbarManager,
   KeyboardShortcuts,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/toolbar";
+} from "@scitex/sdk/ui/ts/shell/toolbar/index.ts";
 
 // Vanilla TS shell keyboard shortcuts + modal (Alt+A, Alt+T, pane cycling)
 import {
   initKeyboardShortcuts,
   registerShortcuts,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/keyboard-shortcuts";
+} from "@scitex/sdk/ui/ts/shell/keyboard-shortcuts/index.ts";
 
 // Vanilla TS shell repo monitor — recent file changes (adapter-based polling)
 import {
   initRepoMonitor,
   initMonitorToggle,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor";
-import type { RepoMonitorAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor";
+} from "@scitex/sdk/ui/ts/shell/repo-monitor/index.ts";
+import type { RepoMonitorAdapter } from "@scitex/sdk/ui/ts/shell/repo-monitor/index.ts";
 
 // Vanilla TS shell viewer — file viewing (images, PDFs, text)
-import { ViewerManager } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/viewer";
-import type { ViewerAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/viewer";
+import { ViewerManager } from "@scitex/sdk/ui/ts/shell/viewer/index.ts";
+import type { ViewerAdapter } from "@scitex/sdk/ui/ts/shell/viewer/index.ts";
 
 // Vanilla TS shell ChatMode — full chat orchestration (scitex-ui)
-import { ChatMode } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
+import { ChatMode } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
 import { figrecipeChatAdapter } from "./bootstrap/chatAdapter";
 
 // Vanilla TS shell SessionsPanel — chat session management (scitex-ui)
-import { SessionsPanel } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
+import { SessionsPanel } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
 import type {
   SessionAdapter,
   SessionMessage,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat";
+} from "@scitex/sdk/ui/ts/shell/chat/index.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 // Mount React InnerEditor into app content area ONLY
 const root = document.getElementById("root");
+if (root) {
+  setApiBase(mountPrefix());
+  if (root.dataset.workingDir) setWorkingDir(root.dataset.workingDir);
+}
+const hosted = root?.dataset.hosted === "true";
 const params = new URLSearchParams(window.location.search);
 const embedded = params.get("mode") === "embedded";
 
@@ -99,7 +107,7 @@ const figrecipeFileTreeAdapter: FileTreeAdapter = {
     const url = rootPath
       ? `api/tree?working_dir=${encodeURIComponent(rootPath)}`
       : "api/tree";
-    const resp = await fetch(url);
+    const resp = await fetch(apiUrl(url));
     if (!resp.ok)
       return {
         success: false,
@@ -127,7 +135,7 @@ const fileTree = new WorkspaceFilesTree({
   adapter: figrecipeFileTreeAdapter,
   showGitStatus: false,
   showFolderActions: false,
-  showBreadcrumb: true,
+  showBreadcrumb: !hosted,
   onFileSelect: (_path, item) => {
     window.dispatchEvent(
       new CustomEvent("figrecipe:file-select", {
@@ -141,7 +149,7 @@ fileTree.initialize();
 // Shell repo monitor — polls api/files for recently modified files
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
   async fetchRecentFiles() {
-    const resp = await fetch("api/files?recent=true&limit=50");
+    const resp = await fetch(apiUrl("api/files?recent=true&limit=50"));
     if (!resp.ok) return [];
     const data = await resp.json();
     // Normalize response: api/files returns { files: [...] }
@@ -162,7 +170,7 @@ const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
     );
   },
   getFileUrl(path: string) {
-    return `api/file-content/${path}?raw=true`;
+    return apiUrl(`api/file-content/${path}?raw=true`);
   },
 };
 
@@ -179,7 +187,7 @@ const figrecipeTerminalAdapter: TerminalConnectionAdapter = {
     return `ws://127.0.0.1:${port + 1}/`;
   },
 };
-initTerminal({
+if (!hosted) initTerminal({
   container: "#stx-shell-ai-console-terminal",
   adapter: figrecipeTerminalAdapter,
   clipboard: true,
@@ -196,11 +204,11 @@ initKeyboardShortcuts();
 // Register figrecipe-specific shortcuts for the modal
 registerShortcuts("figrecipe", [
   {
-    title: "Figure Editor",
+    title: gettext("Figure Editor"),
     shortcuts: [
-      { keys: "Ctrl+Z", description: "Undo" },
-      { keys: "Ctrl+Y", description: "Redo" },
-      { keys: "Del", description: "Delete selected" },
+      { keys: "Ctrl+Z", description: gettext("Undo") },
+      { keys: "Ctrl+Y", description: gettext("Redo") },
+      { keys: "Del", description: gettext("Delete selected") },
     ],
   },
 ]);
@@ -208,7 +216,7 @@ registerShortcuts("figrecipe", [
 // Shell viewer — opens files from file tree in the viewer pane
 const figrecipeViewerAdapter: ViewerAdapter = {
   async readFile(path: string) {
-    const resp = await fetch(`api/file-content/${path}`);
+    const resp = await fetch(apiUrl(`api/file-content/${path}`));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     return { content: data.content ?? "" };
@@ -295,43 +303,44 @@ chatMode.restoreConversation();
 // SessionsPanel — chat session CRUD backed by scitex-app session API
 const figrecipeSessionAdapter: SessionAdapter = {
   async listSessions() {
-    const resp = await fetch("api/chat/sessions/");
+    const resp = await fetch(apiUrl("api/chat/sessions/"));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     return data.sessions ?? [];
   },
   async getMessages(sessionId: number) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/messages/`);
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/messages/`));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return resp.json();
   },
   async createSession(title?: string) {
-    const resp = await fetch("api/chat/sessions/", {
+    const resp = await fetch(apiUrl("api/chat/sessions/"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: title || "New Chat" }),
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
+      body: JSON.stringify({ title: title || gettext("New Chat") }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return resp.json();
   },
   async deleteSession(sessionId: number) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/`, {
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/`), {
       method: "DELETE",
+      headers: { "X-CSRFToken": csrfToken() },
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   },
   async addMessage(sessionId: number, role: string, content: string) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/messages/`, {
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/messages/`), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ role, content }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   },
   async renameSession(sessionId: number, title: string) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/`, {
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/`), {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ title }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -411,17 +420,14 @@ document.addEventListener("stx-shell:clear-chat", () => {
 // Camera button → ChatMode handles via refs, also support custom event
 window.addEventListener("stx-shell:camera", () => {
   // ChatMode wires cameraBtn click internally; this handles custom events
-  const btn = document.querySelector<HTMLButtonElement>(
-    '.stx-shell-ai-input-btn[title="Camera"]',
-  );
+  // By id, not title: the shell translates its titles.
+  const btn = document.getElementById("stx-shell-ai-camera");
   btn?.click();
 });
 
 // Sketch button
 window.addEventListener("stx-shell:sketch", () => {
-  const btn = document.querySelector<HTMLButtonElement>(
-    '.stx-shell-ai-input-btn[title="Sketch"]',
-  );
+  const btn = document.getElementById("stx-shell-ai-sketch");
   btn?.click();
 });
 
@@ -445,7 +451,7 @@ window.addEventListener("stx-shell:settings", () => {
     <div class="ai-config-category expanded" data-cat="App Skills">
       <div class="ai-config-category-header">
         <i class="fas fa-chevron-right ai-config-category-chevron"></i>
-        <span class="ai-config-category-name">App Skills</span>
+        <span class="ai-config-category-name">${gettext("App Skills")}</span>
         <span class="ai-config-category-count">1/1</span>
       </div>
       <div class="ai-config-grid">
@@ -454,9 +460,9 @@ window.addEventListener("stx-shell:settings", () => {
             <i class="fas fa-chart-line ai-config-card-icon"></i>
             <div class="ai-config-card-info">
               <div class="ai-config-card-name">
-                FigRecipe <span class="ai-config-active-tag">active</span>
+                FigRecipe <span class="ai-config-active-tag">${gettext("active")}</span>
               </div>
-              <div class="ai-config-card-desc">Interactive figure editor — plt_*</div>
+              <div class="ai-config-card-desc">${gettext("Interactive figure editor — plt_*")}</div>
             </div>
             <label class="ai-config-toggle" onclick="event.stopPropagation()">
               <input type="checkbox" checked />
@@ -486,7 +492,7 @@ document.addEventListener("stx-shell:files-changed", () => {
 bootstrapContextZoom(
   [
     {
-      selector: ".split-pane-left",
+      selector: ".data-page",
       storageKey: "figrecipe-table-zoom",
       min: 0.7,
       max: 1.6,

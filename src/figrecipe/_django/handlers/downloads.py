@@ -2,11 +2,21 @@
 # -*- coding: utf-8 -*-
 """Download handlers: download CSV, download figure."""
 
-import logging
 
-from django.http import HttpResponse, JsonResponse
+from ..._utils._optional import missing_extra
 
-logger = logging.getLogger(__name__)
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
+    from django.http import HttpResponse, JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def handle_download_csv(request, editor):

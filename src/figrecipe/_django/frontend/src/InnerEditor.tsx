@@ -1,35 +1,47 @@
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
- * Two tabs:
- *   - Plot: DataTable | PlotTypeNav | FigureViewer | Details
- *   - Canvas: Canvas | Details
+ * Three tabs (SigmaPlot-style: data entry lives on its own page):
+ *   - Plot: PlotTypeNav | FigureViewer | Objects + Details
+ *   - Data: full-width DataTablePane (import, paste, sample, edit)
+ *   - Canvas: Canvas | Objects + Details
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CanvasPane } from "./components/CanvasPane/CanvasPane";
 import { DataTablePane } from "./components/DataTablePane/DataTablePane";
 import { FigureViewer } from "./components/FigureViewer/FigureViewer";
 import { PlotTypeNav } from "./components/PlotTypeNav/PlotTypeNav";
 import { PropertiesPane } from "./components/PropertiesPane/PropertiesPane";
+import { ProjectScopeSelector } from "./components/ProjectScopeSelector";
 import { Spinner } from "./components/common/Spinner";
 import { Toast } from "./components/common/Toast";
 // Element inspector now provided by scitex-ui (imported in main.tsx)
 import { useEmbeddedMessages } from "./hooks/useEmbeddedMessages";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import { usePanelResize } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/usePanelResize";
-import { AlertBanner } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/alert-banner";
+import { usePanelResize } from "@scitex/sdk/ui/react/app/usePanelResize.ts";
+import { AlertBanner } from "@scitex/sdk/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
+import { mountPanes, usePhoneLayout } from "./components/mobilePanes";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-type AppTab = "plot" | "canvas";
+type AppTab = "plot" | "data" | "canvas";
 
 interface InnerEditorProps {
   embedded?: boolean;
+  initialRecipe?: string;
+  /**
+   * Explicit figrecipe version for the header badge. Resolution order:
+   * this prop (host/mount contract) -> #root[data-version] (standalone
+   * Django view) -> __FIGRECIPE_VERSION__ (build-time from pyproject.toml,
+   * covers the Hub #app-mount path where neither is stamped).
+   */
+  appVersion?: string;
 }
 
-export function InnerEditor({ embedded = false }: InnerEditorProps) {
+export function InnerEditor({ embedded = false, appVersion, initialRecipe }: InnerEditorProps) {
   const {
     loading,
     loadPreview,
@@ -41,13 +53,47 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     clearToast,
   } = useEditorStore();
 
+  // figrecipe's own version for the header badge (distinct from the Hub global
+  // header's Hub-version). Resolution: explicit prop -> #root[data-version] ->
+  // build-derived __FIGRECIPE_VERSION__ (covers the #app-mount host path).
+  const resolvedVersion = (() => {
+    if (appVersion) return appVersion;
+    try {
+      const stamped = document.getElementById("root")?.getAttribute("data-version");
+      if (stamped) return stamped;
+    } catch {
+      /* #root absent (host mount) */
+    }
+    try {
+      return typeof __FIGRECIPE_VERSION__ !== "undefined" ? __FIGRECIPE_VERSION__ : "";
+    } catch {
+      return "";
+    }
+  })();
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     try {
-      return (localStorage.getItem("figrecipe-app-tab") as AppTab) || "plot";
+      const stored = localStorage.getItem("figrecipe-app-tab") as AppTab;
+      if (stored === "data") return "data";
+      if (stored === "canvas") return "canvas";
+      return "plot";
     } catch {
       return "plot";
     }
   });
+
+  const [stepsDismissed, setStepsDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("figrecipe-steps-dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const dismissSteps = () => {
+    setStepsDismissed(true);
+    try {
+      localStorage.setItem("figrecipe-steps-dismissed", "1");
+    } catch {}
+  };
 
   useEffect(() => {
     try {
@@ -57,7 +103,7 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const hasRecipe = !!params.get("recipe");
+    const hasRecipe = !!(initialRecipe || params.get("recipe"));
 
     loadFiles();
     loadThemes();
@@ -67,7 +113,7 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
       loadHitmap();
       loadDatatable();
     }
-  }, [loadPreview, loadHitmap, loadFiles, loadThemes, loadDatatable]);
+  }, [initialRecipe, loadPreview, loadHitmap, loadFiles, loadThemes, loadDatatable]);
 
   // Global hooks (element inspector from scitex-ui, initialized in main.tsx)
   useKeyboardShortcuts();
@@ -81,61 +127,13 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
 
   // Shell resizer handles overflow via getMaxAllowedWidth() — no React propagation needed
 
-  // Ref for center pane (used by auto-collapse + context-zoom)
-  const centerRef = useRef<HTMLElement | null>(null);
-
-  // Center pane collapse — supports both double-click toggle AND
-  // auto-collapse when resizer pushes width below threshold.
-  const CENTER_MIN_WIDTH = 60;
-  const [centerCollapsed, setCenterCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem("figrecipe-center-collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
-  const toggleCenter = useCallback(() => {
-    setCenterCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("figrecipe-center-collapsed", String(next));
-      } catch {}
-      return next;
-    });
-  }, []);
-
-  // Auto-collapse center pane when it gets too narrow (e.g. right panel resized)
-  useEffect(() => {
-    const el = centerRef.current;
-    if (!el || centerCollapsed) return;
-    const obs = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width < CENTER_MIN_WIDTH && !centerCollapsed) {
-          setCenterCollapsed(true);
-          try {
-            localStorage.setItem("figrecipe-center-collapsed", "true");
-          } catch {}
-        }
-      }
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [centerCollapsed]);
+  // NOTE: the center (Viewer/Canvas) pane intentionally has NO collapse
+  // toggle. A single-viewer pane has nothing to toggle between, and the
+  // collapsed 40px "VIEWER" tab plus the 20px minimal header strip were
+  // dead UI. The pane is always expanded; narrow screens fall back to the
+  // phone tab layout (see usePhoneLayout) instead of collapsing.
 
   // Create refs for cross-panel coordination (prevents pushing rightmost panel off-screen)
-  const rightPanelRef = useRef<HTMLElement | null>(null);
-
-  const dataPanel = usePanelResize({
-    direction: "left",
-    minWidth: 40,
-    defaultWidth: 200,
-    storageKey: "figrecipe-data-width",
-    collapseKey: "figrecipe-data-collapsed",
-    // Reserve space for right panel + PlotTypeNav (fixed ~60px)
-    siblingRefs: [rightPanelRef],
-    reservedWidth: 60,
-  });
-
   const rightPanel = usePanelResize({
     direction: "right",
     minWidth: 40,
@@ -144,111 +142,134 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
     collapseKey: "figrecipe-right-collapsed",
   });
 
-  // Sync the shared ref with rightPanel's panelRef
+  // Hub phones: the columns become tabs (scitex-ui panes); collapse bars do not apply.
+  const phone = usePhoneLayout();
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    rightPanelRef.current = rightPanel.panelRef.current;
-  });
+    const host = bodyRef.current?.parentElement;
+    if (embedded && host) mountPanes(host);
+  }, [embedded, activeTab]);
+  const detailsCollapsed = rightPanel.collapsed && !phone;
+  const paneAttrs = (
+    id: string,
+    label: string,
+    order: number,
+  ): Record<string, string | number> =>
+    embedded
+      ? { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order }
+      : {};
 
   return (
     <div className="inner-editor">
+      {/* ── App header (figrecipe-owned) — canonical .stx-app-header ─────
+          Structure: title, then the shared project-selector slot, then
+          (optional) app actions. The selector lives HERE (not the tab row)
+          per the 0.22.0 placement contract; the scitex-ui slot CSS
+          (.stx-app-header__slot--project-selector) pins it left-after-title
+          on desktop and full-width on phones. The vestigial React Toolbar's
+          "FigRecipe Editor" title is not in this render tree, so this is the
+          only visible title (no duplication). */}
+      <header className="stx-app-header">
+        <span className="stx-app-header__title">{gettext("FigRecipe")}</span>
+        {resolvedVersion && (
+          <span className="stx-app-header__version">v{resolvedVersion}</span>
+        )}
+        <div className="stx-app-header__slot--project-selector">
+          <ProjectScopeSelector />
+        </div>
+      </header>
+
       {/* ── Tab Switcher ────────────────────────────── */}
-      <div className="inner-editor__tabs">
+      <div className="inner-editor__tabs" role="tablist">
         <button
           className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
           onClick={() => setActiveTab("plot")}
+          role="tab"
+          aria-selected={activeTab === "plot"}
         >
-          <i className="fas fa-chart-line" /> Plot
+          <i className="fas fa-chart-line" /> {gettext("Plot")}
         </button>
         <button
-          className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => setActiveTab("canvas")}
+          className={`inner-editor__tab${activeTab === "data" ? " inner-editor__tab--active" : ""}`}
+          onClick={() => setActiveTab("data")}
+          role="tab"
+          aria-selected={activeTab === "data"}
+          title={gettext("Data table — its own full-width page")}
         >
-          <i className="fas fa-object-group" /> Canvas
+          <i className="fas fa-table" /> {gettext("Data")}
         </button>
+        {(
+          <button
+            className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
+            onClick={() => setActiveTab("canvas")}
+            role="tab"
+            aria-selected={activeTab === "canvas"}
+          >
+            <i className="fas fa-object-group" /> {gettext("Canvas")}
+          </button>
+        )}
       </div>
 
+      {!stepsDismissed && activeTab === "plot" && (
+        <div className="fr-steps" role="note">
+          <ol className="fr-steps__list">
+            <li>{gettext("1. Pick or import data")}</li>
+            <li>{gettext("2. Choose a plot type")}</li>
+            <li>{gettext("3. Adjust & export")}</li>
+          </ol>
+          <button
+            type="button"
+            className="fr-steps__close"
+            onClick={dismissSteps}
+            aria-label={gettext("Close")}
+            title={gettext("Close")}
+          >
+            <i className="fas fa-times" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       {/* ── Tab Content ─────────────────────────────── */}
-      <div className="editor-body">
+      <div
+        ref={bodyRef}
+        className="editor-body"
+        {...(embedded ? { "data-stx-panes": "figrecipe", "data-stx-panes-layout": "app" } : {})}
+      >
+        {activeTab === "data" && (
+          /* SigmaPlot-style worksheet: the data table gets its own
+             full-width page instead of a squeezed strip beside the viewer. */
+          <div
+            className="data-page"
+            {...paneAttrs("data", gettext("Data"), 2)}
+          >
+            <div className="data-page__inner">
+              <DataTablePane hideCollapse />
+            </div>
+          </div>
+        )}
+
         {activeTab === "plot" && (
           <>
-            {/* Pane 1 — Data Table */}
-            <aside
-              ref={dataPanel.panelRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-left${dataPanel.collapsed ? " collapsed" : ""}`}
-              style={
-                dataPanel.collapsed ? undefined : { width: dataPanel.width }
-              }
-            >
-              <DataTablePane
-                onHeaderDoubleClick={dataPanel.headerProps.onDoubleClick}
-              />
-            </aside>
-
-            <div className="panel-resizer" {...dataPanel.resizerProps} />
-
             {/* Plot type selector nav — fixed width, not resizable */}
-            <PlotTypeNav />
+            <PlotTypeNav paneAttrs={paneAttrs("plot", gettext("Plot"), 3)} />
 
-            {/* Pass-through resizer — propagates to DataTable (PlotTypeNav stays fixed) */}
-            <div className="panel-resizer" {...dataPanel.resizerProps} />
-
-            {/* Pane 2 — Figure Viewer (rendered image, not canvas) */}
+            {/* Pane 2 — Figure Viewer (rendered image, not canvas).
+                Always expanded: no collapse toggle (single viewer = nothing
+                to toggle between). */}
             <main
-              ref={centerRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-center${centerCollapsed ? " collapsed" : ""}`}
+              className="split-pane split-pane-center"
+              {...paneAttrs("figure", gettext("Figure"), 1)}
             >
-              {centerCollapsed ? (
-                <div className="pane-header" onDoubleClick={toggleCenter}>
-                  <span className="panel-title">
-                    <i className="fas fa-image" />
-                    Viewer
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div
-                    className="pane-header pane-header--minimal"
-                    onDoubleClick={toggleCenter}
-                    title="Double-click to collapse"
-                  >
-                    <i className="fas fa-image" style={{ opacity: 0.5 }} />
-                  </div>
-                  <FigureViewer />
-                </>
-              )}
+              <FigureViewer />
             </main>
           </>
         )}
 
         {activeTab === "canvas" && (
           <>
-            {/* Canvas pane */}
-            <main
-              ref={centerRef as React.Ref<HTMLElement>}
-              className={`split-pane split-pane-center${centerCollapsed ? " collapsed" : ""}`}
-            >
-              {centerCollapsed ? (
-                <div className="pane-header" onDoubleClick={toggleCenter}>
-                  <span className="panel-title">
-                    <i className="fas fa-object-group" />
-                    Canvas
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div
-                    className="pane-header pane-header--minimal"
-                    onDoubleClick={toggleCenter}
-                    title="Double-click to collapse"
-                  >
-                    <i
-                      className="fas fa-object-group"
-                      style={{ opacity: 0.5 }}
-                    />
-                  </div>
-                  <CanvasPane />
-                </>
-              )}
+            {/* Canvas pane — always expanded, no collapse toggle. */}
+            <main className="split-pane split-pane-center" {...paneAttrs("figure", gettext("Canvas"), 1)}>
+              <CanvasPane />
             </main>
           </>
         )}
@@ -257,17 +278,18 @@ export function InnerEditor({ embedded = false }: InnerEditorProps) {
         <div
           className="stx-layout-most-right"
           style={{ display: "flex", flexShrink: 0, marginLeft: "auto" }}
+          {...paneAttrs("details", gettext("Details"), 4)}
         >
           <div className="panel-resizer" {...rightPanel.resizerProps} />
           <aside
             ref={rightPanel.panelRef as React.Ref<HTMLElement>}
-            className={`split-pane split-pane-right${rightPanel.collapsed ? " collapsed" : ""}`}
-            style={
-              rightPanel.collapsed ? undefined : { width: rightPanel.width }
-            }
+            className={`split-pane split-pane-right${detailsCollapsed ? " collapsed" : ""}`}
+            style={detailsCollapsed ? undefined : { width: rightPanel.width }}
           >
             <PropertiesPane
-              onHeaderDoubleClick={rightPanel.headerProps.onDoubleClick}
+              onToggleCollapse={rightPanel.toggleCollapse}
+              collapsed={detailsCollapsed}
+              onRequestDataTab={() => setActiveTab("data")}
             />
           </aside>
         </div>

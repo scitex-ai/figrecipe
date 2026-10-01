@@ -126,6 +126,20 @@ colorbar leaves the reader unable to read any absolute value off the
 image; a colorbar with no label/units leaves them unable to interpret
 what they *can* read.
 
+**The heatmap's OWN axes must stay readable too.** The colorbar says what the
+colors mean; the axes say *where on the map* you are. When they carry a
+physical quantity (a time-by-frequency map, a comodulogram) the numbers on
+them **are the finding** — and three comodulograms once shipped to review
+labelled `(Hz)` with no frequency numbers at all. The colorbar was perfect;
+Rule 2 as written would not have caught it. So:
+
+- a meaningful heatmap axis needs **tick numbers**, not just a title;
+- set `imshow_show_axes=True` (figrecipe hides imshow chrome by default —
+  right for an image, wrong for a map);
+- verify on the **rendered** tick text, never `get_xticks()`, which returns
+  what you asked for even when nothing was drawn. See
+  [28_never-silently-discard](28_never-silently-discard.md).
+
 ### Compliant example
 
 ```python

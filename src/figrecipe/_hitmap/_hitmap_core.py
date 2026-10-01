@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 import numpy as np
 
+from .._utils._optional import missing_extra
 from ._artist_extraction import get_all_artists
 from ._color_application import apply_id_color
 from ._color_conversion import id_to_rgb
@@ -185,7 +186,10 @@ def generate_hitmap_with_bbox_tight(
         - hitmap_image: PIL.Image.Image with RGB-encoded element IDs
         - color_map: dict mapping ID to element info
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     fig = as_mpl_figure(fig)
     artists = get_all_artists(fig, include_text)

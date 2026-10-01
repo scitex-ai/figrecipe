@@ -16,7 +16,13 @@ from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
-from PIL import Image
+
+from ..._utils._optional import missing_extra
+
+try:
+    from PIL import Image
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 if TYPE_CHECKING:
     from ._core import Diagram

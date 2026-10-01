@@ -4,7 +4,12 @@
 
 import json
 
-from django.http import JsonResponse
+from ..._utils._optional import missing_extra
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 
 def _dpi_from_request(request):

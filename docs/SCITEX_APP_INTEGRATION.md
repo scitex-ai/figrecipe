@@ -1,169 +1,94 @@
-# FigRecipe -- SciTeX App Reference Implementation
+# FigRecipe App integration
 
-figrecipe is the first app built on the SciTeX app platform. It validates the entire app contract: manifest, Django bridge, frontend mounting, and file-based storage.
+FigRecipe owns its Django views, URLconf, workspace content and React editor.
+The coordinated candidate consumes `scitex-sdk>=0.3.0`, which physically owns
+`scitex_sdk.app` and `scitex_sdk.ui`. The SDK release and this leaf migration are
+unpublished; matching version strings alone do not identify reviewed artifacts.
 
-## Architecture Overview
+## Install and mount
 
-```
-figrecipe (pip package)
-  src/figrecipe/
-    _django/                    # Django integration package
-      __init__.py               # AppConfig declaration
-      apps.py                   # FigRecipeEditorConfig
-      views.py                  # editor_page + api_dispatch
-      urls.py                   # path("", ...) + path("<path:endpoint>", ...)
-      handlers/                 # API handler modules
-        core.py, files.py, gallery.py, compose.py, ...
-      settings.py               # Standalone Django settings
-      services.py               # Editor session management
-    _editor/                    # Core editor logic (no Django)
-    ...
-
-scitex-cloud (platform)
-  apps/workspace/figrecipe_app/
-    manifest.json               # App metadata for registry
-    urls/figrecipe.py           # Context-injecting URL wrapper
-    views/__init__.py           # Workspace mount view
-    templates/figrecipe_app/    # Django templates
-    static/figrecipe_app/
-      ts/_figrecipe-bridge-init.ts      # Entry point
-      ts/_figrecipe-bridge/
-        FigrecipeMountPoint.ts          # React root + fetch override
-        VisEditorBridge.ts              # Two-way bridge events
-        BridgeEventBus.ts              # Event pub/sub
-```
-
-## What figrecipe Provides
-
-1. **`figrecipe._django`** -- A self-contained Django app that can run standalone (`python -m figrecipe._django.management.commands.figrecipe_editor`) or be included in any Django project
-2. **`api_dispatch(request, endpoint)`** -- Single entry point that routes to handler functions by endpoint name
-3. **`editor_page(request)`** -- Serves the React SPA HTML
-4. **React frontend** -- Built separately, served as static files
-5. **`manifest.json`** -- Declares name, icon, privileges, dependencies
-
-## What scitex-cloud Provides
-
-1. **Authentication** -- `request.user` is always populated
-2. **Project context** -- `_inject_project_context()` adds `working_dir` to requests
-3. **URL mounting** -- figrecipe is reachable at `/apps/figrecipe/figrecipe/<endpoint>`
-4. **Theme** -- `dark-theme` body class, CSS custom properties
-5. **Workspace chrome** -- Tab bar, file tree, AI panel surround the app
-
-## The Bridge Pattern
-
-The scitex-cloud side provides a **bridge** that connects the figrecipe React editor to the workspace:
-
-### 1. Entry Point (`_figrecipe-bridge-init.ts`)
-
-```typescript
-import "scitex-ui/css/app.css";       // shared app styles
-import "figrecipe-editor/styles/...";  // app-specific styles
-
-mountFigrecipeEditor({
-  container: mount,
-  workingDir,
-  darkMode: document.body.classList.contains("dark-theme"),
-});
-```
-
-### 2. Fetch Override (`FigrecipeMountPoint.ts`)
-
-The React editor makes API calls to relative paths like `/preview`, `/save`, `/api/files`. The fetch override rewrites these to the platform URL:
-
-```
-/preview?recipe=foo.yaml
-  --> /apps/figrecipe/figrecipe/preview?recipe=foo.yaml
-```
-
-Only known figrecipe API paths are rewritten; all other fetches pass through unchanged.
-
-### 3. Event Bridge (`BridgeEventBus.ts`)
-
-Two-way communication between the React editor and the workspace:
-
-| Event | Direction | Purpose |
-|-------|-----------|---------|
-| `figrecipe:fileSelect` | Editor -> Workspace | User clicked a file |
-| `figrecipe:elementSelect` | Editor -> Workspace | User selected a plot element |
-| `figrecipe:propertyChange` | Editor -> Workspace | Property panel value changed |
-| `figrecipe:dataChange` | Editor -> Workspace | Data table contents changed |
-
-## File-Based Storage (No ORM)
-
-figrecipe uses **no Django models**. All data is stored as files in the user's project directory:
-
-- Recipe files: `*.yaml`, `*.yml`
-- Output images: `*.png`, `*.svg`, `*.pdf`
-- Data files: `*.csv`
-- Composition files: `*.figz`
-
-This means figrecipe works identically in:
-- **Standalone mode** -- `figrecipe_editor --recipe my_plot.yaml`
-- **Cloud mode** -- mounted inside scitex-cloud workspace
-- **Other Django projects** -- `INSTALLED_APPS += ["figrecipe._django"]`
-
-## The `_django` Convention
-
-figrecipe establishes the convention for SciTeX apps with Django integration:
+Use a GUI extra, for example `pip install 'figrecipe[editor,app]'`, once the
+coordinated SDK is available. Python plotting remains independent of Django.
+The `scitex.apps` entry point declares
+`figrecipe._django.apps:FigRecipeEditorConfig`; discovery retains its SDK
+embedding superclass and metadata. It fails with the missing GUI-extra message
+rather than substituting a plain AppConfig.
 
 ```python
-# apps.py -- standard Django AppConfig
-class FigRecipeEditorConfig(AppConfig):
-    name = "figrecipe._django"
-    label = "figrecipe_editor"
-
-# views.py -- single dispatch entry point
-def api_dispatch(request, endpoint):
-    handler = HANDLERS.get(endpoint)
-    return handler(request, editor)
-
-# urls.py -- two paths: page + API catch-all
-urlpatterns = [
-    path("", views.editor_page, name="editor"),
-    path("<path:endpoint>", views.api_dispatch, name="api"),
+INSTALLED_APPS += [
+    "figrecipe._django",
+    "figrecipe._django.apps.ScitexAppChatConfig",
+    "scitex_sdk.ui",
 ]
+
+from scitex_sdk.urls import mount_urlpatterns
+urlpatterns += mount_urlpatterns("apps/figrecipe/", "figrecipe._django.urls")
 ```
 
-## Standalone Operation
+The second leaf-owned registration discovers shared chat models from
+`scitex_sdk.app._chat` under the existing `scitex_app` label. A host that already
+owns that label must retain its single existing registration; duplicate labels
+are invalid. Chat/session history also needs a usable database. The standalone
+settings keep the dummy database and answer 501 for database-backed session
+endpoints. Leaf startup warns when the chat registration is omitted.
 
-figrecipe can run without scitex-cloud. The `settings.py` provides minimal Django config:
+The SDK mount helper preserves both `figrecipe:*` and established
+`figrecipe_app:*` reverse callers at the same paths. Plain Django `include()`
+does not consume the declared namespace aliases. Root editor names,
+`workspace/`, and existing nested `figrecipe/<endpoint>` routes remain available.
+The generic host retains its independent route-ownership and authentication
+checks; these changes do not authorize a legacy Hub route cutover.
 
-```python
-INSTALLED_APPS = ["django.contrib.staticfiles", "figrecipe._django"]
-# Optionally: "scitex_ui" for shared components
-DATABASES = {}  # No database needed
-```
+## Project authority and workspace lifecycle
 
-This validates a key platform principle: apps must be independently functional.
+Hosted mode requires an authenticated request, a `SCITEX_PROJECT_PROVIDER`,
+`SCITEX_PROJECT_STORAGE` with `project_path(project_id, request)` and
+`can_write(project_id, request)`, and the browser provider URL. The leaf obtains
+SDK project authority before file I/O, checks path selectors beneath that root,
+keeps editors separated by user/project, requires literal-true write permission
+and protects mutations with CSRF. Missing authority does not fall back to cwd.
 
-## Privilege Declaration
+The manifest declares `figrecipe/workspace_partial.html` and
+`figrecipe._django.workspace.build_workspace_context`. The generic host supplies
+the trusted `stx_mount` route after building context. An explicit empty string
+means the root mount; absent mount context leaves the editor unavailable.
+`workspace/` renders the same content in standalone and plugin modes.
 
-From `manifest.json`:
+The leaf subscribes to the existing `workspace:module-injected` event. Repeated
+AJAX mount/unmount and project changes retire outgoing requests and reset plot,
+canvas, clipboard, table, selection and undo targets while keeping display
+preferences. The shared bridge checks container ownership before unmounting.
+Each mount supplies its own project and API base; the global fetch function is
+unchanged. A request already admitted by the server keeps its original project
+authority even if the browser changes projects afterward. Resource API
+resolution uses the SDK's `remember=False` option so late requests cannot
+overwrite the newer navigation selection. Explicit navigation still remembers
+its authorized project.
 
-```json
-{
-  "privileges": [
-    {
-      "type": "filesystem",
-      "scope": "project",
-      "reason": "Read/write figure recipes and data files"
-    }
-  ]
-}
-```
+## Frontend and static assets
 
-figrecipe only needs project-scoped filesystem access. No network, no datastore, no job queue.
+The frontend imports the SDK's public `@scitex/sdk/ui/...` exports, including the
+React bridge and shared CSS. For the installed SDK, run `python configure.py`,
+then normal `npm install`, `npm run build`, and `npm run build:lib` in
+`src/figrecipe/_django/frontend`. The committed dependency supports the exact
+pinned SDK source checkout in CI. Both builds preserve strict TypeScript and
+React peer deduplication. Templates extend `scitex_sdk/ui/standalone_shell.html`;
+compiled leaf assets remain under `figrecipe/`.
 
-## Key Lessons from figrecipe
+## Current feature and rollout limits
 
-1. **Django `_django` sub-package** works well for apps that need server-side rendering
-2. **Fetch override** is simpler than iframe postMessage for API routing
-3. **File-based storage** means zero migration burden and full portability
-4. **Bridge event bus** enables loose coupling between app and workspace
-5. **Standalone settings.py** proves the app works without the platform
+Plot, Data and Canvas are available in both modes. Canvas Save writes the
+existing `composed.png` into the authorized project. Loading a recipe reproduces
+that recipe; PNG save does not persist an editable composition or canvas layout.
+Hosted ZIP remains explicit 501 until scoped extraction is implemented. The
+standalone retains local directory selection, ZIP recipes and local terminal;
+hosted terminal transport is host-owned.
 
-## Cross-References
+The retained legacy Hub bridge, its model/migration ownership, full chat/store
+parity, jobs/collaboration, editable composition persistence and production
+source/build identity remain separate rollout gates. Synthetic local SQLite
+chat testing establishes local ORM compatibility, not tenant store isolation.
+No existing Hub domain route is removed by this leaf package candidate.
 
-- **scitex-cloud** (`docs/ARCHITECTURE/APP_PLATFORM.md`) -- How the platform discovers and mounts figrecipe generically
-- **scitex-ui** (`docs/APP_SANDBOX.md`) -- CSS bundles consumed by the bridge init, future `<AppSandbox>` component
-- **scitex-app** (`docs/APP_SDK.md`) -- `FilesBackend` protocol, path resolution utilities used for file operations
+See [shared SDK ownership](scitex-app-and-ui.md) for dependency and packaging
+contracts.

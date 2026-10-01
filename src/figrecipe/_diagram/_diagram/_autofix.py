@@ -13,14 +13,20 @@ Implementation is split across modules by concern:
 
 from typing import TYPE_CHECKING
 
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 try:
     from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 from ._fix_arrows import (
     fix_arrow_labels,

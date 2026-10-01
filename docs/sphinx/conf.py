@@ -6,7 +6,9 @@
 # -- Path setup --------------------------------------------------------------
 
 import os
+import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath("../../src"))
 
@@ -15,7 +17,14 @@ sys.path.insert(0, os.path.abspath("../../src"))
 project = "FigRecipe"
 copyright = "2026, Yusuke Watanabe"
 author = "Yusuke Watanabe"
-release = "0.28.12"
+version_match = re.search(
+    r'^version\s*=\s*"([^"]+)"',
+    (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text(),
+    re.MULTILINE,
+)
+if version_match is None:
+    raise ValueError("FigRecipe source version is not declared")
+release = version_match.group(1)
 
 # -- General configuration ---------------------------------------------------
 
@@ -113,7 +122,7 @@ html_favicon = None  # Add path to favicon if available
 # Show "Edit on GitHub" links
 html_context = {
     "display_github": True,
-    "github_user": "ywatanabe1989",
+    "github_user": "scitex-ai",
     "github_repo": "figrecipe",
     "github_version": "main",
     "conf_py_path": "/docs/sphinx/",

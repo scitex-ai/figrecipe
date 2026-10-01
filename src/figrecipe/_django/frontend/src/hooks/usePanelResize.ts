@@ -4,9 +4,12 @@
  * Features:
  * - Drag resize via mousedown on resizer element
  * - Auto-collapse when dragged to minWidth
- * - Double-click header to toggle collapse
+ * - Explicit collapse/expand button (the pane header renders `.panel-toggle-btn`)
  * - Drag from collapsed state auto-expands
  * - localStorage persistence for width + collapsed state
+ *
+ * Collapse is driven by a visible button, not a double-click gesture:
+ * double-click was a hidden affordance discoverable only by trial.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -25,11 +28,6 @@ export interface PanelResizeResult {
   panelRef: React.RefObject<HTMLElement | null>;
   resizerProps: {
     onMouseDown: (e: React.MouseEvent) => void;
-    onDoubleClick: () => void;
-  };
-  headerProps: {
-    onDoubleClick: () => void;
-    "data-tooltip": string;
   };
   toggleCollapse: () => void;
 }
@@ -201,13 +199,7 @@ export function usePanelResize(config: PanelResizeConfig): PanelResizeResult {
     width,
     collapsed,
     panelRef,
-    resizerProps: { onMouseDown, onDoubleClick: toggleCollapse },
-    headerProps: {
-      onDoubleClick: toggleCollapse,
-      "data-tooltip": collapsed
-        ? "Double-click to expand"
-        : "Double-click to collapse",
-    },
+    resizerProps: { onMouseDown },
     toggleCollapse,
   };
 }

@@ -67,6 +67,46 @@ def _check_mm_layout(
     return has_explicit_mm or has_style_mm
 
 
+def _warn_mm_layout_discarded(mm_layout, explicitly_requested: bool) -> None:
+    """Say out loud that a computed mm layout is about to be thrown away.
+
+    ``constrained_layout`` and mm positioning cannot both win: the mm path
+    computes exact ``subplots_adjust`` fractions, and constrained_layout
+    recomputes axes positions from decoration extents, overwriting them. The
+    caller is not told, and the FIGURE still comes out the right overall size
+    (it was sized from the same mm numbers) -- so the only visible symptom is
+    that the AXES is bigger than asked for. Measured 2026-08-09: a 60mm axes
+    renders at 82.57mm.
+
+    Silence here is the failure. A caller who passes axes_width_mm=60 and
+    receives 82.57mm has no way to discover why, and nothing in the output
+    looks wrong. See the card
+    figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809 for the
+    root cause and the pending decision on which side should win.
+
+    Only warns when the mm values were asked for EXPLICITLY. Style-supplied
+    defaults would fire on every figure, and a warning that is always on is
+    noise nobody reads.
+    """
+    if not explicitly_requested:
+        return
+
+    import warnings
+
+    aw = mm_layout.get("axes_width_mm")
+    ah = mm_layout.get("axes_height_mm")
+    warnings.warn(
+        f"figrecipe: mm layout was computed ({aw}x{ah}mm per axes) but "
+        "DISCARDED because constrained_layout is active -- the rendered axes "
+        "will be LARGER than requested. The figure's overall size is still "
+        "correct, so this is not visible in the output. Pass "
+        "constrained_layout=False to get the mm sizing you asked for, or drop "
+        "the axes_*_mm/margin_*_mm arguments to accept automatic layout.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 def _calculate_mm_layout(
     nrows: int,
     ncols: int,
@@ -200,11 +240,33 @@ def _apply_style_to_axes(
 
     if style is not None:
         should_apply_style = True
-        style_dict = (
-            style.to_subplots_kwargs()
-            if hasattr(style, "to_subplots_kwargs")
-            else style
-        )
+        if hasattr(style, "to_subplots_kwargs"):
+            # A style OBJECT is already complete -- it carries every key.
+            style_dict = style.to_subplots_kwargs()
+        else:
+            # A DICT is an OVERRIDE, not a replacement. Taking it whole meant
+            # every key the caller did not pass fell through to the literal
+            # defaults inside apply_style_mm, which are NOT the loaded style's
+            # values -- so a partial dict produced a third configuration that
+            # was neither the style nor matplotlib. Measured 2026-09-02 in real
+            # work: style={"font_family": ...} silently moved axes.labelsize
+            # from 7.0 to 8.0, and style={} reverted the spines as well.
+            # Callers were working around it with {**fr.SCITEX_STYLE, ...};
+            # that is what this does, so nobody has to know to do it.
+            base = (
+                to_subplots_kwargs(global_style) if global_style is not None else {}
+            )
+            style_dict = {**(base or {}), **style}
+            # A key in NEITHER the resolved style NOR SCITEX_STYLE is honored by
+            # no consumer, and the merge above carries it silently — which is how
+            # a typo ("font_famly") becomes a no-op instead of a message. The
+            # union is the vocabulary a caller may legitimately pass, computed
+            # from what is already here rather than from a hand-kept list (card
+            # figrecipe-three-style-key-vocabularies-disagree-20260907).
+            from ..presets._scitex_style import SCITEX_STYLE
+            from ..styles._style_keys import warn_unknown_style_keys
+
+            warn_unknown_style_keys(style, set(base or {}) | set(SCITEX_STYLE))
     elif apply_style_mm and global_style is not None:
         style_dict = to_subplots_kwargs(global_style)
         if style_dict and style_dict.get("axes_thickness_mm") is not None:
@@ -337,6 +399,23 @@ def create_subplots(
         fig._mm_layout = mm_layout
         if not use_constrained:
             _apply_mm_layout_to_figure(fig, mm_layout, nrows, ncols)
+        else:
+            _warn_mm_layout_discarded(
+                mm_layout,
+                explicitly_requested=any(
+                    v is not None
+                    for v in (
+                        axes_width_mm,
+                        axes_height_mm,
+                        margin_left_mm,
+                        margin_right_mm,
+                        margin_bottom_mm,
+                        margin_top_mm,
+                        space_w_mm,
+                        space_h_mm,
+                    )
+                ),
+            )
 
     # Apply styling using helper
     _apply_style_to_axes(fig, axes, nrows, ncols, style, apply_style_mm, global_style)

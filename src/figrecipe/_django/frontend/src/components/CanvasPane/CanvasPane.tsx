@@ -7,12 +7,9 @@ import { redo, undo } from "../../hooks/useUndoRedo";
 import { useEditorStore } from "../../store/useEditorStore";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
+import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-interface CanvasPaneProps {
-  onHeaderDoubleClick?: () => void;
-}
-
-export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
+export function CanvasPane() {
   const {
     placedFigures,
     selectedFigureId,
@@ -30,45 +27,61 @@ export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
 
-  // Figure label: selected figure name or count
+  // Figure label: selected figure name or count. When the canvas holds no
+  // figures the label used to be the bare token "No figures" with no
+  // explanation — say what it means and how to get out of it.
   const selectedFig = placedFigures.find((f) => f.id === selectedFigureId);
   const figLabel = selectedFig
-    ? (selectedFig.path.split("/").pop() ?? "figure")
+    ? (selectedFig.path.split("/").pop() ?? gettext("figure"))
     : placedFigures.length > 0
-      ? `${placedFigures.length} figure${placedFigures.length > 1 ? "s" : ""}`
-      : "No figures";
+      ? interpolate(ngettext("%s figure", "%s figures", placedFigures.length), [placedFigures.length])
+      : gettext("No figures yet");
+  const figLabelTitle =
+    placedFigures.length === 0
+      ? gettext("No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree.")
+      : undefined;
 
   return (
     <>
       {/* Pane header with figure dropdown + toolbar actions */}
-      <div className="pane-header" onDoubleClick={onHeaderDoubleClick}>
+      <div className="pane-header">
         {/* Figure dropdown */}
         <div className="figure-dropdown-container">
-          <button className="figure-dropdown-toggle" type="button">
+          <button
+            className="figure-dropdown-toggle"
+            type="button"
+            title={figLabelTitle}
+          >
             <i className="fas fa-paint-brush" />
             <span className="figure-dropdown-label">{figLabel}</span>
             <i className="fas fa-chevron-down" />
           </button>
         </div>
 
-        {/* Toolbar actions (right-aligned) */}
+        {/* Toolbar actions (right-aligned) — icon AND text, so no action
+            is an icon-only mystery. Labels hide under narrow widths via
+            CSS; titles and aria-labels carry the full description. */}
         <div className="pane-header-buttons pane-header-right">
           {/* Undo / Redo */}
           <button
             className="pane-header-btn"
             type="button"
-            title="Undo (Ctrl+Z)"
+            title={gettext("Undo (Ctrl+Z)")}
+            aria-label={gettext("Undo (Ctrl+Z)")}
             onClick={undo}
           >
-            <i className="fas fa-undo" />
+            <i className="fas fa-undo" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Undo")}</span>
           </button>
           <button
             className="pane-header-btn"
             type="button"
-            title="Redo (Ctrl+Shift+Z)"
+            title={gettext("Redo (Ctrl+Shift+Z)")}
+            aria-label={gettext("Redo (Ctrl+Shift+Z)")}
             onClick={redo}
           >
-            <i className="fas fa-redo" />
+            <i className="fas fa-redo" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Redo")}</span>
           </button>
 
           <span className="toolbar-sep" />
@@ -77,18 +90,22 @@ export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
           <button
             className={`pane-header-btn${snapEnabled ? " pane-header-btn--active" : ""}`}
             type="button"
-            title={`Snap: ${snapEnabled ? "ON" : "OFF"}`}
+            title={snapEnabled ? gettext("Snap: ON") : gettext("Snap: OFF")}
+            aria-label={snapEnabled ? gettext("Snap: ON") : gettext("Snap: OFF")}
             onClick={toggleSnap}
           >
-            <i className="fas fa-magnet" />
+            <i className="fas fa-magnet" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Snap")}</span>
           </button>
           <button
             className={`pane-header-btn${showRulers ? " pane-header-btn--active" : ""}`}
             type="button"
-            title="Toggle rulers"
+            title={gettext("Toggle rulers")}
+            aria-label={gettext("Toggle rulers")}
             onClick={toggleRulers}
           >
-            <i className="fas fa-ruler-combined" />
+            <i className="fas fa-ruler-combined" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Rulers")}</span>
           </button>
 
           <span className="toolbar-sep" />
@@ -97,20 +114,24 @@ export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
           <button
             className="pane-header-btn"
             type="button"
-            title="Zoom to fit"
+            title={gettext("Zoom to fit")}
+            aria-label={gettext("Zoom to fit")}
             onClick={zoomControls?.zoomToFit}
           >
-            <i className="fas fa-compress-arrows-alt" />
+            <i className="fas fa-compress-arrows-alt" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Fit")}</span>
           </button>
 
-          {/* Hitmap */}
+          {/* Hitmap — also the entry point for selecting a plot element */}
           <button
             className={`pane-header-btn${showHitmap ? " pane-header-btn--active" : ""}`}
             type="button"
-            title="Toggle hit regions (debug)"
+            title={gettext("Toggle hit regions — click a plot element to select it")}
+            aria-label={gettext("Toggle hit regions — click a plot element to select it")}
             onClick={toggleHitmap}
           >
-            <i className="fas fa-bullseye" />
+            <i className="fas fa-bullseye" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Regions")}</span>
           </button>
 
           <span className="toolbar-sep" />
@@ -119,26 +140,32 @@ export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
           <button
             className="pane-header-btn"
             type="button"
-            title="Save (Ctrl+S)"
+            title={gettext("Save (Ctrl+S)")}
+            aria-label={gettext("Save (Ctrl+S)")}
             onClick={save}
           >
-            <i className="fas fa-save" />
+            <i className="fas fa-save" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Save")}</span>
           </button>
           <button
             className="pane-header-btn"
             type="button"
-            title="Restore original"
+            title={gettext("Restore original")}
+            aria-label={gettext("Restore original")}
             onClick={restore}
           >
-            <i className="fas fa-undo-alt" />
+            <i className="fas fa-undo-alt" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Restore")}</span>
           </button>
           <button
             className="pane-header-btn"
             type="button"
-            title="Export (PNG/SVG/PDF)"
+            title={gettext("Export (PNG/SVG/PDF)")}
+            aria-label={gettext("Export (PNG/SVG/PDF)")}
             onClick={() => setExportOpen(true)}
           >
-            <i className="fas fa-download" />
+            <i className="fas fa-download" aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Export")}</span>
           </button>
 
           <span className="toolbar-sep" />
@@ -147,10 +174,12 @@ export function CanvasPane({ onHeaderDoubleClick }: CanvasPaneProps) {
           <button
             className="pane-header-btn"
             type="button"
-            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            title={darkMode ? gettext("Switch to light mode") : gettext("Switch to dark mode")}
+            aria-label={darkMode ? gettext("Switch to light mode") : gettext("Switch to dark mode")}
             onClick={() => setDarkMode(!darkMode)}
           >
-            <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} />
+            <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} aria-hidden="true" />
+            <span className="pane-header-btn__label">{gettext("Theme")}</span>
           </button>
         </div>
       </div>

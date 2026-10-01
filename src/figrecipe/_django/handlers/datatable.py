@@ -3,22 +3,119 @@
 """Datatable handlers: data, plot, import."""
 
 import json
-import logging
 
-from django.http import JsonResponse
+from ..._utils._optional import missing_extra
 
-logger = logging.getLogger(__name__)
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
+
+
+def _dtype(values):
+    present = [v for v in values if v is not None and v != ""]
+    numeric = all(
+        isinstance(v, (int, float)) and not isinstance(v, bool) for v in present
+    )
+    return "numeric" if numeric else "string"
+
+
+def _table_response(names, rows, source):
+    """The editor store reads ``columns[].name`` and positional ``rows``."""
+    columns = [
+        {"name": name, "dtype": _dtype([row[i] for row in rows if i < len(row)])}
+        for i, name in enumerate(names)
+    ]
+    return JsonResponse({"columns": columns, "rows": rows, "source": source})
 
 
 def handle_datatable_data(request, editor):
+    return _table_response(*_current_table(editor))
+
+
+def _project_working_dir(editor, is_selected):
+    """The selected project dir to attach data to, or None when there is none.
+
+    ``EditorState.working_dir`` falls back to the process CWD, which is not a
+    project the user chose, so it only counts when it differs from the CWD.
+    """
+    working_dir = getattr(editor, "working_dir", None)
+    return working_dir if is_selected(working_dir) else None
+
+
+def _current_table(editor):
+    """The table the Data pane shows, as ``(names, rows, source)``.
+
+    Order: the table this PROJECT has stored, then this session's in-memory
+    import, then the figure's recorded data. The stored table comes first
+    because it is the edit the user made — and, unlike ``imported_table``, which
+    lives on one EditorState in one process, it survives a server restart and is
+    visible to any process opening the same project (Private Beta spec: project
+    data stays connected to the project).
+    """
+    from figrecipe._django._project_table import (
+        is_selected_project_dir,
+        load_project_table,
+    )
     from figrecipe._editor._helpers import to_json_serializable
 
+    stored = load_project_table(
+        getattr(editor, "recipe_path", None),
+        _project_working_dir(editor, is_selected_project_dir),
+    )
+    if stored:
+        names, rows = stored
+        return names, rows, "project"
+
+    imported = getattr(editor, "imported_table", None)
+    if imported:
+        return imported["names"], imported["rows"], "import"
+
     if not hasattr(editor.fig, "record") or not editor.fig.record:
-        return JsonResponse({"columns": [], "data": [], "source": "empty"})
+        return [], [], "empty"
 
     record = editor.fig.record
     columns = []
     data_rows = []
+
+    def _values(value):
+        """Reduce a recorded plot argument to a JSON-safe list.
+
+        A recorded arg is not the bare array: it is a mapping. Two shapes
+        occur, depending on whether the figure is live (in memory) or was
+        `reproduce`d from a recipe:
+          - inline / reproduced-CSV: ``{"name", "data": <list>, "dtype"}``
+          - file-backed live:        ``{"name", "data": "__FILE__", "dtype",
+            "_array": <ndarray>}``  (the values sit in ``_array`` until saved)
+        Passing the whole mapping to `to_json_serializable` returns the mapping
+        itself, so the caller's `isinstance(list)` check silently fails and the
+        row is never built — columns registered, data empty. Pull the payload:
+        ``_array`` when present (the live case), else ``data``; skip the
+        ``"__FILE__"`` sentinel, which carries no values of its own.
+        """
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            payload = value.get("_array")
+            if payload is None:
+                payload = value.get("data")
+            if payload is None:
+                return None
+            # The "__FILE__" sentinel is a string and carries no values of its
+            # own (the real data lives in _array, handled above); compare it
+            # as a string only so an ndarray payload never hits `==`.
+            if isinstance(payload, str) and payload == "__FILE__":
+                return None
+            value = payload
+        return to_json_serializable(value)
 
     for ax_key, ax_record in record.axes.items():
         for call in getattr(ax_record, "calls", []):
@@ -37,8 +134,8 @@ def handle_datatable_data(request, editor):
                 y_col = f"{call_id}_y"
                 if x_col not in columns:
                     columns.extend([x_col, y_col])
-                x_list = to_json_serializable(x_data)
-                y_list = to_json_serializable(y_data)
+                x_list = _values(x_data)
+                y_list = _values(y_data)
                 if isinstance(x_list, list) and isinstance(y_list, list):
                     for i, (xv, yv) in enumerate(zip(x_list, y_list)):
                         while len(data_rows) <= i:
@@ -46,18 +143,48 @@ def handle_datatable_data(request, editor):
                         data_rows[i][x_col] = xv
                         data_rows[i][y_col] = yv
 
-    return JsonResponse({"columns": columns, "data": data_rows, "source": "record"})
+    rows = [[row.get(col) for col in columns] for row in data_rows]
+    return columns, rows, "record"
+
+
+def _columns_from_table(editor, wanted):
+    names, rows, _ = _current_table(editor)
+    return {
+        name: [row[i] for row in rows if i < len(row) and row[i] not in (None, "")]
+        for i, name in enumerate(names)
+        if name in wanted
+    }
+
+
+def _first_empty_axis(rec_axes):
+    """A blank panel is filled in place rather than squeezed beside a new one."""
+    for i, ax in enumerate(rec_axes):
+        if not ax.has_data():
+            return i
+    return None
 
 
 def handle_datatable_plot(request, editor):
-    """Plot from datatable column selections."""
+    """Plot from datatable column selections.
+
+    With an ``x`` key, ``columns`` are the Y columns and ``x`` names the X
+    column (``null`` plots against the row number); without it X is guessed by
+    column name. ``data`` may be omitted, in which case the values come from
+    the table the Data pane is showing.
+    """
     from figrecipe._editor._helpers import render_with_overrides
 
     from .core import _regen_hitmap
 
     data = json.loads(request.body) if request.body else {}
-    plot_data = data.get("data", {})
+    x_column = data.get("x")
     columns = data.get("columns", [])
+    x_mode = "guess"
+    if "x" in data:
+        x_mode = "first" if x_column else "index"
+    if x_column and columns:
+        columns = [x_column] + [c for c in columns if c != x_column]
+    plot_data = data.get("data") or _columns_from_table(editor, columns)
     plot_type = data.get("plot_type", "line")
     target_axis = data.get("target_axis")
 
@@ -74,6 +201,8 @@ def handle_datatable_plot(request, editor):
         fig = editor.fig
         rec_axes = fig.flat
         axes = fig.get_axes()
+        if target_axis is None:
+            target_axis = _first_empty_axis(rec_axes)
 
         if target_axis is not None and target_axis < len(rec_axes):
             ax = rec_axes[target_axis]
@@ -105,7 +234,7 @@ def handle_datatable_plot(request, editor):
         from figrecipe._editor._datatable_plot_handlers import dispatch_plot
 
         try:
-            dispatch_plot(ax, plot_type, plot_data, columns)
+            dispatch_plot(ax, plot_type, plot_data, columns, x_mode=x_mode)
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
 
@@ -182,6 +311,24 @@ def handle_datatable_import(request, editor):
                     except ValueError:
                         row.append(val)
                 rows.append(row)
+
+        # Kept on the editor so the follow-up datatable/data shows this table.
+        editor.imported_table = {"names": list(headers), "rows": rows}
+
+        # ...and written into the PROJECT, so the edit outlives this process and
+        # stays attached to the recipe it belongs to (the in-memory attribute
+        # alone is lost on restart and invisible to any other process).
+        from figrecipe._django._project_table import (
+            is_selected_project_dir,
+            save_project_table,
+        )
+
+        save_project_table(
+            getattr(editor, "recipe_path", None),
+            _project_working_dir(editor, is_selected_project_dir),
+            list(headers),
+            rows,
+        )
 
         columns = []
         for i, name in enumerate(headers):

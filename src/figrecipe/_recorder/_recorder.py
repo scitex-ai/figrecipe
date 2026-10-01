@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from ._core import CallRecord, FigureRecord
+from ._utils import RE_ITERABLE_SEQUENCES, _refuse_one_shot_iterator
 
 
 class Recorder:
@@ -220,7 +221,13 @@ class Recorder:
                 processed[key] = value.tolist()
             elif hasattr(value, "values"):
                 processed[key] = np.asarray(value).tolist()
+            elif isinstance(value, RE_ITERABLE_SEQUENCES):
+                # Same reason as the positional path: `range` and friends are
+                # re-iterable, so materialising them is free, whereas the str()
+                # fallback below would record the TEXT "range(0, 10)".
+                processed[key] = list(value)
             else:
+                _refuse_one_shot_iterator(key, value)
                 # Try to convert to string
                 try:
                     processed[key] = str(value)

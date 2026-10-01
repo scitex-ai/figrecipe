@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from .. import __version__
+from .._utils._console import render_rich
 from ._apis import list_python_apis
 from ._completion import attach_shell_completion
 from ._compose import compose
@@ -95,9 +96,9 @@ class CategorizedGroup(click.Group):
 
 def _print_command_help(cmd, prefix: str, parent_ctx) -> None:
     """Recursively print help for a command and its subcommands."""
-    console.print(f"\n[bold cyan]━━━ {prefix} ━━━[/bold cyan]")
+    render_rich(f"\n[bold cyan]━━━ {prefix} ━━━[/bold cyan]", __name__)
     sub_ctx = click.Context(cmd, info_name=prefix.split()[-1], parent=parent_ctx)
-    console.print(cmd.get_help(sub_ctx))
+    render_rich(cmd.get_help(sub_ctx), __name__)
 
     # If this is a Group, recurse into subcommands
     if isinstance(cmd, click.Group):
@@ -176,8 +177,8 @@ def main(
 
 def _show_recursive_help(ctx: click.Context) -> None:
     """Display recursive help for all commands."""
-    console.print("[bold cyan]━━━ figrecipe ━━━[/bold cyan]")
-    console.print(ctx.get_help())
+    render_rich("[bold cyan]━━━ figrecipe ━━━[/bold cyan]", __name__)
+    render_rich(ctx.get_help(), __name__)
 
     for name, cmd in sorted(main.commands.items()):
         _print_command_help(cmd, f"figrecipe {name}", ctx)
@@ -212,12 +213,44 @@ try:
 except ImportError:
     pass
 
-try:
-    from scitex_dev.cli import skills_click_group
+# audit-cli §13 — self-maintenance commands live under `dev`, not at the top
+# level, so `figrecipe --help` stays a list of things a USER does with figures
+# (doctrine 20_dev-commands.md). The group is defined here rather than in its
+# own module because it holds nothing of figrecipe's own: every member is
+# supplied by scitex-dev.
+@click.group(context_settings=CONTEXT_SETTINGS)
+def dev() -> None:
+    """Self-maintenance commands for figrecipe itself."""
 
-    main.add_command(skills_click_group(package="figrecipe"))
-except ImportError:
-    pass
+
+main.add_command(dev)
+
+# NOT registered here: scitex-dev's own `skills_click_group`. It used to be
+# added to `main`, and `_cli/__init__.py` then overwrote the same name with
+# figrecipe's `_skills.skills_group` — so the scitex-dev one had never been
+# reachable. Removing dead code rather than moving it under `dev`, where it
+# would have collided with the real one for the first time. figrecipe's own
+# group is attached to `dev` in `_cli/__init__.py`, beside the alias.
+
+# §12 IS DELIBERATELY LEFT FIRING, and this is the reasoning rather than an
+# oversight. The rule wants `start-gui` re-registered through
+# `scitex_dev.ecosystem.deprecated_alias()` so the static auditor can see it.
+# Doing that was tried and REVERTED: the generic helper forwards argv to the
+# target and nothing else, while figrecipe's hand-rolled `start_gui` in
+# _gui.py ALSO accepts `--force` (kills whatever holds the port, then sleeps
+# before handing off) and tolerates `-y/--yes` for back-compat. `gui open` has
+# neither option, so the swap turns `start-gui --force` into a usage error and
+# silently drops the port-kill — a functional regression taken to silence a
+# WARN.
+#
+# §12 is WARN-tier and does not gate (measured: audit-all exits 0 with WARN
+# findings present), so the honest trade is to keep the working alias and
+# carry the warning. Reported upstream: the prescribed remedy assumes an alias
+# is a pure forward, and loses behaviour for any alias that accepts options
+# its target does not.
+#
+# `skills` IS moved, in _cli/__init__.py — that one is a pure forward, so the
+# helper costs nothing there.
 
 # audit-cli §1a — wire install-shell-completion + print-shell-completion
 # so `figrecipe <TAB>` works without the user copy-pasting boilerplate.

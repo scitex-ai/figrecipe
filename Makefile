@@ -1,4 +1,4 @@
-.PHONY: help install install-dev install-arial test test-hpc demo-notebook pdf clean clean-outputs clean-old-legacy lint lint-fix format pre-commit demo-gui demo-gui-all demo-plot-all demo-composition run-examples docker-build docker-build-gui docker-gui
+.PHONY: help install install-dev install-arial setup-worktree-frontend-deps test test-hpc demo-notebook pdf clean clean-outputs clean-old-legacy lint lint-fix format pre-commit demo-gui demo-gui-all demo-plot-all demo-composition run-examples docker-build docker-build-gui docker-gui
 
 help:
 	@echo "figrecipe - Record and reproduce matplotlib figures"
@@ -7,6 +7,9 @@ help:
 	@echo "  make install            Install package"
 	@echo "  make install-dev        Install package with dev dependencies"
 	@echo "  make install-arial      Install Arial font for matplotlib"
+	@echo "  make setup-worktree-frontend-deps"
+	@echo "                          Link scitex-ui as a sibling so frontend builds"
+	@echo "                          work from a linked worktree (run after worktree add)"
 	@echo "  make test               Run tests"
 	@echo "  make test-hpc           Run tests on Spartan HPC via srun"
 	@echo "  make demo-notebook      Execute demo notebook"
@@ -37,6 +40,9 @@ install-dev:
 
 install-arial:
 	@./scripts/maintenance/install_arial.sh
+
+setup-worktree-frontend-deps:
+	@./scripts/maintenance/setup-worktree-frontend-deps.sh
 
 test:
 	@./scripts/maintenance/test.sh

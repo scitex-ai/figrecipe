@@ -209,10 +209,44 @@ data/*
 **/*.pdf
 **/*.pkl
 **/*.png
-!examples/01_all_plots_out/*.png
-!examples/03_style_anatomy_out/*.png
-!examples/05_csv_workflow_out/*.png
-!examples/06_diagram_out/*.png
+# Example figures we DO publish. These are the images README/docs and the web
+# gallery point at, so they are deliberate artefacts rather than run output.
+#
+# THESE PATHS MUST TRACK THE EXAMPLE NUMBERING. The examples were renumbered at
+# some point and this allow-list was not, so every entry below named a directory
+# that no longer existed:
+#
+#     01_all_plots_out      ->  02_plot_and_reproduce_all_out
+#     03_style_anatomy_out  ->  05_style_anatomy_out
+#     05_csv_workflow_out   ->  07_csv_workflow_out
+#     06_diagram_out        ->  08_diagram_out
+#
+# `**/*.png` above therefore swallowed every example figure, silently, and no
+# example image has been committable since. That is why
+# examples/10b_figrecipe_concept_diagram_fixed_out/figrecipe_concept.png — the
+# concept diagram the README links to — 404s on GitHub (operator, 2026-08-16:
+# 「一番大事なこれがあがってない」). An allow-list that names nothing does not
+# fail; it just quietly allows nothing.
+!examples/02_plot_and_reproduce_all_out/*.png
+!examples/05_style_anatomy_out/*.png
+!examples/07_csv_workflow_out/*.png
+!examples/08_diagram_out/*.png
+!examples/10b_figrecipe_concept_diagram_fixed_out/*.png
+
+# Gallery templates are PACKAGE DATA, not run output. They ship inside the wheel
+# so the web gallery has something to show once figrecipe is INSTALLED rather
+# than checked out — see _django/handlers/gallery.py. Both extensions need an
+# explicit exception: `**/*.png` (below) and `*.yaml` (further up) would
+# otherwise drop them, which is the same way the example figures disappeared.
+!src/figrecipe/_django/gallery_templates/*.png
+!src/figrecipe/_django/gallery_templates/*.yaml
+
+# Browser evidence for an editor UX change (docs/images/editor-ux-20260916).
+# A canvas/rail/data-pane change cannot be reviewed from the diff alone, so the
+# screenshots are deliberate artefacts rather than run output — the same reason
+# the example figures above need an exception.
+!docs/images/editor-ux-20260916/*.png
+
 !examples/02_composition_out/gallery.jpg
 !docs/style_granularity.jpg
 !docs/sphinx/_static/*.png
@@ -256,7 +290,6 @@ data/*
 !docs/sphinx/requirements.txt
 **/*.log
 **/*.db
-**/*.sqlite
 **/*.xml
 **/*.JNB
 **/*.jnb
@@ -318,12 +351,12 @@ cover/
 # Translations
 *.mo
 *.pot
+# Shipped catalogs: Django reads the .mo at runtime, and msgfmt is absent from production images.
+!src/figrecipe/_django/locale/**/*.mo
 
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -789,7 +822,6 @@ flycheck_*.el
 
 ### Source: /home/ywatanabe/.git-templates/.gitignore-templates/Custom/SQL.gitignore ###
 **/*.db
-**/*.sqlite3
 *.db-shm
 *.db-wal
 
@@ -821,6 +853,12 @@ src/*/_docs/
 !/codecov.yml
 # Playwright CLI snapshots
 .playwright-cli/
+# Playwright MCP snapshots — same class of throwaway browser-automation
+# output as .playwright-cli/ above (console logs, page .yml dumps, .png
+# screenshots), written by the MCP server instead of the CLI. Only the
+# -cli spelling was ignored, so every MCP-driven session left the repo
+# dirty and blocked `sac agents relocate` on source_work_committed.
+.playwright-mcp/
 
 .claude/
 .venv/
@@ -832,3 +870,35 @@ src/*/_docs/
 .scitex/dev/*
 !.scitex/dev/config.yaml
 !.scitex/dev/cli-audit-dict.yaml
+.worktrees/
+
+# --- Gallery template assets (MUST be tracked; they ship inside the wheel) ---
+# The gallery templates under src/figrecipe/_django/gallery_templates/ are
+# PACKAGE DATA, not scratch output. Broad ignores above (*.csv, *.npz,
+# **/*.csv, **/*.npz) would otherwise swallow every *_data/ payload the
+# recipes reference, which is exactly how the gallery came to ship 18
+# recipes and zero of the data files they load ("Add to canvas" then fails
+# with FileNotFoundError). Negations must be LAST — last matching pattern
+# wins — and must be recursive to reach the *_data/ subdirectories.
+!src/figrecipe/_django/gallery_templates/
+!src/figrecipe/_django/gallery_templates/**
+
+### Sphinx build cache (intermediate doctrees, never served)
+.doctrees/
+
+# Bundled Sphinx documentation assets are deliberate wheel data.
+# Images, fonts and source links are required by the generated HTML.
+!src/figrecipe/_sphinx_html/**/*.png
+!src/figrecipe/_sphinx_html/**/*.jpg
+!src/figrecipe/_sphinx_html/**/*.svg
+!src/figrecipe/_sphinx_html/**/*.eot
+!src/figrecipe/_sphinx_html/**/*.ttf
+!src/figrecipe/_sphinx_html/**/*.woff
+!src/figrecipe/_sphinx_html/**/*.woff2
+!src/figrecipe/_sphinx_html/_sources/**/*.rst.txt
+# This 20 MB producer copy has no HTML/CSS/JS/source-link references.
+# The style-reference page serves scitex_style_anatomy.jpg instead.
+src/figrecipe/_sphinx_html/_static/style_anatomy.png
+# Sphinx intermediate state is not served.
+src/figrecipe/_sphinx_html/.doctrees/
+src/figrecipe/_sphinx_html/.buildinfo

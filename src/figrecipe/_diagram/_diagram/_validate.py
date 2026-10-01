@@ -16,14 +16,20 @@ Rules (all enforced programmatically):
 
 from typing import TYPE_CHECKING
 
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 try:
     from scitex_logging import getLogger
 
     logger = getLogger(__name__)
 except ImportError:
-    import logging
 
-    logger = logging.getLogger(__name__)
+    logger = slogging.getLogger(__name__)
 
 from ._geom import bbox_gap, box_rect, rects_overlap, seg_rect_clip_len
 

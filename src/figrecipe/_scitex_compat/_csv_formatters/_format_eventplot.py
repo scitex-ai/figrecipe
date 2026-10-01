@@ -11,7 +11,12 @@ __DIR__ = os.path.dirname(__FILE__)
 
 import numpy as np
 import pandas as pd
-import scitex_logging as logging
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as logging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from figrecipe._utils._csv_column_naming import get_csv_column_name
 

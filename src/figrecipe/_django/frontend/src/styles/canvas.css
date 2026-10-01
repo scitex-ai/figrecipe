@@ -12,6 +12,12 @@
   overflow: hidden;
   position: relative;
   background: var(--vis-bg-primary);
+  /* Left-drag pans here (and on the page), so say so before the user tries.
+   * The page body and the rulers override this with their own cursors. */
+  cursor: grab;
+  /* The canvas owns its gestures: without this the browser scrolls/zooms the
+   * pane itself and cancels the touch pointer stream mid-pan. */
+  touch-action: none;
 }
 
 /* ── Rulers Area: 3x3 CSS Grid (exact copy from vis_app) */
@@ -148,6 +154,28 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* ── Zoom-aware grid layer (CanvasGrid) ───────────────── */
+/* Drawn INSIDE .vis-canvas-container so it pans and zooms with the page, and
+ * OPAQUE (background-color: inherit) so the fixed 1 mm/10 mm CSS grid above it
+ * cannot show through and smear into a block at low zoom. Decoration only:
+ * pointer-events: none keeps every drag and click in the canvas's hands. */
+
+.canvas-grid-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: inherit;
+  background-repeat: repeat;
+  /* Fine rungs draw many more lines, so they read slightly lighter than the
+   * coarse ruling they replace at low zoom. */
+  opacity: 0.9;
+}
+
+.canvas-grid-layer--coarse {
+  opacity: 1;
+}
+
 /* ── Placed figure (composition object on canvas) ───── */
 
 .placed-figure {
@@ -254,6 +282,9 @@
   color: var(--vis-text-muted);
   gap: 8px;
   padding: 60px 20px;
+  /* The grid layer is positioned, so it would otherwise paint over this hint. */
+  position: relative;
+  z-index: 1;
 }
 
 .canvas-empty__hint {
@@ -536,4 +567,47 @@
 .legend-drag-overlay.dragging {
   border-color: var(--stx-app-accent, #7c5cbf);
   background: rgba(124, 92, 191, 0.08);
+}
+
+/* ── Interactive hitmap overlay (plot element selection) ─ */
+/* Sits above the non-interactive bbox overlay; only mounted while the hitmap
+ * toggle is on, so figure drag and the marquee are unaffected otherwise. */
+
+.hitmap-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  outline: none;
+}
+
+/* Keyboard focus must be visible: the ring marks the surface, the reticle marks
+ * the point Enter/Space will select. */
+.hitmap-overlay--focused {
+  outline: 2px solid var(--accent-primary, #4a9b7e);
+  outline-offset: -2px;
+}
+
+.hitmap-overlay__reticle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--accent-primary, #4a9b7e);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+/* Names the selected element on the canvas, so the ring is not the only cue. */
+.hitmap-overlay__selected {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
 }

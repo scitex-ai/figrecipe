@@ -204,49 +204,117 @@ class TestCompose:
                 sources={(0, 0): (recipe, "r99c99")},
             )
 
-    def test_compose_preserves_mm_layout_part_1(self, temp_recipes):
-        """Compose respects mm layout parameters."""
-        # Arrange
-        # Act
-        # Assert
-        recipe1, recipe2 = temp_recipes
-        fig, axes = fr.compose(
-            layout=(1, 2),
-            sources={(0, 0): recipe1, (0, 1): recipe2},
-            axes_width_mm=50,
-            axes_height_mm=40,
-        )
-        assert fig is not None
+    def _compose_and_measure(self, temp_recipes, width_mm, height_mm):
+        """Compose a 1x2 row at the given mm and return each panel's rendered
+        (width_mm, height_mm), measured figrecipe's own way.
 
-    def test_compose_preserves_mm_layout_part_2(self, temp_recipes):
-        """Compose respects mm layout parameters."""
-        # Arrange
-        # Act
-        # Assert
-        recipe1, recipe2 = temp_recipes
-        fig, axes = fr.compose(
-            layout=(1, 2),
-            sources={(0, 0): recipe1, (0, 1): recipe2},
-            axes_width_mm=50,
-            axes_height_mm=40,
-        )
-        figsize = fig.fig.get_size_inches()
-        assert figsize[0] > 0
+        ``get_dimension_info`` draws the canvas before reading, so the size is
+        the one AFTER constrained/tight layout has finished moving things. A
+        reading taken before the draw can differ from what is actually saved.
+        """
+        from figrecipe._utils._dimension_info import get_dimension_info
 
-    def test_compose_preserves_mm_layout_part_3(self, temp_recipes):
-        """Compose respects mm layout parameters."""
-        # Arrange
-        # Act
-        # Assert
         recipe1, recipe2 = temp_recipes
-        fig, axes = fr.compose(
+        fig, _ = fr.compose(
             layout=(1, 2),
             sources={(0, 0): recipe1, (0, 1): recipe2},
-            axes_width_mm=50,
-            axes_height_mm=40,
+            axes_width_mm=width_mm,
+            axes_height_mm=height_mm,
         )
-        figsize = fig.fig.get_size_inches()
-        assert figsize[1] > 0
+        return [
+            get_dimension_info(fig.fig, ax)["axes_size_mm"] for ax in fig.fig.axes
+        ]
+
+    # These assert that the rendered size TRACKS the request, deliberately not
+    # that it EQUALS it. Measured 2026-08-09: every axes renders larger than
+    # requested by a constant (+12.57mm wide, +21.06mm tall through compose),
+    # and whether that is a defect or a footprint-vs-data-rectangle semantic is
+    # unresolved -- see the card
+    # figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809.
+    # Asserting the currently-measured numbers would cement the very behaviour
+    # under question; asserting the RELATIONSHIP is true either way and still
+    # catches a parameter that silently stops working.
+    #
+    # They replace three tests (test_compose_preserves_mm_layout_part_1/2/3)
+    # whose only assertions were `fig is not None`, `figsize[0] > 0` and
+    # `figsize[1] > 0` -- named for this guarantee, passing for every figure
+    # that has ever existed, and green while the discrepancy above went unseen.
+
+    def test_a_wider_request_renders_a_wider_panel(self, temp_recipes):
+        # Arrange
+        narrow = self._compose_and_measure(temp_recipes, 30, 40)[0][0]
+        # Act
+        wide = self._compose_and_measure(temp_recipes, 60, 40)[0][0]
+        # Assert
+        assert wide > narrow
+
+    def test_a_taller_request_renders_a_taller_panel(self, temp_recipes):
+        # Arrange
+        short = self._compose_and_measure(temp_recipes, 50, 25)[0][1]
+        # Act
+        tall = self._compose_and_measure(temp_recipes, 50, 50)[0][1]
+        # Assert
+        assert tall > short
+
+    def test_the_width_request_does_not_move_the_height(self, temp_recipes):
+        # Arrange: the two axes are independent knobs. If widening a panel also
+        # changed its height, mm layout would be unpredictable per-axis.
+        baseline_height = self._compose_and_measure(temp_recipes, 30, 40)[0][1]
+        # Act
+        widened_height = self._compose_and_measure(temp_recipes, 60, 40)[0][1]
+        # Assert
+        assert widened_height == pytest.approx(baseline_height)
+
+    @pytest.mark.xfail(
+        strict=False,
+        reason="SOURCE-DEPENDENT, not characterised: changing only "
+        "axes_height_mm can move the rendered WIDTH for these fixture recipes. "
+        "Measured 2026-08-09 -- it does NOT reproduce with default-size "
+        "fr.subplots() sources, where width stays 62.57mm across heights "
+        "25/40/50/80. So the trigger is something about the source panel "
+        "(tick-label extent is the likely candidate), not the height request "
+        "alone. Deliberately NOT asserted as a clean invariant until the cause "
+        "is known -- an xfail states the gap honestly where a tolerance would "
+        "hide it. Card: "
+        "figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809.",
+    )
+    def test_the_height_request_does_not_move_the_width(self, temp_recipes):
+        # Arrange
+        baseline_width = self._compose_and_measure(temp_recipes, 50, 25)[0][0]
+        # Act
+        heightened_width = self._compose_and_measure(temp_recipes, 50, 50)[0][0]
+        # Assert
+        assert heightened_width == pytest.approx(baseline_width)
+
+    @pytest.mark.xfail(
+        strict=False,
+        reason="REAL but NARROW: two panels in one row can render at different "
+        "widths. Measured 2026-08-09 at axes_width_mm=30/axes_height_mm=25 -- "
+        "panel0 41.82mm vs panel1 42.57mm, a 0.75mm drift. Identical at 50x40 "
+        "and 89x40, so it is size-dependent rather than universal. 0.75mm is "
+        "invisible on screen and visible in print, which is precisely the class "
+        "of mismatch the mm column grid exists to prevent. Card: "
+        "figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809.",
+    )
+    def test_panels_in_one_row_render_at_identical_size(self, temp_recipes):
+        # Arrange: per-panel drift across a row is the mismatch that is
+        # invisible at thumbnail size and glaring in print. Pinned at the size
+        # where the drift actually appears -- 50x40 passes and would give false
+        # assurance.
+        panels = self._compose_and_measure(temp_recipes, 30, 25)
+        # Act
+        first, second = panels[0], panels[1]
+        # Assert
+        assert second == pytest.approx(first)
+
+    def test_the_rendered_size_is_positive_and_finite(self, temp_recipes):
+        # Arrange: the one thing the replaced tests did check, kept so a
+        # degenerate/NaN layout still fails loudly rather than silently.
+        width, height = self._compose_and_measure(temp_recipes, 50, 40)[0]
+        # Act
+        ok = width > 0 and height > 0
+        # Assert
+        assert ok
 
 
 class TestImportAxes:

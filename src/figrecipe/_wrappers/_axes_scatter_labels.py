@@ -42,6 +42,9 @@ class ScatterLabelsMixin:
         leader_lines: bool = False,
         clip: bool = True,
         fontsize: Optional[float] = None,
+        step: Optional[float] = None,
+        max_radius: Optional[float] = None,
+        ink_tol: Optional[float] = None,
         id: Optional[str] = None,
         **text_kwargs,
     ):
@@ -55,6 +58,13 @@ class ScatterLabelsMixin:
         ink, not just point centers; ``avoid="points"`` skips the raster.
         ``clip`` keeps labels inside the axes. Any label with no clear spot is
         left at its point and a warning is emitted (never silently dropped).
+
+        ``step``, ``max_radius`` and ``ink_tol`` tune the ring search and are
+        forwarded to ``solve_label_positions``; leaving them None uses that
+        solver's own defaults, so this signature never restates them. A crowded
+        panel previously had no knob short of calling the private solver, while
+        ``stx_annotate_n`` already forwarded two of the three — the asymmetry was
+        arbitrary rather than intended.
         """
         import numpy as np
 
@@ -105,8 +115,21 @@ class ScatterLabelsMixin:
 
         from .._declutter import solve_label_positions
 
+        # Forward only what the caller actually set. Restating the solver's
+        # defaults here would put them in two places, and the next person to tune
+        # `step` would change one and wonder why nothing moved. `_annotate_n`
+        # currently restates 6.0/160.0; this side deliberately does not.
+        solver_kwargs = {
+            name: value
+            for name, value in (
+                ("step", step),
+                ("max_radius", max_radius),
+                ("ink_tol", ink_tol),
+            )
+            if value is not None
+        }
         centers, placed_clear = solve_label_positions(
-            anchors, sizes, ink_mask, height, obstacles, clip_rect
+            anchors, sizes, ink_mask, height, obstacles, clip_rect, **solver_kwargs
         )
 
         inv = ax.transData.inverted()

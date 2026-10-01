@@ -113,7 +113,7 @@ def main(
     s3.add_box(
         "db",
         "Session DB",
-        subtitle="SQLite",
+        subtitle="Postgres",
         shape="cylinder",
         emphasis="muted",
         x_mm=45,

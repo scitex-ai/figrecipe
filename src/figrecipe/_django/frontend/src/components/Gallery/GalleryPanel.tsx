@@ -1,102 +1,33 @@
-/** Gallery panel — template selector modal.
- * Shows categories + thumbnail grid. Click to add template to canvas.
+/** Gallery panel — template selector for ONE chosen plot family.
+ *
+ * Opened from the plot-type rail (PlotTypeNav). The family was just chosen in
+ * the rail, so the panel shows ONLY that family's templates — picking "Line"
+ * then being handed an "All" grid plus a second row of family tabs would make
+ * the user re-choose the family they already picked. Fetching, thumbnails and
+ * add-to-canvas live in `useGalleryTemplates`, shared with GalleryStart (the
+ * empty-canvas gallery) so the two cannot drift.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { api } from "../../api/client";
-import { useEditorStore } from "../../store/useEditorStore";
-
-interface GalleryTemplate {
-  name: string;
-  label: string;
-  icon: string;
-  path: string;
-  has_thumbnail: boolean;
-}
-
-interface GalleryData {
-  categories: Record<string, GalleryTemplate[]>;
-}
-
-const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
-  line: { label: "Line", icon: "fa-chart-line" },
-  scatter: { label: "Scatter", icon: "fa-braille" },
-  categorical: { label: "Categorical", icon: "fa-chart-bar" },
-  distribution: { label: "Distribution", icon: "fa-chart-column" },
-  statistical: { label: "Statistical", icon: "fa-square-root-variable" },
-  grid: { label: "Grid", icon: "fa-th" },
-  area: { label: "Area", icon: "fa-chart-area" },
-  contour: { label: "Contour", icon: "fa-layer-group" },
-  special: { label: "Special", icon: "fa-shapes" },
-};
+import { useEffect } from "react";
+import { CATEGORY_LABELS, useGalleryTemplates } from "./useGalleryTemplates";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface Props {
   onClose: () => void;
-  initialCategory?: string;
+  /** Called after a template lands on the figure. */
+  onAdded?: () => void;
+  /** The plot family chosen in the rail; the panel shows only its templates. */
+  family: string;
 }
 
-export function GalleryPanel({ onClose, initialCategory }: Props) {
-  const [data, setData] = useState<GalleryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState(
-    initialCategory || "all",
-  );
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-  const { addFigure, showToast } = useEditorStore();
+export function GalleryPanel({ onClose, onAdded, family }: Props) {
+  const { data, loading, failed, thumbnails, addTemplate } =
+    useGalleryTemplates();
 
-  // Load gallery data
-  useEffect(() => {
-    api
-      .get<GalleryData>("api/gallery")
-      .then((d) => {
-        setData(d);
-        // Auto-select first category if initial not found
-        if (initialCategory && !d.categories[initialCategory]) {
-          setActiveCategory("all");
-        }
-      })
-      .catch((e) => {
-        console.error("[Gallery] Failed to load:", e);
-        showToast("Failed to load gallery", "error");
-      })
-      .finally(() => setLoading(false));
-  }, [initialCategory, showToast]);
-
-  // Load thumbnails for visible templates
-  useEffect(() => {
-    if (!data) return;
-    const templates = Object.values(data.categories).flat();
-    for (const tmpl of templates) {
-      if (tmpl.has_thumbnail && !thumbnails[tmpl.name]) {
-        api
-          .get<{ image: string }>(`api/gallery/thumbnail/${tmpl.name}`)
-          .then((d) => {
-            setThumbnails((prev) => ({ ...prev, [tmpl.name]: d.image }));
-          })
-          .catch(() => {
-            /* thumbnail load failure is non-critical */
-          });
-      }
-    }
-  }, [data, thumbnails]);
-
-  const handleAdd = useCallback(
-    async (tmpl: GalleryTemplate) => {
-      try {
-        // Copy template to working dir
-        const result = await api.post<{ recipe_path: string }>(
-          "api/gallery/add",
-          { template: tmpl.name },
-        );
-        // Add the copied recipe to canvas
-        await addFigure(result.recipe_path);
-        onClose();
-      } catch (e) {
-        showToast(`Failed to add template: ${e}`, "error");
-      }
-    },
-    [addFigure, onClose, showToast],
-  );
+  // A family that ships no templates (e.g. "vector" declares none) says so
+  // instead of rendering an empty grid that reads as a broken gallery.
+  const familyTemplates = data?.categories[family] ?? [];
+  const familyLabel = gettext(CATEGORY_LABELS[family]?.label ?? family);
 
   // Close on Escape
   useEffect(() => {
@@ -107,85 +38,49 @@ export function GalleryPanel({ onClose, initialCategory }: Props) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  // Get filtered templates
-  const getTemplates = (): GalleryTemplate[] => {
-    if (!data) return [];
-    if (activeCategory === "all") {
-      // Deduplicate by name
-      const seen = new Set<string>();
-      const all: GalleryTemplate[] = [];
-      for (const items of Object.values(data.categories)) {
-        for (const item of items) {
-          if (!seen.has(item.name)) {
-            seen.add(item.name);
-            all.push(item);
-          }
-        }
-      }
-      return all;
-    }
-    return data.categories[activeCategory] || [];
-  };
-
-  const templates = getTemplates();
-  const categoryKeys = data ? Object.keys(data.categories) : [];
-
   return (
     <div className="gallery-overlay" onMouseDown={onClose}>
       <div className="gallery-panel" onMouseDown={(e) => e.stopPropagation()}>
-        {/* Header */}
+        {/* Header — names the family the rail selection already made */}
         <div className="gallery-header">
           <h3>
-            <i className="fas fa-shapes" /> Template Gallery
+            <i className={`fas ${CATEGORY_LABELS[family]?.icon ?? "fa-shapes"}`} />{" "}
+            {interpolate(gettext("%s templates"), [familyLabel])}
           </h3>
-          <button className="gallery-close" onClick={onClose} type="button">
+          <button className="gallery-close" onClick={onClose} type="button" aria-label={gettext("Close")}>
             <i className="fas fa-times" />
           </button>
-        </div>
-
-        {/* Category tabs */}
-        <div className="gallery-categories-bar">
-          <button
-            className={`gallery-cat-btn${activeCategory === "all" ? " active" : ""}`}
-            onClick={() => setActiveCategory("all")}
-            type="button"
-          >
-            All
-          </button>
-          {categoryKeys.map((key) => {
-            const cat = CATEGORY_LABELS[key];
-            return (
-              <button
-                key={key}
-                className={`gallery-cat-btn${activeCategory === key ? " active" : ""}`}
-                onClick={() => setActiveCategory(key)}
-                type="button"
-              >
-                {cat && <i className={`fas ${cat.icon}`} />}
-                {cat?.label || key}
-              </button>
-            );
-          })}
         </div>
 
         {/* Content */}
         {loading ? (
           <div className="gallery-loading">
-            <i className="fas fa-spinner fa-spin" /> Loading templates...
+            <i className="fas fa-spinner fa-spin" /> {gettext("Loading templates…")}
           </div>
-        ) : templates.length === 0 ? (
+        ) : failed ? (
+          <div className="gallery-empty">
+            <i className="fas fa-triangle-exclamation" />
+            {gettext("Could not load the template gallery")}
+          </div>
+        ) : familyTemplates.length === 0 ? (
           <div className="gallery-empty">
             <i className="fas fa-inbox" />
-            No templates available for this category
+            {interpolate(gettext("No %s templates are available in this install"), [familyLabel])}
           </div>
         ) : (
           <div className="gallery-grid">
-            {templates.map((tmpl) => (
+            {familyTemplates.map((tmpl) => (
               <div
                 key={tmpl.name}
                 className="gallery-item"
-                onClick={() => handleAdd(tmpl)}
-                title={`Add ${tmpl.label} to canvas`}
+                onClick={() => {
+                  void addTemplate(tmpl).then((ok) => {
+                    if (!ok) return;
+                    onClose();
+                    onAdded?.();
+                  });
+                }}
+                title={interpolate(gettext("Add %s to canvas"), [tmpl.label])}
               >
                 <div className="gallery-item-thumb">
                   {thumbnails[tmpl.name] ? (

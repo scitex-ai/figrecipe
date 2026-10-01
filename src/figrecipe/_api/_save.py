@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Save function helpers for the public API."""
 
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -40,6 +41,74 @@ from ._save_helpers import (
 )
 
 _log = get_logger("figrecipe")
+
+
+def _roll_back_image_side_on_recipe_failure(
+    image_path: Path,
+    yaml_path: Path,
+    data_dir: Path,
+    single_csv: Optional[Path],
+    pre_existing: dict,
+) -> bool:
+    """Undo the artifacts THIS save created, after its recipe write failed.
+
+    A figure save declares a pair (image + recipe); a recipe write that raises
+    (e.g. a non-YAML-able object in the record) leaves the already-written
+    image on disk with no recipe to replay it -- a half-saved figure that looks
+    saved (card figrecipe-save-leaves-a-png-with-no-recipe-when-the-recipe-
+    write-fails). ``save_recipe`` also writes data sidecars (<stem>_data/ for
+    separate format, <stem>.csv for single) before the YAML, which would be
+    orphaned too.
+
+    Destructive-safety (the card's explicit caution): only artifacts that THIS
+    call CREATED are removed. ``pre_existing`` maps each artifact path to
+    whether it existed before the save began; an artifact that pre-existed was
+    displaced by an overwrite and is KEPT (deleting it would empty the user's
+    path -- worse than the half-save). The YAML itself is NEVER deleted here:
+    the serializer writes it via an atomic temp-file + os.replace, so a failed
+    recipe write never leaves a partial YAML at the final path -- the old YAML
+    (if any) is intact, and deleting it would be pure data loss.
+
+    Returns True if the image was removed, False if it was kept.
+    """
+    removed, kept = [], []
+
+    def _cleanup(p: Path, name: str):
+        if not (p.exists() or p.is_symlink()):
+            return
+        if pre_existing.get(p, False):
+            kept.append(f"{name} (KEPT -- pre-existed; this save overwrote it)")
+            return
+        try:
+            if p.is_dir():
+                shutil.rmtree(p)
+            else:
+                p.unlink()
+            removed.append(name)
+        except OSError as e:
+            kept.append(f"{name} (remove failed: {e})")
+
+    img_removed = True
+    _cleanup(image_path, image_path.name)
+    img_removed = image_path.name in removed
+    _cleanup(data_dir, f"{data_dir.name}/ (dir)")
+    if single_csv is not None and single_csv != image_path:
+        _cleanup(single_csv, single_csv.name)
+
+    state = "removed" if img_removed else "KEPT"
+    _log.warning(
+        f"Recipe write failed after the image was written. "
+        f"image={image_path} [{state}]; recipe={yaml_path} [kept -- the "
+        f"serializer's atomic write left it intact or absent]. "
+        f"Removed this save's artifacts: {', '.join(removed) or '-'}. "
+        f"Kept pre-existing: {', '.join(kept) or '-'}. "
+        + (
+            "No (image-without-recipe) half-pair left on disk."
+            if img_removed
+            else "NOTE: the image path was KEPT because a figure already existed there; it now has no matching recipe for THIS save."
+        )
+    )
+    return img_removed
 
 
 def save_figure(
@@ -173,6 +242,27 @@ def save_figure(
 
         run_overlap_check(fig, style=style_dict)
 
+    # Refresh the record's figsize/dpi from the LIVE figure before anything
+    # serializes or renders. The record is seeded from fig.get_size_inches()
+    # at creation (_subplots), so for a figure that never resizes this is
+    # byte-identical to the creation-time values -- but
+    # fig.set_size_inches(...) (delegated to the matplotlib figure, not
+    # recorded as a call) would otherwise leave the recipe holding the
+    # ORIGINAL size while the saved PNG has the NEW one, and the replay is
+    # built at record.figsize (_reproducer) -> size mismatch, validation has
+    # nothing to compare. Same save-time-capture pattern as record.rcparams.
+    # The mm-composed aspect path (_composition/_tile.py::_source_aspect) reads
+    # record.figsize only as a FALLBACK after content_size_mm, and the saved
+    # figure's true aspect IS the live figsize, so the refresh is safe and more
+    # correct there. (card figrecipe-set-size-inches-after-subplots-size-
+    # mismatch-20260906)
+    _w, _h = (float(v) for v in fig.fig.get_size_inches())
+    if (_w, _h) != (float(fig.record.figsize[0]), float(fig.record.figsize[1])):
+        fig.record.figsize = (_w, _h)
+    _live_dpi = int(fig.fig.get_dpi())
+    if _live_dpi != int(fig.record.dpi):
+        fig.record.dpi = _live_dpi
+
     # Check for .fig.zip (multi-panel Figz bundle) or .plt.zip (single-plot Pltz bundle)
     suffixes = [s.lower() for s in path.suffixes]
     if suffixes[-2:] == [".fig", ".zip"]:
@@ -245,6 +335,13 @@ def save_figure(
     # to the content-aware crop. (#215 generalised from standalone diagrams.)
     use_content_crop = wants_content_crop(is_croppable, use_constrained, mm_layout)
     use_tight = use_constrained and not use_content_crop
+
+    # Half-save safety (card figrecipe-save-leaves-a-png-with-no-recipe-when-the-
+    # recipe-write-fails): snapshot whether the IMAGE path pre-existed BEFORE
+    # this call's savefig below overwrites it. This flag must be captured here --
+    # not at the recipe write, by which point the image has already been created
+    # and the flag would wrongly report "pre-existed", leaving a half-saved pair.
+    _image_pre_existed = image_path.exists() or image_path.is_symlink()
 
     # Handle facecolor override - make patches opaque if needed
     restore_patches = None
@@ -449,12 +546,47 @@ def save_figure(
         raise ValueError("\n  ".join(_diagram_errors))
 
     # Save the recipe
-    saved_yaml = fig.save_recipe(
-        yaml_path,
-        include_data=include_data,
-        data_format=data_format,
-        csv_format=csv_format,
+    # ------------------------------------------------------------------
+    # Half-save safety (card figrecipe-save-leaves-a-png-with-no-recipe-when-
+    # the-recipe-write-fails): the image was already written by this call (see
+    # _image_pre_existed, snapshotted before the savefig above), and save_recipe
+    # is about to write the data sidecars. If save_recipe raises (e.g. a
+    # non-YAML-able object in the record -- the shape PR #374 fixed for
+    # CapStyle but that generalises to any future serialization failure), we must
+    # not leave an image with no recipe. So we roll back exactly what THIS save
+    # created -- never a pre-existing file the user might be re-saving over.
+    # The data sidecars are created only by save_recipe, so their pre-existence
+    # is snapshotted here (just before the call); the image's was snapshotted
+    # before the savefig.
+    _data_dir = image_path.parent / f"{image_path.stem}_data"
+    _single_csv = (
+        image_path.with_suffix(".csv")
+        if data_format == "csv" and csv_format == "single"
+        else None
     )
+    _pre_existing = {image_path: _image_pre_existed}
+    _pre_existing[_data_dir] = _data_dir.exists() or _data_dir.is_symlink()
+    if _single_csv is not None:
+        _pre_existing[_single_csv] = _single_csv.exists() or _single_csv.is_symlink()
+
+    try:
+        saved_yaml = fig.save_recipe(
+            yaml_path,
+            include_data=include_data,
+            data_format=data_format,
+            csv_format=csv_format,
+        )
+    except Exception as _exc:
+        _roll_back_image_side_on_recipe_failure(
+            image_path, yaml_path, _data_dir, _single_csv, _pre_existing
+        )
+        raise _exc
+
+    # Say so BEFORE anyone opens the file: CJK text with no CJK-capable font
+    # renders as blank boxes, and nothing else in the pipeline notices.
+    from ..styles._fonts import warn_if_cjk_without_font
+
+    warn_if_cjk_without_font(fig.fig if hasattr(fig, "fig") else fig)
 
     # Validate if requested
     if validate:

@@ -1,14 +1,16 @@
 /** Figure composition actions — add/remove/select/move/align placed figures. */
 
-import { api } from "../api/client";
+import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent, setRecipe } from "../api/client";
 import { DPI, getPanelBboxes } from "../hooks/useSnap";
 import { pushUndoState } from "../hooks/useUndoRedo";
+import { newId } from "../utils/newId";
 import type {
   BBox,
   PlacedFigure,
   PreviewResponse,
   TabData,
 } from "../types/editor";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type Get = () => {
   placedFigures: PlacedFigure[];
@@ -25,6 +27,7 @@ type Get = () => {
   loadFiles: () => Promise<void>;
   loadDatatable: () => Promise<void>;
   loadPanelPositions: () => Promise<void>;
+  loadHitmap: () => Promise<void>;
 };
 type Set = (
   partial:
@@ -38,11 +41,15 @@ export function createFigureActions(set: Set, get: Get) {
       const { placedFigures } = get();
       if (placedFigures.some((f) => f.path === path)) {
         const existing = placedFigures.find((f) => f.path === path);
-        if (existing) set({ selectedFigureId: existing.id });
-        get().showToast(`Already on canvas: ${path}`, "info");
+        if (existing) {
+          setRecipe(path);
+          set({ selectedFigureId: existing.id, currentFile: path });
+        }
+        get().showToast(interpolate(gettext("Already on canvas: %s"), [path]), "info");
         return;
       }
 
+      let session = apiSessionId();
       set({ loading: true } as never);
       try {
         const data = await api.post<
@@ -62,7 +69,7 @@ export function createFigureActions(set: Set, get: Get) {
         if (placedFigures.length > 0) nextY += 20;
 
         const newFig: PlacedFigure = {
-          id: crypto.randomUUID(),
+          id: newId(),
           path,
           x: 0,
           y: nextY,
@@ -81,19 +88,26 @@ export function createFigureActions(set: Set, get: Get) {
         const params = new URLSearchParams(window.location.search);
         const wd = data.working_dir || get().workingDir;
         const fullPath = wd ? `${wd}/${path}` : path;
+        setRecipe(fullPath);
+        session = apiSessionId();
         params.set("recipe", fullPath);
         window.history.replaceState(null, "", `?${params.toString()}`);
 
-        get().showToast(`Added: ${path}`, "success");
+        get().showToast(interpolate(gettext("Added: %s"), [path]), "success");
         pushUndoState();
         get().loadFiles();
         get().loadDatatable();
         get().loadPanelPositions();
+        // api/switch resets the server's hitmap cache, so the raster is now a
+        // picture of THIS recipe and must be re-fetched: the previous figure's
+        // raster depicts a different one and is inert on this figure.
+        get().loadHitmap();
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
         console.error("[Editor] Failed to add figure:", e);
-        get().showToast(`Error: ${e}`, "error");
+        get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
-        set({ loading: false } as never);
+        if (isApiSessionCurrent(session)) set({ loading: false } as never);
       }
     },
 
@@ -184,7 +198,7 @@ export function createFigureActions(set: Set, get: Get) {
     /** Group selected figures (or all if none selected). */
     groupFigures: (ids: string[]) => {
       if (ids.length < 2) return;
-      const groupId = crypto.randomUUID();
+      const groupId = newId();
       set((s) => ({
         placedFigures: s.placedFigures.map((f) =>
           ids.includes(f.id) ? { ...f, groupId } : f,

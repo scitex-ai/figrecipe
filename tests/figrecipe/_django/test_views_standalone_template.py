@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests for figrecipe's standalone.html shell template.
+"""Tests for the standalone.html shell template that views.editor_page renders.
 
 figrecipe prototyped the ``favicon_href`` context var and scitex-ui adopted it as
 the shared contract (0.6.4), where ``standalone_shell.html`` renders the

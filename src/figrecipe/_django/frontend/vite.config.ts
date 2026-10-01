@@ -1,59 +1,63 @@
-import { execSync } from "child_process";
+import { readFileSync } from "fs";
+import { dirname, resolve } from "path";
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 
+const __here = dirname(fileURLToPath(import.meta.url));
+
 /**
- * Discover scitex-ui static directory from the Python environment.
- * Works for both pip-installed packages and editable (dev) installs.
- * Falls back to SCITEX_UI_STATIC env var if Python discovery fails.
+ * Derive figrecipe's version from pyproject.toml (the package source of
+ * truth) at BUILD time, baked into the bundle as __FIGRECIPE_VERSION__.
+ * Reproducible (no timestamp), works on BOTH the standalone #root path and
+ * the Hub #app-mount host path (the host doesn't stamp a version), and is
+ * derived rather than hardcoded. A host that wants a different value can
+ * still override via the FigrecipeEditor appVersion prop or #root
+ * [data-version].
  */
-function discoverScitexUiStatic(): string {
-  // 1. Environment variable override (for CI, Docker, custom setups)
-  if (process.env.SCITEX_UI_STATIC) {
-    return process.env.SCITEX_UI_STATIC;
-  }
-
-  // 2. Auto-discover via scitex_ui.get_static_dir() (pip-installed or editable)
+function deriveFigrecipeVersion(): string {
   try {
-    const pkgPath = execSync(
-      'python3 -c "import scitex_ui; print(scitex_ui.get_static_dir())"',
-      { encoding: "utf-8", timeout: 5000 },
-    ).trim();
-    if (pkgPath) return pkgPath;
+    const pyproject = resolve(__here, "../../../../pyproject.toml");
+    const text = readFileSync(pyproject, "utf8");
+    const m = text.match(/^version\s*=\s*["']([^"']+)["']/m);
+    if (m) return m[1];
   } catch {
-    // scitex_ui not installed — fall through
+    // fall through
   }
-
-  throw new Error(
-    "scitex-ui not found. Install it (pip install scitex-ui) or set SCITEX_UI_STATIC env var.",
-  );
+  return "0.0.0+local";
 }
 
-const SCITEX_UI_STATIC = discoverScitexUiStatic();
+const FIGRECIPE_VERSION = deriveFigrecipeVersion();
 
+// Resolve canonical SDK exports without source aliases.
 export default defineConfig({
   plugins: [react()],
   base: "/static/figrecipe/",
   resolve: {
-    alias: {
-      "@scitex/ui": SCITEX_UI_STATIC.replace(
-        /\/src\/scitex_ui\/static\/scitex_ui$/,
-        "",
-      ),
-    },
+    dedupe: ["react", "react-dom"],
+  },
+  // figrecipe's own version, derived from pyproject.toml at build time.
+  // Referenced from the frontend as __FIGRECIPE_VERSION__ (the header's
+  // version-badge fallback, so it works on the Hub #app-mount path too, where
+  // no #root[data-version] is stamped). Reproducible; a host can still
+  // override via the FigrecipeEditor appVersion prop.
+  define: {
+    __FIGRECIPE_VERSION__: JSON.stringify(FIGRECIPE_VERSION),
   },
   build: {
     outDir: "../static/figrecipe",
     emptyOutDir: true,
     sourcemap: true,
     manifest: true,
+    cssCodeSplit: false,
     rollupOptions: {
+      input: { index: resolve(__here, "index.html"), workspace: resolve(__here, "src/workspace.ts") },
       // mermaid and graphviz are optional lazy-loaded viewers — not bundled
       external: ["mermaid", "@hpcc-js/wasm-graphviz"],
       output: {
-        entryFileNames: "assets/index.js",
+        entryFileNames: "assets/[name].js",
         chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+        assetFileNames: (asset) => asset.name === "style.css" ? "assets/index.css" : "assets/[name][extname]",
       },
     },
   },

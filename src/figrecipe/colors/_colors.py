@@ -92,7 +92,7 @@ def str2bgr(c):
 
 
 def str2bgra(c, alpha=1.0):
-    return rgba2bgra(str2rgba(c))
+    return rgba2bgra(str2rgba(c, alpha=alpha))
 
 
 def bgr2bgra(bgra, alpha=1.0, round=2):

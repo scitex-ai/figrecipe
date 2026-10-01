@@ -3,12 +3,23 @@
 """File management handlers: list/switch/new/delete/rename/duplicate/download."""
 
 import json
-import logging
+import time
 from pathlib import Path
 
-from django.http import FileResponse, JsonResponse
+from ..._utils._optional import missing_extra
 
-logger = logging.getLogger(__name__)
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
+    from django.http import FileResponse, JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 # Directory-listing helpers extracted to _files_tree.py (tree enrichment,
 # recipe detection, working-dir/backend resolution).
@@ -19,6 +30,8 @@ from ._files_tree import (  # noqa: E402
     _is_figrecipe_yaml,
     _is_figrecipe_yaml_rel,
     _local_build_tree,
+    resolve_working_dir,
+    workspace_has_a_recipe,
 )
 from .core import _dpi_from_request  # noqa: E402
 
@@ -29,13 +42,15 @@ __all__ = [
     "_is_figrecipe_yaml",
     "_is_figrecipe_yaml_rel",
     "_local_build_tree",
+    "resolve_working_dir",
+    "workspace_has_a_recipe",
 ]
 
 
 def handle_api_tree(request, editor):
     """List ALL files in working dir as a tree (no filtering)."""
     try:
-        from scitex_app import build_tree as _build_tree
+        from scitex_sdk.app import build_tree as _build_tree
     except ImportError:
         _build_tree = _local_build_tree
 
@@ -58,7 +73,7 @@ def handle_api_tree(request, editor):
 def handle_api_files(request, editor):
     """List recipe files in working dir as tree + flat list."""
     try:
-        from scitex_app import build_tree as _build_tree
+        from scitex_sdk.app import build_tree as _build_tree
     except ImportError:
         _build_tree = _local_build_tree
 
@@ -104,27 +119,30 @@ def handle_api_switch(request, editor):
         return JsonResponse({"error": "No file path provided"}, status=400)
 
     # Resolve working_dir — use editor's if available, else default
-    working_dir = getattr(editor, "working_dir", None) if editor else None
-    wd_param = request.GET.get("working_dir")
-    if wd_param:
-        wd_path = Path(wd_param)
-        if wd_path.is_dir():
-            working_dir = wd_path
-    if working_dir is None:
-        working_dir = _find_default_working_dir()
+    working_dir = resolve_working_dir(request, editor)
     full_path = working_dir / file_path
-    if not full_path.exists():
-        # Try as absolute path
+    if not full_path.exists() and Path(file_path).is_absolute():
+        # An absolute path is a deliberate, fully-qualified request; keep it.
+        #
+        # The fallback used to accept ANY path, which meant a RELATIVE name
+        # that missed in the workspace was re-tried against the process cwd.
+        # That is what hid the gallery bug above: "add" wrote plot_plot.yaml
+        # into the server's cwd, the workspace lookup missed, and this line
+        # silently found the server's copy — reporting success while moving
+        # the whole session's working_dir to the server's directory. A file
+        # that is not in the workspace must 404, loudly.
         full_path = Path(file_path)
     if not full_path.exists():
         return JsonResponse({"error": f"File not found: {file_path}"}, status=404)
 
     # Bootstrap editor if none exists (first file click)
     if editor is None:
+        from .._project_access import bind_editor, editor_key
         from ..services import get_or_create_editor
 
-        session_key = f"figrecipe_{full_path}"
+        session_key = editor_key(request, full_path)
         editor = get_or_create_editor(session_key, str(full_path))
+        bind_editor(request, editor)
 
     # Sync dark_mode from frontend if provided
     req_dark = data.get("dark_mode")
@@ -165,7 +183,15 @@ def handle_api_switch(request, editor):
 
 
 def handle_api_new(request, editor):
-    """Create a new blank figure file."""
+    """Create a new blank figure file.
+
+    Works with no recipe loaded (``editor is None``): the create endpoint itself
+    must not require an editor, since a first-run user has none yet. In that
+    case we resolve the workspace the same way every other no-editor handler
+    does (``_get_working_dir_and_backend``) and bootstrap an ``EditorState`` for
+    it, so the new figure lands in the user's working directory — not the
+    server's cwd — and the browser can immediately edit it.
+    """
     from figrecipe import reproduce, save, subplots
     from figrecipe._editor._helpers import render_with_overrides
 
@@ -173,8 +199,19 @@ def handle_api_new(request, editor):
         fig, ax = subplots()
         ax.set_title("New Figure")
 
-        working_dir = getattr(editor, "working_dir", Path.cwd())
-        files = editor.files
+        working_dir, files = _get_working_dir_and_backend(request, editor)
+
+        if editor is None:
+            from .._project_access import bind_editor, editor_key
+            from ..services import EditorState, _editor_cache
+
+            session_key = editor_key(request, f"new_{working_dir}")
+            cached = _editor_cache.get(session_key)
+            editor = cached[0] if cached else EditorState(working_dir=working_dir)
+            bind_editor(request, editor)
+            if not cached:
+                _editor_cache[session_key] = (editor, time.time())
+
         counter = 1
         while True:
             rel_path = f"new_figure_{counter:03d}.yaml"
@@ -183,11 +220,23 @@ def handle_api_new(request, editor):
             counter += 1
         file_path = working_dir / rel_path
 
+        from .._project_access import check_output
+
+        for output in (
+            file_path,
+            file_path.with_suffix(".png"),
+            file_path.with_suffix(".tex"),
+            file_path.with_suffix(".overrides.json"),
+            file_path.with_name(f"{file_path.stem}_data"),
+        ):
+            check_output(request, output)
+
         save(fig, file_path.with_suffix(".png"), validate=False, verbose=False)
         reproduced_fig, _ = reproduce(file_path)
 
         editor.fig = reproduced_fig
         editor.recipe_path = file_path
+        editor.working_dir = working_dir
         editor._hitmap_generated = False
         editor._color_map = {}
         editor._overrides = None  # reset overrides; lazy rebuild from style
@@ -210,9 +259,14 @@ def handle_api_new(request, editor):
                 "img_size": {"width": size[0], "height": size[1]},
                 "file": str(file_path.relative_to(working_dir)),
                 "file_name": file_path.stem,
+                "working_dir": str(working_dir),
             }
         )
     except Exception as e:
+        from scitex_sdk.host import AccessError
+
+        if isinstance(e, AccessError):
+            raise
         logger.exception("[FigRecipe] api_new failed")
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -409,10 +463,10 @@ def handle_api_file_content(request, editor, file_path):
     """Serve raw file content for Viewer pane (image, text, etc.)."""
     import mimetypes
 
-    working_dir = _find_default_working_dir()
+    working_dir = resolve_working_dir(request, editor)
     full_path = (working_dir / file_path).resolve()
     # Path traversal protection
-    if not str(full_path).startswith(str(working_dir.resolve())):
+    if not full_path.is_relative_to(working_dir.resolve()):
         return JsonResponse({"error": "Access denied"}, status=403)
     if not full_path.exists():
         return JsonResponse({"error": "File not found"}, status=404)

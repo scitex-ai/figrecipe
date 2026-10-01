@@ -1,15 +1,19 @@
 /** Sync actions — element↔data linking, calls/labels, stat brackets. */
 
-import { api } from "../api/client";
+import { api, ApiSessionExpired } from "../api/client";
 import type {
   AxesLabels,
   BBox,
   CallRecord,
+  ElementDetails,
   StatBracket,
 } from "../types/editor";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type Get = () => {
   selectedFigureId: string | null;
+  selectedElement: string | null;
+  elementCell: { row: number; col: number } | null;
   elementDataMap: Record<string, { columns: string[]; rowIndices: number[] }>;
   loadPreview: () => Promise<void>;
   loadHitmap: () => Promise<void>;
@@ -29,7 +33,8 @@ export function createSyncActions(set: Set, get: Get) {
         set((s: any) => ({
           calls: { ...s.calls, [String(axIndex)]: data.calls ?? [] },
         }));
-      } catch {
+      } catch (error) {
+        if (error instanceof ApiSessionExpired) return;
         set((s: any) => ({
           calls: { ...s.calls, [String(axIndex)]: [] },
         }));
@@ -59,6 +64,37 @@ export function createSyncActions(set: Set, get: Get) {
       const { elementDataMap } = get();
       const link = elementDataMap[elementId];
       set({ highlightedDataRows: link?.rowIndices ?? [] });
+    },
+
+    // ── Inspected details for a selected element ──────────
+    loadElementDetails: async () => {
+      const { selectedElement, elementCell } = get();
+      if (!selectedElement) {
+        set({ elementDetails: null });
+        return;
+      }
+      // A newer selection supersedes this fetch: only the latest pick may
+      // write, or a fast click-train shows stale values under a new element.
+      const wanted = selectedElement;
+      const cell = elementCell;
+      try {
+        let endpoint = `element_details?element=${encodeURIComponent(wanted)}`;
+        if (cell) endpoint += `&row=${cell.row}&col=${cell.col}`;
+        const data = await api.get<ElementDetails>(endpoint);
+        if (get().selectedElement !== wanted) return;
+        set((s: any) => {
+          const shapes = { ...s.elementShapes };
+          const shape = (data as ElementDetails | null)?.shape;
+          if (shape && shape.length === 2) {
+            shapes[wanted] = { rows: shape[0], cols: shape[1] };
+          }
+          return { elementDetails: data, elementShapes: shapes };
+        });
+      } catch (error) {
+        if (error instanceof ApiSessionExpired) return;
+        if (get().selectedElement !== wanted) return;
+        set({ elementDetails: null });
+      }
     },
 
     // ── Refresh preview + bboxes + hitmap after mutation ──
@@ -111,7 +147,8 @@ export function createSyncActions(set: Set, get: Get) {
         if (loadStatBrackets) loadStatBrackets();
         return data.bracket_id;
       } catch (e) {
-        get().showToast(`Add bracket failed: ${e}`, "error");
+        if (e instanceof ApiSessionExpired) return null;
+        get().showToast(interpolate(gettext("Add bracket failed: %s"), [e]), "error");
         return null;
       }
     },
@@ -149,7 +186,8 @@ export function createSyncActions(set: Set, get: Get) {
         if (loadStatBrackets) loadStatBrackets();
         return true;
       } catch (e) {
-        get().showToast(`Remove bracket failed: ${e}`, "error");
+        if (e instanceof ApiSessionExpired) return false;
+        get().showToast(interpolate(gettext("Remove bracket failed: %s"), [e]), "error");
         return false;
       }
     },
@@ -191,7 +229,8 @@ export function createSyncActions(set: Set, get: Get) {
         }
         return true;
       } catch (e) {
-        get().showToast(`Move legend failed: ${e}`, "error");
+        if (e instanceof ApiSessionExpired) return false;
+        get().showToast(interpolate(gettext("Move legend failed: %s"), [e]), "error");
         return false;
       }
     },

@@ -4,10 +4,17 @@
 Helper functions for the figure editor.
 """
 
-import logging
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger(__name__)
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+logger = slogging.getLogger(__name__)
 
 
 def get_form_values_from_style(style: Dict[str, Any]) -> Dict[str, Any]:
@@ -153,7 +160,10 @@ def render_with_overrides(
     import warnings
 
     from matplotlib.backends.backend_agg import FigureCanvasAgg
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from ._bbox import extract_bboxes
 
@@ -193,14 +203,13 @@ def render_with_overrides(
 
     # Set global font family via rcParams to catch any text matplotlib creates
     if overrides:
-        import matplotlib as mpl
-
-        from ..styles._fonts import check_font
+        from ..styles._fonts import ensure_font_family
 
         font_fam = overrides.get("fonts_family", overrides.get("font_family"))
         if font_fam:
-            mpl.rcParams["font.family"] = "sans-serif"
-            mpl.rcParams["font.sans-serif"] = [check_font(font_fam)]
+            # A LIST family (generic + CJK face), exactly as at save time: a
+            # bare string here re-introduced tofu on editor re-render.
+            ensure_font_family(font_fam)
 
     # Apply overrides directly to existing figure
     # Skip style overrides for diagram figures — diagrams have their own
@@ -289,7 +298,10 @@ def render_with_overrides(
                 logger.exception(
                     "[render_with_overrides] Fallback render also failed: %s", e2
                 )
-                from PIL import Image as PILImage
+                try:
+                    from PIL import Image as PILImage
+                except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+                    raise missing_extra(exc) from exc
 
                 placeholder = PILImage.new("RGB", (400, 300), color=(240, 240, 240))
                 placeholder.save(buf, format="PNG")

@@ -9,7 +9,12 @@ Usage:
 import os
 import webbrowser
 
-from django.core.management.base import BaseCommand
+from ...._utils._optional import missing_extra
+
+try:
+    from django.core.management.base import BaseCommand
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 
 class Command(BaseCommand):
@@ -51,6 +56,9 @@ class Command(BaseCommand):
         self.stdout.write(f"FigRecipe Editor running at {url}")
         self.stdout.write("Press Ctrl+C to stop")
 
-        from django.core.management import call_command
+        try:
+            from django.core.management import call_command
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         call_command("runserver", f"127.0.0.1:{port}", "--noreload")

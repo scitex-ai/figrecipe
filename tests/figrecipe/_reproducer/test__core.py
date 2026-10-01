@@ -468,3 +468,58 @@ if __name__ == "__main__":
         print("\nFailed tests:")
         for name, msg in failed:
             print(f"  {name}: {msg}")
+
+
+# ── a capstyle in rcParams used to lose the whole recipe ─────────────────────
+#
+# matplotlib validates lines.solid_capstyle into a CapStyle enum, which
+# SUBCLASSES str, so it slipped past the "already a primitive" check in
+# styles/_rcparams.py and reached the YAML writer as an enum object:
+# RepresenterError, with the png already written and the yaml never. Every
+# seaborn-v0_8-* style sets one of these (measured 2026-09-06).
+
+
+def test_capstyle_rcparam_does_not_break_the_save(tmp_path):
+    # Arrange
+    with matplotlib.rc_context():
+        plt.style.use("default")
+        try:
+            matplotlib.rcParams["lines.solid_capstyle"] = "round"
+            fig, ax = fr.subplots()
+            x = np.linspace(0, 10, 50)
+            ax.plot(x, np.sin(x), id="sin")
+            # Act
+            _img, _yml, result = fr.save(
+                fig,
+                str(tmp_path / "capstyle.png"),
+                validate_error_level="warning",
+                verbose=False,
+            )
+        finally:
+            plt.close("all")
+    # Assert
+    assert result.valid is True
+
+
+def test_seaborn_style_figure_writes_a_recipe(tmp_path):
+    """The real-world trigger: plt.style.use("seaborn-v0_8-whitegrid")."""
+    # Arrange
+    with matplotlib.rc_context():
+        plt.style.use("seaborn-v0_8-whitegrid")
+        try:
+            fig, ax = fr.subplots()
+            ax.plot([1, 2, 3], [1, 4, 9], id="l")
+            # Act
+            _img, yaml_path, _result = fr.save(
+                fig,
+                str(tmp_path / "seaborn.png"),
+                validate_error_level="warning",
+                verbose=False,
+            )
+        finally:
+            plt.close("all")
+    # Assert
+    assert Path(yaml_path).exists()
+
+
+# EOF

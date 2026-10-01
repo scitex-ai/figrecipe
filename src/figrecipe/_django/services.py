@@ -7,14 +7,20 @@ the matplotlib figure directly (labels, legend, axes positions).
 Uses a lightweight EditorState dataclass.
 """
 
-import logging
 import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-logger = logging.getLogger(__name__)
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 # In-process cache: session_key -> (editor, last_access_time)
 _editor_cache: Dict[str, Tuple[Any, float]] = {}
@@ -33,6 +39,7 @@ class EditorState:
     _color_map: Optional[Dict] = None
     _style_name: str = "SCITEX"
     _hitmap_generated: bool = False
+    imported_table: Optional[Dict[str, Any]] = None
 
     # StyleOverrides for layered style management
     _overrides: Any = None
@@ -49,7 +56,7 @@ class EditorState:
         """
         if self._files_backend is None:
             try:
-                from scitex_app import get_files
+                from scitex_sdk.app import get_files
 
                 self._files_backend = get_files(root=str(self.working_dir))
             except ImportError:

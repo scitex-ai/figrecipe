@@ -23,6 +23,7 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import pytest
+from scitex_dev.testing import make_pytest_configure
 
 # ---------------------------------------------------------------------------
 # Subprocess coverage wiring (module-import time — must run before tests).
@@ -34,6 +35,30 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # pyproject so child interpreters configure themselves correctly.
 os.environ["COVERAGE_PROCESS_START"] = str(_PROJECT_ROOT / "pyproject.toml")
 os.environ["COVERAGE_FILE"] = str(_PROJECT_ROOT / ".coverage")
+
+
+# ---------------------------------------------------------------------------
+# Import-vantage guard — refuse to grade a tree we are not importing.
+# ---------------------------------------------------------------------------
+#
+# The implementation lives in scitex-dev, not here. figrecipe carried a local
+# copy from #362 only because the trap bit twice on 2026-08-18 and waiting for
+# the shared version meant running unprotected in the meantime; that commit said
+# it should collapse to a one-line call, and this is that collapse.
+#
+# Keeping both would have been the joke version of this fix: forking a helper
+# whose entire purpose is to stop fifteen repos each writing their own.
+#
+# WHAT IT DOES, so nobody has to go read scitex-dev to know why a run refused:
+# if `figrecipe` resolves outside this checkout, the session raises instead of
+# running. A green is a claim about the code that produced it, and a suite
+# importing site-packages while you are testing a worktree cannot make that
+# claim — it reports a number about somewhere else, well-formed and confident,
+# with nothing in the output to say so.
+#
+# Set SCITEX_ALLOW_FOREIGN_IMPORT=1 to test a deliberately installed build; it
+# prints loudly when used.
+pytest_configure = make_pytest_configure("figrecipe", _PROJECT_ROOT)
 
 
 def _ensure_subprocess_coverage_shim(purelib: Path | None = None) -> Path | None:

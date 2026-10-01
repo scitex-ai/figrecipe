@@ -4,6 +4,12 @@
 
 Applies mm-based styling to matplotlib axes for publication-quality figures.
 """
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __all__ = [
     "apply_style_mm",
@@ -20,7 +26,12 @@ from matplotlib.axes import Axes
 
 from .._utils._units import mm_to_pt
 from ._finalize import finalize_special_plots, finalize_ticks
-from ._fonts import check_font, ensure_font_family, list_available_fonts
+from ._fonts import (
+    check_font,
+    ensure_font_family,
+    font_family_chain,
+    list_available_fonts,
+)
 from ._plot_styles import (
     apply_barplot_style,
     apply_boxplot_style,
@@ -30,6 +41,8 @@ from ._plot_styles import (
     apply_violinplot_style,
 )
 from ._themes import THEME_COLORS, apply_theme_colors
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def _normalize_style_keys(style: Dict[str, Any]) -> Dict[str, Any]:
@@ -248,7 +261,9 @@ def apply_style_mm(ax: Axes, style: Dict[str, Any]) -> float:
     # mpl text inherits it, and emit the single loud figrecipe warning if the
     # requested font is missing (no silent fallback). Deduped to once/session.
     ensure_font_family(requested_font)
-    font_family = check_font(requested_font)
+    # 単一 family だと matplotlib のグリフ単位フォールバックが効かない。
+    # 日本語ラベルを豆腐にしないため CJK フォントを併記する。
+    font_family = font_family_chain(requested_font)
 
     ax.xaxis.label.set_fontsize(axis_fs)
     ax.xaxis.label.set_fontfamily(font_family)
@@ -383,7 +398,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
-    print("Testing style application...")
+    console.info("Testing style application...")
 
     fig, ax = plt.subplots(figsize=(4, 3))
 
@@ -406,7 +421,7 @@ if __name__ == "__main__":
     ax.set_title("Test Plot")
 
     plt.savefig("/tmp/test_style.png", dpi=300, bbox_inches="tight")
-    print("Saved to /tmp/test_style.png")
+    console.info("Saved to /tmp/test_style.png")
     plt.close()
 
 # EOF

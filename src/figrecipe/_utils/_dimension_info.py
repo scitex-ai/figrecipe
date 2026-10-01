@@ -16,6 +16,15 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from ._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+console = slogging.getConsole(f"{__name__}.console")
+
 
 def get_dimension_info(fig, ax) -> Dict[str, Any]:
     """Get all dimension info about a figure/axes for debugging.
@@ -109,50 +118,114 @@ def get_dimension_info(fig, ax) -> Dict[str, Any]:
     }
 
 
+def create_axes_with_size_mm(
+    axes_width_mm: float = 30,
+    axes_height_mm: float = 21,
+    mode: str = "publication",
+    **kwargs,
+):
+    """Create a figure whose AXES measures exactly ``axes_width_mm`` x ``axes_height_mm``.
+
+    Restored 2026-08-09. ``_dimension_viewer`` has imported this from
+    ``._figure_from_axes_mm`` since the figrecipe-owns-plt migration, but that
+    module was never migrated into figrecipe (``git log --all`` finds no trace of
+    it), so both public functions in that module raised ModuleNotFoundError on
+    every call. This is the missing piece.
+
+    ``constrained_layout=False`` IS THE LOAD-BEARING ARGUMENT, and it is why this
+    helper can exist at all. constrained_layout recomputes axes positions from
+    decoration extents and overwrites the exact mm fractions the mm path
+    calculates, inflating a 60mm axes to ~82mm. With it off, the request lands to
+    within 0.01mm. See
+    figrecipe-rendered-axes-exceeds-requested-mm-by-a-constant-20260809 — that is
+    the same finding, and this function is its first practical use.
+
+    Parameters
+    ----------
+    axes_width_mm, axes_height_mm : float
+        The size of the AXES RECTANGLE, not the figure. The figure comes out
+        larger by whatever the margins are.
+    mode : {"publication", "display"}
+        ``publication`` renders at 300 DPI at the exact requested size.
+        ``display`` renders 3x larger at 100 DPI, so on-screen inspection shows
+        the same proportions at a legible size. Anything else RAISES rather than
+        silently picking one.
+    **kwargs
+        Forwarded to ``figrecipe.subplots``.
+
+    Returns
+    -------
+    (fig, ax)
+    """
+    if mode not in ("publication", "display"):
+        raise ValueError(
+            f"mode must be 'publication' or 'display', got {mode!r}. "
+            "'publication' = exact size at 300 DPI; 'display' = 3x at 100 DPI."
+        )
+
+    import figrecipe
+
+    scale = 3.0 if mode == "display" else 1.0
+    dpi = 100 if mode == "display" else 300
+    kwargs.setdefault("dpi", dpi)
+    # constrained_layout must stay off or the mm request is discarded.
+    kwargs["constrained_layout"] = False
+    fig, ax = figrecipe.subplots(
+        axes_width_mm=axes_width_mm * scale,
+        axes_height_mm=axes_height_mm * scale,
+        **kwargs,
+    )
+    return fig, ax
+
+
 def print_dimension_info(fig, ax) -> None:
     """Print ``get_dimension_info`` output in a human-readable format."""
     info = get_dimension_info(fig, ax)
 
-    print("\n" + "=" * 60)
-    print("DIMENSION INFORMATION")
-    print("=" * 60)
+    console.info("\n" + "=" * 60)
+    console.info("DIMENSION INFORMATION")
+    console.info("=" * 60)
 
-    print("\nFIGURE (total canvas including margins):")
-    print(
+    console.info("\nFIGURE (total canvas including margins):")
+    console.info(
         f"  Size (mm):    {info['figure_size_mm'][0]:.2f} x {info['figure_size_mm'][1]:.2f}"
     )
-    print(
+    console.info(
         f"  Size (inch):  {info['figure_size_inch'][0]:.3f} x {info['figure_size_inch'][1]:.3f}"
     )
-    print(f"  Size (px):    {info['figure_size_px'][0]} x {info['figure_size_px'][1]}")
+    console.info(f"  Size (px):    {info['figure_size_px'][0]} x {info['figure_size_px'][1]}")
 
-    print("\nAXES (actual plot area):")
-    print(
+    console.info("\nAXES (actual plot area):")
+    console.info(
         f"  Size (mm):    {info['axes_size_mm'][0]:.2f} x {info['axes_size_mm'][1]:.2f}"
     )
-    print(
+    console.info(
         f"  Size (inch):  {info['axes_size_inch'][0]:.3f} x {info['axes_size_inch'][1]:.3f}"
     )
-    print(f"  Size (px):    {info['axes_size_px'][0]} x {info['axes_size_px'][1]}")
-    print(
+    console.info(f"  Size (px):    {info['axes_size_px'][0]} x {info['axes_size_px'][1]}")
+    console.info(
         f"  Position:     left={info['axes_position'][0]:.3f}, bottom={info['axes_position'][1]:.3f}"
     )
 
-    print("\nSETTINGS:")
-    print(f"  DPI:          {info['dpi']}")
-    print(f"  Conversion:   1 inch = {info['mm_per_inch']} mm")
-    print(
+    console.info("\nSETTINGS:")
+    console.info(f"  DPI:          {info['dpi']}")
+    console.info(f"  Conversion:   1 inch = {info['mm_per_inch']} mm")
+    console.info(
         f"  At {info['dpi']} DPI: 1 mm = {info['dpi'] / 25.4:.2f} px, 1 inch = {info['dpi']} px"
     )
 
-    print("\nFOR PUBLICATION:")
-    print(
+    console.info("\nFOR PUBLICATION:")
+    console.info(
         f"  Save with: fig.savefig('file.tiff', dpi={info['dpi']}, bbox_inches='tight')"
     )
-    print(
+    console.info(
         f"  Final axes size: ~{info['axes_size_mm'][0]:.1f} x {info['axes_size_mm'][1]:.1f} mm"
     )
-    print("=" * 60 + "\n")
+    console.info("=" * 60 + "\n")
 
 
-__all__ = ["get_dimension_info", "print_dimension_info"]
+__all__ = [
+    "create_axes_with_size_mm",
+    "get_dimension_info",
+    "print_dimension_info",
+]

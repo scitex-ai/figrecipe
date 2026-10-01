@@ -9,6 +9,14 @@ needed by Django handlers.
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
 
 def _check_figure_has_content(fig) -> bool:
     """Check if figure has any plot content."""
@@ -152,6 +160,15 @@ def gui(
 
     os.environ["FIGRECIPE_WORKING_DIR"] = wd
 
+    # What this bind implies for ALLOWED_HOSTS -- BEFORE django.setup() on either
+    # path below, because settings.py reads the variable once, at import. Both
+    # paths (scitex-app's run_standalone and the bare fallback) configure Django
+    # from figrecipe's own settings.py, so this is the one place that reaches
+    # both. Without it `--host 0.0.0.0` answers 400 to every non-loopback caller.
+    from figrecipe._django._allowed_hosts import apply_bound_host
+
+    apply_bound_host(host, os.environ)
+
     # Extra env for recipe source
     extra_env = {}
     if source:
@@ -164,9 +181,8 @@ def gui(
 
             start_terminal_server(port + 1)
         except Exception as e:
-            import logging
 
-            logging.getLogger(__name__).warning("Terminal server failed: %s", e)
+            slogging.getLogger(__name__).warning("Terminal server failed: %s", e)
 
     import threading
 
@@ -174,10 +190,13 @@ def gui(
 
     # Use shared standalone launcher from scitex-app
     try:
-        from scitex_app._standalone import run_standalone
+        from scitex_sdk.app import embed
 
-        # Pre-configure Django with figrecipe's settings (includes DB + chat app)
-        # before run_standalone, so _standalone.py skips its own bare config.
+        run_standalone = embed.run_standalone
+
+        # Pre-configure Django with figrecipe's settings (chat app, templates,
+        # static dirs) before run_standalone, so _standalone.py skips its own
+        # bare config.
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "figrecipe._django.settings")
         if wd:
             os.environ.setdefault("FIGRECIPE_WORKING_DIR", wd)
@@ -185,10 +204,6 @@ def gui(
         import django
 
         django.setup()
-
-        from django.core.management import call_command
-
-        call_command("migrate", "--run-syncdb", verbosity=0)
 
         run_standalone(
             app_module="figrecipe._django",
@@ -206,7 +221,10 @@ def gui(
 
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "figrecipe._django.settings")
 
-        import django
+        try:
+            import django
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         django.setup()
 
@@ -214,10 +232,10 @@ def gui(
         if open_browser:
             threading.Timer(1.5, webbrowser.open, args=[url]).start()
 
-        from django.core.management import call_command
-
-        # Auto-migrate database (creates tables for chat sessions on first run)
-        call_command("migrate", "--run-syncdb", verbosity=0)
+        try:
+            from django.core.management import call_command
+        except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+            raise missing_extra(exc) from exc
 
         noreload = [] if hot_reload else ["--noreload"]
         call_command("runserver", f"{host}:{port}", *noreload)

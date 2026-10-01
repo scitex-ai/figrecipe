@@ -2,15 +2,25 @@
  *
  * Used in the Plot tab to show the matplotlib figure preview.
  * The Canvas tab uses CanvasPane instead (for composition layout).
+ *
+ * TODO 130 / standalone item #4 — "nothing saves an image": the backend export
+ * endpoints (download/<fmt>, api/compose/export/<fmt>) and the ExportDialog
+ * have existed since the ribbon work, but the Plot tab — where a first-run user
+ * opens a recipe — had NO control to reach them; export was only on the Canvas
+ * tab. A figure now exposes the same ExportDialog directly here.
  */
 
 import { useRef, useState, useCallback } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
+import { GalleryStart } from "../Gallery/GalleryStart";
+import { ExportDialog } from "../ExportDialog/ExportDialog";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function FigureViewer() {
   const { placedFigures, selectedFigureId, loading } = useEditorStore();
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [exportOpen, setExportOpen] = useState(false);
   const dragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
 
@@ -55,11 +65,28 @@ export function FigureViewer() {
     setTranslate({ x: 0, y: 0 });
   }, []);
 
+  // Nothing open yet. Showing the shipped examples here rather than an
+  // instruction ("Select a recipe file...") matters because a NEW project has
+  // no recipe file to select — the instruction named something the visitor did
+  // not have, so the first screen of the tool showed neither a figure nor a
+  // way to get one.
   if (!previewImage && !loading) {
     return (
-      <div className="figure-viewer figure-viewer--empty">
-        <i className="fas fa-image" />
-        <p>Select a recipe file to view the figure</p>
+      <div className="figure-viewer figure-viewer--start">
+        <GalleryStart />
+      </div>
+    );
+  }
+
+  // A preview is on its way: say so. The bare dark surface used to read as a
+  // broken black viewer while the render was still in flight.
+  if (!previewImage) {
+    return (
+      <div className="figure-viewer figure-viewer--start">
+        <div className="gallery-start gallery-start--message">
+          <i className="fas fa-spinner fa-spin" aria-hidden="true" />
+          <p>{gettext("Preparing a figure…")}</p>
+        </div>
       </div>
     );
   }
@@ -78,7 +105,7 @@ export function FigureViewer() {
       {previewImage && (
         <img
           src={`data:image/png;base64,${previewImage}`}
-          alt="Figure preview"
+          alt={gettext("Figure preview")}
           draggable={false}
           style={{
             transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
@@ -89,6 +116,25 @@ export function FigureViewer() {
           }}
         />
       )}
+
+      {/* Save/export control on the Plot-tab figure surface (standalone item #4).
+          Reuses the same ExportDialog the Canvas tab uses; the dialog picks the
+          right endpoint (compose export when figures are placed, single-figure
+          download otherwise). */}
+      {previewImage && (
+        <button
+          className="figure-viewer__export"
+          type="button"
+          title={gettext("Export figure (PNG / SVG / PDF)")}
+          aria-label={gettext("Export figure")}
+          onClick={() => setExportOpen(true)}
+        >
+          <i className="fas fa-download" />
+          <span>{gettext("Export")}</span>
+        </button>
+      )}
+
+      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
     </div>
   );
 }

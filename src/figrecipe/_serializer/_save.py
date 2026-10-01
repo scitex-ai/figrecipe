@@ -19,6 +19,10 @@ from .._utils._numpy_io import (
     save_arrays_single_csv,
 )
 from ._clew import record_output
+from ._tick_faithfulness import (
+    assert_tick_call_faithful,
+    assert_ticklabel_calls_faithful,
+)
 from ._utils import _convert_numpy_types, _sanitize_filename
 
 # Sub-panel array args below this size stay inline on save: the inset/embed
@@ -46,32 +50,10 @@ def _panel_prefix(ax_key: str, nrows, ncols) -> str:
     return f"{label}_" if label else ""
 
 
-def _assert_tick_call_faithful(call: Dict[str, Any]) -> None:
-    """Record-time faithfulness guard (FR-FAITHFUL-TICKS): a set_xticks/set_yticks
-    op must carry as many tick POSITIONS as LABELS, else the recipe can't
-    round-trip (replay raises "FixedLocator locations != labels"). Fail loud at
-    save rather than ship a silently-unreproducible recipe."""
-    if call.get("function") not in ("set_xticks", "set_yticks"):
-        return
-    labels = call.get("kwargs", {}).get("labels")
-    args = call.get("args", [])
-    if labels is None or not args:
-        return
-    pos = args[0]
-    if isinstance(pos, dict) and "_array" in pos:
-        n_pos = len(pos["_array"])
-    elif isinstance(pos, dict) and isinstance(pos.get("data"), list):
-        n_pos = len(pos["data"])
-    else:
-        return  # positions length not determinable here; skip
-    if n_pos != len(labels):
-        raise ValueError(
-            f"figrecipe [FR-FAITHFUL-TICKS]: {call.get('function')} recorded "
-            f"{n_pos} tick positions but {len(labels)} labels (call "
-            f"{call.get('id')}). This recipe would not round-trip (replay would "
-            f"raise FixedLocator count != labels) -- indicates a recording/"
-            f"serialization bug. Not shipping a mismatched recipe."
-        )
+# The record-time tick guards live in ._tick_faithfulness (they outgrew this
+# file, which sat at 510 of its 512-line ceiling). Re-exported under the old
+# private name so existing importers keep working unchanged.
+_assert_tick_call_faithful = assert_tick_call_faithful
 
 
 def save_recipe(
@@ -407,10 +389,14 @@ def _process_arrays_with_symlinks(
 
     def _process_call_list(call_list, panel_prefix: str, id_prefix: str) -> None:
         nonlocal data_dir_created
+        # Cross-call guard: a set_[xy]ticklabels whose count disagrees with the
+        # positions this same axes pinned earlier cannot be placed on replay.
+        # Checked over the whole list because no single call carries both facts.
+        assert_ticklabel_calls_faithful(call_list)
         for call in call_list:
             call_id = call.get("id", "unknown")
             safe_call_id = _sanitize_filename(f"{id_prefix}{call_id}")
-            _assert_tick_call_faithful(call)
+            assert_tick_call_faithful(call)
 
             for i, arg in enumerate(call.get("args", [])):
                 source_file_path = arg.pop("_source_file", None)

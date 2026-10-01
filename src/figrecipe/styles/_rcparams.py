@@ -16,6 +16,7 @@ so the figure renders in the identical environment -- pixel-identical, in all
 cases.
 """
 
+import enum
 import warnings
 from typing import Any, Dict
 
@@ -60,6 +61,13 @@ def _excluded(key: str) -> bool:
 def _to_primitive(value: Any) -> Any:
     """Convert an rcParam value to a YAML-safe, round-trippable primitive."""
     from cycler import Cycler
+
+    # matplotlib's rcParam enums (CapStyle, JoinStyle) subclass str, so they
+    # pass the isinstance(value, str) test below and would be handed to the YAML
+    # writer AS ENUM OBJECTS -- which raises RepresenterError and loses the whole
+    # recipe (the png is already written; the yaml never is). Unwrap first.
+    if isinstance(value, enum.Enum):
+        return _to_primitive(value.value)
 
     if isinstance(value, Cycler):
         return {

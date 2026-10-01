@@ -80,6 +80,97 @@ def save_array(
     return path
 
 
+def _v2_rows(data: np.ndarray):
+    """Return ``(rows, marker_tokens)`` for the typed v2 CSV format.
+
+    ``rows`` is a list of string cells (mask columns already appended for
+    masked arrays). Used only for bool, timedelta64, and MaskedArray -- the
+    dtypes the plain ``str()`` writer cannot round-trip (card figrecipe-csv-
+    roundtrip-writer-reader-asymmetry). Everything else stays on the plain path.
+    """
+    masked = isinstance(data, np.ma.MaskedArray)
+    arr = data.data if masked else data
+    mask = np.ma.getmaskarray(data) if masked else None
+    kind = arr.dtype.kind
+    td_unit = str(arr.dtype).split("[")[-1].rstrip("]") if kind == "m" else None
+    # int64 of a timedelta64 array is its count in the array's OWN unit.
+    # (int() on a timedelta64 SCALAR raises; the array astype is the safe path.)
+    counts = arr.astype("int64") if kind == "m" else None
+
+    def fmt(r, c):
+        if kind == "b":
+            v = arr[r] if c is None else arr[r, c]
+            return "1" if bool(v) else "0"
+        if kind == "m":
+            n = counts[r] if c is None else counts[r, c]
+            return f"{int(n)}{td_unit}"
+        v = arr[r] if c is None else arr[r, c]
+        return v
+
+    rows = []
+    if arr.ndim == 1:
+        for r in range(arr.size):
+            row = [fmt(r, None)]
+            if masked:
+                row.append("1" if mask[r] else "0")
+            rows.append(row)
+    else:
+        C = arr.shape[1]
+        for r in range(arr.shape[0]):
+            row = [fmt(r, c) for c in range(C)]
+            if masked:
+                row.extend("1" if mask[r, c] else "0" for c in range(C))
+            rows.append(row)
+
+    tokens = ["fmt: 2"]
+    if masked:
+        tokens.append("mask")
+    if td_unit:
+        tokens.append("unit=" + td_unit)
+    return rows, tokens
+
+
+def _v2_parse(rows, dtype, masked, td_unit):
+    """Parse typed v2 CSV string cells back into an array (data-level round-trip)."""
+    if masked:
+        C = len(rows[0]) // 2
+        data_cells = [row[:C] for row in rows]
+        mask_bits = [row[C:] for row in rows]
+        arr = _v2_parse(data_cells, dtype, False, td_unit)
+        if C == 1:
+            mask = np.array([b[0] == "1" for b in mask_bits])
+        else:
+            mask = np.array([[b == "1" for b in row] for row in mask_bits])
+        return np.ma.array(arr, mask=mask)
+
+    is_1d = all(len(row) == 1 for row in rows)
+    vals = [row[0] for row in rows] if is_1d else rows
+    kind = np.dtype(dtype).kind if dtype is not None else None
+
+    # bool: numpy's bool-from-string treats ANY non-empty string as True, so map
+    # "1"/"0" explicitly -- exactly the failure the card describes (all-true).
+    if kind == "b":
+        if is_1d:
+            bits = [1 if v == "1" else 0 for v in vals]
+        else:
+            bits = [[1 if v == "1" else 0 for v in row] for row in vals]
+        return np.array(bits, dtype="bool")
+    if kind == "m" and td_unit:
+        n = len(td_unit)
+        if is_1d:
+            counts = [int(v[:-n]) for v in vals]
+        else:
+            counts = [[int(v[:-n]) for v in row] for row in vals]
+        return np.array(counts, dtype="int64").astype(dtype)
+
+    if dtype is None:
+        try:
+            return np.array(vals, dtype=np.float64)
+        except ValueError:
+            return np.array(vals, dtype=object)
+    return np.array(vals, dtype=dtype)
+
+
 def save_array_csv(data: np.ndarray, path: Union[str, Path]) -> Path:
     """Save numpy array to CSV file.
 
@@ -97,22 +188,41 @@ def save_array_csv(data: np.ndarray, path: Union[str, Path]) -> Path:
 
     Notes
     -----
-    Dtype is stored in the YAML recipe file, not in CSV.
-    CSV contains only the raw data values for clean import into other tools.
+    Dtype is stored in the YAML recipe file, not in CSV. CSV contains only the
+    raw data values for clean import into other tools.
+
+    Round-trip safety (card figrecipe-csv-roundtrip-writer-reader-asymmetry):
+    bool, timedelta64, and MaskedArray cannot round-trip through the plain
+    ``str()`` writer + ``np.array(..., dtype=...)`` reader -- bool reloads as
+    all-true, timedelta64 crashes, and the mask is lost. Those are written in a
+    typed v2 format marked by a ``# fmt: 2`` header the reader understands.
+    Every other dtype keeps the exact plain (unmarked) output, so existing
+    files/recipes are byte-identical to before and the legacy reader path is
+    untouched.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(path, "w", newline="") as f:
-        writer = csv.writer(f)
-        # Write data only (dtype stored in YAML)
-        if data.ndim == 1:
-            for val in data:
-                writer.writerow([val])
-        else:
-            for row in data:
-                writer.writerow(row if hasattr(row, "__iter__") else [row])
+    # Plain path -- byte-identical to the historical writer.
+    if not isinstance(data, np.ma.MaskedArray) and data.dtype.kind not in ("b", "m"):
+        with open(path, "w", newline="") as f:
+            writer = csv.writer(f)
+            # Write data only (dtype stored in YAML)
+            if data.ndim == 1:
+                for val in data:
+                    writer.writerow([val])
+            else:
+                for row in data:
+                    writer.writerow(row if hasattr(row, "__iter__") else [row])
+        return path
 
+    # Typed v2 path (bool / timedelta64 / masked).
+    rows, tokens = _v2_rows(data)
+    with open(path, "w", newline="") as f:
+        f.write("# " + "; ".join(tokens) + "\n")
+        writer = csv.writer(f)
+        for row in rows:
+            writer.writerow(row)
     return path
 
 
@@ -128,32 +238,52 @@ def load_array_csv(path: Union[str, Path], dtype=None) -> np.ndarray:
 
     Returns
     -------
-    np.ndarray
+    np.ndarray (or np.ma.MaskedArray)
         Loaded array.
 
     Notes
     -----
-    Supports both new format (pure data) and legacy format (with dtype header).
+    Supports the legacy format (with a ``# dtype:`` header, or no header) and
+    the typed v2 format (``# fmt: 2``) that ``save_array_csv`` emits for bool,
+    timedelta64, and MaskedArray so those round-trip losslessly.
     """
     path = Path(path)
     data_rows = []
+    v2 = False
+    v2_masked = False
+    v2_unit = None
 
     with open(path, "r", newline="") as f:
         reader = csv.reader(f)
         for row in reader:
+            if not row:
+                continue
+            first = row[0]
+            if first.startswith("# fmt: 2"):
+                v2 = True
+                for tok in first.split(";")[1:]:
+                    tok = tok.strip()
+                    if tok == "mask":
+                        v2_masked = True
+                    elif tok.startswith("unit="):
+                        v2_unit = tok[len("unit="):]
+                continue
             # Skip legacy dtype header for backwards compatibility
-            if row and row[0].startswith("# dtype:"):
+            if first.startswith("# dtype:"):
                 if dtype is None:
-                    dtype_str = row[0].replace("# dtype:", "").strip()
+                    dtype_str = first.replace("# dtype:", "").strip()
                     dtype = np.dtype(dtype_str)
                 continue
-            if row:  # Skip empty rows
-                data_rows.append(row)
+            data_rows.append(row)
 
     # Parse data
     if not data_rows:
         return np.array([], dtype=dtype)
 
+    if v2:
+        return _v2_parse(data_rows, dtype, v2_masked, v2_unit)
+
+    # Legacy path (unchanged).
     # Check if 1D (single column)
     if all(len(row) == 1 for row in data_rows):
         data = [row[0] for row in data_rows]

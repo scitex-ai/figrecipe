@@ -1,11 +1,28 @@
 {
+  "_mobile.js": {
+    "file": "assets/mobile.js",
+    "name": "mobile"
+  },
   "index.html": {
     "file": "assets/index.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
-    "css": [
-      "assets/index.css"
+    "imports": [
+      "_mobile.js"
     ]
+  },
+  "src/workspace.ts": {
+    "file": "assets/workspace.js",
+    "name": "workspace",
+    "src": "src/workspace.ts",
+    "isEntry": true,
+    "imports": [
+      "_mobile.js"
+    ]
+  },
+  "style.css": {
+    "file": "assets/index.css",
+    "src": "style.css"
   }
 }

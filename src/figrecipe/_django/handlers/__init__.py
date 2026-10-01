@@ -5,15 +5,6 @@
 Exports HANDLERS dict for the catch-all dispatcher.
 """
 
-# Chat: single source of truth from scitex-app (no figrecipe-specific fallback).
-# `scitex_app.chat` is a lazily-exposed package attribute (PEP 562
-# `__getattr__`), not a real importable submodule -- `from scitex_app.chat
-# import X` raises ModuleNotFoundError since that form requires the import
-# system to resolve `scitex_app.chat` as an actual submodule. `from
-# scitex_app import chat` works: it falls back to attribute lookup on the
-# already-imported `scitex_app` package.
-from scitex_app import chat as _chat
-
 from .annotation import (
     handle_get_captions,
     handle_update_annotation_position,
@@ -29,6 +20,14 @@ from .axis import (
     handle_update_label,
     handle_update_legend_position,
 )
+from .chat import (  # noqa: F401
+    _chat_unavailable,
+    _database_is_configured,
+    handle_api_chat_stream,
+    handle_api_session_detail,
+    handle_api_session_list,
+    handle_api_session_messages,
+)
 from .compose import handle_compose_save
 from .core import handle_hitmap, handle_ping, handle_preview, handle_update
 from .datatable import (
@@ -39,6 +38,7 @@ from .datatable import (
 from .downloads import handle_download_csv, handle_download_fig
 from .elements import (
     handle_calls,
+    handle_element_details,
     handle_single_call,
     handle_update_call,
     handle_update_element_color,
@@ -56,6 +56,7 @@ from .files import (
 from .gallery import (
     handle_gallery_add,
     handle_gallery_available,
+    handle_gallery_demo,
     handle_gallery_thumbnail,
 )
 from .image import (
@@ -65,6 +66,7 @@ from .image import (
 )
 from .stats import (
     handle_stats_add_bracket,
+    handle_stats_import_plot_spec,
     handle_stats_list_brackets,
     handle_stats_remove_bracket,
     handle_stats_update_bracket,
@@ -79,32 +81,6 @@ from .style import (
     handle_style,
     handle_switch_theme,
 )
-
-_raw_chat_stream = _chat.chat_stream_view
-_raw_session_detail = _chat.session_detail_view
-_raw_session_list = _chat.session_list_view
-_raw_session_messages = _chat.session_messages_view
-
-
-def handle_api_chat_stream(request, editor):
-    """Wrapper: chat handler ignores editor."""
-    return _raw_chat_stream(request)
-
-
-def handle_api_session_list(request, editor):
-    """Wrapper: session list/create — ignores editor."""
-    return _raw_session_list(request)
-
-
-def handle_api_session_detail(request, editor, session_id):
-    """Wrapper: session get/patch/delete — ignores editor."""
-    return _raw_session_detail(request, session_id)
-
-
-def handle_api_session_messages(request, editor, session_id):
-    """Wrapper: session messages get/add — ignores editor."""
-    return _raw_session_messages(request, session_id)
-
 
 # fmt: off
 HANDLERS = {
@@ -136,6 +112,7 @@ HANDLERS = {
 
     # Elements
     "calls":                        handle_calls,
+    "element_details":              handle_element_details,
     "update_call":                  handle_update_call,
     "update_element_color":         handle_update_element_color,
 
@@ -170,6 +147,7 @@ HANDLERS = {
     # Gallery
     "api/gallery":                  handle_gallery_available,
     "api/gallery/add":              handle_gallery_add,
+    "api/gallery/demo":             handle_gallery_demo,
 
     # Compose
     "api/compose":                  handle_compose_save,
@@ -183,6 +161,7 @@ HANDLERS = {
     "stats/remove_bracket":         handle_stats_remove_bracket,
     "stats/update_bracket":         handle_stats_update_bracket,
     "stats/list_brackets":          handle_stats_list_brackets,
+    "api/import/stats-plot-spec":   handle_stats_import_plot_spec,
 }
 # fmt: on
 
@@ -190,6 +169,7 @@ __all__ = [
     "HANDLERS",
     "handle_single_call",
     "handle_download_fig",
+    "handle_gallery_demo",
     "handle_gallery_thumbnail",
     "handle_compose_export",
 ]

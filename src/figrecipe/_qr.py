@@ -13,9 +13,15 @@ annotation is figure-domain, not I/O-domain.
 from __future__ import annotations
 
 import json
-import logging
 
-logger = logging.getLogger(__name__)
+from ._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def add_qr_to_figure(fig, metadata, position="bottom-right", size=0.08):

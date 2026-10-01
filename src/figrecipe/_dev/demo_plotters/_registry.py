@@ -6,6 +6,15 @@ import importlib
 from pathlib import Path
 from typing import Callable, Dict
 
+from ..._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+console = slogging.getConsole(f"{__name__}.console")
+
 # Registry: plot_name -> plotter function
 REGISTRY: Dict[str, Callable] = {}
 
@@ -45,6 +54,6 @@ for _file in _demo_files:
         if hasattr(_module, _func_name):
             REGISTRY[_plot_name] = getattr(_module, _func_name)
     except ImportError as e:
-        print(f"Warning: Could not import {_cat_dir}.{_module_name}: {e}")
+        console.warning(f"Warning: Could not import {_cat_dir}.{_module_name}: {e}")
 
 # EOF

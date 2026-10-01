@@ -7,6 +7,7 @@ from typing import Any
 from matplotlib.axes import Axes
 
 from .._recorder import CallRecord
+from ._warnings import ReplayFailureWarning
 
 
 def replay_seaborn_call(ax: Axes, call: CallRecord) -> Any:
@@ -93,7 +94,9 @@ def replay_seaborn_call(ax: Axes, call: CallRecord) -> Any:
     except Exception as e:
         import warnings
 
-        warnings.warn(f"Failed to replay sns.{func_name}: {e}")
+        warnings.warn(
+            f"Failed to replay sns.{func_name}: {e}", ReplayFailureWarning
+        )
         return None
 
 

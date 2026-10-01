@@ -63,6 +63,13 @@ class RecordingAxes(
         self._track = True
         # Map matplotlib result objects (by id) to their source call_id
         self._result_refs: Dict[int, str] = {}
+        # call_id -> weakrefs ... keyed by the RECORD's identity: {id(record):
+        # (record, [weakref(artist), ...])}. Read at SAVE time to drop recorded
+        # calls whose artists the figure no longer holds (card
+        # figrecipe-recipe-keeps-artists-removed-before-save-20260906); see
+        # _recorder/_artists.py. Held per-axes, so there is no global state, and
+        # holding the RECORD in the entry keeps the key valid (no id-reuse).
+        self._artist_refs: Dict[int, tuple] = {}
 
     @property
     def ax(self) -> Axes:
@@ -212,6 +219,7 @@ class RecordingAxes(
                     self._result_refs,
                     self._RESULT_REFERENCING_METHODS,
                     self._RESULT_REFERENCEABLE_METHODS,
+                    self._artist_refs,
                 )
             return result
 

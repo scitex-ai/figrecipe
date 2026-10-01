@@ -6,7 +6,13 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
-from PIL import Image
+
+from .._utils._optional import missing_extra
+
+try:
+    from PIL import Image
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 
 def create_hitmap(

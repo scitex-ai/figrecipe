@@ -181,10 +181,16 @@ def _resolve_data_references(
                                 else:
                                     col = arr
 
-                                # Trim to original length (remove NaN padding)
+                                # Trim to original length (remove NaN padding).
+                                # Do NOT also filter NaN: the length trim above
+                                # already removes the padding, and a second
+                                # isnan filter would delete the user's GENUINE
+                                # NaNs (e.g. a ragged float array whose real
+                                # data contains NaN) -- a silent data change
+                                # that the pixel MSE gate cannot see.
+                                # (card figrecipe-csv-roundtrip-writer-reader-asymmetry #5)
                                 if array_lengths and i < len(array_lengths):
                                     col = col[: array_lengths[i]]
-                                    col = col[~np.isnan(col)]
                                 arrays.append(col)
 
                             arg["data"] = [a.tolist() for a in arrays]

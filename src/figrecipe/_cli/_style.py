@@ -5,6 +5,8 @@
 import click
 from rich.console import Console
 
+from .._utils._console import render_rich
+
 console = Console()
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -12,15 +14,15 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 def _print_command_help(cmd, prefix: str, parent_ctx) -> None:
     """Print help for a command."""
-    console.print(f"\n[bold cyan]━━━ {prefix} ━━━[/bold cyan]")
+    render_rich(f"\n[bold cyan]━━━ {prefix} ━━━[/bold cyan]", __name__)
     sub_ctx = click.Context(cmd, info_name=prefix.split()[-1], parent=parent_ctx)
-    console.print(cmd.get_help(sub_ctx))
+    render_rich(cmd.get_help(sub_ctx), __name__)
 
 
 def _show_recursive_help(ctx: click.Context) -> None:
     """Display recursive help for all style subcommands."""
-    console.print("[bold cyan]━━━ figrecipe style ━━━[/bold cyan]")
-    console.print(ctx.get_help())
+    render_rich("[bold cyan]━━━ figrecipe style ━━━[/bold cyan]", __name__)
+    render_rich(ctx.get_help(), __name__)
 
     for name, cmd in sorted(style.commands.items()):
         if name == "help-recursive":

@@ -3,9 +3,10 @@
 """Reproducibility validation for figrecipe recipes."""
 
 import tempfile
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -49,6 +50,12 @@ class ValidationResult:
     # reproduced.<ext>`` beside the saved figure) for visual inspection; None
     # when validation passes or no image path was provided.
     not_reproduced_path: Optional[str] = None
+    # Replay problems observed WHILE reproducing, in the order they occurred.
+    # A pixel diff says the figure changed; these say WHY. Empty when replay
+    # was clean — which, on a failed validation, is itself informative: it
+    # means the divergence came from rendering rather than from a call that
+    # could not be replayed.
+    replay_warnings: Tuple[str, ...] = ()
 
     def __repr__(self) -> str:
         status = "VALID" if self.valid else "INVALID"
@@ -137,6 +144,7 @@ def validate_recipe(
     # the moved modules but missed THIS file's internal relative imports back
     # to its (former) siblings. Bump one level.
     from .._reproducer import reproduce
+    from .._reproducer._warnings import ReplayFailureWarning
     from .._utils._image_diff import compare_images
 
     recipe_path = Path(recipe_path)
@@ -152,8 +160,39 @@ def validate_recipe(
         # tick finalization and cropping behavior with reproduced figure
         fig.savefig(original_path, save_recipe=False, dpi=dpi, verbose=False)
 
-        # Reproduce from recipe
-        reproduced_fig, _ = reproduce(recipe_path)
+        # Reproduce from recipe.
+        #
+        # Capture what replay complains about. When validation later fails, the
+        # pixel diff can only say THAT the figure changed; these warnings say
+        # WHY — e.g. "Failed to replay plot: 'range(0, 10)' is not a valid
+        # format string", which names the offending call and is actionable,
+        # where an MSE is not.
+        #
+        # They are RE-EMITTED rather than swallowed: `catch_warnings(record=True)`
+        # stops them reaching the caller, and silently removing a signal while
+        # adding a better one would be a net loss for anyone already watching
+        # for them.
+        with warnings.catch_warnings(record=True) as replay_record:
+            warnings.simplefilter("always")
+            reproduced_fig, _ = reproduce(recipe_path)
+        # Filter by CATEGORY, not by message text. A replay pass also emits font
+        # fallbacks, layout hints and overlap notices; quoting all of them as
+        # "cause" would bury the real one — measured, the first draft of this
+        # reported "cause: Font 'Arial' not found" above the actual failure.
+        # Matching on the message prefix would work until someone rewords a
+        # message; a category cannot drift.
+        replay_warnings = tuple(
+            str(entry.message)
+            for entry in replay_record
+            if issubclass(entry.category, ReplayFailureWarning)
+        )
+        for entry in replay_record:
+            warnings.warn_explicit(
+                entry.message,
+                entry.category,
+                entry.filename,
+                entry.lineno,
+            )
 
         # Save reproduced figure using same method as original
         reproduced_path = tmpdir / "reproduced.png"
@@ -182,6 +221,21 @@ def validate_recipe(
         else:
             valid = True
             message = "Reproduction matches original within threshold"
+
+        # A pixel diff can only report THAT the figure changed. Replay already
+        # reported WHY while reproducing — e.g. "Failed to replay plot:
+        # 'range(0, 10)' is not a valid format string" names the offending call
+        # and is actionable, where "MSE 412.5, 1.9% of pixels" is not.
+        #
+        # The cause is attached to ``message`` rather than to the caller's
+        # exception string, so every surface that already shows the message
+        # gains it at once: the raised ValueError, the warning under
+        # ``validate_error_level="warning"``, the logged ERROR line, and
+        # ``summary()``. Composing it at the call site instead would have
+        # improved exactly one of those and left the others uninformative.
+        if not valid and replay_warnings:
+            causes = "".join(f"\n  cause: {text}" for text in replay_warnings)
+            message = f"{message}{causes}"
 
         # On FAILURE, persist the reproduced figure next to the saved one as
         # ``<stem>-not-reproduced.<ext>`` so the divergence is inspectable (the
@@ -227,6 +281,7 @@ def validate_recipe(
             file_size_diff=diff["file_size2"] - diff["file_size1"],
             message=message,
             not_reproduced_path=not_reproduced_path,
+            replay_warnings=replay_warnings,
         )
 
 

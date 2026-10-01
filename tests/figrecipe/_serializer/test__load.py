@@ -656,3 +656,40 @@ class TestArrayListPlots:
             assert len(ax2.patches) > 0  # patch_artist creates Patch objects
 
             plt.close(fig2.fig)
+
+
+class TestArrayListGenuineNaNPreserved:
+    """A length-trim must not also filter NaN (card figrecipe-csv-roundtrip-
+    writer-reader-asymmetry #5).
+
+    Equal-length arrays make the length-trim a NO-OP, so the only difference
+    between old and new load behaviour is the removed ``col[~np.isnan(col)]``
+    line. A genuine NaN in the data therefore survives the round-trip under
+    the fix and was silently deleted before -- the false-green MSE 56.74 case.
+    """
+
+    def test_equal_length_float_array_list_keeps_genuine_nan(self, tmp_path):
+        # Arrange: 2 equal-length float columns; column 0 has a GENUINE NaN at
+        # index 1 (real missing data, not padding).
+        from figrecipe._serializer._load import _resolve_data_references
+        from figrecipe._utils._numpy_io import save_array_csv
+
+        stacked = np.array([[1.0, 4.0], [np.nan, 5.0], [3.0, 6.0]])
+        csv_path = tmp_path / "d.csv"
+        save_array_csv(stacked, csv_path)
+        arg = {
+            "data": "d.csv",
+            "dtype": "float64",
+            "_is_array_list": True,
+            "_n_arrays": 2,
+            "_array_lengths": [3, 3],  # equal length -> trim is a no-op
+        }
+        data = {"axes": {"r0c0": {"calls": [{"args": [arg]}]}}}
+        # Act
+        _resolve_data_references(data, tmp_path)
+        # Assert: column 0's GENUINE NaN survived. (np.nan == np.nan is False,
+        # so compare positionally with isnan; the old code stripped it to [1.0, 3.0].)
+        import math
+
+        col0 = data["axes"]["r0c0"]["calls"][0]["args"][0]["data"][0]
+        assert len(col0) == 3 and math.isnan(col0[1]) and col0[0] == 1.0 and col0[2] == 3.0
