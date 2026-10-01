@@ -54,6 +54,8 @@ jobs:
 
   import-smoke:
     uses: scitex-ai/.github/.github/workflows/import-smoke.yml@main
+    with:
+      console_script: figrecipe
     secrets: inherit
 
   quality-audit:
