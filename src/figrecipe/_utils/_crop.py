@@ -6,12 +6,13 @@ This utility automatically detects the content area of saved figures
 and crops them, removing excess whitespace while preserving a specified margin.
 """
 
+from .._utils._optional import missing_extra
+
 try:
     import scitex_logging as slogging
 except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
     raise missing_extra(exc) from exc
 
-from .._utils._optional import missing_extra
 
 __all__ = ["crop", "crop_svg", "find_content_area", "mm_to_pixels"]
 

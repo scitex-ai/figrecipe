@@ -5,13 +5,14 @@
 from pathlib import Path
 from typing import Optional
 
+from .._utils._optional import missing_extra
+
 try:
     import scitex_logging as slogging
 except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
     raise missing_extra(exc) from exc
 
 from .._utils._grid import grid_id
-from .._utils._optional import missing_extra
 
 console = slogging.getConsole(f"{__name__}.console")
 

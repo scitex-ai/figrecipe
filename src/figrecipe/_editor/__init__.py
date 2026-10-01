@@ -9,12 +9,13 @@ needed by Django handlers.
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+from .._utils._optional import missing_extra
+
 try:
     import scitex_logging as slogging
 except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
     raise missing_extra(exc) from exc
 
-from .._utils._optional import missing_extra
 
 
 def _check_figure_has_content(fig) -> bool:

@@ -5,12 +5,13 @@
 import json
 from pathlib import Path
 
+from .._utils._optional import missing_extra
+
 try:
     import scitex_logging as slogging
 except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
     raise missing_extra(exc) from exc
 
-from .._utils._optional import missing_extra
 
 try:
     from django.http import HttpResponse, JsonResponse
