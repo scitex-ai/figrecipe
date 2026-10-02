@@ -1,7 +1,8 @@
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
- * Three tabs (SigmaPlot-style: data entry lives on its own page):
+ * Stable panes: Data -> Plot -> Figure -> Details. Desktop tabs keep the
+ * SigmaPlot-style full-width worksheet and the resizable Details column.
  *   - Plot: PlotTypeNav | FigureViewer | Objects + Details
  *   - Data: full-width DataTablePane (import, paste, sample, edit)
  *   - Canvas: Canvas | Objects + Details
@@ -24,7 +25,10 @@ import { AlertBanner } from "@scitex/sdk/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
-import { mountPanes, usePhoneLayout } from "./components/mobilePanes";
+import { mountEditorPanes, releaseEditorPanes, showEditorPane, usePhoneLayout } from "./components/mobilePanes";
+import { PANES_CHANGE } from "@scitex/sdk/ui/ts/app/panes";
+import type { PanesChangeDetail } from "@scitex/sdk/ui/ts/app/panes";
+import type { EditorPane } from "./components/mobilePanes";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type AppTab = "plot" | "data" | "canvas";
@@ -144,23 +148,53 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
 
   // Hub phones: the columns become tabs (scitex-ui panes); collapse bars do not apply.
   const phone = usePhoneLayout();
+  const [phonePane, setPhonePane] = useState<EditorPane>(() => {
+    try {
+      const stored = localStorage.getItem("figrecipe-app-tab");
+      if (stored === "canvas") return "figure";
+      if (stored === "plot") return "plot";
+    } catch {}
+    return "data";
+  });
   const bodyRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const host = bodyRef.current?.parentElement;
-    if (embedded && host) mountPanes(host);
-  }, [embedded, activeTab]);
+    const body = bodyRef.current;
+    const host = body?.parentElement;
+    if (!body || !host) return;
+    const onChange = (event: Event) => {
+      if (event.target !== body) return;
+      const detail = (event as CustomEvent<PanesChangeDetail>).detail;
+      if (detail?.app === "figrecipe" && ["data", "plot", "figure", "details"].includes(detail.pane)) {
+        setPhonePane(detail.pane as EditorPane);
+      }
+    };
+    body.addEventListener(PANES_CHANGE, onChange);
+    // SDK panes collect direct children once. Their nodes stay mounted below,
+    // so switching desktop pages never invalidates the phone tab registry.
+    const mounted = mountEditorPanes(host);
+    if (mounted) setPhonePane(mounted.active as EditorPane);
+    return () => {
+      body.removeEventListener(PANES_CHANGE, onChange);
+      releaseEditorPanes(body);
+    };
+  }, []);
+  const selectTab = (tab: AppTab) => {
+    setActiveTab(tab);
+    showEditorPane(tab === "canvas" ? "figure" : tab);
+  };
+  const plotActive = phone ? phonePane === "plot" : activeTab === "plot";
+  const dataActive = phone ? phonePane === "data" : activeTab === "data";
+  const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
   const detailsCollapsed = rightPanel.collapsed && !phone;
   const paneAttrs = (
     id: string,
     label: string,
     order: number,
   ): Record<string, string | number> =>
-    embedded
-      ? { "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order }
-      : {};
+    ({ "data-stx-pane": id, "data-stx-label": label, "data-stx-order": order });
 
   return (
-    <div className="inner-editor">
+    <div className="inner-editor" data-editor-tab={activeTab}>
       {/* ── App header (figrecipe-owned) — canonical .stx-app-header ─────
           Structure: title, then the shared project-selector slot, then
           (optional) app actions. The selector lives HERE (not the tab row)
@@ -182,35 +216,33 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
       {/* ── Tab Switcher ────────────────────────────── */}
       <div className="inner-editor__tabs" role="tablist">
         <button
-          className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => setActiveTab("plot")}
-          role="tab"
-          aria-selected={activeTab === "plot"}
-        >
-          <i className="fas fa-chart-line" /> {gettext("Plot")}
-        </button>
-        <button
           className={`inner-editor__tab${activeTab === "data" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => setActiveTab("data")}
+          onClick={() => selectTab("data")}
           role="tab"
           aria-selected={activeTab === "data"}
           title={gettext("Data table — its own full-width page")}
         >
           <i className="fas fa-table" /> {gettext("Data")}
         </button>
-        {(
-          <button
-            className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
-            onClick={() => setActiveTab("canvas")}
-            role="tab"
-            aria-selected={activeTab === "canvas"}
-          >
-            <i className="fas fa-object-group" /> {gettext("Canvas")}
-          </button>
-        )}
+        <button
+          className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
+          onClick={() => selectTab("plot")}
+          role="tab"
+          aria-selected={activeTab === "plot"}
+        >
+          <i className="fas fa-chart-line" /> {gettext("Plot")}
+        </button>
+        <button
+          className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
+          onClick={() => selectTab("canvas")}
+          role="tab"
+          aria-selected={activeTab === "canvas"}
+        >
+          <i className="fas fa-object-group" /> {gettext("Figure")}
+        </button>
       </div>
 
-      {!stepsDismissed && activeTab === "plot" && (
+      {!stepsDismissed && plotActive && (
         <div className="fr-steps" role="note">
           <ol className="fr-steps__list">
             <li>{gettext("1. Pick or import data")}</li>
@@ -233,46 +265,29 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
       <div
         ref={bodyRef}
         className="editor-body"
-        {...(embedded ? { "data-stx-panes": "figrecipe", "data-stx-panes-layout": "app" } : {})}
+        data-stx-panes="figrecipe"
+        data-stx-panes-layout="app"
+        data-stx-active={phonePane}
       >
-        {activeTab === "data" && (
-          /* SigmaPlot-style worksheet: the data table gets its own
-             full-width page instead of a squeezed strip beside the viewer. */
-          <div
-            className="data-page"
-            {...paneAttrs("data", gettext("Data"), 2)}
-          >
-            <div className="data-page__inner">
-              <DataTablePane hideCollapse />
-            </div>
+        {/* SigmaPlot-style worksheet: the data table gets its own
+            full-width page instead of a squeezed strip beside the viewer. */}
+        <div className="data-page" {...paneAttrs("data", gettext("Data"), 1)}>
+          <div className="data-page__inner">
+            <DataTablePane hideCollapse active={dataActive} />
           </div>
-        )}
-
-        {activeTab === "plot" && (
-          <>
-            {/* Plot type selector nav — fixed width, not resizable */}
-            <PlotTypeNav paneAttrs={paneAttrs("plot", gettext("Plot"), 3)} />
-
-            {/* Pane 2 — Figure Viewer (rendered image, not canvas).
-                Always expanded: no collapse toggle (single viewer = nothing
-                to toggle between). */}
-            <main
-              className="split-pane split-pane-center"
-              {...paneAttrs("figure", gettext("Figure"), 1)}
-            >
-              <FigureViewer />
-            </main>
-          </>
-        )}
-
-        {activeTab === "canvas" && (
-          <>
-            {/* Canvas pane — always expanded, no collapse toggle. */}
-            <main className="split-pane split-pane-center" {...paneAttrs("figure", gettext("Canvas"), 1)}>
-              <CanvasPane />
-            </main>
-          </>
-        )}
+        </div>
+        <section className="editor-plot-page" {...paneAttrs("plot", gettext("Plot"), 2)}>
+          {/* Plot type selector nav — fixed width, not resizable. */}
+          <PlotTypeNav />
+          {/* Rendered figure viewer — always expanded. */}
+          <main className="split-pane split-pane-center">
+            <FigureViewer />
+          </main>
+        </section>
+        {/* Composition canvas — always expanded. */}
+        <main className="split-pane split-pane-center editor-figure-page" {...paneAttrs("figure", gettext("Figure"), 3)}>
+          <CanvasPane active={canvasActive} />
+        </main>
 
         {/* Resizer + Details grouped together and pushed to far right */}
         <div
@@ -289,7 +304,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
             <PropertiesPane
               onToggleCollapse={rightPanel.toggleCollapse}
               collapsed={detailsCollapsed}
-              onRequestDataTab={() => setActiveTab("data")}
+              onRequestDataTab={() => selectTab("data")}
             />
           </aside>
         </div>

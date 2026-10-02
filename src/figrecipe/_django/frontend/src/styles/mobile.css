@@ -8,6 +8,13 @@
  */
 
 @media (max-width: 768px) {
+  .editor-plot-page {
+    flex-direction: column;
+    overflow: visible;
+  }
+  .editor-plot-page > .plot-type-nav {
+    order: 0;
+  }
   /* ── Editor body: one scrolling column of natural-height sections ──
      Squeezing every pane into the viewport (flex 1 1 0, height 0) left the
      Data pane ~200px tall, so its form overflowed under the plot-type rail and
@@ -242,9 +249,13 @@
 }
 
 /* ── Hub phones: one tab per column (scitex-ui panes) ─────────────────
-   Figure | Data | Plot | Details. No collapse title bars: a collapsed
+   Data | Plot | Figure | Details. No collapse title bars: a collapsed
    viewer left an empty area that read as a broken image. */
 @media (max-width: 640px) {
+  /* The canonical SDK tabs are the phone's single workflow control. */
+  .inner-editor__tabs {
+    display: none;
+  }
   .editor-body.stx-panes--single {
     height: auto !important;
     flex: 1 1 0;
@@ -287,17 +298,16 @@
     display: none !important;
   }
 
-  .editor-body.stx-panes--single > .split-pane-center .figure-viewer {
-    flex: 1 1 auto;
-    height: auto;
-    min-height: 0;
+  .editor-body.stx-panes--single > .editor-plot-page .figure-viewer {
+    height: 100%;
+    min-height: 240px;
   }
 
   .editor-body.stx-panes--single .split-pane-left .stx-app-data-table {
     max-height: none;
   }
 
-  .editor-body.stx-panes--single > .plot-type-nav .stx-app-selector-nav__items {
+  .editor-body.stx-panes--single .plot-type-nav .stx-app-selector-nav__items {
     flex-wrap: wrap;
     overflow-x: visible;
     padding: 12px;
@@ -305,7 +315,7 @@
     -webkit-mask-image: none;
     mask-image: none;
   }
-  .editor-body.stx-panes--single > .plot-type-nav .stx-app-selector-nav__item {
+  .editor-body.stx-panes--single .plot-type-nav .stx-app-selector-nav__item {
     flex: 1 1 calc(33% - 8px);
     min-height: 72px;
     border: 1px solid var(--vis-border);
@@ -314,6 +324,30 @@
   .editor-body.stx-panes--single > .stx-layout-most-right .split-pane-right {
     min-height: 0;
     flex: 1 1 auto;
+  }
+
+  /* The drawing surface owns pan/pinch; its toolbar and all other panes keep
+     ordinary page scrolling. The viewport fills the height below the tabs. */
+  .editor-body.stx-panes--single > .editor-figure-page[data-stx-pane-active] {
+    overflow: hidden;
+  }
+  .editor-figure-page .canvas-content {
+    min-height: 0;
+  }
+  .editor-figure-page .pane-header {
+    height: auto;
+    min-height: 52px;
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  .editor-figure-page .pane-header-btn,
+  .editor-figure-page .figure-dropdown-toggle {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .editor-figure-page .figure-dropdown-container {
+    flex-shrink: 0;
+    max-width: 140px;
   }
 }
 

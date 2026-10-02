@@ -250,6 +250,24 @@
   padding-bottom: var(--site-dock-height, 0px);
 }
 
+/* Stable SDK panes retain their DOM identity across desktop page switches.
+   Plot keeps its category rail and the actual rendered viewer together. */
+.editor-plot-page {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (min-width: 641px) {
+  .inner-editor:not([data-editor-tab="data"]) .editor-body > .data-page,
+  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-plot-page,
+  .inner-editor:not([data-editor-tab="canvas"]) .editor-body > .editor-figure-page {
+    display: none;
+  }
+}
+
 /* ── SigmaPlot-style Data page (full-width worksheet) ── */
 
 .data-page {

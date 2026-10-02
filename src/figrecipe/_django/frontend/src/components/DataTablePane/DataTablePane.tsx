@@ -67,6 +67,8 @@ interface DataTablePaneProps {
   collapsed?: boolean;
   /** Full-page mode (the Data tab): no collapse toggle, actions labeled. */
   hideCollapse?: boolean;
+  /** A stable but hidden worksheet must not intercept the canvas' shortcuts. */
+  active?: boolean;
 }
 
 /** User-facing name of an edit. Doubles as the undo entry's label and as the
@@ -124,7 +126,7 @@ function badgeFromTarget(target: EventTarget | null): HoverBadge | null {
   return { name, role };
 }
 
-export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse }: DataTablePaneProps) {
+export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, active = true }: DataTablePaneProps) {
   const {
     datatableTabs,
     activeTabId,
@@ -659,6 +661,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse }: Dat
   // way to keep one Ctrl+Z from undoing the canvas as well.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (!active) return;
       if (!(e.ctrlKey || e.metaKey)) return;
       if (e.key.toLowerCase() !== "z") return;
       // Shift+Ctrl/Cmd+Z is the redo half of the pair. Both are the table's
@@ -682,7 +685,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse }: Dat
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [handleRedo, handleUndo]);
+  }, [active, handleRedo, handleUndo]);
 
   /** Close a tab and remove the corresponding figure from canvas. */
   const handleCloseTab = useCallback(
