@@ -161,18 +161,30 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     const body = bodyRef.current;
     const host = body?.parentElement;
     if (!body || !host) return;
+    const syncActivePane = (pane: string) => {
+      setPhonePane(pane as EditorPane);
+      if (pane === "data" || pane === "plot") setActiveTab(pane);
+      else if (pane === "figure") setActiveTab("canvas");
+      // Details stays beside the selected desktop page.
+    };
     const onChange = (event: Event) => {
       if (event.target !== body) return;
       const detail = (event as CustomEvent<PanesChangeDetail>).detail;
       if (detail?.app === "figrecipe" && ["data", "plot", "figure", "details"].includes(detail.pane)) {
-        setPhonePane(detail.pane as EditorPane);
+        syncActivePane(detail.pane);
       }
     };
     body.addEventListener(PANES_CHANGE, onChange);
     // SDK panes collect direct children once. Their nodes stay mounted below,
     // so switching desktop pages never invalidates the phone tab registry.
     const mounted = mountEditorPanes(host);
-    if (mounted) setPhonePane(mounted.active as EditorPane);
+    if (mounted) {
+      // SDK show() emits no event for the already-active pane. Align the
+      // initial desktop tab before accepting named routes; phones keep the
+      // SDK's restored selection.
+      if (!mounted.single) mounted.show(activeTab === "canvas" ? "figure" : activeTab);
+      syncActivePane(mounted.active);
+    }
     return () => {
       body.removeEventListener(PANES_CHANGE, onChange);
       releaseEditorPanes(body);
