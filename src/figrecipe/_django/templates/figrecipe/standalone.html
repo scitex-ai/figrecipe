@@ -1,4 +1,4 @@
-{% extends "scitex_sdk/ui/standalone_shell.html" %}
+{% extends "scitex_sdk/app/app_shell.html" %}
 {% load scitex_i18n scitex_static scitex_project_picker %}
 {% block extra_css %}
     {% if hosted %}
@@ -9,7 +9,7 @@
           crossorigin
           href="{% app_static 'figrecipe/assets/index.css' %}">
 {% endblock %}
-{% block app_content %}
+{% block scitex_app_content %}
     <div id="root"
          data-working-dir="{{ working_dir|default:'' }}"
          data-hosted="{{ hosted|yesno:'true,false' }}"

@@ -24,6 +24,7 @@ except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
 
 from scitex_sdk.host import CapabilityUnavailable
 
+from . import api_policy
 from ._project_access import (
     AccessError,
     bind_editor,
@@ -93,21 +94,7 @@ def _get_editor(request):
 
 
 # ── Endpoints that work without an editor ──────────────────────────
-_NO_EDITOR_ENDPOINTS = {
-    "ping",
-    "list_themes",
-    "api/tree",
-    "api/files",
-    "api/switch",
-    "api/new",
-    "api/gallery",
-    "api/gallery/add",
-    "api/gallery/demo",
-    "api/compose",
-    "api/import/stats-plot-spec",
-    "api/chat/stream",
-    "api/chat/sessions/",
-}
+_NO_EDITOR_ENDPOINTS = api_policy.NO_EDITOR_ENDPOINTS
 
 
 def _favicon_data_uri(hex_color: str) -> str:
@@ -232,14 +219,7 @@ def _dispatch(request, endpoint):
     editor = _get_editor(request)
 
     # Some endpoints require an editor
-    _no_editor = endpoint in _NO_EDITOR_ENDPOINTS or endpoint.startswith(
-        (
-            "api/compose/export/",
-            "api/gallery/thumbnail/",
-            "api/file-content/",
-            "api/chat/sessions/",
-        )
-    )
+    _no_editor = api_policy.allows_no_editor(endpoint)
     if editor is None and not _no_editor:
         handler = HANDLERS.get(endpoint)
         if handler:
