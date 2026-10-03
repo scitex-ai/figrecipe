@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Hub phones show the editor as tabs (scitex-ui panes), without collapse title bars.
+"""Phones select permanent labeled panes through the canonical SDK controller.
 
 The operator saw the collapsible "Viewer" bar leave an empty area that read as a
 broken image; on phones only the pane tabs switch columns.
@@ -42,46 +42,83 @@ def test_phone_panes_hide_collapse_title_bars():
     ), "phones must not show the collapsible viewer title bar"
 
 
-def _tab_content_blocks(source: str) -> dict[str, str]:
-    """Read the real mutually exclusive active-tab contents from the JSX."""
-    blocks = {}
-    for match in re.finditer(r'\{activeTab === "(data|plot|canvas)" && \(\n', source):
-        end = source.index("\n        )}", match.end())
-        blocks[match.group(1)] = source[match.end() : end]
-    return blocks
+def _pane_declarations(source: str) -> list[tuple[str, str, int]]:
+    """Read IDs, translated labels and order from the actual pane markup."""
+    return [
+        (pane, label, int(order))
+        for pane, label, order in re.findall(
+            r'paneAttrs\("(\w+)", gettext\("([^"]+)"\), (\d+)\)', source,
+        )
+    ]
 
 
 def test_editor_declares_the_four_phone_tabs():
     # Arrange
     source = (_FRONTEND / "InnerEditor.tsx").read_text(encoding="utf-8")
+    adapter = (_FRONTEND / "components" / "mobilePanes.ts").read_text(
+        encoding="utf-8"
+    )
+    css = (_FRONTEND / "styles" / "mobile.css").read_text(encoding="utf-8")
     # Act
-    # Canvas occupies the Figure pane only when its alternate tab is active.
-    # The logical pane vocabulary/order is the existing four-pane contract.
-    source = source.replace(_tab_content_blocks(source)["canvas"], "")
-    panes = re.findall(r'paneAttrs\("(\w+)"', source)
+    # IDs/labels/order feed SDK-owned tab buttons and their ARIA selection.
+    checks = (
+        _pane_declarations(source),
+        'data-stx-panes="figrecipe"' in source,
+        'data-stx-active={phonePane}' in source,
+        '"data-stx-label": label' in source,
+        'mountPanes as mountSdkPanes' in adapter,
+        'from "@scitex/sdk/ui/ts/app/panes"' in adapter,
+        'import "@scitex/sdk/ui/css/app/panes.css"' in adapter,
+        'mountSdkPanes(host).find((item) => item.root === body)' in adapter,
+        'currentEditor?.root.isConnected' in adapter,
+        'currentEditor.show(pane)' in adapter,
+        bool(re.search(
+            r'\.inner-editor__tabs\s*\{\s*display:\s*none;', _phone_block(css)
+        )),
+        '.stx-panes__tab[aria-selected="true"]' in _phone_block(css),
+    )
     # Assert
-    assert panes == ["data", "plot", "figure", "details"], (
-        f"pane ids in DOM order: {panes}"
+    assert checks == (
+        [("data", "Data", 1), ("plot", "Plot", 2),
+         ("figure", "Figure", 3), ("details", "Details", 4)],
+        *([True] * 11),
     )
 
 
 @pytest.mark.parametrize(
-    "tab,expected",
+    "tab,page_class",
     [
-        ("data", ["data", "details"]),
-        ("plot", ["plot", "figure", "details"]),
-        ("canvas", ["figure", "details"]),
+        ("data", "data-page"),
+        ("plot", "editor-plot-page"),
+        ("canvas", "editor-figure-page"),
     ],
 )
-def test_each_active_tab_declares_only_its_visible_phone_panes(tab, expected):
+def test_each_desktop_page_retains_the_permanent_phone_panes(tab, page_class):
     # Arrange
     source = (_FRONTEND / "InnerEditor.tsx").read_text(encoding="utf-8")
-    branches = _tab_content_blocks(source)
+    css = (_FRONTEND / "styles" / "layout.css").read_text(encoding="utf-8")
+    body = source.split('data-stx-active={phonePane}', 1)[1].split(
+        "{loading &&", 1
+    )[0]
     # Act
-    visible = source
-    for mode, body in branches.items():
-        if mode != tab:
-            visible = visible.replace(body, "")
-    panes = re.findall(r'paneAttrs\("(\w+)"', visible)
+    # Page switches hide existing desktop nodes; they never replace the four
+    # children collected by SDK panes. Details stays beside each desktop page.
+    checks = (
+        [pane for pane, _label, _order in _pane_declarations(body)],
+        not bool(re.search(r'\{[^{}\n]*&&\s*\(', body)),
+        f'onClick={{() => selectTab("{tab}")}}' in source,
+        'setActiveTab(tab);' in source,
+        'showEditorPane(tab === "canvas" ? "figure" : tab);' in source,
+        bool(re.search(
+            r'@media \(min-width: 641px\)\s*\{[^}]*'
+            + re.escape(
+                f'.inner-editor:not([data-editor-tab="{tab}"]) '
+                f'.editor-body > .{page_class}'
+            ) + r'[^}]*display:\s*none;', css,
+        )),
+        not bool(re.search(
+            r'\[data-editor-tab[^}]*\.stx-layout-most-right', css
+        )),
+    )
     # Assert
-    assert panes == expected, f"active {tab} pane ids in DOM order: {panes}"
+    assert checks == (["data", "plot", "figure", "details"], *([True] * 6))

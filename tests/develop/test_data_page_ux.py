@@ -46,11 +46,20 @@ def test_data_tab_renders_the_table_full_width():
     problems = [
         check
         for check, present in [
-            ("no Data tab button", 'setActiveTab("data")' in source),
-            ("no Data tab content", 'activeTab === "data"' in source),
+            ("no Data page action", 'onClick={() => selectTab("data")}' in source),
+            (
+                "no permanent, labeled Data pane",
+                'className="data-page" {...paneAttrs("data", gettext("Data"), 1)}'
+                in source,
+            ),
             (
                 "Data tab table is not full-page",
-                "<DataTablePane hideCollapse" in source,
+                bool(re.search(
+                    r'className="data-page"[^\n]*>\s*'
+                    r'<div className="data-page__inner">\s*'
+                    r'<DataTablePane hideCollapse active=\{dataActive\} />',
+                    source,
+                )),
             ),
         ]
         if not present
