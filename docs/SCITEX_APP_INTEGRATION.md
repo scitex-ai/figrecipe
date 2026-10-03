@@ -82,6 +82,25 @@ The metadata alone does not grant access. SDK 0.3.0 does not automatically
 discover this policy export, so generic host intake must qualify its consumption
 before replacing any existing host route or capability check.
 
+The app package also publishes dependency-free dotted declarations named
+`context_builder`, `partial_template`, `content_renderer`, `api_policy_module`
+and `hosted_api_dispatcher`. The proposed SDK PR #29 accessor
+`scitex_sdk.app.plugins.leaf_declarations` reads these names with caller-supplied
+`str` types; it returns their values without resolving the dotted targets.
+Consumers resolve the existing leaf callables at request time. The policy
+module uses a distinct attribute name so importing its submodule cannot replace
+the declaration. These exports add no manifest keys or automatic host adoption.
+
+The content renderer still requires the server's explicit trusted `stx_mount`.
+For the retained native Hub route, the guarded API prefix is
+`/apps/figrecipe/figrecipe`, while navigation is `/apps/figrecipe`; navigation
+does not supply that API mount. The hosted dispatcher declaration resolves to
+the existing CSRF-protected leaf callable, preserving authentication, selected
+project authority, path confinement and per-route write decisions. SDK PR #29
+is a source prerequisite for consuming these declarations; SDK 0.3.0 and a
+version string alone do not establish that accessor. Protected host consumption
+and mounted acceptance remain separate qualification steps.
+
 The leaf subscribes to the existing `workspace:module-injected` event. Repeated
 AJAX mount/unmount and project changes retire outgoing requests and reset plot,
 canvas, clipboard, table, selection and undo targets while keeping display
