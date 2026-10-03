@@ -55,10 +55,17 @@ env:
   RUN_E2E: "1"
 
 jobs:
+  runner-admission:
+    uses: scitex-ai/.github/.github/workflows/runner-admission.yml@d7d96c34d68cdfbb5503a933591f7748b5aa30ee
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON || '["ubuntu-latest"]' }}
+    permissions: {}
+
   test:
+    needs: [runner-admission]
     # Job name kept verbatim — these are the required status checks on develop.
     name: pytest-matrix-on-ubuntu-py${{ matrix.python-version }}
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    runs-on: ${{ fromJSON(needs.runner-admission.outputs.runs_on) }}
     # The complete owning plotting, protocol and end-to-end suite runs under
     # xdist and coverage. Keep the existing 60-minute gate for busy runners.
     timeout-minutes: 60
@@ -67,7 +74,43 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
+      - name: Refuse to run fork-authored code on self-hosted infrastructure
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository &&
+          runner.environment == 'self-hosted'
+        run: |
+          set -euo pipefail
+          echo "::error title=Fork PR blocked::Fork-authored code is not run on the self-hosted Spartan pool."
+          echo "head repo: ${{ github.event.pull_request.head.repo.full_name }}  base repo: ${{ github.repository }}"
+          echo "To review this contribution, adopt its branch into ${{ github.repository }} and open a same-repo PR:"
+          echo "  gh pr checkout ${{ github.event.pull_request.number }} && git push origin HEAD:review/pr-${{ github.event.pull_request.number }}"
+          exit 1
+      - name: Require confirmed organization membership on native runners
+        if: runner.environment == 'self-hosted' && needs.runner-admission.outputs.native_authorized != 'true'
+        run: |
+          echo '::error::Organization membership admission was not confirmed.'
+          exit 1
+      - name: Require admitted native execution for the retained CI SIF
+        env:
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
+          NATIVE_AUTHORIZED: ${{ needs.runner-admission.outputs.native_authorized }}
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_ENVIRONMENT" != 'self-hosted' ] || [ "$NATIVE_AUTHORIZED" != 'true' ]; then
+            echo '::error::The retained full SIF suite requires admitted native execution; no bare-runner or unqualified hosted fallback.'
+            exit 1
+          fi
       - uses: actions/checkout@v4
+      - name: Require the retained whole CI image identity
+        env:
+          EXPECTED_SIF_SHA256: aa5836a6c317640d7e20f01eb79aa7385b3dca2f369b595065c50ba3dd34a7d5
+        run: |
+          set -euo pipefail
+          if [ "${SCITEX_CI_SIF_SHA256:?}" != "$EXPECTED_SIF_SHA256" ]; then
+            echo '::error::The CI image input differs from the retained qualified whole image; obtain owning image/runtime qualification before execution.'
+            exit 1
+          fi
       - name: Run tests in the reused CI SIF (apptainer exec — deps layered, not on the bare runner)
         run: bash .github/ci/exec-in-sif.sh run-in-sif.sh ${{ matrix.python-version }}
       - name: Prepare owned Codecov Git configuration and caches
