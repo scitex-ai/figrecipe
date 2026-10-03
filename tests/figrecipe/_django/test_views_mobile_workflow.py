@@ -177,6 +177,79 @@ def test_phone_workflow_keeps_panes_and_canvas_view(browser, editor_server, lang
     context.close()
 
 
+@pytest.mark.parametrize("data_route", ["named", "explicit"])
+def test_desktop_table_routes_show_data_then_figure(browser, editor_server, data_route):
+    # Arrange
+    url, _catalog = editor_server
+    context = browser.new_context(viewport={"width": 1440, "height": 1000})
+    try:
+        page = context.new_page()
+        page.set_default_timeout(7000)
+        requests = []
+        page.on(
+            "request",
+            lambda request: requests.append(
+                (request.method, urllib.parse.urlsplit(request.url).path)
+            ),
+        )
+        # Act
+        page.goto(
+            url + "/?recipe=synthetic.yaml&mode=embedded", wait_until="networkidle"
+        )
+        editor = page.locator(".inner-editor")
+        observed = {
+            "loaded_table": ("GET", "/datatable/data") in requests,
+            "initial_tab": editor.get_attribute("data-editor-tab"),
+            "initial_plot_visible": page.locator(".editor-plot-page").is_visible(),
+        }
+
+        page.locator(".editor-plot-page .plot-type-nav").get_by_role(
+            "button", name="Line", exact=True
+        ).click()
+        if data_route == "explicit":
+            # Bypass a broken named Data route to check the Figure route independently.
+            page.locator(".inner-editor__tabs").get_by_role(
+                "tab", name="Data", exact=True
+            ).click()
+        page.locator(".data-page").wait_for(state="visible")
+        _settle(page)
+        observed["data_tab"] = editor.get_attribute("data-editor-tab")
+        observed["plot_visible_after_data"] = page.locator(
+            ".editor-plot-page"
+        ).is_visible()
+        plot = page.locator(".plot-from-columns").get_by_role(
+            "button", name="Plot", exact=True
+        )
+        observed["plot_enabled"] = plot.is_enabled()
+
+        with page.expect_response(
+            lambda response: response.request.method == "POST"
+            and urllib.parse.urlsplit(response.url).path == "/datatable/plot"
+        ) as plotted:
+            plot.click()
+        observed["plot_status"] = plotted.value.status
+        observed["plot_request"] = plotted.value.request.post_data_json
+        page.locator(".editor-figure-page").wait_for(state="visible")
+        _settle(page)
+        observed["figure_tab"] = editor.get_attribute("data-editor-tab")
+        observed["data_visible_after_figure"] = page.locator(".data-page").is_visible()
+        # Assert
+        assert observed == {
+            "loaded_table": True,
+            "initial_tab": "plot",
+            "initial_plot_visible": True,
+            "data_tab": "data",
+            "plot_visible_after_data": False,
+            "plot_enabled": True,
+            "plot_status": 200,
+            "plot_request": {"plot_type": "line", "x": "time", "columns": ["signal"]},
+            "figure_tab": "canvas",
+            "data_visible_after_figure": False,
+        }
+    finally:
+        context.close()
+
+
 def test_hidden_worksheet_does_not_intercept_canvas_undo(browser, editor_server):
     # Arrange
     url, _catalog = editor_server
