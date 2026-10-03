@@ -21,20 +21,19 @@ logger = slogging.getLogger(__name__)
 
 
 def _dtype(values):
-    present = [v for v in values if v is not None and v != ""]
-    numeric = all(
-        isinstance(v, (int, float)) and not isinstance(v, bool) for v in present
-    )
-    return "numeric" if numeric else "string"
+    """Keep the existing internal compatibility entry for column inference."""
+    from figrecipe._api._extract import _dtype as infer_dtype
+
+    return infer_dtype(values)
 
 
 def _table_response(names, rows, source):
     """The editor store reads ``columns[].name`` and positional ``rows``."""
-    columns = [
-        {"name": name, "dtype": _dtype([row[i] for row in rows if i < len(row)])}
-        for i, name in enumerate(names)
-    ]
-    return JsonResponse({"columns": columns, "rows": rows, "source": source})
+    from figrecipe._api._extract import table_columns
+
+    return JsonResponse(
+        {"columns": table_columns(names, rows), "rows": rows, "source": source}
+    )
 
 
 def handle_datatable_data(request, editor):
@@ -65,7 +64,6 @@ def _current_table(editor):
         is_selected_project_dir,
         load_project_table,
     )
-    from figrecipe._editor._helpers import to_json_serializable
 
     stored = load_project_table(
         getattr(editor, "recipe_path", None),
@@ -82,68 +80,9 @@ def _current_table(editor):
     if not hasattr(editor.fig, "record") or not editor.fig.record:
         return [], [], "empty"
 
-    record = editor.fig.record
-    columns = []
-    data_rows = []
+    from figrecipe._api._extract import table_from_record
 
-    def _values(value):
-        """Reduce a recorded plot argument to a JSON-safe list.
-
-        A recorded arg is not the bare array: it is a mapping. Two shapes
-        occur, depending on whether the figure is live (in memory) or was
-        `reproduce`d from a recipe:
-          - inline / reproduced-CSV: ``{"name", "data": <list>, "dtype"}``
-          - file-backed live:        ``{"name", "data": "__FILE__", "dtype",
-            "_array": <ndarray>}``  (the values sit in ``_array`` until saved)
-        Passing the whole mapping to `to_json_serializable` returns the mapping
-        itself, so the caller's `isinstance(list)` check silently fails and the
-        row is never built — columns registered, data empty. Pull the payload:
-        ``_array`` when present (the live case), else ``data``; skip the
-        ``"__FILE__"`` sentinel, which carries no values of its own.
-        """
-        if value is None:
-            return None
-        if isinstance(value, dict):
-            payload = value.get("_array")
-            if payload is None:
-                payload = value.get("data")
-            if payload is None:
-                return None
-            # The "__FILE__" sentinel is a string and carries no values of its
-            # own (the real data lives in _array, handled above); compare it
-            # as a string only so an ndarray payload never hits `==`.
-            if isinstance(payload, str) and payload == "__FILE__":
-                return None
-            value = payload
-        return to_json_serializable(value)
-
-    for ax_key, ax_record in record.axes.items():
-        for call in getattr(ax_record, "calls", []):
-            kwargs = getattr(call, "kwargs", {})
-            args = getattr(call, "args", [])
-            func = getattr(call, "function", "")
-
-            x_data = kwargs.get("x") or (args[0] if len(args) > 0 else None)
-            y_data = kwargs.get("y") or (args[1] if len(args) > 1 else None)
-
-            if x_data is not None and y_data is not None:
-                call_id = (
-                    getattr(call, "call_id", None) or getattr(call, "id", None) or func
-                )
-                x_col = f"{call_id}_x"
-                y_col = f"{call_id}_y"
-                if x_col not in columns:
-                    columns.extend([x_col, y_col])
-                x_list = _values(x_data)
-                y_list = _values(y_data)
-                if isinstance(x_list, list) and isinstance(y_list, list):
-                    for i, (xv, yv) in enumerate(zip(x_list, y_list)):
-                        while len(data_rows) <= i:
-                            data_rows.append({})
-                        data_rows[i][x_col] = xv
-                        data_rows[i][y_col] = yv
-
-    rows = [[row.get(col) for col in columns] for row in data_rows]
+    columns, rows = table_from_record(editor.fig.record)
     return columns, rows, "record"
 
 

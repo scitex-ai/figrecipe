@@ -341,21 +341,10 @@ def render_with_overrides(
 
 
 def to_json_serializable(obj):
-    """Convert numpy arrays and other non-serializable objects to JSON-safe types."""
-    import numpy as np
+    """Keep the editor compatibility entry for the pure leaf converter."""
+    from figrecipe._api._extract import to_json_serializable as convert
 
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, (np.integer, np.floating)):
-        return obj.item()
-    # Handle pandas Series
-    elif hasattr(obj, "values") and hasattr(obj, "tolist"):
-        return obj.tolist()
-    elif isinstance(obj, dict):
-        return {k: to_json_serializable(v) for k, v in obj.items()}
-    elif isinstance(obj, (list, tuple)):
-        return [to_json_serializable(item) for item in obj]
-    return obj
+    return convert(obj)
 
 
 __all__ = [

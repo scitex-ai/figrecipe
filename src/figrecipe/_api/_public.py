@@ -268,20 +268,10 @@ def extract_data(path: Union[str, Path]) -> Dict[str, Dict[str, Any]]:
     dict
         Nested dictionary: {call_id: {'x': array, 'y': array, ...}}
     """
-    from ._extract import DECORATION_FUNCS, extract_call_data
+    from ._extract import extract_record_data
 
     record = load_recipe(path)
-    result = {}
-
-    for ax_key, ax_record in record.axes.items():
-        for call in ax_record.calls:
-            if call.function in DECORATION_FUNCS:
-                continue
-            call_data = extract_call_data(call)
-            if call_data:
-                result[call.id] = call_data
-
-    return result
+    return extract_record_data(record)
 
 
 def validate(

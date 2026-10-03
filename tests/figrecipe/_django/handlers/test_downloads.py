@@ -135,3 +135,94 @@ class TestPlotTabExportSurface:
             "FigureViewer export surface incomplete: "
             + "; ".join(k for k, ok in contract.items() if not ok)
         )
+
+
+class TestDownloadCsv:
+    def test_csv_download_preserves_live_inline_data_and_native_headers(
+        self, _django_ready, tmp_path
+    ):
+        # Arrange
+        import matplotlib.pyplot as plt
+        from django.test import RequestFactory
+
+        import figrecipe as fr
+        from figrecipe._django.handlers.downloads import handle_download_csv
+        from figrecipe._django.services import EditorState
+
+        # Categorical lists are genuinely inline; numeric live CSV's separate
+        # file-sentinel behavior is outside this adapter relocation control.
+        fig, ax = fr.subplots()
+        try:
+            ax.plot(["A", "B"], ["C", "D"], id="categorical")
+            editor = EditorState(
+                fig=fig,
+                recipe_path=tmp_path / "editor-session.yaml",
+                working_dir=tmp_path,
+            )
+            request = RequestFactory().get("/download/csv")
+            # Act
+            response = handle_download_csv(request, editor)
+            observed = {
+                "status": response.status_code,
+                "body": response.content,
+                "content_type": response["Content-Type"],
+                "disposition": response["Content-Disposition"],
+            }
+        finally:
+            plt.close(fig._fig)
+        # Assert
+        assert observed == {
+            "status": 200,
+            "body": b"categorical_x,categorical_y\r\nA,C\r\nB,D\r\n",
+            "content_type": "text/csv",
+            "disposition": 'attachment; filename="editor-session_data.csv"',
+        }
+
+    def test_csv_download_preserves_empty_and_unrecorded_errors(self, _django_ready):
+        # Arrange
+        import json
+
+        import matplotlib.pyplot as plt
+        from django.test import RequestFactory
+
+        import figrecipe as fr
+        from figrecipe._django.handlers.downloads import handle_download_csv
+        from figrecipe._django.services import EditorState
+
+        blank, _ = fr.subplots()
+        unrecorded = plt.figure()
+        request = RequestFactory().get("/download/csv")
+        try:
+            editors = {
+                "empty_record": EditorState(fig=blank),
+                "no_record": EditorState(fig=unrecorded),
+            }
+            # Act
+            responses = {
+                name: handle_download_csv(request, editor)
+                for name, editor in editors.items()
+            }
+            observed = {
+                name: {
+                    "status": response.status_code,
+                    "content_type": response["Content-Type"],
+                    "payload": json.loads(response.content),
+                }
+                for name, response in responses.items()
+            }
+        finally:
+            plt.close(blank._fig)
+            plt.close(unrecorded)
+        # Assert
+        assert observed == {
+            "empty_record": {
+                "status": 400,
+                "content_type": "application/json",
+                "payload": {"error": "No plot data found"},
+            },
+            "no_record": {
+                "status": 400,
+                "content_type": "application/json",
+                "payload": {"error": "No recorded data available"},
+            },
+        }

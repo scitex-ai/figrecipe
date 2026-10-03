@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   explicit trusted API mount and retains project authority, CSRF and path guards.
 
 ### Changed
+- Move recorded-data extraction, CSV projection and table shaping into the
+  Python leaf core; Django retains the existing HTTP responses and selected
+  project/session table priority.
 - Use the public SDK App shell adapter for full editor pages while preserving
   host template overrides and the existing standalone app label.
 - Require Python SDK 0.3.2 for the leaf discovery accessor. The immutable

@@ -1,14 +1,15 @@
 # FigRecipe App integration
 
 FigRecipe owns its Django views, URLconf, workspace content and React editor.
-The coordinated candidate consumes `scitex-sdk>=0.3.0`, which physically owns
-`scitex_sdk.app` and `scitex_sdk.ui`. The SDK release and this leaf migration are
-unpublished; matching version strings alone do not identify reviewed artifacts.
+The coordinated candidate consumes `scitex-sdk>=0.3.2`, which physically owns
+`scitex_sdk.app` and `scitex_sdk.ui`. SDK 0.3.2 is published; the FigRecipe 0.36.1
+candidate retains its separate source, CI and distribution qualification.
+Matching version strings alone do not identify reviewed artifacts.
 
 ## Install and mount
 
-Use a GUI extra, for example `pip install 'figrecipe[editor,app]'`, once the
-coordinated SDK is available. Python plotting remains independent of Django.
+Use a GUI extra, for example `pip install 'figrecipe[editor,app]'`. Python
+plotting remains independent of Django.
 The `scitex.apps` entry point declares
 `figrecipe._django.apps:FigRecipeEditorConfig`; discovery retains its SDK
 embedding superclass and metadata. It fails with the missing GUI-extra message
@@ -84,7 +85,7 @@ before replacing any existing host route or capability check.
 
 The app package also publishes dependency-free dotted declarations named
 `context_builder`, `partial_template`, `content_renderer`, `api_policy_module`
-and `hosted_api_dispatcher`. The proposed SDK PR #29 accessor
+and `hosted_api_dispatcher`. The published SDK 0.3.2 accessor
 `scitex_sdk.app.plugins.leaf_declarations` reads these names with caller-supplied
 `str` types; it returns their values without resolving the dotted targets.
 Consumers resolve the existing leaf callables at request time. The policy
@@ -96,9 +97,8 @@ For the retained native Hub route, the guarded API prefix is
 `/apps/figrecipe/figrecipe`, while navigation is `/apps/figrecipe`; navigation
 does not supply that API mount. The hosted dispatcher declaration resolves to
 the existing CSRF-protected leaf callable, preserving authentication, selected
-project authority, path confinement and per-route write decisions. SDK PR #29
-is a source prerequisite for consuming these declarations; SDK 0.3.0 and a
-version string alone do not establish that accessor. Protected host consumption
+project authority, path confinement and per-route write decisions. SDK 0.3.2
+supplies the declaration accessor; SDK 0.3.0 does not. Protected host consumption
 and mounted acceptance remain separate qualification steps.
 
 The leaf subscribes to the existing `workspace:module-injected` event. Repeated
@@ -111,6 +111,17 @@ authority even if the browser changes projects afterward. Resource API
 resolution uses the SDK's `remember=False` option so late requests cannot
 overwrite the newer navigation selection. Explicit navigation still remembers
 its authorized project.
+
+## Recorded-data reads
+
+`figrecipe._api._extract` owns record extraction, combined CSV projection, live
+table shaping, column types and JSON conversion without importing Django, the
+SDK or Hub. The public `extract_data(path)` loads the recipe once and delegates
+to core. CSV and table HTTP adapters pass their existing live record to core
+and retain their response formats, headers and errors. Table reads still prefer
+the selected project table, then session-imported data, then the live record.
+The CSV and table projections retain their distinct fields and padding; this
+relocation does not change plotting, storage or native request authority.
 
 ## Frontend and static assets
 
