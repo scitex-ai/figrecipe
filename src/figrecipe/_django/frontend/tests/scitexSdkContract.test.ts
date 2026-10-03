@@ -143,14 +143,15 @@ ok("normal npm packs the SDK owner instead of an external peer-less symlink",()=
  assert.notEqual(entry.link,true);
  assert.match(entry.resolved,/^file:/);
 });
-ok("installed package name/version and frontend/Python floors agree",()=>{
+ok("installed frontend SDK owner and Python accessor floor remain explicit",()=>{
  const owner=JSON.parse(readFileSync(join(OWNER,"package.json"),"utf8"));
  assert.equal(owner.name,"@scitex/sdk");
  assert.equal(owner.version,pkg.scitexSdk.version);
  const pyproject=readFileSync(join(REPO,"pyproject.toml"),"utf8");
  const floors=[...pyproject.matchAll(/"scitex-sdk(?:\[[^\]]+\])?([^"]*)"/g)].map(m=>m[1]);
- assert.ok(floors.length>=4,"required and GUI/test extras must declare the owner");
- assert.deepEqual([...new Set(floors)],[`>=${pkg.scitexSdk.version}`]);
+ // The Python leaf_declarations minimum is separate from the immutable JS pin.
+ assert.equal(floors.length,6,"required and GUI/test extras must declare the owner");
+ assert.deepEqual([...new Set(floors)],[">=0.3.2"]);
  assert.doesNotMatch(pyproject,/"scitex-(?:app|ui)(?:[>=\[]|" )/);
 });
 ok("import scanning covers actual TS/React/CSS surfaces",()=>{

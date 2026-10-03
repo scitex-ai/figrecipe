@@ -15,4 +15,20 @@ Usage (integrated into Django project):
 
 default_app_config = "figrecipe._django.apps.FigRecipeEditorConfig"
 
-__all__ = ["default_app_config"]
+# Generic consumers read these strings without importing views at discovery.
+# Resolve callables at request time; declarations do not authorize requests.
+context_builder = "figrecipe._django.workspace.build_workspace_context"
+partial_template = "figrecipe/workspace_partial.html"
+content_renderer = "figrecipe._django.workspace.render_workspace_content"
+# Avoid the api_policy submodule name, which Python binds on this package.
+api_policy_module = "figrecipe._django.api_policy"
+hosted_api_dispatcher = "figrecipe._django.views._hosted_api_dispatch"
+
+__all__ = [
+    "default_app_config",
+    "context_builder",
+    "partial_template",
+    "content_renderer",
+    "api_policy_module",
+    "hosted_api_dispatcher",
+]

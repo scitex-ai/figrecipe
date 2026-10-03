@@ -1,7 +1,7 @@
 name: frontend-build
 
 # Validate the pinned canonical SDK owner before any native frontend build.
-# The native frontend producer uses the verified self-hosted runner route.
+# The pure JavaScript producer runs on GitHub-hosted Ubuntu.
 on:
   push:
     branches: [main, develop]
@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     name: frontend-build-on-ubuntu-latest
-    runs-on: [self-hosted, Linux, X64, scitex-ci]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Prepare job-owned state and caches
