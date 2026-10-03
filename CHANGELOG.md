@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.1] - 2026-10-03
+
+### Fixed
+- Synchronize desktop Data and Figure visibility with the editor's named routes.
+- Preserve chooser Close and See All keyboard activation, make the Line Data
+  action reachable with Tab, and restore chooser focus after Escape and reopen.
+- Keep mobile panes mounted and retain their keyboard ownership when switching
+  views.
+
+### Added
+- Expose the authorized workspace partial renderer and existing API policy as
+  lazy leaf declarations for generic host consumers. The renderer takes an
+  explicit trusted API mount and retains project authority, CSRF and path guards.
+
+### Changed
+- Use the public SDK App shell adapter for full editor pages while preserving
+  host template overrides and the existing standalone app label.
+- Require Python SDK 0.3.2 for the leaf discovery accessor. The immutable
+  frontend SDK 0.3.0 source pin remains explicit and unchanged.
+
 ## [0.36.0] - 2026-10-02
 
 ### Added
