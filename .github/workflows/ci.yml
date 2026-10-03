@@ -9,13 +9,11 @@ name: ci
 # the retired consolidated pr-ci.yml/release-ci.yml pair). This file carries
 # only triggers, concurrency, and thin `uses:` calls.
 #
-# Runner policy: SELF-HOSTED ONLY — GitHub-hosted runners are forbidden
-# (PS-169). Runner selection is the Actions Variable CI_RUNS_ON (repo ->
-# org precedence),
-# resolved from THIS repo's context by the called workflows via
-#   runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","Linux","X64","scitex-ci"]') }}
-# (`vars` in a reusable workflow resolve against the CALLER repo/org, so a
-# per-repo CI_RUNS_ON override still works through the shared bodies).
+# Pass the repo/org CI_RUNS_ON preference through each supported runs_on input.
+# Shared runner admission selects the requested native group only for confirmed
+# organization members; fork and untrusted events retain the hosted route.
+# A missing preference uses the shared safe hosted default. Runner labels alone
+# do not grant workflow admission to the native organization group.
 #
 # Required-status-check contexts (branch protection must reference these;
 # under workflow_call GitHub renders "<caller-job-id> / <reusable job name>"):
@@ -44,6 +42,7 @@ jobs:
   pytest-matrix:
     uses: scitex-ai/.github/.github/workflows/pytest-matrix.yml@main
     with:
+      runs_on: ${{ vars.CI_RUNS_ON || '["ubuntu-latest"]' }}
       pre_test_command: |
         owned=$(mktemp -d "${RUNNER_TEMP:?}/figrecipe-matrix-context.XXXXXXXX")
         mkdir -p "$owned/tmp" "$owned/cache" "$owned/config" "$owned/scitex" "$owned/mpl"
@@ -55,13 +54,18 @@ jobs:
   import-smoke:
     uses: scitex-ai/.github/.github/workflows/import-smoke.yml@main
     with:
+      runs_on: ${{ vars.CI_RUNS_ON || '["ubuntu-latest"]' }}
       console_script: figrecipe
     secrets: inherit
 
   quality-audit:
     uses: scitex-ai/.github/.github/workflows/quality-audit.yml@main
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON || '["ubuntu-latest"]' }}
     secrets: inherit
 
   rtd-sphinx-build:
     uses: scitex-ai/.github/.github/workflows/rtd-sphinx-build.yml@main
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON || '["ubuntu-latest"]' }}
     secrets: inherit
