@@ -45,7 +45,8 @@ def test_partial_renderer_requires_an_explicit_mount(hosted):
 
     client, _ = hosted
     request = client.get("/apps/figrecipe/workspace/?project=alpha").wsgi_request
-    # Act / Assert
+    # Act: invoke the renderer inside the exception check.
+    # Assert: reject an undeclared mount with the expected error.
     with pytest.raises(TypeError, match="explicitly declare the app mount"):
         render_workspace_content(request, stx_mount=None)
 
@@ -58,7 +59,8 @@ def test_partial_renderer_rejects_anonymous_project_access(hosted):
     request = client.get(
         "/apps/figrecipe/workspace/?project=alpha", HTTP_X_USER=""
     ).wsgi_request
-    # Act / Assert
+    # Act: invoke the renderer inside the exception check.
+    # Assert: reject anonymous project authority with the expected error.
     with pytest.raises(AccessError, match="Authentication required"):
         render_workspace_content(request, stx_mount="/apps/figrecipe")
 
