@@ -366,6 +366,7 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
               Boolean(activeTable && activeTable.columns.length > 0),
             )
               ? () => {
+                  setPlotFamily(reveal.family);
                   closeReveal();
                   plotFromData();
                 }
