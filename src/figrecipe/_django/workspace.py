@@ -63,7 +63,10 @@ def render_workspace_content(request, current_project=None, *, stx_mount):
     """
     if not isinstance(stx_mount, str):
         raise TypeError("The host must explicitly declare the app mount")
-    from django.shortcuts import render
+    try:
+        from django.shortcuts import render
+    except ImportError as exc:
+        raise missing_extra(exc) from exc
 
     context = build_workspace_context(request, current_project)
     context["stx_mount"] = stx_mount
