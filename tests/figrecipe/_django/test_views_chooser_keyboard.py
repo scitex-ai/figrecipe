@@ -178,12 +178,8 @@ def _data_from_line(case, activation="Enter"):
     return arrow, posts
 
 
-@pytest.mark.parametrize("view", VIEWS, ids=VIEW_IDS)
-@pytest.mark.parametrize("control", ["close", "more"], ids=["Close", "SeeAll"])
-@pytest.mark.parametrize("activation", ["Enter", "Space"])
-def test_chooser_utility_keys_preserve_hidden_figures(chooser, control, activation):
-    # Arrange
-    case, page = chooser, chooser.page
+def _prepare_utility(case, control):
+    page = case.page
     _choose_specgram(case, select_family=True)
     _to_plot(case)
     _open_special(case)
@@ -193,8 +189,11 @@ def test_chooser_utility_keys_preserve_hidden_figures(chooser, control, activati
     _tab_to(page, utility, backward=control == "close")
     before, posts = _figures(page), len(case.posts)
     _capture(case, "utility-focus")
+    return utility, before, posts
 
-    # Act
+
+def _activate_utility(case, utility, activation, before, posts):
+    page = case.page
     page.keyboard.press("ArrowRight")
     _settle(page)
     observed = {
@@ -205,16 +204,11 @@ def test_chooser_utility_keys_preserve_hidden_figures(chooser, control, activati
     _capture(case, "utility-arrow")
     page.keyboard.press(activation)
     page.locator(CHOOSER).wait_for(state="hidden")
-    if control == "close":
-        page.wait_for_function(
-            "label => document.activeElement?.matches('.stx-app-selector-nav__item') && document.activeElement.textContent.trim() === label",
-            arg=case.label("Special"),
-        )
-        focused = _focused(_rail(case, "special"))
-    else:
-        page.locator(".gallery-panel").wait_for(state="visible")
-        _tab_to(page, page.locator(".gallery-close"))
-        focused = _focused(page.locator(".gallery-close"))
+    return observed
+
+
+def _utility_result(case, observed, before, posts, focused):
+    page = case.page
     page.wait_for_load_state("networkidle")
     _settle(page)
     observed.update(
@@ -233,6 +227,25 @@ def test_chooser_utility_keys_preserve_hidden_figures(chooser, control, activati
         }
     )
     _capture(case, "utility-result")
+    return observed
+
+
+@pytest.mark.parametrize("view", VIEWS, ids=VIEW_IDS)
+@pytest.mark.parametrize("activation", ["Enter", "Space"])
+def test_chooser_utility_close_preserves_hidden_figures(chooser, activation):
+    # Arrange
+    case, page = chooser, chooser.page
+    utility, before, posts = _prepare_utility(case, "close")
+
+    # Act
+    observed = _activate_utility(case, utility, activation, before, posts)
+    page.wait_for_function(
+        "label => document.activeElement?.matches('.stx-app-selector-nav__item') && document.activeElement.textContent.trim() === label",
+        arg=case.label("Special"),
+    )
+    observed = _utility_result(
+        case, observed, before, posts, _focused(_rail(case, "special"))
+    )
 
     # Assert
     assert observed == {
@@ -242,10 +255,40 @@ def test_chooser_utility_keys_preserve_hidden_figures(chooser, control, activati
         "plot_visible": True,
         "pane": "plot",
         "focus": True,
-        "gallery": control == "more",
-        "gallery_labels": [t["label"] for t in case.categories["special"]]
-        if control == "more"
-        else [],
+        "gallery": False,
+        "gallery_labels": [],
+        "unchanged_figures": True,
+        "no_posts": True,
+        "errors": [],
+        "http_errors": [],
+    }
+
+
+@pytest.mark.parametrize("view", VIEWS, ids=VIEW_IDS)
+@pytest.mark.parametrize("activation", ["Enter", "Space"])
+def test_chooser_utility_see_all_preserves_hidden_figures(chooser, activation):
+    # Arrange
+    case, page = chooser, chooser.page
+    utility, before, posts = _prepare_utility(case, "more")
+
+    # Act
+    observed = _activate_utility(case, utility, activation, before, posts)
+    page.locator(".gallery-panel").wait_for(state="visible")
+    _tab_to(page, page.locator(".gallery-close"))
+    observed = _utility_result(
+        case, observed, before, posts, _focused(page.locator(".gallery-close"))
+    )
+
+    # Assert
+    assert observed == {
+        "utility_keeps_focus": True,
+        "arrow_keeps_figures": True,
+        "arrow_sends_no_post": True,
+        "plot_visible": True,
+        "pane": "plot",
+        "focus": True,
+        "gallery": True,
+        "gallery_labels": [t["label"] for t in case.categories["special"]],
         "unchanged_figures": True,
         "no_posts": True,
         "errors": [],
