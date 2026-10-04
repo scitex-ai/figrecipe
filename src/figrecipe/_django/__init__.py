@@ -7,13 +7,22 @@ Usage (standalone):
 
 Usage (integrated into Django project):
     # settings.py
-    INSTALLED_APPS = [..., "figrecipe._django", ...]
+    from figrecipe._django import INSTALLED_APPS_ENTRIES
+    INSTALLED_APPS = [..., *INSTALLED_APPS_ENTRIES, ...]
 
     # urls.py
     path("figrecipe/", include("figrecipe._django.urls")),
 """
 
 default_app_config = "figrecipe._django.apps.FigRecipeEditorConfig"
+
+# Explicit mounts and standalone settings share the existing registrations.
+# These strings can be read before Django setup without importing AppConfig or
+# models. Automatic plugin discovery must separately consume this declaration.
+INSTALLED_APPS_ENTRIES = (
+    "figrecipe._django",
+    "figrecipe._django.apps.ScitexAppChatConfig",
+)
 
 # Generic consumers read these strings without importing views at discovery.
 # Resolve callables at request time; declarations do not authorize requests.
@@ -26,6 +35,7 @@ hosted_api_dispatcher = "figrecipe._django.views._hosted_api_dispatch"
 
 __all__ = [
     "default_app_config",
+    "INSTALLED_APPS_ENTRIES",
     "context_builder",
     "partial_template",
     "content_renderer",

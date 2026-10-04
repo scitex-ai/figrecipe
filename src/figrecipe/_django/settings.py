@@ -9,6 +9,8 @@ import os
 import tempfile
 from pathlib import Path
 
+from figrecipe._django import INSTALLED_APPS_ENTRIES
+
 BASE_DIR = Path(__file__).resolve().parent
 SCITEX_APP_MODE = "standalone"
 
@@ -41,8 +43,7 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0"] + [
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
-    "figrecipe._django",
-    "figrecipe._django.apps.ScitexAppChatConfig",
+    *INSTALLED_APPS_ENTRIES,
 ]
 
 # Optional: scitex-ui shared components (static assets served via AppDirectoriesFinder)

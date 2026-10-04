@@ -96,7 +96,7 @@ class FigRecipeEditorConfig(ScitexAppConfig):
         warnings.warn(
             "figrecipe._django is mounted without "
             "'figrecipe._django.apps.ScitexAppChatConfig': the chat models are "
-            "not registered, so api/chat/* will fail at request time. Add that "
+            "not registered, so chat session endpoints cannot query them. Add that "
             "entry to INSTALLED_APPS (docs/SCITEX_APP_INTEGRATION.md).",
             UserWarning,
             stacklevel=2,

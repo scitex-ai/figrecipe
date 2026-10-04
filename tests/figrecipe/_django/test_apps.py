@@ -24,7 +24,6 @@ from pathlib import Path
 from figrecipe._django.apps import FigRecipeEditorConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SETTINGS = REPO_ROOT / "src" / "figrecipe" / "_django" / "settings.py"
 DOC = REPO_ROOT / "docs" / "SCITEX_APP_INTEGRATION.md"
 
 CHAT_APP = "figrecipe._django.apps.ScitexAppChatConfig"
@@ -191,18 +190,44 @@ assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
         # Assert
         assert is_default is True
 
-    def test_the_editors_own_settings_register_both_apps(self):
+    def test_explicit_mount_registers_existing_sdk_models_and_migration(self):
         # Arrange
-        # Arrange
-        source = SETTINGS.read_text(encoding="utf-8")
+        code = """
+from figrecipe._django import INSTALLED_APPS_ENTRIES
+from django.conf import settings
+settings.configure(
+    INSTALLED_APPS=['django.contrib.contenttypes', *INSTALLED_APPS_ENTRIES],
+    SECRET_KEY='registration-control',
+)
+import django
+django.setup()
+# Import the genuine handler path that naturally loads the existing models.
+from figrecipe._django.handlers import chat
+from django.apps import apps
+from django.db.migrations.loader import MigrationLoader
+from scitex_sdk.app._chat._models import ChatMessage, ChatSession
+loader = MigrationLoader(None)
+assert {
+    'config': apps.get_app_config('scitex_app').name,
+    'session': apps.get_model('scitex_app', 'ChatSession') is ChatSession,
+    'message': apps.get_model('scitex_app', 'ChatMessage') is ChatMessage,
+    'migration': type(loader.disk_migrations[('scitex_app', '0001_initial')]).__module__,
+} == {
+    'config': 'scitex_sdk.app._chat',
+    'session': True,
+    'message': True,
+    'migration': 'scitex_sdk.app._chat.migrations.0001_initial',
+}
+"""
         # Act
-        registrations = [
-            name for name in ("figrecipe._django", CHAT_APP) if name in source
-        ]
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
         # Assert
-        # Act
-        # Assert
-        assert registrations == ["figrecipe._django", CHAT_APP], registrations
+        assert result.returncode == 0, result.stderr
 
     def test_the_documented_mount_lists_both_apps(self):
         # Arrange

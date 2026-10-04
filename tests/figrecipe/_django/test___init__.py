@@ -12,6 +12,7 @@ from django.utils.module_loading import import_string
 pytest_plugins = ("tests.integration.test_project_capability",)
 
 _EXPECTED = {
+    "INSTALLED_APPS_ENTRIES": tuple,
     "context_builder": str,
     "partial_template": str,
     "content_renderer": str,
@@ -49,6 +50,7 @@ sys.meta_path.insert(0, NoGUI())
 import figrecipe._django as app
 assert isinstance(app.content_renderer, str)
 assert isinstance(app.hosted_api_dispatcher, str)
+assert isinstance(app.INSTALLED_APPS_ENTRIES, tuple)
 assert 'figrecipe._django.views' not in sys.modules
 """
     # Act

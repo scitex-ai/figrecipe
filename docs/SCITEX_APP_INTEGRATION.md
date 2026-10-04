@@ -16,9 +16,10 @@ embedding superclass and metadata. It fails with the missing GUI-extra message
 rather than substituting a plain AppConfig.
 
 ```python
+from figrecipe._django import INSTALLED_APPS_ENTRIES
+
 INSTALLED_APPS += [
-    "figrecipe._django",
-    "figrecipe._django.apps.ScitexAppChatConfig",
+    *INSTALLED_APPS_ENTRIES,
     "scitex_sdk.ui",
 ]
 
@@ -29,7 +30,19 @@ urlpatterns += mount_urlpatterns("apps/figrecipe/", "figrecipe._django.urls")
 The second leaf-owned registration discovers shared chat models from
 `scitex_sdk.app._chat` under the existing `scitex_app` label. A host that already
 owns that label must retain its single existing registration; duplicate labels
-are invalid. Chat/session history also needs a usable database. The standalone
+are invalid. The tuple includes
+`figrecipe._django.apps.ScitexAppChatConfig`; standalone settings consume this
+same tuple. A host must qualify its existing model and migration ownership
+before adding the companion config.
+
+SDK 0.3.2 plugin discovery installs only the primary entry-point AppConfig;
+`installed_app_paths()` does not expand this tuple. Its public
+`leaf_declarations()` accessor can read `INSTALLED_APPS_ENTRIES` with the
+caller-supplied `tuple` type, but automatic mounting still needs a generic
+settings-time consumer. The chat companion is not a second launcher plugin.
+
+Chat/session history also needs a usable database. Streaming does not require
+chat model registration or a database. The standalone
 settings keep the dummy database and answer 501 for database-backed session
 endpoints. Leaf startup warns when the chat registration is omitted.
 
