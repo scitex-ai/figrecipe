@@ -274,6 +274,7 @@
   .editor-body.stx-panes--single .stx-panes__tab[aria-selected="true"] {
     background: transparent;
     border-color: transparent;
+    border-radius: 0;
     color: var(--vis-text-primary);
     box-shadow: inset 0 -2px 0 var(--accent-primary);
   }
