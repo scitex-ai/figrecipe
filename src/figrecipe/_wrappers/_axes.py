@@ -247,6 +247,7 @@ class RecordingAxes(
                 self._position,
                 track=self._track and track,
                 call_id=id,
+                artist_refs=self._artist_refs,
             )
 
         return wrapper

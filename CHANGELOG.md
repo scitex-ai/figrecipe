@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A hidden `ax.bar()` / `ax.imshow()` no longer replays drawn. Those two
+  methods record through their own path rather than the generic artist
+  funnel, so the save-time visibility annotation never saw their
+  BarContainer/AxesImage and a recipe for a figure with a hidden bar or image
+  drew it anyway (measured MSE 9129.84 / 23248.60, invalid). They now note
+  their artists at their own record sites, so the existing annotation writes
+  `visible: false` and the replay matches the saved figure at 0.00. As a
+  side effect the removal repair now also reaches a removed bar, dropping the
+  call rather than leaving it for the count check.
+
 ## [0.36.0] - 2026-10-02
 
 ### Added

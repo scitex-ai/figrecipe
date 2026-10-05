@@ -276,13 +276,13 @@ class TestThePruneDecision:
         assert [r.id for r in kept] == ["c"]
 
     def test_a_call_with_no_registry_entry_is_kept(self):
-        # Arrange -- an unregistered path (bar, boxplot, legend) is simply not
+        # Arrange -- an unregistered path (boxplot, legend, pie) is simply not
         # this slice's business: no evidence, no drop.
         fig, ax = fr.subplots()
         ax.plot([1, 2], [1, 2])
         # Act
         kept, _ = prune(
-            [FakeRecord("c", "bar")], {}, live_artist_ids(fig), set(), "r0c0", "calls"
+            [FakeRecord("c", "boxplot")], {}, live_artist_ids(fig), set(), "r0c0", "calls"
         )
         # Assert
         assert [r.id for r in kept] == ["c"]
@@ -514,7 +514,8 @@ class TestNothingElseMoves:
         assert _recipe(yml) == before and lifecycle == []
 
 
-# What the repair cannot reach (ax.bar() and the other paths that record outside
-# the artist funnel) is covered by the count check's own wiring test in
-# test__lifecycle.py::TestSavePathWiring: the two layers are complementary, and
-# each is asserted where it lives.
+# Paths that still record outside the artist funnel (boxplot, legend, pie,
+# stem, ...) remain the count check's business; bar and imshow now register
+# their artists too, so the repair reaches them. The two layers are
+# complementary, and each is asserted where it lives
+# (test__lifecycle.py::TestSavePathWiring).
