@@ -13,7 +13,11 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from ._core import CallRecord, FigureRecord
-from ._utils import RE_ITERABLE_SEQUENCES, _refuse_one_shot_iterator
+from ._utils import (
+    RE_ITERABLE_SEQUENCES,
+    _refuse_one_shot_iterator,
+    _warn_text_recorded,
+)
 
 
 class Recorder:
@@ -228,11 +232,24 @@ class Recorder:
                 processed[key] = list(value)
             else:
                 _refuse_one_shot_iterator(key, value)
-                # Try to convert to string
+                # Numpy scalars (np.int64, …) are not natively serializable;
+                # coerce them first so a kwarg coordinate stays a number,
+                # exactly like the positional path in ``_process_scalar``.
+                if isinstance(value, np.generic):
+                    value = value.item()
+                    if self._is_serializable(value):
+                        processed[key] = value
+                        continue
+                # An unserializable kwarg is stored as its text — but never
+                # SILENTLY (card
+                # figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906).
                 try:
-                    processed[key] = str(value)
+                    text = str(value)
                 except Exception:
                     pass
+                else:
+                    _warn_text_recorded(key, value, text)
+                    processed[key] = text
 
         return processed
 
