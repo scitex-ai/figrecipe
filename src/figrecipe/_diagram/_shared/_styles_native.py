@@ -78,6 +78,10 @@ EMPHASIS_COLORS: Dict[str, Dict[str, str]] = {
     "success": _build_emphasis("green"),
     "warning": _build_emphasis("yellow"),
     "muted": _build_emphasis("gray", fill_factor=0.88, text_factor=0.3),
+    # manim opacity-layering port (card
+    # figrecipe-bioinformatics-figure-beauty-20261006): the dimmed context
+    # layer below muted — near-white fill, low-contrast text.
+    "context": _build_emphasis("gray", fill_factor=0.95, text_factor=0.15),
 }
 
 # Edge styles (neutral gray tones from SCITEX gray)

@@ -25,13 +25,30 @@ def test_import__diagram__diagram__layout_graph_module():
 class TestCircularLayoutContract:
     """Pin the ellipse-mapping contract before deduplicating onto radial_positions."""
 
-    def test_four_nodes_land_on_cardinal_points_of_the_ellipse(self):
+    def test_north_node_sits_at_top_center(self):
         # Arrange
         # Act
         pos = _circular_layout(["n", "e", "s", "w"], 0.0, 10.0, 0.0, 20.0)
-        # Assert -- cx=5, cy=10, r=min(10,20)/2*0.8=4.0 on BOTH axes;
-        # angles start at top (-pi/2), counter-clockwise in math convention.
+        # Assert -- cx=5, cy=10, r=min(10,20)/2*0.8=4.0; start at top.
         assert pos["n"] == pytest.approx((5.0, 6.0))
+
+    def test_east_node_sits_at_right_middle(self):
+        # Arrange
+        # Act
+        pos = _circular_layout(["n", "e", "s", "w"], 0.0, 10.0, 0.0, 20.0)
+        # Assert
         assert pos["e"] == pytest.approx((9.0, 10.0))
+
+    def test_south_node_sits_at_bottom_center(self):
+        # Arrange
+        # Act
+        pos = _circular_layout(["n", "e", "s", "w"], 0.0, 10.0, 0.0, 20.0)
+        # Assert
         assert pos["s"] == pytest.approx((5.0, 14.0))
+
+    def test_west_node_sits_at_left_middle(self):
+        # Arrange
+        # Act
+        pos = _circular_layout(["n", "e", "s", "w"], 0.0, 10.0, 0.0, 20.0)
+        # Assert
         assert pos["w"] == pytest.approx((1.0, 10.0))
