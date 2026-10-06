@@ -54,19 +54,27 @@ def _circular_layout(
     y_min: float,
     y_max: float,
 ) -> Dict[str, Tuple[float, float]]:
-    """Compute circular layout."""
-    import math
+    """Compute circular layout.
+
+    Delegates the unit-circle trigonometry to
+    ``figrecipe._composition._radial.radial_positions`` (the tested p5js
+    port, card figrecipe-bioinformatics-figure-beauty-20261006) so the two
+    circular implementations cannot drift; the bounds mapping here
+    (center + min-span radius) is this function's own contract, pinned by
+    TestCircularLayoutContract.
+    """
+    from ..._composition._radial import radial_positions
 
     n = len(box_ids)
     cx = (x_min + x_max) / 2
     cy = (y_min + y_max) / 2
     radius = min(x_max - x_min, y_max - y_min) / 2 * 0.8
 
+    unit = radial_positions(n, radius=1.0)
     positions = {}
     for i, bid in enumerate(box_ids):
-        angle = 2 * math.pi * i / n - math.pi / 2  # Start from top
-        x = cx + radius * math.cos(angle)
-        y = cy + radius * math.sin(angle)
+        x = cx + radius * float(unit[i, 0])
+        y = cy + radius * float(unit[i, 1])
         positions[bid] = (x, y)
 
     return positions
