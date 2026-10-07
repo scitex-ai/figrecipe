@@ -3,6 +3,7 @@
 """Tests for figure and panel metadata/caption features."""
 
 import tempfile
+import warnings
 from pathlib import Path
 
 import matplotlib
@@ -11,6 +12,7 @@ matplotlib.use("Agg")
 
 import figrecipe as fr
 from figrecipe._recorder import AxesRecord, FigureRecord
+from figrecipe._recorder._utils import UnrecordableArgumentWarning
 
 
 class TestFigureRecordMetadata:
@@ -940,3 +942,86 @@ class TestRecorder:
         recorder.record_call((1, 0), "bar", (), {})
         record = recorder.figure_record
         assert len(record.axes["r1c0"].calls) == 1
+
+
+# --- the kwargs str() fallback is never silent (card
+# figrecipe-recorder-str-fallback-swallows-unserializable-args-20260906) -----
+
+
+class TestUnserializableKwargIsAnnounced:
+    """``Recorder._process_kwargs`` must announce its ``str(value)`` fallback."""
+
+    class Unrecordable:
+        """An object the recorder cannot serialize."""
+
+        def __repr__(self):
+            return "<Unrecordable>"
+
+    def test_an_unserializable_kwarg_warns(self):
+        # Arrange
+        recorder = Recorder()
+        value = self.Unrecordable()
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            recorder._process_kwargs({"label": value}, "plot")
+        # Assert -- the silence is the defect; exactly one warning speaks.
+        assert len(caught) == 1
+
+    def test_the_kwarg_warning_names_the_kwarg(self):
+        # Arrange
+        recorder = Recorder()
+        value = self.Unrecordable()
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            recorder._process_kwargs({"label": value}, "plot")
+        # Assert -- the caller is told WHICH kwarg, not just that one failed.
+        assert "label" in str(caught[0].message)
+
+    def test_the_kwarg_warning_is_unrecordable_argument_warning(self):
+        # Arrange
+        recorder = Recorder()
+        value = self.Unrecordable()
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            recorder._process_kwargs({"label": value}, "plot")
+        # Assert -- the category is the documented one, filterable by callers.
+        assert caught[0].category is UnrecordableArgumentWarning
+
+    def test_the_kwarg_text_is_still_recorded_so_nothing_breaks(self):
+        # Arrange
+        recorder = Recorder()
+        value = self.Unrecordable()
+        # Act
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            processed = recorder._process_kwargs({"label": value}, "plot")
+        # Assert -- the fix is the ANNOUNCEMENT; the recorded payload is unchanged.
+        assert bool(caught) and processed == {"label": str(value)}
+
+    def test_a_serializable_kwarg_is_silent(self):
+        # Arrange
+        recorder = Recorder()
+        catcher = warnings.catch_warnings()
+        # Act
+        with catcher:
+            warnings.simplefilter("error")
+            processed = recorder._process_kwargs({"color": "red"}, "plot")
+        # Assert -- any warning here would be a false alarm on the ordinary path.
+        assert processed == {"color": "red"}
+
+    def test_a_numpy_scalar_kwarg_is_silent_because_it_is_coerced_first(self):
+        # Arrange
+        recorder = Recorder()
+        catcher = warnings.catch_warnings()
+        # Act
+        with catcher:
+            warnings.simplefilter("error")
+            processed = recorder._process_kwargs(
+                {"linewidth": np.int64(2)}, "plot"
+            )
+        # Assert -- np.int64 is coerced to int before the serializability test, so
+        # the warning must NOT fire for it.
+        assert processed == {"linewidth": 2}
