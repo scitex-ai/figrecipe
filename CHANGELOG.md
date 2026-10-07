@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Exact content rendering uses scitex-logging's plain stdout writer without
+  builtin print, while preserving the existing newline, return value, aliases,
+  and caller-controlled flushing. Require scitex-logging 0.2.3 in the owning
+  SciTeX and developer extras, and scitex-dev 0.62.4.dev0 in the developer extra
+  for mandatory auditor activation; missing logging retains its installation hint.
+
 ## [0.36.2] - 2026-10-10
 
 Recorder and Django fixes since 0.36.1 (PR #447, #448, #449, #450; main #440, #441):
@@ -29,6 +36,13 @@ Recorder and Django fixes since 0.36.1 (PR #447, #448, #449, #450; main #440, #4
 Migrate completion install to drop-in contract v1 (PR #445):
 vendored completion module (stdlib+click only), atomic+idempotent
 drop-in write, never touches rc files.
+=======
+### Fixed
+- Exact content rendering uses scitex-logging's plain stdout writer without
+  builtin print, while preserving the existing newline, return value, aliases,
+  and caller-controlled flushing. Require scitex-logging 0.2.3 in the owning
+  SciTeX and developer extras, and scitex-dev 0.62.4.dev0 in the developer extra
+  for mandatory auditor activation; missing logging retains its installation hint.
 
 ## [0.36.0] - 2026-10-02
 

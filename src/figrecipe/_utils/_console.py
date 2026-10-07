@@ -9,9 +9,8 @@ SciTeX package produces. scitex-logging ships in figrecipe's ``[scitex]``
 extra, so the imports below are guarded: without the extra they re-raise
 with the install hint instead of a bare ``ModuleNotFoundError``.
 
-Three transports, each matching one of the carve-outs the ecosystem's PS-220
-rule recognises STRUCTURALLY (a `print` is spared only when a static reader can
-mechanically prove it is data transport, never by a comment):
+Output uses the owning scitex-logging primitives throughout. The ecosystem's
+PS-220 rule forbids builtin print in source, including exact protocol results:
 
 ``get_logger(name)``
     scitex-logging's logger. Diagnostics about work figrecipe is doing.
@@ -23,12 +22,14 @@ mechanically prove it is data transport, never by a comment):
     the reader sees; it adds the level.
 
 ``render_content(content)``
-    The explicit content-rendering contract: print caller-supplied, already
-    rendered content to stdout VERBATIM. Reserved for the outputs whose exact
+    The explicit content-rendering contract: emit caller-supplied, already
+    rendered content to stdout through scitex-logging's plain writer. Reserved
+    for the outputs whose exact
     bytes are a published contract (a ``--version`` line, a shell-completion
     script that gets ``source``d), where a level prefix would corrupt the
     payload rather than clarify it. It is deliberately not a general ``print``
-    hatch -- the doc's ONE `print` lives here and nowhere else.
+    hatch. The writer adds only the existing newline, without logging, level
+    filtering, diagnostic capture, or forced flushing.
 
 ``render_rich(renderable, name)``
     Rich's ``Console.print`` writes to a console stream that carries no level
@@ -38,9 +39,8 @@ mechanically prove it is data transport, never by a comment):
     record on the stdout console. This is the same transport scitex-dev's
     ``_core/streams.py`` documents and uses for its own CLI tables.
 
-Caller-owned streams (a ``file=`` parameter the CALLER supplies) are the fourth
-carve-out and are not funnelled through here: figrecipe honours the caller's
-stream at the call site.
+Caller-owned exact streams can use scitex-logging's plain writer with its
+``stream=`` argument; builtin print has no stream-based exemption.
 """
 
 from __future__ import annotations
@@ -72,9 +72,8 @@ def get_console(name: str = "figrecipe") -> Any:
     """Return scitex-logging's STDOUT console for ``name``.
 
     Use this rather than the logger when the output is the command's product
-    and has to stay on stdout. Suffix the name with ``".console"`` to keep the
-    console channel distinct from the logger channel, matching the convention
-    scitex-dev's own CLI uses.
+    and has to stay on stdout. Console and diagnostic names are independent;
+    a ``".console"`` suffix can still distinguish their record labels.
 
     Parameters
     ----------
@@ -90,11 +89,10 @@ def get_console(name: str = "figrecipe") -> Any:
 
 
 def render_content(content: str) -> None:
-    """Print caller-supplied, already-rendered content verbatim to stdout.
+    """Emit caller-supplied, already-rendered content plus a newline to stdout.
 
-    This is the *explicit content-rendering contract* PS-220 recognises
-    structurally: the enclosing API is an output operation that emits its
-    caller-supplied content unchanged. Reserved for product outputs whose exact
+    The plain scitex-logging writer retains the exact output contract while
+    avoiding builtin print. Reserved for product outputs whose exact
     bytes are published -- a version line, a sourced shell-completion script --
     where a logging level prefix or a hop to stderr would corrupt the payload.
 
@@ -103,7 +101,12 @@ def render_content(content: str) -> None:
     content : str
         The already-rendered text, emitted unchanged.
     """
-    print(content)
+    try:
+        import scitex_logging as slogging
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
+
+    slogging.getPlainConsole(__name__).emit(content, flush=False)
 
 
 def render_rich(renderable: Any, name: str, *, level: str = "info") -> None:
