@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.36.0"
+version = "0.36.1"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -66,11 +66,11 @@ dev = [
     "babel>=2.12",
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
-    # The owning source audit requires the corrected published PS-220 corpus.
-    "scitex-dev>=0.62.1",
+    # Activates the mandatory package-owned logger auditor and its Issue SPI.
+    "scitex-dev>=0.62.4.dev0",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
-    "scitex-logging",
+    "scitex-logging>=0.2.3",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
@@ -97,7 +97,7 @@ seaborn = [
 ]
 scitex = [
     "scitex-sdk>=0.3.0",
-    "scitex-logging",
+    "scitex-logging>=0.2.3",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Exact content rendering uses scitex-logging's plain stdout writer without
+  builtin print, while preserving the existing newline, return value, aliases,
+  and caller-controlled flushing. Require scitex-logging 0.2.3 in the owning
+  SciTeX and developer extras, and scitex-dev 0.62.4.dev0 in the developer extra
+  for mandatory auditor activation; missing logging retains its installation hint.
+
 ## [0.36.0] - 2026-10-02
 
 ### Added
