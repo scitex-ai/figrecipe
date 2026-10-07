@@ -272,8 +272,9 @@
     color: var(--vis-text-muted);
   }
   .editor-body.stx-panes--single .stx-panes__tab[aria-selected="true"] {
-    background: var(--vis-bg-primary);
-    border-color: var(--vis-border);
+    background: transparent;
+    border-color: transparent;
+    border-radius: 0;
     color: var(--vis-text-primary);
     box-shadow: inset 0 -2px 0 var(--accent-primary);
   }
