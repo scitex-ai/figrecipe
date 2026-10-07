@@ -2,14 +2,14 @@
  * Gallery categories moved to PlotTypeNav sidebar.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { redo, undo } from "../../hooks/useUndoRedo";
 import { useEditorStore } from "../../store/useEditorStore";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-export function CanvasPane() {
+export function CanvasPane({ active = true }: { active?: boolean }) {
   const {
     placedFigures,
     selectedFigureId,
@@ -26,6 +26,13 @@ export function CanvasPane() {
     toggleHitmap,
   } = useEditorStore();
   const [exportOpen, setExportOpen] = useState(false);
+  // Mount the drawing surface once, on its first visible visit. This leaves
+  // session restoration ahead of its initial viewport read and keeps every
+  // later tab switch from re-registering gesture listeners or resetting view.
+  const [canvasMounted, setCanvasMounted] = useState(active);
+  useEffect(() => {
+    if (active) setCanvasMounted(true);
+  }, [active]);
 
   // Figure label: selected figure name or count. When the canvas holds no
   // figures the label used to be the bare token "No figures" with no
@@ -186,7 +193,7 @@ export function CanvasPane() {
 
       {/* Canvas content */}
       <div className="pane-content canvas-content">
-        <Canvas />
+        {canvasMounted && <Canvas active={active} />}
       </div>
 
       {/* Export dialog */}

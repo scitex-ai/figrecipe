@@ -15,6 +15,8 @@ export function useKeyboardShortcuts() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Canonical pane tabs and worksheet controls own handled key events.
+      if (e.defaultPrevented) return;
       const mod = e.ctrlKey || e.metaKey;
       const tag = (e.target as HTMLElement).tagName;
       const isEditing =

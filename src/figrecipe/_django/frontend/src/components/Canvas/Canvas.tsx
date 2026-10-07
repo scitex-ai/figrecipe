@@ -19,7 +19,7 @@ import { useZoomPan } from "./useZoomPan";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 // ── Main Canvas ──────────────────────────────────────────────
-export function Canvas() {
+export function Canvas({ active = true }: { active?: boolean }) {
   const {
     placedFigures,
     rulerUnit,
@@ -76,11 +76,14 @@ export function Canvas() {
   // so a genuinely different figure is still fitted on arrival.
   const figuresKey = placedFigures.map((figure) => figure.id).join("|");
   useEffect(() => {
+    // The phone pane is stable even while hidden. Do not fit a zero-sized
+    // viewport or mark a new figure set fitted before the Figure pane opens.
+    if (!active) return;
     const store = useEditorStore.getState();
     if (store.canvasFitKey === figuresKey) return;
     store.setCanvasFitKey(figuresKey);
     if (placedFigures.length > 0) zoomToFit(CANVAS_W, CANVAS_H);
-  }, [figuresKey, placedFigures.length, zoomToFit]);
+  }, [active, figuresKey, placedFigures.length, zoomToFit]);
 
   // Mousedown on empty canvas → the view pans (useZoomPan reads the same
   // mousedown). Shift+left-drag keeps the marquee for rubber-band selection, and

@@ -73,12 +73,27 @@ globals().update(i18n_settings())
 # the static route standalone needs must not ride along into a host.
 ROOT_URLCONF = "figrecipe._django.urls_standalone"
 
+# This legacy standalone settings module registers the shared chat AppConfig,
+# not the SDK App core with the same persisted label. Discover the genuine SDK
+# App adapter without adding a duplicate label or copying its template.
+from importlib.resources import files as package_files  # noqa: E402
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
-        "APP_DIRS": True,
+        "APP_DIRS": False,
         "OPTIONS": {
+            # Project DIRS and installed-app templates retain precedence. The
+            # final loader finds the genuine SDK adapter without app relabeling.
+            "loaders": [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+                (
+                    "django.template.loaders.filesystem.Loader",
+                    [str(package_files("scitex_sdk.app") / "templates")],
+                ),
+            ],
             "context_processors": [
                 "django.template.context_processors.request",
             ],

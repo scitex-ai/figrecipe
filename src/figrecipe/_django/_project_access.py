@@ -17,39 +17,8 @@ except ImportError as exc:
     raise missing_extra(exc) from exc
 from scitex_sdk.host import AccessError, project_access
 
+from . import api_policy
 from ._local_files import LocalFilesAdapter
-
-_READ_ENDPOINTS = {
-    "ping",
-    "preview",
-    "hitmap",
-    "style",
-    "overrides",
-    "theme",
-    "list_themes",
-    "diff",
-    "get_labels",
-    "get_axis_info",
-    "get_legend_info",
-    "get_axes_positions",
-    "calls",
-    "element_details",
-    "get_captions",
-    "datatable/data",
-    "download/csv",
-    "api/tree",
-    "api/files",
-    "api/download",
-    "api/gallery",
-    "stats/list_brackets",
-    "api/switch",
-}
-_READ_PREFIXES = (
-    "download/",
-    "api/file-content/",
-    "api/gallery/thumbnail/",
-    "api/compose/export/",
-)
 
 
 def hub_mode():
@@ -57,13 +26,8 @@ def hub_mode():
 
 
 def requires_write(request, endpoint):
-    if endpoint is None or endpoint in _READ_ENDPOINTS:
-        return False
-    if endpoint.startswith(_READ_PREFIXES):
-        return False
-    if endpoint.startswith(("call/", "api/chat/sessions/")):
-        return request.method not in ("GET", "HEAD", "OPTIONS")
-    return True
+    """Compatibility wrapper around the public leaf endpoint declaration."""
+    return api_policy.requires_write(request, endpoint)
 
 
 def _path(access, value, base=None):

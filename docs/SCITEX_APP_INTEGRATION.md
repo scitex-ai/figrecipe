@@ -54,6 +54,34 @@ the trusted `stx_mount` route after building context. An explicit empty string
 means the root mount; absent mount context leaves the editor unavailable.
 `workspace/` renders the same content in standalone and plugin modes.
 
+The leaf's `workspace.render_workspace_content` also renders that partial for
+a generic host content endpoint. The caller supplies its resolved `stx_mount`
+explicitly; `""` declares a root mount. The renderer obtains SDK project
+authority before rendering and issues the CSRF cookie. Capability errors
+propagate to the caller's existing response handling. A presentation-only
+`current_project` never supplies filesystem authority. The full `workspace/`
+page keeps its shell and remains a separate response.
+
+Both full leaf templates extend `scitex_sdk/app/app_shell.html` and fill
+`scitex_app_content`. SDK 0.3.0 supplies the adapter to its UI shell. A host can
+shadow the generic adapter through its Django template directories while the
+leaf retains its content, CSS and script blocks.
+The legacy leaf standalone settings discover the genuine SDK App template
+directory with a final filesystem loader, after project directories and
+installed-app templates. A generic host must likewise discover it, either through
+its single existing SDK App registration or a template-directory entry after
+host overrides. Registering the SDK App core alongside the retained chat config
+would duplicate their `scitex_app` label; this candidate keeps that registration
+unchanged. The SDK standalone launcher already registers its App core.
+
+`figrecipe._django.api_policy` exposes the existing read/write and editor-context
+decisions, path-selector metadata, and dotted targets for the request guard and
+guarded dispatcher. The leaf consumes these same declarations; specialized
+path checks and request execution remain in the existing guard and dispatcher.
+The metadata alone does not grant access. SDK 0.3.0 does not automatically
+discover this policy export, so generic host intake must qualify its consumption
+before replacing any existing host route or capability check.
+
 The leaf subscribes to the existing `workspace:module-injected` event. Repeated
 AJAX mount/unmount and project changes retire outgoing requests and reset plot,
 canvas, clipboard, table, selection and undo targets while keeping display
@@ -72,7 +100,7 @@ React bridge and shared CSS. For the installed SDK, run `python configure.py`,
 then normal `npm install`, `npm run build`, and `npm run build:lib` in
 `src/figrecipe/_django/frontend`. The committed dependency supports the exact
 pinned SDK source checkout in CI. Both builds preserve strict TypeScript and
-React peer deduplication. Templates extend `scitex_sdk/ui/standalone_shell.html`;
+React peer deduplication. Templates extend `scitex_sdk/app/app_shell.html`;
 compiled leaf assets remain under `figrecipe/`.
 
 ## Current feature and rollout limits

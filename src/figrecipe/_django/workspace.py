@@ -11,6 +11,7 @@ from figrecipe._utils._optional import missing_extra
 
 try:
     from django.middleware.csrf import get_token
+    from django.views.decorators.csrf import ensure_csrf_cookie
 except ImportError as exc:
     raise missing_extra(exc) from exc
 
@@ -46,3 +47,27 @@ def build_workspace_context(request, current_project=None):
         # An explicit empty mount is valid; an undeclared mount cannot route.
         "stx_mount": None,
     }
+
+
+@ensure_csrf_cookie
+def render_workspace_content(request, current_project=None, *, stx_mount):
+    """Render leaf content under an explicitly resolved host app mount.
+
+    ``stx_mount`` comes from the host's route declaration, never the partial
+    request URL or a query parameter. The empty string declares a root mount.
+    Project authority still comes from the SDK provider; ``current_project``
+    is only the existing generic context-builder argument.
+
+    SDK access errors propagate before rendering so the host can retain its
+    existing authentication/error response policy.
+    """
+    if not isinstance(stx_mount, str):
+        raise TypeError("The host must explicitly declare the app mount")
+    try:
+        from django.shortcuts import render
+    except ImportError as exc:
+        raise missing_extra(exc) from exc
+
+    context = build_workspace_context(request, current_project)
+    context["stx_mount"] = stx_mount
+    return render(request, "figrecipe/workspace_partial.html", context)

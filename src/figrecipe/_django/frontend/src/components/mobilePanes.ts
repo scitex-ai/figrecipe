@@ -1,20 +1,41 @@
-/** Phone tabs (scitex-ui panes) for the hub-mounted editor: Figure | Data | Plot | Details. */
+/** Stable SDK phone tabs: Data | Plot | Figure (composition canvas) | Details. */
 
 import { useEffect, useState } from "react";
 import {
   PHONE_QUERY,
-  mountPanes,
-  showPane,
+  mountPanes as mountSdkPanes,
 } from "@scitex/sdk/ui/ts/app/panes";
+import type { Panes } from "@scitex/sdk/ui/ts/app/panes";
 import "@scitex/sdk/ui/css/app/panes.css";
 
 export type EditorPane = "figure" | "data" | "plot" | "details";
 
-export { mountPanes };
+// The released SDK keeps a page registry without disposing detached roots.
+// Keep the controller for each leaf root so StrictMode can rebind the same
+// instance, and host DOM replacement cannot select a detached first instance.
+const editors = new WeakMap<HTMLElement, Panes>();
+let currentEditor: Panes | null = null;
 
-/** Switch the phone tab; a no-op before the panes mount (standalone). */
+export function mountEditorPanes(host: HTMLElement): Panes | null {
+  const body = host.querySelector<HTMLElement>('[data-stx-panes="figrecipe"]');
+  if (!body) return null;
+  const panes = editors.get(body)
+    ?? mountSdkPanes(host).find((item) => item.root === body)
+    ?? null;
+  if (panes) {
+    editors.set(body, panes);
+    currentEditor = panes;
+  }
+  return panes;
+}
+
+export function releaseEditorPanes(body: HTMLElement): void {
+  if (currentEditor?.root === body) currentEditor = null;
+}
+
+/** Switch this leaf's connected phone root through the canonical SDK. */
 export function showEditorPane(pane: EditorPane): void {
-  showPane(pane, "figrecipe");
+  if (currentEditor?.root.isConnected) currentEditor.show(pane);
 }
 
 function phoneQuery(): MediaQueryList | null {

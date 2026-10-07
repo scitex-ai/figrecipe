@@ -129,26 +129,39 @@ export function VariantChooser({
       focusedOnce.current = false;
       return;
     }
-    if (focusedOnce.current) return;
+    // The first render is hidden until its placement has been measured.
+    if (!placement || focusedOnce.current) return;
     if (focusOnOpen) {
       const index = chooserFocusIndex(active, choices.length);
       itemRefs.current[index]?.focus();
+      focusedOnce.current = document.activeElement === itemRefs.current[index];
     } else {
       panelRef.current?.focus();
+      focusedOnce.current = document.activeElement === panelRef.current;
     }
-    focusedOnce.current = true;
-  }, [pinned, focusOnOpen, active, choices.length]);
+  }, [pinned, focusOnOpen, active, choices.length, placement]);
 
   if (choices.length === 0) return null;
 
   const step = (e: React.KeyboardEvent) => {
     const result = choiceKeyAction(e.key, active, choices.length);
     if (result.action === "ignore") return;
-    e.preventDefault();
+    // Chooser keys must not also move a figure through global shortcuts.
+    e.stopPropagation();
     if (result.action === "dismiss") {
+      e.preventDefault();
       onClose();
       return;
     }
+    // Utility buttons keep their native Enter/Space activation. Only the
+    // dialog container and variant buttons operate the roving variant list.
+    if (
+      e.target !== e.currentTarget &&
+      !itemRefs.current.some((item) => item?.contains(e.target as Node))
+    ) {
+      return;
+    }
+    e.preventDefault();
     if (result.action === "choose") {
       const choice = choices[result.index];
       if (choice) onChoose(choice);
@@ -202,7 +215,6 @@ export function VariantChooser({
             <button
               type="button"
               className="plot-type-nav__chooser-item plot-type-nav__chooser-item--data"
-              tabIndex={-1}
               onClick={onPlotFromData}
             >
               <span className="plot-type-nav__chooser-thumb">

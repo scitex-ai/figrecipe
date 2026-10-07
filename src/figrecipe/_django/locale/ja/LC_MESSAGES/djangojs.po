@@ -27,6 +27,10 @@ msgid "Canvas"
 msgstr "キャンバス"
 
 #: frontend/src/InnerEditor.tsx
+msgid "Figure"
+msgstr "図"
+
+#: frontend/src/InnerEditor.tsx
 msgid "Viewer"
 msgstr "ビューワー"
 
