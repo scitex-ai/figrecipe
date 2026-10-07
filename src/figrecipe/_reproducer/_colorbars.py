@@ -211,6 +211,27 @@ def _replay_colorbars(fig, axes_2d, record, result_cache):
                 except Exception:
                     pass
 
+            # Restore the captured presentation (outline/tick/label sizes).
+            # Geometry + ticks alone leave a default-styled colorbar over a
+            # styled original; these resolved values restore the appearance
+            # without re-deriving style (no style_colorbar call, so manual
+            # origins keep their defaults and shared paths are untouched).
+            presentation = cbar_info.get("cax_presentation") or {}
+            if presentation:
+                try:
+                    cbar.ax.spines["outline"].set_linewidth(
+                        float(presentation["outline_linewidth"])
+                    )
+                    cbar.ax.tick_params(
+                        width=float(presentation["tick_width"]),
+                        length=float(presentation["tick_length"]),
+                        pad=float(presentation["tick_pad"]),
+                    )
+                    for label in cbar.ax.get_yticklabels():
+                        label.set_fontsize(float(presentation["label_fontsize"]))
+                except Exception:
+                    pass
+
             # Freeze: keep constrained_layout enabled (so the save still uses the
             # deterministic tight path) but take the pinned axes out of the solver
             # so the save-time re-solve can't move them.
