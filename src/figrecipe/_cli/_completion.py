@@ -12,6 +12,14 @@ registers four leaves on ``main``:
   * ``install-tab-completion``   (hidden deprecated alias)
   * ``completion``               (hidden deprecated alias)
 
+Drop-in contract v1: ``install-shell-completion`` writes the generated
+script to the drop-in file ``$SCITEX_DIR/<prog>/runtime/completion/<prog>``
+(default ``~/.scitex/figrecipe/runtime/completion/figrecipe``) with an
+atomic rename, skips the rewrite when the content is unchanged
+(idempotent), and prints the drop-in path. It never touches shell
+startup files — sourcing the printed path (or a loader that sources the
+drop-in directory) activates completion.
+
 Why generate the completion script IN-PROCESS (``click.shell_completion``)
 instead of shelling out to ``subprocess.run([prog_name])`` the way the
 shared scitex-dev helper historically did: figrecipe's CI (and any
@@ -27,6 +35,7 @@ subprocess, works identically on a dev box and inside the SIF.
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 
 import click
@@ -59,28 +68,34 @@ def _generate_script(main_group: click.Group, shell: str, prog_name: str) -> str
     return script
 
 
-def _rc_path(shell: str, prog_name: str) -> str:
-    if shell == "fish":
-        return os.path.expanduser(f"~/.config/fish/completions/{prog_name}.fish")
-    return os.path.expanduser({"bash": "~/.bashrc", "zsh": "~/.zshrc"}[shell])
-
-
 def _scitex_dir() -> Path:
     """Resolve ``$SCITEX_DIR`` (default ``~/.scitex``)."""
     return Path(os.environ.get("SCITEX_DIR", os.path.expanduser("~/.scitex")))
 
 
 def _cache_path(prog_name: str) -> Path:
-    """Primary cache: ``$SCITEX_DIR/<prog>/runtime/completion/<prog>``."""
+    """Drop-in file: ``$SCITEX_DIR/<prog>/runtime/completion/<prog>``."""
     return _scitex_dir() / prog_name / "runtime" / "completion" / prog_name
 
 
-def _marker(prog_name: str) -> str:
-    return f"# {prog_name} tab completion"
-
-
-def _source_line(cache_path: Path, prog_name: str) -> str:
-    return f"[ -f {cache_path} ] && source {cache_path}  {_marker(prog_name)}"
+def _write_atomic(path: Path, content: str) -> None:
+    """Write ``content`` to ``path`` atomically (tmp file + rename)."""
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(path.parent), prefix=path.name + ".", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, path)
+        os.chmod(path, 0o644)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 def attach_shell_completion(main_group: click.Group, *, prog_name: str) -> None:
@@ -114,74 +129,43 @@ def attach_shell_completion(main_group: click.Group, *, prog_name: str) -> None:
     @click.option(
         "--dry-run",
         is_flag=True,
-        help="Print the target rc file + source line without writing.",
+        help="Print the drop-in path without writing.",
     )
     @click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt.")
     def install_shell_completion(shell: str, dry_run: bool, yes: bool) -> None:
-        """Wire up ``<TAB>`` completion in the user's shell rc.
+        """Install the ``<TAB>``-completion drop-in file.
 
         \b
         Example:
-          $ figrecipe install-shell-completion              # -> ~/.bashrc
-          $ figrecipe install-shell-completion --shell zsh  # -> ~/.zshrc
+          $ figrecipe install-shell-completion
+          $ figrecipe install-shell-completion --shell zsh
           $ figrecipe install-shell-completion --dry-run    # preview only
 
         \b
         Activate in the current shell after install:
-          source ~/.bashrc
+          source ~/.scitex/figrecipe/runtime/completion/figrecipe
         """
         del yes  # accepted for §2 compliance; use --dry-run for preview
-        rc_path = _rc_path(shell, prog_name)
-
-        if shell == "fish":
-            if dry_run:
-                click.echo(f"Would write fish completion to {rc_path}")
-                return
-            os.makedirs(os.path.dirname(rc_path), exist_ok=True)
-            with open(rc_path, "w") as f:
-                f.write(_generate_script(main_group, shell, prog_name) + "\n")
-            click.echo(f"Tab completion installed at {rc_path}")
-            click.echo(f"Run: source {rc_path}")
-            return
-
-        # Cache-file pattern: generate ONCE to a cache file, then append a
-        # cheap `[ -f cache ] && source cache` line to rc (sourcing the
-        # cached script is ~microseconds vs ~0.4s for the eval form that
-        # re-invokes the binary on every shell start).
-        cache = _cache_path(prog_name)
-        line = _source_line(cache, prog_name)
-        marker = _marker(prog_name)
+        drop_in = _cache_path(prog_name)
 
         if dry_run:
-            click.echo(f"Would write completion cache to {cache}")
-            click.echo(f"Would append to {rc_path}:")
-            click.echo(f"  {line}")
+            click.echo(f"Would write completion drop-in to {drop_in}")
             return
 
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(_generate_script(main_group, shell, prog_name) + "\n")
+        script = _generate_script(main_group, shell, prog_name) + "\n"
+        drop_in.parent.mkdir(parents=True, exist_ok=True)
 
-        existing = ""
-        if os.path.isfile(rc_path):
-            with open(rc_path) as f:
-                existing = f.read()
-        if marker in existing and line.strip() in existing:
-            click.echo(f"Tab completion already installed in {rc_path}")
+        try:
+            existing = drop_in.read_text() if drop_in.is_file() else None
+        except OSError:
+            existing = None
+        if existing == script:
+            click.echo(f"Tab completion already installed at {drop_in}")
             return
-        if marker in existing:
-            # Drop any stale marker line(s) so we replace cleanly.
-            kept = [ln for ln in existing.splitlines() if marker not in ln]
-            existing = "\n".join(kept).rstrip() + "\n"
-            with open(rc_path, "w") as f:
-                f.write(existing)
-            click.echo(f"Removed previous {prog_name} completion line from {rc_path}")
 
-        with open(rc_path, "a") as f:
-            f.write(f"\n{line}\n")
-        click.echo(f"Tab completion installed for {prog_name}")
-        click.echo(f"  cache:  {cache}")
-        click.echo(f"  rc:     {rc_path}  (source line appended)")
-        click.echo(f"Run: source {rc_path}")
+        _write_atomic(drop_in, script)
+        click.echo(f"Tab completion installed at {drop_in}")
+        click.echo(f"Run: source {drop_in}")
 
     @main_group.command(
         "install-tab-completion",
