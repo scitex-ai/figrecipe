@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.1] - 2026-10-08
+
+Migrate completion install to drop-in contract v1 (PR #445):
+vendored completion module (stdlib+click only), atomic+idempotent
+drop-in write, never touches rc files.
+
 ## [0.36.0] - 2026-10-02
 
 ### Added
