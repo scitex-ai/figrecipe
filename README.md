@@ -86,6 +86,12 @@ This coordinated source candidate requires the reviewed `scitex-sdk>=0.3.0`
 owner. Install its reviewed wheel or checkout first while that release is
 pending; the following registry commands describe the published package.
 
+Exact content output in this source candidate requires `scitex-logging>=0.2.3`;
+its developer extra also requires `scitex-dev>=0.62.4.dev0` to activate the
+package-owned auditor. Until those coordinated releases are published, install
+their reviewed wheels before this candidate. This change creates no release tag
+or package publication.
+
 ```bash
 uv pip install "figrecipe[all]"
 ```
