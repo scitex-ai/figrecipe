@@ -12,8 +12,10 @@ reconcile): the three save-path tests below that used to assert the warn-only
 message now assert that the situation is REPORTED, because a save now also FIXES
 it -- the old text promised "a replay will draw what this figure does not show",
 which is no longer true once the call is dropped from the recipe. The count check
-keeps its own case here (a removal on a path the repair cannot reach), and the
-repair's behaviour is asserted in test__artists.py.
+keeps its own cases here (a removal on a path the repair still cannot reach, e.g.
+boxplot), and the repair's behaviour is asserted in test__artists.py. bar/imshow
+now register their artists, so the repair reaches them too and they are asserted
+as repair cases, not count-check cases.
 
 Each test makes a single assertion (STX-TQ007); no mocks (PA-306).
 """
@@ -348,7 +350,7 @@ class TestSavePathWiring:
 
     @staticmethod
     def _save_with_a_removed_bar(tmp_path, name):
-        """Remove a bar patch: ax.bar() records outside the artist funnel."""
+        """Remove a bar patch: ax.bar() now registers its artists too."""
         fig, ax = fr.subplots()
         ax.bar([1], [1], id="b1")
         ax.bar([2], [2], id="b2")
@@ -401,14 +403,15 @@ class TestSavePathWiring:
         # Assert
         assert len(hits) == 1 and "fewer artists" not in str(hits[0].message)
 
-    def test_the_count_check_still_fires_where_the_repair_cannot_reach(
-        self, tmp_path
-    ):
-        # Arrange -- ax.bar() records through its own path, so no artist registry
-        # exists for it and the repair cannot drop the call; the count check is
-        # what still catches this removal. Both layers are wired from a save.
+    def test_the_repair_now_reaches_a_removed_bar(self, tmp_path):
+        # Arrange -- ax.bar() used to record through its own path, so no artist
+        # registry existed for it and the REPAIR could not drop the call; only
+        # the count check caught this removal. Registering bar's artists (the
+        # hidden-bar/imshow repair) makes the repair reach it too, so the
+        # removal is now DROPPED rather than merely counted -- a strictly
+        # better outcome: the recipe no longer claims the removed bar at all.
         name = "bar_removed.png"
         # Act
         hits = self._save_with_a_removed_bar(tmp_path, name)
         # Assert
-        assert len(hits) == 1 and "fewer artists" in str(hits[0].message)
+        assert len(hits) == 1 and "fewer artists" not in str(hits[0].message)

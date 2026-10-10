@@ -71,6 +71,7 @@ class RecordingAxesMethods:
             self._position,
             self._track and track,
             id,
+            artist_refs=self._artist_refs,
             **kwargs,
         )
 
