@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `visible: false` and the replay matches the saved figure at 0.00. As a
   side effect the removal repair now also reaches a removed bar, dropping the
   call rather than leaving it for the count check.
+- `ax.cla()` now resets the axes' recorded state, not just its live artists.
+  Two divergences were measured: the calls/decorations that made the cleared
+  artists stayed in the recipe, so a replay re-drew a cleared axes (a stale
+  `set_xlabel`, MSE 174.91); and `cla()` rebuilt the tick/axis text with
+  matplotlib's default font, dropping the figrecipe style family, so the live
+  render and the freshly styled replay differed over the tick labels even
+  though every readable state entry matched (MSE 428.51). `cla()` now clears
+  the axes record and its artist registry and re-applies the recorded style;
+  both cases validate at 0.00.
+>>>>>>> origin/main
 
 ## [0.36.0] - 2026-10-02
 

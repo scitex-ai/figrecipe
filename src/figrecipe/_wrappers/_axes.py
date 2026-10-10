@@ -101,6 +101,14 @@ class RecordingAxes(
         if callable(attr) and name == "stem":
             return self._create_stem_wrapper()
 
+        # Route cla() to a wrapper that also clears this axes' recorded calls
+        # and decorations: the live cla() removes every artist and every
+        # decoration from the axes, but the records kept claiming them, so a
+        # replay drew a cleared axes (card
+        # figrecipe-cla-replay-still-diverges-20260927).
+        if callable(attr) and name == "cla":
+            return self._create_cla_wrapper()
+
         # Route add_patch to a wrapper that records a serializable patch spec
         # (raw patches are objects that otherwise vanish on replay)
         if callable(attr) and name == "add_patch":
@@ -221,6 +229,50 @@ class RecordingAxes(
                     self._RESULT_REFERENCEABLE_METHODS,
                     self._artist_refs,
                 )
+            return result
+
+        return wrapper
+
+    def _create_cla_wrapper(self):
+        """Create wrapper for cla() that resets the axes' recorded state.
+
+        matplotlib's ``Axes.cla()`` resets the axes: every artist it holds is
+        gone and the axis label/title/ticks are blanked. Two things then went
+        wrong (card figrecipe-cla-replay-still-diverges-20260927):
+
+        * the recorder kept the calls and decorations that made those artists,
+          so a replay re-drew the cleared axes -- after ``ax.set_xlabel("x");
+          ax.cla()`` the recipe still carried the label and the replay showed
+          it. A cleared axes has no recorded state to replay, so its records
+          are dropped, and the artist registry goes with them (the artists they
+          noted are gone; a stale weakref must not be read as a live one).
+        * ``cla()`` rebuilds the tick/axis text artists with matplotlib's
+          default font, discarding the figrecipe style family applied at axes
+          creation. The replayed axes (styled fresh) then used the style font
+          while the live one used the default, and the renders differed over
+          the tick labels even though every readable state entry matched
+          (measured MSE 428.51 for a bare draw-then-cla). Re-applying the
+          recorded style restores the family and the renders match at 0.00.
+        """
+        base_cla = self._ax.cla
+
+        def wrapper(*args, **kwargs):
+            result = base_cla(*args, **kwargs)
+            if self._track:
+                ax_record = self._recorder.figure_record.get_or_create_axes(
+                    *self._position
+                )
+                ax_record.calls.clear()
+                ax_record.decorations.clear()
+                self._artist_refs.clear()
+                self._result_refs.clear()
+                # Restore the figrecipe style the fresh tick/axis text artists
+                # lost in the reset (font family, sizes, tick params).
+                style = getattr(self._recorder.figure_record, "style", None)
+                if style:
+                    from ..styles._internal import apply_style_mm
+
+                    apply_style_mm(self._ax, style)
             return result
 
         return wrapper
