@@ -337,6 +337,32 @@ def _annotate_hidden_artists(rec_ax, ax_record, key: str, live_ids: set) -> list
     return annotated
 
 
+def _annotate_mutated_artists(rec_ax, ax_record, key: str, live_ids: set) -> list:
+    """Write each mutated artist's final data/style into its recorded call.
+
+    The counterpart of the hidden-visibility annotation above for an artist
+    the figure still holds AND still paints, but with different state than
+    the call recorded (card
+    figrecipe-handle-mutation-after-draw-not-recorded-20260906): nothing is
+    dropped -- a ``set_data``/``set_color`` after draw changes what the saved
+    PNG shows, so the record gains the final values and the replay draws the
+    saved figure. Returns the ``MutatedCall`` list; a no-op on an ordinary
+    figure (a field is rewritten only when it differs).
+    """
+    from .._recorder._mutation import annotate_mutated
+
+    registry = getattr(rec_ax, "_artist_refs", None) or {}
+    if not registry:
+        return []
+    mutated: list = []
+    for half, records in (
+        ("calls", ax_record.calls),
+        ("decorations", ax_record.decorations),
+    ):
+        mutated.extend(annotate_mutated(records, registry, live_ids, key, half))
+    return mutated
+
+
 def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
     """Capture bounding boxes of all axes for alignment/snap functionality.
 
@@ -473,6 +499,14 @@ def _capture_axes_bboxes(fig, crop_offset: Optional[dict] = None) -> None:
                     _annotate_hidden_artists(rec_ax, ax_record, key, _live_ids)
                 except Exception:
                     pass  # best-effort: an annotation must not break a save
+                # ...and for the artists it still holds AND still paints, the
+                # record gains their final data/style (card
+                # figrecipe-handle-mutation-after-draw-not-recorded-20260906).
+                # Same best-effort rule: a re-read must not break a save.
+                try:
+                    _annotate_mutated_artists(rec_ax, ax_record, key, _live_ids)
+                except Exception:
+                    pass
             matched_records.add(key)
 
     # Fallback for mm-based composition records (keyed "ax_mm_idx"), which are
