@@ -166,7 +166,7 @@ html=render_to_string('figrecipe/standalone.html', {'working_dir':''})
 assert html.count('rel="icon"')==1
 assert '/static/scitex_sdk/ui/' in html
 assert apps.get_app_config('scitex_app').name=='scitex_sdk.app._chat'
-assert apps.get_app_config('scitex_ui').name=='scitex_sdk.ui'
+assert apps.get_app_config('scitex_sdk_ui').name=='scitex_sdk.ui'
 assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
 """,
             ],
