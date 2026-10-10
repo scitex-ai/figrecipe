@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.2] - 2026-10-10
+
+Recorder and Django fixes since 0.36.1 (PR #447, #448, #449, #450; main #440, #441):
+
+### Fixed
+- A hidden `ax.bar()` / `ax.imshow()` no longer replays drawn (visible: false
+  annotated at their own record sites; MSE 9129.84 / 23248.60 -> 0.00).
+- `ax.cla()` now resets the axes' recorded state, not just its live artists.
+- `line.set_data()` / `line.set_color()` after draw now reach the recipe
+  (save-time final-state re-read; MSE 802.13 / 563.65 -> 0.00).
+- `ax.add_line()` / `ax.add_artist()` / `ax.add_collection()` are now recorded
+  via serializable specs and replayed (-> 0.00).
+- Standalone shell renders the request language (`shell_lang` at both
+  consumers; JA no longer renders `<html lang="en">`).
+- Mount docstring names both apps so hosts keep chat models.
+- Tests expect the SDK 0.3.4 `scitex_sdk_ui` Django label.
+
 ## [0.36.1] - 2026-10-08
 
 Migrate completion install to drop-in contract v1 (PR #445):
