@@ -32,6 +32,8 @@ def build_workspace_context(request, current_project=None):
         if access
         else os.environ.get("FIGRECIPE_WORKING_DIR", "")
     )
+    from scitex_sdk.ui import branding
+
     from figrecipe import __version__
 
     return {
@@ -44,6 +46,11 @@ def build_workspace_context(request, current_project=None):
         "working_dir": working_dir,
         "working_dir_name": access.name if access else Path(working_dir).name,
         "recipe": request.GET.get("recipe", ""),
+        # The SDK shell defaults an absent key to 'en'; populate ONLY the
+        # language from the public shell_context (active Django language,
+        # 'en' fallback) so every other value stays exactly as it was (card
+        # figrecipe-ja-shell-lang-context-20261003).
+        "shell_lang": branding.shell_context("figrecipe")["shell_lang"],
         # An explicit empty mount is valid; an undeclared mount cannot route.
         "stx_mount": None,
     }
