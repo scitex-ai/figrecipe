@@ -51,13 +51,16 @@ def _run(tmp_path: Path, body: str):
 @pytest.mark.parametrize("capture", [False, True])
 @pytest.mark.parametrize("level", ["info", "critical"])
 def test_content_is_exact_at_all_verbosity_and_capture_levels(tmp_path, capture, level):
+    # Arrange
     content = ['{"label":"Δ","ok":true}', "first\nsecond\n", ""]
+    # Act
     result = _run(
         tmp_path,
         f"slog.configure(level={level!r},enable_file=False,capture_prints={capture!r})\n"
         f"for value in {content!r}:\n"
         "    assert render_content(value) is None",
     )
+    # Assert
     assert (result.stdout, result.stderr) == (
         "".join(value + "\n" for value in content),
         "",
@@ -65,6 +68,8 @@ def test_content_is_exact_at_all_verbosity_and_capture_levels(tmp_path, capture,
 
 
 def test_legacy_alias_and_signature_are_preserved(tmp_path):
+    # Arrange
+    # Act
     result = _run(
         tmp_path,
         "import inspect\n"
@@ -73,11 +78,14 @@ def test_legacy_alias_and_signature_are_preserved(tmp_path):
         "assert list(inspect.signature(render_content).parameters)==['content']\n"
         "assert legacy('LEGACY') is None",
     )
+    # Assert
     assert (result.stdout, result.stderr) == ("LEGACY\n", "")
 
 
 @pytest.mark.parametrize("capture", [False, True])
 def test_content_respects_nested_stdout_redirects(tmp_path, capture):
+    # Arrange
+    # Act
     result = _run(
         tmp_path,
         f"slog.configure(enable_file=False,capture_prints={capture!r})\n"
@@ -90,10 +98,13 @@ def test_content_respects_nested_stdout_redirects(tmp_path, capture):
         "assert sys.stdout is original\n"
         "render_content(json.dumps([a.getvalue(),b.getvalue()]))",
     )
+    # Assert
     assert (json.loads(result.stdout), result.stderr) == (["A\nC\n", "B\n"], "")
 
 
 def test_content_preserves_foreign_wrapper_and_does_not_force_flush(tmp_path):
+    # Arrange
+    # Act
     result = _run(
         tmp_path,
         "class Foreign:\n"
@@ -108,10 +119,13 @@ def test_content_preserves_foreign_wrapper_and_does_not_force_flush(tmp_path):
         "render_content(json.dumps([stream.destination.getvalue(),"
         "stream.original_stdout.getvalue()]))",
     )
+    # Assert
     assert (json.loads(result.stdout), result.stderr) == (["FOREIGN\n", ""], "")
 
 
 def test_content_bypasses_nested_owned_capture_without_disabling_it(tmp_path):
+    # Arrange
+    # Act
     result = _run(
         tmp_path,
         "from scitex_logging._print_capture import PrintCapture\n"
@@ -124,10 +138,13 @@ def test_content_bypasses_nested_owned_capture_without_disabling_it(tmp_path):
         "    assert sys.stdout is outer and outer.capturing\n"
         "assert sys.stdout is original",
     )
+    # Assert
     assert (result.stdout, result.stderr) == ("FRAME\n", "")
 
 
 def test_content_write_error_propagates(tmp_path):
+    # Arrange
+    # Act
     result = _run(
         tmp_path,
         "class Broken:\n"
@@ -141,14 +158,17 @@ def test_content_write_error_propagates(tmp_path):
         "    else:\n"
         "        raise AssertionError('write error was swallowed')",
     )
+    # Assert
     assert (result.stdout, result.stderr) == ("", "")
 
 
 def test_missing_logging_at_render_time_retains_owning_extra_hint(tmp_path):
+    # Arrange
     expected = (
         "scitex-logging is required for this capability but is not installed. "
         "Install it with: pip install 'figrecipe[scitex]'"
     )
+    # Act
     result = _run(
         tmp_path,
         "import importlib.abc\n"
@@ -168,4 +188,5 @@ def test_missing_logging_at_render_time_retains_owning_extra_hint(tmp_path):
         "else:\n"
         "    raise AssertionError('missing logger did not fail')",
     )
+    # Assert
     assert (result.stdout, result.stderr) == ("", "")
