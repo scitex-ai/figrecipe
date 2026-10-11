@@ -46,5 +46,8 @@
       "scipy",
       "scitex-sdk"
     ]
+  },
+  "mount_policy": {
+    "login_required": true
   }
 }
