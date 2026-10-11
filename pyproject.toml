@@ -241,6 +241,7 @@ concurrency = ["multiprocessing", "thread"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
+    "*/site-packages/*",
     "*/figrecipe/_cli/*",
     "*/figrecipe/_editor/*",
     "*/figrecipe/_dev/*",
