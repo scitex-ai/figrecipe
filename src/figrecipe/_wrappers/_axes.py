@@ -108,6 +108,24 @@ class RecordingAxes(
 
             return build_add_patch_wrapper(self)
 
+        # Route add_line/add_artist/add_collection to wrappers that record a
+        # serializable artist spec (raw artists otherwise vanish on replay;
+        # card figrecipe-unrecorded-axes-artist-methods-20261005). Non-Line2D
+        # artists fail loud at call time; twinx/twiny stay unrouted (raw Axes
+        # needs its own secondary-axes design, same card).
+        if callable(attr) and name in (
+            "add_line",
+            "add_artist",
+            "add_collection",
+        ):
+            from . import _axes_lines
+
+            return {
+                "add_line": _axes_lines.build_add_line_wrapper,
+                "add_artist": _axes_lines.build_add_artist_wrapper,
+                "add_collection": _axes_lines.build_add_collection_wrapper,
+            }[name](self)
+
         # Route inset_axes to a wrapper that records its content as a managed
         # sub-panel (raw inset axes are otherwise unrecorded and vanish on replay)
         if callable(attr) and name == "inset_axes":

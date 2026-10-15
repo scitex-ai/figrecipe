@@ -26,6 +26,7 @@ from figrecipe._django.apps import FigRecipeEditorConfig
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SETTINGS = REPO_ROOT / "src" / "figrecipe" / "_django" / "settings.py"
 DOC = REPO_ROOT / "docs" / "SCITEX_APP_INTEGRATION.md"
+INIT_DOC = REPO_ROOT / "src" / "figrecipe" / "_django" / "__init__.py"
 
 CHAT_APP = "figrecipe._django.apps.ScitexAppChatConfig"
 
@@ -165,7 +166,7 @@ html=render_to_string('figrecipe/standalone.html', {'working_dir':''})
 assert html.count('rel="icon"')==1
 assert '/static/scitex_sdk/ui/' in html
 assert apps.get_app_config('scitex_app').name=='scitex_sdk.app._chat'
-assert apps.get_app_config('scitex_ui').name=='scitex_sdk.ui'
+assert apps.get_app_config('scitex_sdk_ui').name=='scitex_sdk.ui'
 assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
 """,
             ],
@@ -212,6 +213,18 @@ assert not {'scitex_app','scitex_ui'}.intersection(sys.modules)
         single_app_mount = 'INSTALLED_APPS += ["figrecipe._django"]'
         # Assert -- the doc names the chat app, and no longer documents the form
         # that loses it.
+        # Act
+        # Assert
+        assert CHAT_APP in doc and single_app_mount not in doc
+
+    def test_the_package_docstring_mount_lists_both_apps(self):
+        # Arrange
+        # Arrange
+        doc = INIT_DOC.read_text(encoding="utf-8")
+        # Act -- the shape that shipped the defect: the editor app alone.
+        single_app_mount = 'INSTALLED_APPS = [..., "figrecipe._django", ...]'
+        # Assert -- the package docstring names the chat app, and no longer
+        # documents the form that loses it.
         # Act
         # Assert
         assert CHAT_APP in doc and single_app_mount not in doc

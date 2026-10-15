@@ -7,7 +7,12 @@ Usage (standalone):
 
 Usage (integrated into Django project):
     # settings.py
-    INSTALLED_APPS = [..., "figrecipe._django", ...]
+    INSTALLED_APPS = [
+        ...,
+        "figrecipe._django",
+        "figrecipe._django.apps.ScitexAppChatConfig",  # chat models (api/chat/*)
+        ...,
+    ]
 
     # urls.py
     path("figrecipe/", include("figrecipe._django.urls")),

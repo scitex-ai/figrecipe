@@ -4,13 +4,12 @@
 
 Historically this module hand-rolled a scitex-logging bridge with a plain
 ``print`` fallback, so figrecipe stayed "dependency-light" when scitex-logging
-was absent. scitex-logging is now a hard dependency of figrecipe (the whole
-package emits through the ecosystem logging tier), which makes the fallback
-dead code -- and a bare ``print`` inside library code cannot be silenced,
-redirected or levelled by the caller, which is exactly what the ecosystem's
-strict logging tier forbids.
+was absent. Current transports use scitex-logging's diagnostic, stdout, and
+plain writers. Missing logging raises the owning ``figrecipe[scitex]`` install
+hint rather than falling back to builtin print. Exact result lines retain their
+newline and are independent of diagnostic filtering and print capture.
 
-The transports themselves now live in :mod:`figrecipe._console`. This module is
+The transports themselves live in :mod:`figrecipe._utils._console`. This module is
 kept as the documented import path for existing internal callers.
 """
 
@@ -29,7 +28,7 @@ __all__ = [
 
 
 def logger(name: str = "figrecipe") -> Any:
-    """Alias for :func:`figrecipe._console.get_logger`."""
+    """Alias for :func:`figrecipe._utils._console.get_logger`."""
     return get_logger(name)
 
 
