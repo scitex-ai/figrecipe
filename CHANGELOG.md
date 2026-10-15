@@ -7,12 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.4] - 2026-10-15
+
+Leaf-migration pilot, logging ownership, composition adoption (PR #453, #454,
+#455, #456; composition/diagram source-adoption):
+
+### Added
+- Leaf `mount_policy` jail declaration in the Django manifest (PR #456, on top
+  of the #455 login boundary): login_required + touches_files with a
+  user-scoped jail (working_dir_param `working_dir`, path_params `path`,
+  `recipe`, `recipe_path`) — verbatim SDK FIGRECIPE reference, so the hub
+  generic mount enforces containment with zero per-app host code.
+- Deterministic composition layout helpers: radial positions and Poisson-disk
+  sampling (pure NumPy, seeded), circular-layout trig dedup onto the tested
+  helper, dimmed `context` emphasis level, and named compose layout aliases
+  (single/side_by_side/stacked/triptych/quad).
+
 ### Fixed
 - Exact content rendering uses scitex-logging's plain stdout writer without
   builtin print, while preserving the existing newline, return value, aliases,
   and caller-controlled flushing. Require scitex-logging 0.2.3 in the owning
   SciTeX and developer extras, and scitex-dev 0.62.4.dev0 in the developer extra
   for mandatory auditor activation; missing logging retains its installation hint.
+- Unserializable recorder kwargs no longer vanish into a silent `str()`
+  fallback (explicit marker instead).
+
+### Changed
+- CI is the canonical org-shared `ci.yml` only; the four legacy per-repo
+  workflows are removed (PR #453).
 
 ## [0.36.2] - 2026-10-10
 
