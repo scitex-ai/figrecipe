@@ -46,5 +46,14 @@
       "scipy",
       "scitex-sdk"
     ]
+  },
+  "mount_policy": {
+    "login_required": true,
+    "touches_files": true,
+    "jail": {
+      "scope": "user",
+      "working_dir_param": "working_dir",
+      "path_params": ["path", "recipe", "recipe_path"]
+    }
   }
 }

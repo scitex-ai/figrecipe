@@ -47,6 +47,28 @@ def _replay_add_patch(ax: Any, call: CallRecord, result_cache: Dict[str, Any]) -
     return replay_add_patch_call(ax, call)
 
 
+def _replay_add_line(ax: Any, call: CallRecord, result_cache: Dict[str, Any]) -> Any:
+    from ._replay_lines import replay_add_line_call
+
+    return replay_add_line_call(ax, call)
+
+
+def _replay_add_artist(
+    ax: Any, call: CallRecord, result_cache: Dict[str, Any]
+) -> Any:
+    from ._replay_lines import replay_add_artist_call
+
+    return replay_add_artist_call(ax, call)
+
+
+def _replay_add_collection(
+    ax: Any, call: CallRecord, result_cache: Dict[str, Any]
+) -> Any:
+    from ._replay_lines import replay_add_collection_call
+
+    return replay_add_collection_call(ax, call)
+
+
 def _replay_joyplot(ax: Any, call: CallRecord, result_cache: Dict[str, Any]) -> Any:
     from ._custom_plots import replay_joyplot_call
 
@@ -127,6 +149,9 @@ _HANDLERS = (
     (lambda name: name == "boxplot", _replay_boxplot),
     (lambda name: name == "violinplot", _replay_violinplot),
     (lambda name: name == "add_patch", _replay_add_patch),
+    (lambda name: name == "add_line", _replay_add_line),
+    (lambda name: name == "add_artist", _replay_add_artist),
+    (lambda name: name == "add_collection", _replay_add_collection),
     (lambda name: name == "joyplot", _replay_joyplot),
     (lambda name: name == "swarmplot", _replay_swarmplot),
     (lambda name: name == "stat_annotation", _replay_stat_annotation),

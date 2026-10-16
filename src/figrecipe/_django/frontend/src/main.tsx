@@ -79,6 +79,10 @@ import type {
   SessionMessage,
 } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import {
+  createFileTreeFetcher,
+  createRecentFilesFetcher,
+} from "./bootstrap/bootFetch";
 
 // Mount React InnerEditor into app content area ONLY
 const root = document.getElementById("root");
@@ -90,6 +94,20 @@ const hosted = root?.dataset.hosted === "true";
 const params = new URLSearchParams(window.location.search);
 const embedded = params.get("mode") === "embedded";
 
+// Hub-embedded handoff (live defect 2026-10-16: the hub page loads this
+// index.js bundle only, never workspace.js, so the body never mounts).
+// When this standalone bundle lands on a hub-embedded figrecipe container
+// instead of its own #root, pull in the workspace sync and skip the
+// standalone shell init below — there is no #root to mount into, and the
+// standalone shell must not drive the host's DOM. The workspace sync then
+// mounts with the container's declared mount (or logs + retries when the
+// host has not declared one).
+if (!root && document.querySelector('[data-app-slug="figrecipe"][data-embedded="true"]')) {
+  await import("./workspace").catch((e) =>
+    console.error("[figrecipe] workspace handoff failed:", e),
+  );
+}
+
 if (root) {
   document.documentElement.setAttribute("data-theme", "dark");
   ReactDOM.createRoot(root).render(
@@ -99,26 +117,16 @@ if (root) {
   );
 }
 
-// Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint
+// The standalone shell init below runs only on the standalone page (#root).
+// On a hub-embedded container the handoff above owns the mount; running
+// this here would drive the host's shell DOM a second time.
+// Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint.
+// Fetch bodies live in ./bootstrap/bootFetch: every failure class (blocked
+// fetch, HTTP error, malformed body) resolves to the degraded {success:false}
+// value instead of an unhandled rejection (boot-resilience-20261016).
+if (root) {
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
-  async fetchTree(rootPath?: string) {
-    // rootPath (breadcrumb navigation) re-roots the backend tree via the
-    // working_dir query param; omit it for the default launch folder.
-    const url = rootPath
-      ? `api/tree?working_dir=${encodeURIComponent(rootPath)}`
-      : "api/tree";
-    const resp = await fetch(apiUrl(url));
-    if (!resp.ok)
-      return {
-        success: false,
-        tree: [],
-        error: `HTTP ${resp.status}: ${resp.statusText}`,
-      };
-    const data = await resp.json();
-    // Return the absolute root the backend resolved so the breadcrumb shows the
-    // path from filesystem root.
-    return { success: true, tree: data.tree ?? [], rootPath: data.working_dir };
-  },
+  ...createFileTreeFetcher({ fetchImpl: fetch, apiUrl }),
   getCsrfToken() {
     const meta = document.querySelector<HTMLMetaElement>(
       'meta[name="csrf-token"]',
@@ -146,32 +154,11 @@ const fileTree = new WorkspaceFilesTree({
 });
 fileTree.initialize();
 
-// Shell repo monitor — polls api/files for recently modified files
+// Shell repo monitor — polls api/files for recently modified files.
+// Degraded [] on any failure class (boot-resilience-20261016); the monitor
+// retries on its next poll interval.
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
-  async fetchRecentFiles() {
-    const resp = await fetch(apiUrl("api/files?recent=true&limit=50"));
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    // Normalize response: api/files returns { files: [...] }
-    const files = data.files ?? data ?? [];
-    return files.map(
-      (f: {
-        path: string;
-        name?: string;
-        modified_at?: string;
-        mtime?: string;
-        action?: string;
-      }) => ({
-        path: f.path,
-        name: f.name ?? f.path.split("/").pop() ?? f.path,
-        modified_at: f.modified_at ?? f.mtime ?? new Date().toISOString(),
-        action: f.action,
-      }),
-    );
-  },
-  getFileUrl(path: string) {
-    return apiUrl(`api/file-content/${path}?raw=true`);
-  },
+  ...createRecentFilesFetcher({ fetchImpl: fetch, apiUrl }),
 };
 
 initMonitorToggle();
@@ -512,3 +499,4 @@ bootstrapContextZoom(
   ],
   [],
 );
+} // end if (root): standalone shell init only

@@ -7,25 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.4] - 2026-10-15
+
+Leaf-migration pilot, logging ownership, composition adoption (PR #453, #454,
+#455, #456; composition/diagram source-adoption):
+
+### Added
+- Leaf `mount_policy` jail declaration in the Django manifest (PR #456, on top
+  of the #455 login boundary): login_required + touches_files with a
+  user-scoped jail (working_dir_param `working_dir`, path_params `path`,
+  `recipe`, `recipe_path`) — verbatim SDK FIGRECIPE reference, so the hub
+  generic mount enforces containment with zero per-app host code.
+- Deterministic composition layout helpers: radial positions and Poisson-disk
+  sampling (pure NumPy, seeded), circular-layout trig dedup onto the tested
+  helper, dimmed `context` emphasis level, and named compose layout aliases
+  (single/side_by_side/stacked/triptych/quad).
+
 ### Fixed
-- A hidden `ax.bar()` / `ax.imshow()` no longer replays drawn. Those two
-  methods record through their own path rather than the generic artist
-  funnel, so the save-time visibility annotation never saw their
-  BarContainer/AxesImage and a recipe for a figure with a hidden bar or image
-  drew it anyway (measured MSE 9129.84 / 23248.60, invalid). They now note
-  their artists at their own record sites, so the existing annotation writes
-  `visible: false` and the replay matches the saved figure at 0.00. As a
-  side effect the removal repair now also reaches a removed bar, dropping the
-  call rather than leaving it for the count check.
+- Exact content rendering uses scitex-logging's plain stdout writer without
+  builtin print, while preserving the existing newline, return value, aliases,
+  and caller-controlled flushing. Require scitex-logging 0.2.3 in the owning
+  SciTeX and developer extras, and scitex-dev 0.62.4.dev0 in the developer extra
+  for mandatory auditor activation; missing logging retains its installation hint.
+- Unserializable recorder kwargs no longer vanish into a silent `str()`
+  fallback (explicit marker instead).
+
+### Changed
+- CI is the canonical org-shared `ci.yml` only; the four legacy per-repo
+  workflows are removed (PR #453).
+
+## [0.36.2] - 2026-10-10
+
+Recorder and Django fixes since 0.36.1 (PR #447, #448, #449, #450; main #440, #441):
+
+### Fixed
+- A hidden `ax.bar()` / `ax.imshow()` no longer replays drawn (visible: false
+  annotated at their own record sites; MSE 9129.84 / 23248.60 -> 0.00).
 - `ax.cla()` now resets the axes' recorded state, not just its live artists.
-  Two divergences were measured: the calls/decorations that made the cleared
-  artists stayed in the recipe, so a replay re-drew a cleared axes (a stale
-  `set_xlabel`, MSE 174.91); and `cla()` rebuilt the tick/axis text with
-  matplotlib's default font, dropping the figrecipe style family, so the live
-  render and the freshly styled replay differed over the tick labels even
-  though every readable state entry matched (MSE 428.51). `cla()` now clears
-  the axes record and its artist registry and re-applies the recorded style;
-  both cases validate at 0.00.
+- `line.set_data()` / `line.set_color()` after draw now reach the recipe
+  (save-time final-state re-read; MSE 802.13 / 563.65 -> 0.00).
+- `ax.add_line()` / `ax.add_artist()` / `ax.add_collection()` are now recorded
+  via serializable specs and replayed (-> 0.00).
+- Standalone shell renders the request language (`shell_lang` at both
+  consumers; JA no longer renders `<html lang="en">`).
+- Mount docstring names both apps so hosts keep chat models.
+- Tests expect the SDK 0.3.4 `scitex_sdk_ui` Django label.
+
+## [0.36.1] - 2026-10-08
+
+Migrate completion install to drop-in contract v1 (PR #445):
+vendored completion module (stdlib+click only), atomic+idempotent
+drop-in write, never touches rc files.
 >>>>>>> origin/main
 
 ## [0.36.0] - 2026-10-02

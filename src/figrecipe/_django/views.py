@@ -148,6 +148,8 @@ def editor_page(request, view_path=""):
         # editor (see figrecipe._cli._main's program-name detection) rather
         # than forking the template.
         favicon_color = os.environ.get("FIGRECIPE_FAVICON_COLOR", "")
+        from scitex_sdk.ui import branding
+
         html = render_to_string(
             "figrecipe/standalone.html",
             {
@@ -161,6 +163,12 @@ def editor_page(request, view_path=""):
                 "favicon_href": (
                     _favicon_data_uri(favicon_color) if favicon_color else ""
                 ),
+                # The SDK shell defaults an absent key to 'en'; populate ONLY
+                # the language from the public shell_context (active Django
+                # language, 'en' fallback) so every other value stays exactly
+                # as it was (card figrecipe-ja-shell-lang-context-20261003).
+                # Placed after the mount spread so it cannot be shadowed.
+                "shell_lang": branding.shell_context("figrecipe")["shell_lang"],
             },
             request=request,
         )
