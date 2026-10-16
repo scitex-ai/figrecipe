@@ -15,7 +15,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+# Repo root = tests/figrecipe/_editor/conftest.py -> up four levels. The
+# child interpreter launched below MUST import the repo's src/figrecipe, not
+# the tests/figrecipe package that shadows it when cwd=tests. Anchor both the
+# sys.path entry and the child cwd to this absolute root.
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+_REPO_SRC = _REPO_ROOT / "src"
+
+sys.path.insert(0, str(_REPO_SRC))
 
 
 def check_playwright_available() -> bool:
@@ -71,20 +78,25 @@ class EditorServer:
 
     def __enter__(self):
         """Start the editor server."""
+        # The child must import the repo's src/figrecipe. A relative 'src'
+        # sys.path entry plus cwd=tests resolves to the nonexistent tests/src,
+        # so `import figrecipe` binds to the tests/figrecipe package (which has
+        # no gui) and the server dies before the browser tests run. Anchor the
+        # path entry AND the cwd to the absolute repo root.
         self.process = subprocess.Popen(
             [
                 sys.executable,
                 "-c",
                 f"""
 import sys
-sys.path.insert(0, 'src')
+sys.path.insert(0, {str(_REPO_SRC)!r})
 import figrecipe as fr
-fr.gui('{self.recipe_path}', port={self.port}, open_browser=False)
+fr.gui({str(self.recipe_path)!r}, port={self.port}, open_browser=False)
 """,
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=Path(__file__).parent.parent.parent,
+            cwd=_REPO_ROOT,
         )
 
         # Allow time for server + matplotlib initialization

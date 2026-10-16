@@ -5,9 +5,16 @@
 import tempfile
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pytest
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pytest  # noqa: E402
+
+import figrecipe as fr  # noqa: E402
+from figrecipe._quality._validator import validate_recipe  # noqa: E402
 
 
 class TestCreateFigureFromSpec:
@@ -458,3 +465,118 @@ class TestPlotConstants:
         # Assert
         from figrecipe._api._plot import RESERVED_KEYS
         assert "data_file" in RESERVED_KEYS
+
+
+class TestAxesClaResetsTheRecord:
+    """ax.cla() must reset the recorded state, not just the live artists.
+
+    Card figrecipe-cla-replay-still-diverges-20260927. Two mechanisms, both
+    driven through a REAL save + validate:
+      (i) the calls/decorations that made the cleared artists stayed in the
+          recipe, so a replay re-drew a cleared axes (stale xlabel, MSE 174.91);
+      (ii) cla() rebuilt the tick/axis text with matplotlib's default font,
+          dropping the figrecipe style family, so the live render and the
+          (freshly styled) replay differed over the tick labels (MSE 428.51).
+    """
+
+    def test_a_stale_xlabel_after_cla_is_not_replayed(self, tmp_path):
+        # Arrange -- the card's case (i).
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        ax.set_xlabel("x-before-cla")
+        fig.canvas.draw()
+        ax.cla()
+        ax.plot([1, 2, 3], [9, 4, 1], id="l2")
+        fr.save(fig, tmp_path / "i.png", validate=False)
+        # Act
+        result = validate_recipe(fig, tmp_path / "i.yaml")
+        # Assert -- was MSE 174.91 and invalid.
+        assert result.mse == 0.0 and result.valid
+
+    def test_the_stale_label_is_absent_from_the_recipe(self, tmp_path):
+        # Arrange -- the record must not claim a label cla() cleared.
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        ax.set_xlabel("x-before-cla")
+        fig.canvas.draw()
+        ax.cla()
+        ax.plot([1, 2, 3], [9, 4, 1], id="l2")
+        # Act
+        fr.save(fig, tmp_path / "i2.png", validate=False)
+        # Assert
+        import yaml
+
+        data = yaml.safe_load((tmp_path / "i2.yaml").read_text())
+        funcs = [d["function"] for d in data["axes"]["r0c0"]["decorations"]]
+        assert "set_xlabel" not in funcs
+
+    def test_a_bare_draw_then_cla_now_validates(self, tmp_path):
+        # Arrange -- the card's case (ii): every readable state entry matched
+        # yet the renders differed, because the tick-label font did not.
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        fig.canvas.draw()
+        ax.cla()
+        fr.save(fig, tmp_path / "ii.png", validate=False)
+        # Act
+        result = validate_recipe(fig, tmp_path / "ii.yaml")
+        # Assert -- was MSE 428.51 and invalid.
+        assert result.mse == 0.0 and result.valid
+
+    def test_cla_clears_the_recorded_calls(self, tmp_path):
+        # Arrange -- a cleared axes has nothing to replay.
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        fig.canvas.draw()
+        ax.cla()
+        # Act
+        fr.save(fig, tmp_path / "c.png", validate=False)
+        # Assert
+        import yaml
+
+        data = yaml.safe_load((tmp_path / "c.yaml").read_text())
+        assert data["axes"]["r0c0"]["calls"] == []
+
+    def test_a_plot_after_cla_is_kept(self, tmp_path):
+        # Arrange -- the control: content drawn AFTER cla() must survive.
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        fig.canvas.draw()
+        ax.cla()
+        ax.plot([1, 2, 3], [9, 4, 1], id="l2")
+        # Act
+        fr.save(fig, tmp_path / "k.png", validate=False)
+        # Assert
+        import yaml
+
+        data = yaml.safe_load((tmp_path / "k.yaml").read_text())
+        funcs = [c["function"] for c in data["axes"]["r0c0"]["calls"]]
+        assert funcs == ["plot"]
+
+    def test_a_figure_without_cla_is_unchanged(self, tmp_path):
+        # Arrange -- the no-op control: no cla, nothing dropped or re-styled.
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        ax.set_xlabel("kept")
+        fig.canvas.draw()
+        ax.plot([1, 2, 3], [9, 4, 1], id="l2")
+        fr.save(fig, tmp_path / "n.png", validate=False)
+        # Act
+        result = validate_recipe(fig, tmp_path / "n.yaml")
+        # Assert
+        assert result.mse == 0.0 and result.valid
+
+    def test_cla_then_replot_with_new_decorations_validates(self, tmp_path):
+        # Arrange -- the common pattern: clear and redraw with new labels/title.
+        fig, ax = fr.subplots()
+        ax.plot([1, 2, 3], [1, 4, 9], id="l")
+        fig.canvas.draw()
+        ax.cla()
+        ax.plot([1, 2, 3], [2, 5, 8], id="l3")
+        ax.set_xlabel("after")
+        ax.set_title("T")
+        fr.save(fig, tmp_path / "r.png", validate=False)
+        # Act
+        result = validate_recipe(fig, tmp_path / "r.yaml")
+        # Assert
+        assert result.mse == 0.0 and result.valid

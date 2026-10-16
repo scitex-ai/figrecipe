@@ -386,6 +386,132 @@ class TestTheSavePathWritesTheFinalVisibility:
         assert Path(png).exists() and Path(yml).exists()
 
 
+class TestCallsRecordedOutsideTheArtistFunnel:
+    """bar/imshow record outside the funnel, so they must note their own artists.
+
+    Card figrecipe-hidden-bar-imshow-not-registered-in-artist-funnel-20260927:
+    ``bar_plot`` / ``imshow_plot`` call ``recorder.record_call`` directly instead
+    of ``record_call_with_color_capture``, so the one funnel that calls
+    ``note_call_artists`` never saw their BarContainer/AxesImage -- no registry
+    entry, so ``call_is_hidden`` was never reached and a hidden bar/imshow
+    replayed drawn (measured 9129.84 / 23248.60). Each case below fails before
+    the repair and passes after it, driven through a REAL fr.save.
+    """
+
+    def test_a_hidden_bar_now_validates(self, tmp_path):
+        # Arrange -- the card's own bar case (was MSE 9129.84, invalid).
+        fig, ax = fr.subplots()
+        bars = ax.bar([1, 2, 3], [1, 4, 9], id="b")
+        fig.canvas.draw()
+        for patch in bars:
+            patch.set_visible(False)
+        png, yml = _save(fig, tmp_path / "bar.png")
+        # Act
+        result = validate_on_save(fig, yml, mse_threshold=100.0, image_path=png)
+        # Assert
+        assert result.mse == 0.0 and result.valid
+
+    def test_a_hidden_imshow_now_validates(self, tmp_path):
+        # Arrange -- the card's own imshow case (was MSE 23248.60, invalid).
+        import numpy as np
+
+        fig, ax = fr.subplots()
+        image = ax.imshow(np.arange(16).reshape(4, 4), id="i")
+        fig.canvas.draw()
+        image.set_visible(False)
+        png, yml = _save(fig, tmp_path / "imshow.png")
+        # Act
+        result = validate_on_save(fig, yml, mse_threshold=100.0, image_path=png)
+        # Assert
+        assert result.mse == 0.0 and result.valid
+
+    def test_a_hidden_bar_writes_visible_false(self, tmp_path):
+        # Arrange
+        fig, ax = fr.subplots()
+        bars = ax.bar([1, 2, 3], [1, 4, 9], id="b")
+        fig.canvas.draw()
+        for patch in bars:
+            patch.set_visible(False)
+        # Act
+        _, yml = _save(fig, tmp_path / "bar2.png")
+        # Assert
+        assert _visible_kwargs(yml) == [False]
+
+    def test_a_hidden_imshow_writes_visible_false(self, tmp_path):
+        # Arrange
+        import numpy as np
+
+        fig, ax = fr.subplots()
+        image = ax.imshow(np.arange(16).reshape(4, 4), id="i")
+        fig.canvas.draw()
+        image.set_visible(False)
+        # Act
+        _, yml = _save(fig, tmp_path / "imshow2.png")
+        # Assert
+        assert _visible_kwargs(yml) == [False]
+
+    def test_the_hidden_bar_patches_still_exist_in_the_replay(self, tmp_path):
+        # Arrange -- the data must survive: hiding asks not to PAINT, not to forget.
+        fig, ax = fr.subplots()
+        bars = ax.bar([1, 2, 3], [1, 4, 9], id="b")
+        fig.canvas.draw()
+        for patch in bars:
+            patch.set_visible(False)
+        png, _ = _save(fig, tmp_path / "bar3.png")
+        # Act
+        _, ax2 = fr.reproduce(png)
+        # Assert
+        assert len(ax2.patches) == 3 and all(not p.get_visible() for p in ax2.patches)
+
+    def test_the_hidden_imshow_image_still_exists_in_the_replay(self, tmp_path):
+        # Arrange
+        import numpy as np
+
+        fig, ax = fr.subplots()
+        image = ax.imshow(np.arange(16).reshape(4, 4), id="i")
+        fig.canvas.draw()
+        image.set_visible(False)
+        png, _ = _save(fig, tmp_path / "imshow3.png")
+        # Act
+        _, ax2 = fr.reproduce(png)
+        images = [c for c in ax2.get_children() if type(c).__name__ == "AxesImage"]
+        # Assert
+        assert len(images) == 1 and images[0].get_visible() is False
+
+    def test_a_shown_bar_gains_no_visible_kwarg(self, tmp_path):
+        # Arrange -- the control: a drawn-and-shown bar must be untouched.
+        fig, ax = fr.subplots()
+        ax.bar([1, 2, 3], [1, 4, 9], id="b")
+        # Act
+        _, yml = _save(fig, tmp_path / "bar4.png")
+        # Assert
+        assert _visible_kwargs(yml) == []
+
+    def test_a_shown_imshow_gains_no_visible_kwarg(self, tmp_path):
+        # Arrange -- the control: a drawn-and-shown imshow must be untouched.
+        import numpy as np
+
+        fig, ax = fr.subplots()
+        ax.imshow(np.arange(16).reshape(4, 4), id="i")
+        # Act
+        _, yml = _save(fig, tmp_path / "imshow4.png")
+        # Assert
+        assert _visible_kwargs(yml) == []
+
+    def test_a_shown_bar_keeps_its_recorded_call(self, tmp_path):
+        # Arrange -- nothing is dropped for the outside-funnel methods either.
+        fig, ax = fr.subplots()
+        ax.bar([1, 2, 3], [1, 4, 9], id="b")
+        before = {
+            key: ([c.function for c in rec.calls], [d.function for d in rec.decorations])
+            for key, rec in fig.record.axes.items()
+        }
+        # Act
+        _, yml = _save(fig, tmp_path / "bar5.png")
+        # Assert
+        assert _functions(yml) == before
+
+
 class TestNothingElseMoves:
     """The controls that make the annotation safe to ship."""
 
