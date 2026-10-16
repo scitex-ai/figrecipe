@@ -94,6 +94,20 @@ const hosted = root?.dataset.hosted === "true";
 const params = new URLSearchParams(window.location.search);
 const embedded = params.get("mode") === "embedded";
 
+// Hub-embedded handoff (live defect 2026-10-16: the hub page loads this
+// index.js bundle only, never workspace.js, so the body never mounts).
+// When this standalone bundle lands on a hub-embedded figrecipe container
+// instead of its own #root, pull in the workspace sync and skip the
+// standalone shell init below — there is no #root to mount into, and the
+// standalone shell must not drive the host's DOM. The workspace sync then
+// mounts with the container's declared mount (or logs + retries when the
+// host has not declared one).
+if (!root && document.querySelector('[data-app-slug="figrecipe"][data-embedded="true"]')) {
+  await import("./workspace").catch((e) =>
+    console.error("[figrecipe] workspace handoff failed:", e),
+  );
+}
+
 if (root) {
   document.documentElement.setAttribute("data-theme", "dark");
   ReactDOM.createRoot(root).render(
@@ -103,10 +117,14 @@ if (root) {
   );
 }
 
+// The standalone shell init below runs only on the standalone page (#root).
+// On a hub-embedded container the handoff above owns the mount; running
+// this here would drive the host's shell DOM a second time.
 // Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint.
 // Fetch bodies live in ./bootstrap/bootFetch: every failure class (blocked
 // fetch, HTTP error, malformed body) resolves to the degraded {success:false}
 // value instead of an unhandled rejection (boot-resilience-20261016).
+if (root) {
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
   ...createFileTreeFetcher({ fetchImpl: fetch, apiUrl }),
   getCsrfToken() {
@@ -481,3 +499,4 @@ bootstrapContextZoom(
   ],
   [],
 );
+} // end if (root): standalone shell init only
