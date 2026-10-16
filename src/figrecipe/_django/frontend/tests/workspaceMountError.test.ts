@@ -1,12 +1,16 @@
-/** Mount-failure gate (live defect 2026-10-16: shell only, body never mounts).
+/** Mount latch/retry gate (live defect 2026-10-16: shell only, body never mounts).
  *
  * workspace.ts evaluates at module scope on the hub-embedded path. A
- * throwing mountFigrecipeEditor (undeclared/invalid app mount) used to
- * escape module evaluation: React never mounted, no error UI, and the
- * half-latched mountedContainer blocked every later retry. The fix:
- * mount in try/catch, render a role=alert error state into the
- * container, latch mountedContainer only after success, and keep the
- * workspace:module-injected subscription so a later injection retries.
+ * throwing mountFigrecipeEditor used to escape module evaluation AND
+ * half-latch mountedContainer, blocking every later retry. The kept
+ * correction: mount in try/catch (log + return unlatched), latch only
+ * after success, keep the workspace:module-injected subscription so a
+ * later injection retries.
+ *
+ * Operator order 2026-10-16: STOP leaf-side error-state additions — the
+ * shared error-state primitive will live in the SDK. This gate enforces
+ * that: workspace.ts must contain NO leaf error UI (no role=alert, no
+ * mount-error DOM).
  *
  * workspace.ts imports CSS + the React bridge chain, so it cannot run
  * under plain node here (no esbuild/SDK vendored); this gate asserts
@@ -37,26 +41,17 @@ function check(name: string, cond: boolean) {
 const workspace = read("workspace.ts");
 console.log("workspaceMountError:");
 
-// The mount call is guarded: a throw resolves to UI, never escapes.
+// The mount call is guarded: a throw logs and returns, never escapes.
 check(
   "mountFigrecipeEditor runs inside try",
   /try\s*\{\s*\n?\s*mountFigrecipeEditor\(\{/.test(workspace),
 );
 check(
-  "mount failure renders renderMountError(container, …)",
-  /catch\s*\([^)]*\)\s*\{[^}]*renderMountError\(container/.test(workspace),
-);
-// The error state is an assertive alert, not a silent blank.
-check(
-  "renderMountError sets role=alert",
-  /function renderMountError[\s\S]*?setAttribute\("role",\s*"alert"\)/.test(
+  "mount failure path returns without latching",
+  /catch\s*\([^)]*\)\s*\{[^}]*console\.error\([^)]*mount failed[^)]*\)[^}]*return;/.test(
     workspace,
   ),
 );
-{
-  const body = workspace.match(/function renderMountError[\s\S]*?\n\}/)?.[0] ?? "";
-  check("renderMountError never rethrows", !/\bthrow\b/.test(body));
-}
 // Latch-after-success: a failed mount must not block later retries.
 {
   const mountCall = workspace.indexOf("mountFigrecipeEditor({");
@@ -77,6 +72,16 @@ check(
 check(
   "unmountFigrecipeEditor runs inside try",
   /try\s*\{\s*\n?\s*unmountFigrecipeEditor\(\)/.test(workspace),
+);
+// Operator stop-order: NO leaf-owned error-state UI in workspace.ts.
+check(
+  "no leaf error UI (no renderMountError)",
+  !/renderMountError/.test(workspace),
+);
+check("no leaf error UI (no role=alert)", !/role=.alert/.test(workspace));
+check(
+  "no leaf error UI (no mount-error DOM class)",
+  !/mount-error/.test(workspace),
 );
 
 if (failures) {
