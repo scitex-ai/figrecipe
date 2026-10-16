@@ -79,6 +79,10 @@ import type {
   SessionMessage,
 } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import {
+  createFileTreeFetcher,
+  createRecentFilesFetcher,
+} from "./bootstrap/bootFetch";
 
 // Mount React InnerEditor into app content area ONLY
 const root = document.getElementById("root");
@@ -99,26 +103,12 @@ if (root) {
   );
 }
 
-// Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint
+// Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint.
+// Fetch bodies live in ./bootstrap/bootFetch: every failure class (blocked
+// fetch, HTTP error, malformed body) resolves to the degraded {success:false}
+// value instead of an unhandled rejection (boot-resilience-20261016).
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
-  async fetchTree(rootPath?: string) {
-    // rootPath (breadcrumb navigation) re-roots the backend tree via the
-    // working_dir query param; omit it for the default launch folder.
-    const url = rootPath
-      ? `api/tree?working_dir=${encodeURIComponent(rootPath)}`
-      : "api/tree";
-    const resp = await fetch(apiUrl(url));
-    if (!resp.ok)
-      return {
-        success: false,
-        tree: [],
-        error: `HTTP ${resp.status}: ${resp.statusText}`,
-      };
-    const data = await resp.json();
-    // Return the absolute root the backend resolved so the breadcrumb shows the
-    // path from filesystem root.
-    return { success: true, tree: data.tree ?? [], rootPath: data.working_dir };
-  },
+  ...createFileTreeFetcher({ fetchImpl: fetch, apiUrl }),
   getCsrfToken() {
     const meta = document.querySelector<HTMLMetaElement>(
       'meta[name="csrf-token"]',
@@ -146,32 +136,11 @@ const fileTree = new WorkspaceFilesTree({
 });
 fileTree.initialize();
 
-// Shell repo monitor — polls api/files for recently modified files
+// Shell repo monitor — polls api/files for recently modified files.
+// Degraded [] on any failure class (boot-resilience-20261016); the monitor
+// retries on its next poll interval.
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
-  async fetchRecentFiles() {
-    const resp = await fetch(apiUrl("api/files?recent=true&limit=50"));
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    // Normalize response: api/files returns { files: [...] }
-    const files = data.files ?? data ?? [];
-    return files.map(
-      (f: {
-        path: string;
-        name?: string;
-        modified_at?: string;
-        mtime?: string;
-        action?: string;
-      }) => ({
-        path: f.path,
-        name: f.name ?? f.path.split("/").pop() ?? f.path,
-        modified_at: f.modified_at ?? f.mtime ?? new Date().toISOString(),
-        action: f.action,
-      }),
-    );
-  },
-  getFileUrl(path: string) {
-    return apiUrl(`api/file-content/${path}?raw=true`);
-  },
+  ...createRecentFilesFetcher({ fetchImpl: fetch, apiUrl }),
 };
 
 initMonitorToggle();
