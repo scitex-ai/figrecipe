@@ -399,7 +399,7 @@ function ViewTab() {
             type="button"
             onClick={() => setDarkMode(!darkMode)}
           >
-            <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} />
+            <i className={darkMode ? "fas fa-moon" : "fas fa-circle-half-stroke"} />
             {darkMode ? gettext("Dark") : gettext("Light")}
           </button>
         </div>

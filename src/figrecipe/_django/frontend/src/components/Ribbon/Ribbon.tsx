@@ -339,7 +339,7 @@ function StylePanel({ active }: { active: boolean }) {
 
       <RibbonGroup label={gettext("Appearance")} separator={false}>
         <RibbonButton
-          icon={darkMode ? "fas fa-moon" : "fas fa-sun"}
+          icon={darkMode ? "fas fa-moon" : "fas fa-circle-half-stroke"}
           label={darkMode ? gettext("Dark") : gettext("Light")}
           onClick={() => setDarkMode(!darkMode)}
           active={darkMode}

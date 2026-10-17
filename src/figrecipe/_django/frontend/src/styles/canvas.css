@@ -176,6 +176,22 @@
   opacity: 1;
 }
 
+/* ── Dotted journal-column guides (0.5 / 1.5 col) ───────────────────
+ * Rendered INSIDE .vis-canvas-container (after the opaque grid layer, before
+ * the figures) so they pan/zoom with the page, sit above the grid ruling and
+ * below the figures. Replaces the dashed guide baked into the old fixed CSS
+ * grid background, which the opaque zoom-aware layer covers. Decoration only.
+ */
+.column-guide {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  width: 0;
+  border-left: 2px dotted var(--accent-primary, #4a9b7e);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 /* ── Placed figure (composition object on canvas) ───── */
 
 .placed-figure {

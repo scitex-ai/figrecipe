@@ -147,10 +147,12 @@
   white-space: nowrap;
 }
 
-/* Active state (for toggles like snap, hitmap, rulers) */
+/* Active state (for toggles like snap, hitmap, rulers): full outline,
+   identical on every control (Snap-style) — no partial glows. */
 .ribbon-btn--active {
   background: rgba(139, 148, 158, 0.2);
-  border-color: var(--accent-primary);
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
 }
 
 .ribbon-btn--active i {
