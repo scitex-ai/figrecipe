@@ -23,12 +23,14 @@ import {
   canStartCanvasPan,
   clampZoom,
   dragView,
+  fitContentView,
   panDelta,
   pinchDistance,
   pinchMidpoint,
   pinchUpdate,
   pointerKindOf,
   sanitizeView,
+  unionFigureBox,
 } from "../src/components/Canvas/canvasPan.ts";
 
 let passed = 0;
@@ -313,6 +315,75 @@ ok("the auto-fit is remembered in the SESSION store, not in a component ref", ()
   );
   assert.match(canvas, /store\.canvasFitKey === figuresKey/);
   assert.doesNotMatch(canvas, /didAutoFit/);
+});
+
+ok("unionFigureBox spans the placed footprints and skips the unusable", () => {
+  // Two figures: union covers both; the sizeless third is ignored.
+  const box = unionFigureBox([
+    { x: 0, y: 0, imgSize: { width: 800, height: 600 } },
+    { x: 900, y: 100, imgSize: { width: 400, height: 300 } },
+    { x: 50, y: 50, imgSize: undefined },
+  ]);
+  assert.deepEqual(box, { x: 0, y: 0, w: 1300, h: 600 });
+  assert.equal(unionFigureBox([]), null);
+  assert.equal(
+    unionFigureBox([{ x: 0, y: 0, imgSize: { width: 0, height: 10 } }]),
+    null,
+  );
+});
+
+ok("fitContentView fills max-size and centers the box", () => {
+  // 800x600 figure in a 1440x900 viewport (40px buffer): height binds,
+  // zoom = 860/600 ≈ 1.4333, and the box lands exactly centered.
+  const view = fitContentView(1440, 900, { x: 0, y: 0, w: 800, h: 600 });
+  if (view === null) throw new Error("expected a fitted view");
+  const eps = 1e-9;
+  assert.ok(Math.abs(view.zoom - 860 / 600) < eps);
+  // Centered: left margin equals right margin, top equals bottom.
+  const left = view.panX + view.zoom * 0;
+  const right = 1440 - (view.panX + view.zoom * 800);
+  const top = view.panY + view.zoom * 0;
+  const bottom = 900 - (view.panY + view.zoom * 600);
+  assert.ok(Math.abs(left - right) < eps && left > 0);
+  assert.ok(Math.abs(top - bottom) < eps && top > 0);
+});
+
+ok("fitContentView has no 1.0 cap but respects the zoom clamp", () => {
+  // A 200x100 figure in the same viewport would fit at 7x — clamped to MAX.
+  const big = fitContentView(1440, 900, { x: 0, y: 0, w: 200, h: 100 });
+  if (big === null) throw new Error("expected a fitted view");
+  assert.equal(big.zoom, MAX_ZOOM);
+  // A page-size box still fits below 1.0 (no forced upscale either).
+  const small = fitContentView(1440, 900, { x: 0, y: 0, w: 2126, h: 2953 });
+  if (small === null) throw new Error("expected a fitted view");
+  assert.ok(small.zoom < 1 && small.zoom >= MIN_ZOOM);
+});
+
+ok("fitContentView rejects degenerate input instead of NaN", () => {
+  assert.equal(fitContentView(1440, 900, { x: 0, y: 0, w: 0, h: 600 }), null);
+  assert.equal(fitContentView(0, 900, { x: 0, y: 0, w: 800, h: 600 }), null);
+  assert.equal(
+    fitContentView(1440, 900, { x: NaN, y: 0, w: 800, h: 600 }),
+    null,
+  );
+});
+
+ok("the arrival fit targets FIGURE content, falling back to the page", () => {
+  // Operator mandate (max-size default): the auto-fit effect and the Fit
+  // control fit the union box when figures exist; the page fit is only the
+  // empty-canvas fallback.
+  const canvas = readFileSync(
+    join(here, "..", "src", "components", "Canvas", "Canvas.tsx"),
+    "utf8",
+  );
+  assert.match(canvas, /unionFigureBox\(placedFigures\)/);
+  assert.match(canvas, /if \(box\) zoomToContent\(box\);\s*\n?\s*else zoomToFit\(CANVAS_W, CANVAS_H\)/);
+  const hook = readFileSync(
+    join(here, "..", "src", "components", "Canvas", "useZoomPan.ts"),
+    "utf8",
+  );
+  assert.match(hook, /const zoomToContent = useCallback/);
+  assert.match(hook, /fitContentView\(\s*\n?\s*container\.clientWidth/);
 });
 
 console.log("\nAll canvasPan checks passed (" + passed + " assertion-groups).");

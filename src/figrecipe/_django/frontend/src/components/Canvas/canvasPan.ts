@@ -173,3 +173,76 @@ export function pinchUpdate(start: PinchStart, a: Point, b: Point): ViewState {
   const panY = mid.y - (anchor.y - base.panY) * ratio;
   return sanitizeView({ zoom, panX, panY });
 }
+
+/** A content rectangle in canvas px (a figure's placed footprint). */
+export interface ContentBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Minimal placed-figure shape for the union: position + rendered size. */
+export interface FigureFootprint {
+  x: number;
+  y: number;
+  imgSize?: { width: number; height: number } | null;
+}
+
+/** Union bounding box of the placed figures. Entries without a finite
+ * positive size are skipped; null when nothing usable remains. */
+export function unionFigureBox(figures: FigureFootprint[]): ContentBox | null {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const fig of figures) {
+    const w = fig.imgSize?.width ?? NaN;
+    const h = fig.imgSize?.height ?? NaN;
+    if (
+      !Number.isFinite(fig.x) ||
+      !Number.isFinite(fig.y) ||
+      !(w > 0) ||
+      !(h > 0)
+    ) {
+      continue;
+    }
+    if (fig.x < minX) minX = fig.x;
+    if (fig.y < minY) minY = fig.y;
+    if (fig.x + w > maxX) maxX = fig.x + w;
+    if (fig.y + h > maxY) maxY = fig.y + h;
+  }
+  if (!(minX <= maxX) || !(minY <= maxY)) return null;
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+/** Fit a content box max-size and centered: zoom fills the viewport
+ * (NO 1.0 cap — a small figure renders large, clamped only to
+ * [MIN_ZOOM, MAX_ZOOM]) and the pan centers the box. Null for degenerate
+ * input (the caller keeps its previous view / falls back to page fit). */
+export function fitContentView(
+  containerW: number,
+  containerH: number,
+  box: ContentBox,
+  buffer = 40,
+): ViewState | null {
+  if (
+    !Number.isFinite(containerW) ||
+    !Number.isFinite(containerH) ||
+    !Number.isFinite(box.x) ||
+    !Number.isFinite(box.y) ||
+    !(box.w > 0) ||
+    !(box.h > 0)
+  ) {
+    return null;
+  }
+  const availW = containerW - buffer;
+  const availH = containerH - buffer;
+  if (!(availW > 0) || !(availH > 0)) return null;
+  const zoom = clampZoom(Math.min(availW / box.w, availH / box.h));
+  // Screen position of box point p is pan + zoom*p: center the box by
+  // putting its scaled extent in the middle of the container.
+  const panX = (containerW - zoom * box.w) / 2 - zoom * box.x;
+  const panY = (containerH - zoom * box.h) / 2 - zoom * box.y;
+  return sanitizeView({ zoom, panX, panY });
+}

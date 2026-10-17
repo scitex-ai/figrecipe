@@ -30,12 +30,13 @@ import {
   applyPan,
   canStartCanvasPan,
   clampZoom,
+  fitContentView,
   panDelta,
   pinchUpdate,
   pointerKindOf,
   sanitizeView,
 } from "./canvasPan";
-import type { GestureOrigin, PinchStart, Point } from "./canvasPan";
+import type { ContentBox, GestureOrigin, PinchStart, Point } from "./canvasPan";
 
 interface ZoomPanState {
   zoom: number;
@@ -418,6 +419,23 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     setState({ zoom: INITIAL_ZOOM, panX: 0, panY: 0 });
   }, []);
 
+  // Operator mandate (max-size default): fit the FIGURE content — union of
+  // placed footprints — centered, not the page. Null/degenerate input keeps
+  // the current view; the caller falls back to page fit.
+  const zoomToContent = useCallback(
+    (box: ContentBox) => {
+      const container = containerRef.current;
+      if (!container) return;
+      const fitted = fitContentView(
+        container.clientWidth,
+        container.clientHeight,
+        box,
+      );
+      if (fitted) setState(fitted);
+    },
+    [containerRef],
+  );
+
   // Never hand a non-finite transform to the DOM: translate(NaNpx) drops the
   // whole rulers/canvas layer, and the grid ladder would degenerate with it.
   const view = sanitizeView(state);
@@ -430,6 +448,7 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
     zoomIn,
     zoomOut,
     zoomToFit,
+    zoomToContent,
     resetView,
     handleRulerMouseDown,
     handleRulerDoubleClick,

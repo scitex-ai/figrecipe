@@ -15,6 +15,7 @@ import { CanvasGrid } from "./CanvasGrid";
 import { PlacedFigure } from "./PlacedFigure";
 import { HorizontalRuler, VerticalRuler } from "./Rulers";
 import { SnapGuides } from "./SnapGuides";
+import { unionFigureBox } from "./canvasPan";
 import { useZoomPan } from "./useZoomPan";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
@@ -50,6 +51,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
     zoomIn,
     zoomOut,
     zoomToFit,
+    zoomToContent,
     resetView,
     transformStyle,
     isPanning,
@@ -59,8 +61,12 @@ export function Canvas({ active = true }: { active?: boolean }) {
 
   // Expose zoom controls to store for toolbar access
   const fitCanvas = useCallback(() => {
-    zoomToFit(CANVAS_W, CANVAS_H);
-  }, [zoomToFit]);
+    // Fit the FIGURE content when figures exist (max-size, centered);
+    // an empty canvas falls back to the page.
+    const box = unionFigureBox(useEditorStore.getState().placedFigures);
+    if (box) zoomToContent(box);
+    else zoomToFit(CANVAS_W, CANVAS_H);
+  }, [zoomToContent, zoomToFit]);
 
   useEffect(() => {
     useEditorStore.setState({
@@ -82,8 +88,14 @@ export function Canvas({ active = true }: { active?: boolean }) {
     const store = useEditorStore.getState();
     if (store.canvasFitKey === figuresKey) return;
     store.setCanvasFitKey(figuresKey);
-    if (placedFigures.length > 0) zoomToFit(CANVAS_W, CANVAS_H);
-  }, [active, figuresKey, placedFigures.length, zoomToFit]);
+    // Max-size default (operator mandate): fit the FIGURE content centered;
+    // an empty canvas falls back to the page.
+    if (placedFigures.length > 0) {
+      const box = unionFigureBox(placedFigures);
+      if (box) zoomToContent(box);
+      else zoomToFit(CANVAS_W, CANVAS_H);
+    }
+  }, [active, figuresKey, placedFigures.length, zoomToContent, zoomToFit]);
 
   // Mousedown on empty canvas → the view pans (useZoomPan reads the same
   // mousedown). Shift+left-drag keeps the marquee for rubber-band selection, and
