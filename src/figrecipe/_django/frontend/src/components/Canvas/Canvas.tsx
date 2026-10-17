@@ -12,6 +12,7 @@ import { CANVAS_H, CANVAS_W, DPI } from "../../hooks/useSnap";
 import { useEditorStore } from "../../store/useEditorStore";
 import { ContextMenu } from "../ContextMenu/ContextMenu";
 import { CanvasGrid } from "./CanvasGrid";
+import { ColumnGuides } from "./ColumnGuides";
 import { PlacedFigure } from "./PlacedFigure";
 import { HorizontalRuler, VerticalRuler } from "./Rulers";
 import { SnapGuides } from "./SnapGuides";
@@ -235,6 +236,9 @@ export function Canvas({ active = true }: { active?: boolean }) {
         >
           {/* Grid first: it is the page ruling, everything else sits on it */}
           <CanvasGrid zoom={zoom} dark={darkMode} />
+          {/* Dotted journal-column guides (0.5 / 1.5 col): layout aids that
+              pan/zoom with the page and never intercept pointer input. */}
+          <ColumnGuides />
           {placedFigures.length === 0 ? (
             <div className="canvas-empty">
               <p>{gettext("No figure loaded")}</p>

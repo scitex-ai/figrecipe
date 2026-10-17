@@ -477,8 +477,11 @@
 
 .pane-header-btn--active {
   background: rgba(139, 148, 158, 0.2);
-  border-color: var(--accent-primary);
   color: var(--vis-text-primary);
+  /* Full-outline active state (Snap-style): the outline is the indicator,
+     identical on every control — no partial glows. */
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
 }
 
 .pane-header-buttons {
