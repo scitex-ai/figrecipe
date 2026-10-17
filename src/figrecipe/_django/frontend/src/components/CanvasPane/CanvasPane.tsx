@@ -185,7 +185,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             aria-label={darkMode ? gettext("Switch to light mode") : gettext("Switch to dark mode")}
             onClick={() => setDarkMode(!darkMode)}
           >
-            <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} aria-hidden="true" />
+            <i className={darkMode ? "fas fa-moon" : "fas fa-circle-half-stroke"} aria-hidden="true" />
             <span className="pane-header-btn__label">{gettext("Theme")}</span>
           </button>
         </div>

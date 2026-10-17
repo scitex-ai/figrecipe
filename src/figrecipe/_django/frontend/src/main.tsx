@@ -44,6 +44,8 @@ import type { TerminalConnectionAdapter } from "@scitex/sdk/ui/ts/shell/terminal
 // Vanilla TS shell file tree — WorkspaceFilesTree (full-featured, adapter-based)
 import { WorkspaceFilesTree } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
 import type { FileTreeAdapter } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
+import type { TreeItem } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
+import type { RecentFileEntry } from "@scitex/sdk/ui/ts/shell/repo-monitor/index.ts";
 
 // Vanilla TS shell toolbar + keyboard shortcuts
 import {
@@ -103,8 +105,9 @@ const embedded = params.get("mode") === "embedded";
 // mounts with the container's declared mount (or logs + retries when the
 // host has not declared one).
 if (!root && document.querySelector('[data-app-slug="figrecipe"][data-embedded="true"]')) {
-  await import("./workspace").catch((e) =>
-    console.error("[figrecipe] workspace handoff failed:", e),
+  void import("./workspace").then(
+    () => undefined,
+    (e) => console.error("[figrecipe] workspace handoff failed:", e),
   );
 }
 
@@ -125,8 +128,12 @@ if (root) {
 // fetch, HTTP error, malformed body) resolves to the degraded {success:false}
 // value instead of an unhandled rejection (boot-resilience-20261016).
 if (root) {
+const _fileTreeFetcher = createFileTreeFetcher({ fetchImpl: fetch, apiUrl });
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
-  ...createFileTreeFetcher({ fetchImpl: fetch, apiUrl }),
+  fetchTree: (rootPath?: string) =>
+    _fileTreeFetcher
+      .fetchTree(rootPath)
+      .then((result) => ({ ...result, tree: result.tree as TreeItem[] })),
   getCsrfToken() {
     const meta = document.querySelector<HTMLMetaElement>(
       'meta[name="csrf-token"]',
@@ -157,8 +164,12 @@ fileTree.initialize();
 // Shell repo monitor — polls api/files for recently modified files.
 // Degraded [] on any failure class (boot-resilience-20261016); the monitor
 // retries on its next poll interval.
+const _recentFilesFetcher = createRecentFilesFetcher({ fetchImpl: fetch, apiUrl });
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
-  ...createRecentFilesFetcher({ fetchImpl: fetch, apiUrl }),
+  fetchRecentFiles: () =>
+    _recentFilesFetcher
+      .fetchRecentFiles()
+      .then((files) => files as RecentFileEntry[]),
 };
 
 initMonitorToggle();
