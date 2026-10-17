@@ -10,6 +10,9 @@
     "isEntry": true,
     "imports": [
       "_mobile.js"
+    ],
+    "dynamicImports": [
+      "src/workspace.ts"
     ]
   },
   "src/workspace.ts": {
@@ -17,6 +20,7 @@
     "name": "workspace",
     "src": "src/workspace.ts",
     "isEntry": true,
+    "isDynamicEntry": true,
     "imports": [
       "_mobile.js"
     ]
