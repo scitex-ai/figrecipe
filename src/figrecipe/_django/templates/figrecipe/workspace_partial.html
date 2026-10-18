@@ -5,6 +5,7 @@
         {% scitex_project_provider_meta %}
     {% endif %}
     <link rel="stylesheet" crossorigin href="{% app_static 'figrecipe/assets/index.css' %}">
+    {% if not app_header_rendered %}{% include "figrecipe/_app_header.html" %}{% endif %}
     <div id="app-mount"
          class="figrecipe-workspace"
          data-app-slug="figrecipe"
