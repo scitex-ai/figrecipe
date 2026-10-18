@@ -280,6 +280,7 @@ msgstr "インポートに失敗しました: %s"
 
 #: frontend/src/components/DataTable/DataTable.tsx
 #: frontend/src/store/useEditorStore.ts
+#: frontend/src/InnerEditor.tsx
 msgid "Data"
 msgstr "データ"
 
@@ -1194,10 +1195,6 @@ msgid "This plot type cannot be drawn from table columns yet; pick Line, Scatter
 msgstr "この種類は表の列からはまだ描けません。折れ線・散布図・棒・分布・統計から選んでください。"
 
 #: frontend/src/InnerEditor.tsx
-msgid "Data"
-msgstr "データ"
-
-#: frontend/src/InnerEditor.tsx
 msgid "Data table — its own full-width page"
 msgstr "データ表 — 全幅の専用ページ"
 
@@ -1342,3 +1339,236 @@ msgstr "ヒント：選択中のグリッドの別のセルをクリックする
 #: frontend/src/components/Properties/ElementDetails.tsx
 msgid "Row"
 msgstr "行"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Clear %s cell"
+msgid_plural "Clear %s cells"
+msgstr[0] ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete %s row"
+msgid_plural "Delete %s rows"
+msgstr[0] ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Edit %s cell"
+msgid_plural "Edit %s cells"
+msgstr[0] ""
+
+#: frontend/components/CanvasPane/CanvasPane.tsx
+#, javascript-format, python-format
+msgid "%s variants"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add a column at the end of the table"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add a row below the selected one"
+msgstr ""
+
+#: frontend/components/Gallery/GalleryStart.tsx
+#: frontend/components/ObjectTree/ObjectTree.tsx
+msgid "Add an example recipe and its data to this project"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Add column '%s'"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add row"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Add row %s"
+msgstr ""
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+msgid "Click a plot element to select it; Escape clears the selection"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Confirm deleting an assigned column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Confirm deleting the last column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete column '%s'"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete column '%s'? It is the %s column — that assignment will be cleared."
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete row"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete row %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete the last column '%s'?"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete the selected column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete the selected row"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Duplicate column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Duplicate column '%s' as '%s'"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Duplicate the selected column beside itself"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Edit %s in row %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Edit table"
+msgstr ""
+
+#: frontend/InnerEditor.tsx
+msgid "FigRecipe"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "No data table to edit"
+msgstr ""
+
+#: frontend/components/Gallery/VariantChooser.tsx
+msgid "Plot from data columns…"
+msgstr ""
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+msgid "Plot hit regions"
+msgstr ""
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+msgid "Plot hit regions are not loaded yet"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Redid: %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Redo %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Redo the last undone table change"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Rename"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Rename column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Rename column '%s'"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Rename column '%s' to '%s'"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Rename the selected column"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Save failed: %s"
+msgstr ""
+
+#: frontend/components/Gallery/VariantChooser.tsx
+msgid "See all templates…"
+msgstr ""
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+#, javascript-format, python-format
+msgid "Select %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Select a column to delete"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Select a column to duplicate"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Select a row to delete"
+msgstr ""
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+#, javascript-format, python-format
+msgid "Selected: %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Table editing"
+msgstr ""
+
+#: frontend/components/CanvasPane/CanvasPane.tsx
+msgid "Toggle hit regions — click a plot element to select it"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Undid: %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Undo %s"
+msgstr ""
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Undo last table change"
+msgstr ""
