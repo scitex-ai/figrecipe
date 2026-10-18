@@ -84,6 +84,11 @@ interface EditorState {
   // ── Data ────────────────────────────────────────────────
   datatableTabs: Record<string, TabData>;
   activeTabId: string | null;
+  /** The stored project table's revision (opaque string from the server, null
+   *  when the shown table did not come from the project). The save queue sends
+   *  it as base_revision so a write based on a superseded table is refused
+   *  (409) instead of discarding newer edits. */
+  datatableRevision: string | null;
 
   // ── Style ───────────────────────────────────────────────
   darkMode: boolean;
@@ -231,6 +236,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   projectName: null,
   datatableTabs: {},
   activeTabId: null,
+  datatableRevision: null,
   elementDataMap: {},
   highlightedDataRows: [],
   calls: {},
@@ -431,6 +437,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const data = await api.get<{
         columns: ColumnDef[];
         rows: (string | number)[][];
+        revision?: string | null;
         element_data_map?: Record<
           string,
           { columns: string[]; row_indices: number[] }
@@ -464,6 +471,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         datatableTabs: { main: tab },
         activeTabId: "main",
         elementDataMap,
+        datatableRevision:
+          typeof data.revision === "string" ? data.revision : null,
       });
     } catch (e) {
       console.warn("[Editor] No datatable data available:", e);

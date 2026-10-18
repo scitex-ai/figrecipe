@@ -28,17 +28,26 @@ def _dtype(values):
     return "numeric" if numeric else "string"
 
 
-def _table_response(names, rows, source):
-    """The editor store reads ``columns[].name`` and positional ``rows``."""
+def _table_response(names, rows, source, revision):
+    """The editor store reads ``columns[].name`` and positional ``rows``.
+
+    ``revision`` is the stored table's current revision (opaque string) when
+    the table came from the project, else None. The pane sends it back as
+    ``base_revision`` so a write based on a superseded table is refused (409)
+    instead of silently discarding newer edits.
+    """
     columns = [
         {"name": name, "dtype": _dtype([row[i] for row in rows if i < len(row)])}
         for i, name in enumerate(names)
     ]
-    return JsonResponse({"columns": columns, "rows": rows, "source": source})
+    return JsonResponse(
+        {"columns": columns, "rows": rows, "source": source, "revision": revision}
+    )
 
 
 def handle_datatable_data(request, editor):
-    return _table_response(*_current_table(editor))
+    names, rows, source, revision = _current_table(editor)
+    return _table_response(names, rows, source, revision)
 
 
 def _project_working_dir(editor, is_selected):
@@ -52,7 +61,7 @@ def _project_working_dir(editor, is_selected):
 
 
 def _current_table(editor):
-    """The table the Data pane shows, as ``(names, rows, source)``.
+    """The table the Data pane shows, as ``(names, rows, source, revision)``.
 
     Order: the table this PROJECT has stored, then this session's in-memory
     import, then the figure's recorded data. The stored table comes first
@@ -60,10 +69,15 @@ def _current_table(editor):
     lives on one EditorState in one process, it survives a server restart and is
     visible to any process opening the same project (Private Beta spec: project
     data stays connected to the project).
+
+    ``revision`` is the stored table's revision when ``source`` is
+    ``"project"``, else None: only the project copy has cross-client
+    staleness to guard.
     """
     from figrecipe._django._project_table import (
         is_selected_project_dir,
         load_project_table,
+        table_revision,
     )
     from figrecipe._editor._helpers import to_json_serializable
 
@@ -73,14 +87,18 @@ def _current_table(editor):
     )
     if stored:
         names, rows = stored
-        return names, rows, "project"
+        revision = table_revision(
+            getattr(editor, "recipe_path", None),
+            _project_working_dir(editor, is_selected_project_dir),
+        )
+        return names, rows, "project", revision
 
     imported = getattr(editor, "imported_table", None)
     if imported:
-        return imported["names"], imported["rows"], "import"
+        return imported["names"], imported["rows"], "import", None
 
     if not hasattr(editor.fig, "record") or not editor.fig.record:
-        return [], [], "empty"
+        return [], [], "empty", None
 
     record = editor.fig.record
     columns = []
@@ -144,11 +162,11 @@ def _current_table(editor):
                         data_rows[i][y_col] = yv
 
     rows = [[row.get(col) for col in columns] for row in data_rows]
-    return columns, rows, "record"
+    return columns, rows, "record", None
 
 
 def _columns_from_table(editor, wanted):
-    names, rows, _ = _current_table(editor)
+    names, rows, _, _ = _current_table(editor)
     return {
         name: [row[i] for row in rows if i < len(row) and row[i] not in (None, "")]
         for i, name in enumerate(names)
@@ -260,7 +278,15 @@ def handle_datatable_plot(request, editor):
 
 
 def handle_datatable_import(request, editor):
-    """Import CSV/TSV/JSON data into the datatable."""
+    """Import CSV/TSV/JSON data into the datatable.
+
+    ``base_revision`` (optional, opaque string from a ``datatable/data`` or
+    import response) makes the write conditional: when the stored table no
+    longer carries it, the write is refused with 409 carrying the CURRENT
+    revision instead of silently discarding newer edits. Absent
+    ``base_revision`` keeps the legacy blind write — the explicit-replace
+    paths (file import, sample data) intend to overwrite whatever is stored.
+    """
     import csv
     import io
     import json as _json
@@ -268,6 +294,11 @@ def handle_datatable_import(request, editor):
     data = json.loads(request.body) if request.body else {}
     content = data.get("content", "")
     fmt = data.get("format", "csv").lower()
+    base_revision = data.get("base_revision")
+    if base_revision is not None and not isinstance(base_revision, str):
+        return JsonResponse(
+            {"error": "base_revision must be the opaque revision string"}, status=400
+        )
 
     try:
         if fmt == "json":
@@ -318,17 +349,35 @@ def handle_datatable_import(request, editor):
         # ...and written into the PROJECT, so the edit outlives this process and
         # stays attached to the recipe it belongs to (the in-memory attribute
         # alone is lost on restart and invisible to any other process).
+        # Conditional on base_revision when the client sent one: a write based
+        # on a superseded table is refused (409) rather than discarding the
+        # newer edits another client stored meanwhile.
         from figrecipe._django._project_table import (
+            TableRevisionConflict,
             is_selected_project_dir,
             save_project_table,
+            table_revision,
         )
 
-        save_project_table(
-            getattr(editor, "recipe_path", None),
-            _project_working_dir(editor, is_selected_project_dir),
-            list(headers),
-            rows,
-        )
+        recipe_path = getattr(editor, "recipe_path", None)
+        project_working_dir = _project_working_dir(editor, is_selected_project_dir)
+        try:
+            save_project_table(
+                recipe_path,
+                project_working_dir,
+                list(headers),
+                rows,
+                expected_revision=base_revision,
+            )
+        except TableRevisionConflict as exc:
+            return JsonResponse(
+                {
+                    "error": "Table changed since it was read; reload and retry",
+                    "revision": exc.current_revision,
+                },
+                status=409,
+            )
+        revision = table_revision(recipe_path, project_working_dir)
 
         columns = []
         for i, name in enumerate(headers):
@@ -342,7 +391,7 @@ def handle_datatable_import(request, editor):
                 }
             )
 
-        return JsonResponse({"columns": columns, "rows": rows})
+        return JsonResponse({"columns": columns, "rows": rows, "revision": revision})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
