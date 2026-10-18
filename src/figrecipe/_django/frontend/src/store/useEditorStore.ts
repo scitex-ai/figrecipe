@@ -84,6 +84,10 @@ interface EditorState {
   // ── Data ────────────────────────────────────────────────
   datatableTabs: Record<string, TabData>;
   activeTabId: string | null;
+  /** The last datatable load failure's user-facing message, null when the
+   *  table loaded fine. The Data pane renders it with a retry affordance
+   *  instead of leaving a silently empty table (error-fallback-ui). */
+  datatableLoadError: string | null;
 
   // ── Style ───────────────────────────────────────────────
   darkMode: boolean;
@@ -231,6 +235,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   projectName: null,
   datatableTabs: {},
   activeTabId: null,
+  datatableLoadError: null,
   elementDataMap: {},
   highlightedDataRows: [],
   calls: {},
@@ -427,6 +432,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   loadDatatable: async (options?) => {
+    set({ datatableLoadError: null });
     try {
       const data = await api.get<{
         columns: ColumnDef[];
@@ -467,6 +473,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       });
     } catch (e) {
       console.warn("[Editor] No datatable data available:", e);
+      // Fail loud, not blank: the Data pane renders this with a retry
+      // affordance. The technical detail stays in the console above; the
+      // user sees a translated explanation.
+      set({ datatableLoadError: gettext("Could not load the data table") });
     }
   },
 

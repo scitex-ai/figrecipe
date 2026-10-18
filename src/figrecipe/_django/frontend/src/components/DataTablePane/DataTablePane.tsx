@@ -130,6 +130,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
   const {
     datatableTabs,
     activeTabId,
+    datatableLoadError,
     highlightedDataRows: _highlightedDataRows,
     placedFigures,
     removeFigure,
@@ -972,19 +973,34 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
       >
         {tabs.length === 0 ? (
           /* No tables: the starter grid used to sit here with nothing to do
-             in it. Name the three ways in instead. */
-          <div className="datatable-empty-state">
+             in it. Name the three ways in instead — unless the last load
+             FAILED, in which case the table is not empty, it is unreachable:
+             say so with a retry (error-fallback-ui), never a silent blank. */
+          <div className="datatable-empty-state" role={datatableLoadError ? "alert" : undefined}>
             <i
-              className="fas fa-table datatable-empty-icon"
+              className={`fas ${datatableLoadError ? "fa-triangle-exclamation" : "fa-table"} datatable-empty-icon`}
               aria-hidden="true"
             />
             <div className="datatable-empty-title">
-              {gettext("No tables")}
+              {datatableLoadError ?? gettext("No tables")}
             </div>
             <div className="datatable-empty-hint">
-              {gettext("Import a CSV file, paste cells from a spreadsheet, or load a sample table to begin.")}
+              {datatableLoadError
+                ? gettext("Check the connection, then try again — your tables are still stored.")
+                : gettext("Import a CSV file, paste cells from a spreadsheet, or load a sample table to begin.")}
             </div>
             <div className="datatable-empty-actions">
+              {datatableLoadError ? (
+                <button
+                  type="button"
+                  className="data-pane__btn datatable-empty-cta"
+                  onClick={() => void loadDatatable()}
+                >
+                  <i className="fas fa-rotate-right" aria-hidden="true" />
+                  {gettext("Retry")}
+                </button>
+              ) : (
+              <>
               <button
                 type="button"
                 className="data-pane__btn datatable-empty-cta"
@@ -1009,6 +1025,8 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 <i className="fas fa-wand-magic-sparkles" aria-hidden="true" />
                 {gettext("Load sample data")}
               </button>
+              </>
+              )}
             </div>
           </div>
         ) : (
