@@ -10,6 +10,7 @@
           href="{% app_static 'figrecipe/assets/index.css' %}">
 {% endblock %}
 {% block scitex_app_content %}
+    {% if not app_header_rendered %}{% include "figrecipe/_app_header.html" %}{% endif %}
     <div id="root"
          data-working-dir="{{ working_dir|default:'' }}"
          data-hosted="{{ hosted|yesno:'true,false' }}"
