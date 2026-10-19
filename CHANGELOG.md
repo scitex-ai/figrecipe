@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-10-19
+
+Datatable revision safety + error-state retry, SSoT header adoption
+(PR #466-#475):
+
+### Added
+- Datatable revision-gated project saves: stale writes refused
+  (PR #469).
+- Datatable failed loads render an error state with retry (PR #471).
+- Shared SSoT header row adopted in FigRecipe templates (PR #466).
+
+### Fixed
+- Standalone editor respects stored theme instead of forcing dark on
+  boot (PR #468).
+- Injected fetchImpl binding so the Files pane loads (PR #473).
+- Single header row in the standalone editor (PR #474).
+- Plot-tab onboarding strip dropped; app-side launcher space reserves
+  reclaimed (PR #475).
+- JA catalog coverage backfilled for 50+ frontend strings (PR #472).
+
 ## [0.36.4] - 2026-10-15
 
 Leaf-migration pilot, logging ownership, composition adoption (PR #453, #454,
