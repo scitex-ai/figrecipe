@@ -156,4 +156,14 @@ await ok("fetchRecentFiles normalizes entries on success", async () => {
   assert.equal(files[1].modified_at, "2026-10-15T00:00:00Z");
 });
 
+// main.tsx must never inject the bare global: a detached `fetch` reference
+// loses its Window receiver and throws "Illegal invocation" on first call
+// (Files pane, 2026-10-19 — card
+// figrecipe-files-pane-fetch-illegal-invocation-20261019). The injected impl
+// must call fetch as a bare global (arrow) or carry a bound receiver.
+await ok("main.tsx injects a bound fetch, never the bare global", () => {
+  const main = read("main.tsx");
+  assert.doesNotMatch(main, /fetchImpl:\s*fetch\s*[,}]/);
+});
+
 console.log(`\nall boot-resilience checks passed (${passed} assertion-groups).`);
