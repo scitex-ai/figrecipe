@@ -254,12 +254,14 @@ ok("every table write goes through the queue", () => {
   // Arrange
   const pane = read("components/DataTablePane/DataTablePane.tsx");
   // Act / Assert: one write path, so no edit can bypass serialisation. The
-  // queue's write is the one that carries a serialised table; a user-file
+  // queue's write is the one that carries a serialised table, and it is
+  // CONDITIONAL: it sends the last adopted revision as base_revision so a
+  // write based on a superseded table is refused (409). A user-file
   // import (handleImportCsv) is a different gesture with its own payload.
   assert.match(pane, /createTableSaveQueue\(/);
   assert.match(
     pane,
-    /createTableSaveQueue\(async \(csv: string\) => \{[\s\S]{0,240}?api\.post\("datatable\/import", \{ content: csv, format: "csv" \}\)/,
+    /createTableSaveQueue\(async \(csv: string\) => \{[\s\S]{0,400}?api\.post<[^>]*>\(\s*"datatable\/import",\s*\{ content: csv, format: "csv", base_revision: base \}/,
   );
   assert.match(
     pane,
@@ -273,10 +275,11 @@ ok("the pane adopts the server's table only for an applied save", () => {
   // Act / Assert
   assert.match(pane, /if \(outcome\.status === "failed"\)/);
   assert.match(pane, /if \(outcome\.status !== "applied"\) return;/);
-  // The reload sits behind that gate.
+  // The applied-branch reload sits behind that gate (the 409 branch above has
+  // its own `reloaded` guard: a newer queued edit speaks for the table).
   assert.ok(
     pane.indexOf('if (outcome.status !== "applied") return;') <
-      pane.indexOf("await loadDatatable("),
+      pane.indexOf("await loadDatatable({ isCurrent:"),
     "the reload must not run for a superseded or failed save",
   );
 });
@@ -304,7 +307,7 @@ ok("a user-file import waits for pending table edits to drain", () => {
   // the one text-content path, and THAT path drains the queue first.
   assert.match(
     pane,
-    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string[^)]*\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post\("datatable\/import", \{ content, format \}\);/,
+    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string[^)]*\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?api\.post<[^>]*>\(\s*"datatable\/import",\s*\{ content, format \},?\s*\)/,
   );
   assert.match(pane, /await handleImportTextContent\(content, format\);/);
   assert.match(pane, /await handleImportTextContent\(pasted\.content, pasted\.format\);/);
