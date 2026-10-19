@@ -27,12 +27,14 @@ from pathlib import Path
 from figrecipe._django._project_table import (
     PROJECT_TABLE_SUFFIX,
     RECIPE_LESS_TABLE_NAME,
+    TableRevisionConflict,
     is_selected_project_dir,
     is_within_project,
     load_project_table,
     project_table_path,
     read_table_csv,
     save_project_table,
+    table_revision,
     table_to_csv,
 )
 
@@ -197,3 +199,124 @@ class TestSaveAndLoad:
         written = save_project_table(recipe, working_dir, *TABLE)
         # Assert
         assert written is None
+
+
+class TestTableRevision:
+    def test_no_stored_table_has_no_revision(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        # Act
+        revision = table_revision(recipe, None)
+        # Assert -- nothing stored, nothing to be stale against.
+        assert revision is None
+
+    def test_a_saved_table_carries_a_revision(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        # Act
+        revision = table_revision(recipe, None)
+        # Assert
+        assert revision is not None
+
+    def test_the_revision_is_an_opaque_string(self, tmp_path):
+        # Arrange -- JS doubles cannot round-trip nanosecond integers, so a
+        # numeric revision would come back corrupted.
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        # Act
+        revision = table_revision(recipe, None)
+        # Assert
+        assert isinstance(revision, str)
+
+    def test_a_matching_revision_writes(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        revision = table_revision(recipe, None)
+        # Act
+        written = save_project_table(
+            recipe, None, ["mass"], [[9.0]], expected_revision=revision
+        )
+        # Assert
+        assert written == tmp_path / f"figure{PROJECT_TABLE_SUFFIX}"
+
+    def test_a_stale_revision_is_refused(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        # Act -- based on a revision the stored table no longer carries.
+        try:
+            save_project_table(
+                recipe, None, ["mass"], [[9.0]], expected_revision="stale"
+            )
+            refused = False
+        except TableRevisionConflict:
+            refused = True
+        # Assert
+        assert refused
+
+    def test_the_conflict_carries_the_current_revision(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        current = table_revision(recipe, None)
+        carried = None
+        # Act
+        try:
+            save_project_table(
+                recipe, None, ["mass"], [[9.0]], expected_revision="stale"
+            )
+        except TableRevisionConflict as exc:
+            carried = exc.current_revision
+        # Assert -- the client reloads from this instead of guessing.
+        assert carried == current
+
+    def test_a_refused_write_leaves_the_stored_table_untouched(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        # Act
+        try:
+            save_project_table(
+                recipe, None, ["mass"], [[9.0]], expected_revision="stale"
+            )
+        except TableRevisionConflict:
+            pass
+        # Assert -- the newer edits someone else stored are still there.
+        assert load_project_table(recipe, None) == (
+            ["mass", "label"],
+            [[1.0, "a"], [2.0, "b"], ["", ""]],
+        )
+
+    def test_successive_writes_advance_the_revision(self, tmp_path):
+        # Arrange
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        first = table_revision(recipe, None)
+        # Act -- different bytes, so a different revision.
+        save_project_table(
+            recipe, None, ["mass"], [[9.0]], expected_revision=first
+        )
+        # Assert
+        assert table_revision(recipe, None) != first
+
+    def test_an_identical_rewrite_keeps_its_revision(self, tmp_path):
+        # Arrange -- same bytes: nothing changed, nothing to lose, so no
+        # spurious conflict for the next writer.
+        recipe = tmp_path / "figure.yaml"
+        recipe.write_text("recipe: {}\n", encoding="utf-8")
+        save_project_table(recipe, None, *TABLE)
+        first = table_revision(recipe, None)
+        # Act
+        save_project_table(recipe, None, *TABLE, expected_revision=first)
+        # Assert
+        assert table_revision(recipe, None) == first

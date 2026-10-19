@@ -10,6 +10,24 @@ let _controller = new AbortController();
 
 export class ApiSessionExpired extends Error {}
 
+/** A failed API call, carrying its HTTP status and the server's error body.
+ *
+ * Thrown with the same message as before (callers matching on text keep
+ * working); the status lets callers branch on RECOVERABLE failures — 409
+ * table-revision conflicts reload the newer table instead of reporting a
+ * generic save failure. The body carries the conflict's current revision.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+  constructor(status: number, message: string, body: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 /** Retire requests from the outgoing editor; they cannot update its successor. */
 export function retireApiSession(): void {
   _session += 1;
@@ -105,7 +123,11 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
       ensureCurrent(session);
-      throw new Error(err.error || interpolate(gettext("API error: %s"), [res.status]));
+      throw new ApiError(
+        res.status,
+        err.error || interpolate(gettext("API error: %s"), [res.status]),
+        err,
+      );
     }
     const data = await res.json();
     ensureCurrent(session);

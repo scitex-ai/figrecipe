@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@scitex/sdk/ui/react/app/data-table/DataTable.tsx";
-import { api, setRecipe } from "../../api/client";
+import { api, ApiError, setRecipe } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { getPanelColor } from "../../utils/panelColors";
 import { PlotFromColumns } from "./PlotFromColumns";
@@ -210,10 +210,24 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
 
   /** The write path for every table edit: one save in flight, edits coalesced to
    *  the newest, and a revision gate on adopting the server's state. The queue is
-   *  created once per pane (see tableSaveQueue.ts). */
+   *  created once per pane (see tableSaveQueue.ts). The write is CONDITIONAL:
+   *  it carries the revision this pane last adopted as base_revision, so a write
+   *  based on a superseded table is refused (409) instead of silently
+   *  discarding the newer edits another client stored. The adopted revision is
+   *  updated from the import response itself — synchronously, before the queue
+   *  starts the next write — because persistTable's reload lands later and a
+   *  newer edit's write must already be based on what the server just kept. */
   const saveQueue = useRef<TableSaveQueue>(
     createTableSaveQueue(async (csv: string) => {
-      await api.post("datatable/import", { content: csv, format: "csv" });
+      const base = useEditorStore.getState().datatableRevision;
+      const res = await api.post<{ revision?: string | null }>(
+        "datatable/import",
+        { content: csv, format: "csv", base_revision: base },
+      );
+      useEditorStore.setState({
+        datatableRevision:
+          typeof res?.revision === "string" ? res.revision : null,
+      });
     }),
   ).current;
 
@@ -246,6 +260,39 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     async (table: TableModel, message: string) => {
       const outcome = await saveQueue.enqueue(serializeTableToCsv(table));
       if (outcome.status === "failed") {
+        // 409: another client stored a newer table meanwhile. Adopt it instead
+        // of re-sending this edit on top, which would discard their edits —
+        // and the conflicted edit must NOT stay queued-retryable. A newer
+        // LOCAL edit already queued speaks for the table (its write carries
+        // the fresh revision this branch just adopted), so skip the reload
+        // then; its own completion adopts the server's state.
+        const conflict =
+          outcome.error instanceof ApiError && outcome.error.status === 409
+            ? outcome.error
+            : null;
+        if (conflict) {
+          const body = (conflict.body ?? {}) as { revision?: unknown };
+          if (typeof body.revision === "string" || body.revision === null) {
+            useEditorStore.setState({ datatableRevision: body.revision });
+          }
+          const reloaded = outcome.revision === saveQueue.revision;
+          if (reloaded) {
+            await loadDatatable();
+            await refreshAfterMutation();
+          }
+          // Always surfaced, even when a newer queued edit skips the reload:
+          // the newer edit's own outcome speaks for the table, but only this
+          // toast names what happened to THIS edit.
+          showToast(
+            gettext(
+              reloaded
+                ? "Table changed in another session — loaded the newer version"
+                : "Table changed in another session — your queued edit is based on the newer version",
+            ),
+            "info",
+          );
+          return;
+        }
         // The edit stays on screen: a failed save must not also throw away what
         // the user just changed. The error toast is the fail-loud signal.
         showToast(interpolate(gettext("Save failed: %s"), [outcome.error]), "error");
@@ -735,7 +782,16 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         // a pending edit must land first — otherwise it would overwrite the
         // data the user just chose.
         await saveQueue.idle();
-        await api.post("datatable/import", { content, format });
+        const res = await api.post<{ revision?: string | null }>(
+          "datatable/import",
+          { content, format },
+        );
+        // Explicit replace (no base_revision sent): adopt the new revision so
+        // the next queued edit is based on what the server just kept.
+        useEditorStore.setState({
+          datatableRevision:
+            typeof res?.revision === "string" ? res.revision : null,
+        });
         loadDatatable();
         await refreshAfterMutation();
       } catch (e) {
