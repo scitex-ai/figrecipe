@@ -280,6 +280,7 @@ msgstr "インポートに失敗しました: %s"
 
 #: frontend/src/components/DataTable/DataTable.tsx
 #: frontend/src/store/useEditorStore.ts
+#: frontend/src/InnerEditor.tsx
 msgid "Data"
 msgstr "データ"
 
@@ -1194,10 +1195,6 @@ msgid "This plot type cannot be drawn from table columns yet; pick Line, Scatter
 msgstr "この種類は表の列からはまだ描けません。折れ線・散布図・棒・分布・統計から選んでください。"
 
 #: frontend/src/InnerEditor.tsx
-msgid "Data"
-msgstr "データ"
-
-#: frontend/src/InnerEditor.tsx
 msgid "Data table — its own full-width page"
 msgstr "データ表 — 全幅の専用ページ"
 
@@ -1342,3 +1339,236 @@ msgstr "ヒント：選択中のグリッドの別のセルをクリックする
 #: frontend/src/components/Properties/ElementDetails.tsx
 msgid "Row"
 msgstr "行"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Clear %s cell"
+msgid_plural "Clear %s cells"
+msgstr[0] "%s のセルをクリア"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete %s row"
+msgid_plural "Delete %s rows"
+msgstr[0] "%s の行を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Edit %s cell"
+msgid_plural "Edit %s cells"
+msgstr[0] "%s のセルを編集"
+
+#: frontend/components/CanvasPane/CanvasPane.tsx
+#, javascript-format, python-format
+msgid "%s variants"
+msgstr "%s のバリエーション"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add a column at the end of the table"
+msgstr "テーブルの末尾に列を追加"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add a row below the selected one"
+msgstr "選択中の行の下に行を追加"
+
+#: frontend/components/Gallery/GalleryStart.tsx
+#: frontend/components/ObjectTree/ObjectTree.tsx
+msgid "Add an example recipe and its data to this project"
+msgstr "サンプルレシピとそのデータをこのプロジェクトに追加"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add column"
+msgstr "列を追加"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Add column '%s'"
+msgstr "列「%s」を追加"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Add row"
+msgstr "行を追加"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Add row %s"
+msgstr "行 %s を追加"
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+msgid "Click a plot element to select it; Escape clears the selection"
+msgstr "プロットの要素をクリックして選択;Escapeで選択を解除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Confirm deleting an assigned column"
+msgstr "割り当て中の列の削除を確認"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Confirm deleting the last column"
+msgstr "最後の列の削除を確認"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete column"
+msgstr "列を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete column '%s'"
+msgstr "列「%s」を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete column '%s'? It is the %s column — that assignment will be cleared."
+msgstr "列「%s」を削除しますか?この列は%sに割り当てられています — その割り当ては解除されます。"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete row"
+msgstr "行を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete row %s"
+msgstr "行 %s を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete the last column '%s'?"
+msgstr "最後の列「%s」を削除しますか?"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete the selected column"
+msgstr "選択中の列を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Delete the selected row"
+msgstr "選択中の行を削除"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Duplicate column"
+msgstr "列を複製"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Duplicate column '%s' as '%s'"
+msgstr "列「%s」を「%s」として複製"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Duplicate the selected column beside itself"
+msgstr "選択中の列を隣に複製"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Edit %s in row %s"
+msgstr "行%sの%sを編集"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Edit table"
+msgstr "テーブルを編集"
+
+#: frontend/InnerEditor.tsx
+msgid "FigRecipe"
+msgstr "FigRecipe"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "No data table to edit"
+msgstr "編集できるデータテーブルがありません"
+
+#: frontend/components/Gallery/VariantChooser.tsx
+msgid "Plot from data columns…"
+msgstr "データ列からプロット…"
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+msgid "Plot hit regions"
+msgstr "プロットのヒット領域"
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+msgid "Plot hit regions are not loaded yet"
+msgstr "プロットのヒット領域はまだ読み込まれていません"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Redid: %s"
+msgstr "やり直しました: %s"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Redo %s"
+msgstr "%s をやり直す"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Redo the last undone table change"
+msgstr "元に戻した直前のテーブル変更をやり直す"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Rename"
+msgstr "名前を変更"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Rename column"
+msgstr "列の名前を変更"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Rename column '%s'"
+msgstr "列「%s」の名前を変更"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Rename column '%s' to '%s'"
+msgstr "列「%s」の名前を「%s」に変更"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Rename the selected column"
+msgstr "選択中の列の名前を変更"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Save failed: %s"
+msgstr "保存に失敗しました: %s"
+
+#: frontend/components/Gallery/VariantChooser.tsx
+msgid "See all templates…"
+msgstr "すべてのテンプレートを見る…"
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+#, javascript-format, python-format
+msgid "Select %s"
+msgstr "%s を選択"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Select a column to delete"
+msgstr "削除する列を選択"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Select a column to duplicate"
+msgstr "複製する列を選択"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Select a row to delete"
+msgstr "削除する行を選択"
+
+#: frontend/components/Canvas/HitmapOverlay.tsx
+#, javascript-format, python-format
+msgid "Selected: %s"
+msgstr "選択中: %s"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Table editing"
+msgstr "テーブル編集中"
+
+#: frontend/components/CanvasPane/CanvasPane.tsx
+msgid "Toggle hit regions — click a plot element to select it"
+msgstr "ヒット領域の表示を切り替え — プロットの要素をクリックして選択"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Undid: %s"
+msgstr "元に戻しました: %s"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Undo %s"
+msgstr "%s を元に戻す"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Undo last table change"
+msgstr "直前のテーブル変更を元に戻す"
