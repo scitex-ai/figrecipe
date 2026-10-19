@@ -63,92 +63,44 @@ def _partial_context(**overrides):
 
 
 # ── standalone.html ──────────────────────────────────────────────────────────
+# Operator CCT4601: the standalone shell renders NO server header row. The
+# row the templates used to include stacked as a first title above the
+# React-owned fallback header (which renders whenever no server SSoT row
+# is present) — two "FigRecipe v…" rows. The React-owned row is the single
+# header; the page title (<title>) still carries the leaf label.
 
 
-def test_standalone_renders_the_ssot_header(_django_ready):
-    # Arrange: the view passes the leaf label + version (never the host's).
+def test_standalone_renders_no_server_header_row(_django_ready):
+    # Arrange: zero server rows — the single header is React-owned.
     # Act
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
-    # Assert
-    assert 'data-ssot="sdk"' in html
-
-
-def test_standalone_renders_exactly_one_header_element(_django_ready):
-    # Arrange: one shared row — zero is the card defect, two is host + leaf.
-    # Act
-    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
-    # Assert
-    assert html.count("<header") == 1
-
-
-def test_standalone_links_the_sdk_header_stylesheet(_django_ready):
-    # Arrange
-    # Act
-    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
-    # Assert: the chrome comes from the SDK, not a leaf fork.
-    assert "scitex_sdk/ui/css/app/app-header.css" in html
-
-
-def test_standalone_header_carries_the_leaf_title(_django_ready):
-    # Arrange
-    # Act
-    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
-    # Assert
-    assert "FigRecipe Editor" in html
-
-
-def test_standalone_header_carries_the_leaf_version(_django_ready):
-    # Arrange
-    # Act
-    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
-    # Assert
-    assert ">v0.36.2<" in html
-
-
-def test_standalone_header_hides_the_badge_when_version_unknown(_django_ready):
-    # Arrange: SDK contract — an unknown version renders ABSENT, never as a
-    # plausible-looking wrong badge.
-    context = _standalone_context()
-    del context["app_version"]
-    # Act
-    html = _render(_django_ready, "figrecipe/standalone.html", **context)
-    # Assert
-    assert "stx-app-header__version" not in html
-
-
-def test_standalone_header_row_survives_without_a_version(_django_ready):
-    # Arrange: only the badge goes missing, never the row itself.
-    context = _standalone_context()
-    del context["app_version"]
-    # Act
-    html = _render(_django_ready, "figrecipe/standalone.html", **context)
-    # Assert
-    assert 'data-ssot="sdk"' in html
-
-
-def test_standalone_host_header_suppresses_the_leaf_row(_django_ready):
-    # Arrange: a host rendering its own header sets app_header_rendered
-    # (Writer precedent) so the page never carries two.
-    # Act
-    html = _render(
-        _django_ready,
-        "figrecipe/standalone.html",
-        **_standalone_context(app_header_rendered=True),
-    )
     # Assert
     assert 'data-ssot="sdk"' not in html
 
 
-def test_standalone_host_header_leaves_no_header_element(_django_ready):
+def test_standalone_renders_no_header_element_server_side(_django_ready):
+    # Arrange: the only <header> comes from the React mount, not the template.
+    # Act
+    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
+    # Assert
+    assert html.count("<header") == 0
+
+
+def test_standalone_links_the_sdk_header_stylesheet(_django_ready):
+    # Arrange: the React-owned row takes its chrome from the SDK, not a leaf fork.
+    # The SDK shell always links its own stylesheets; the leaf partial is gone.
+    # Act
+    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
+    # Assert
+    assert "scitex_sdk/ui/css/app/app-header.css" not in html
+
+
+def test_standalone_page_title_carries_the_leaf_label(_django_ready):
     # Arrange
     # Act
-    html = _render(
-        _django_ready,
-        "figrecipe/standalone.html",
-        **_standalone_context(app_header_rendered=True),
-    )
+    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
     # Assert
-    assert "<header" not in html
+    assert "<title>FigRecipe Editor</title>" in html
 
 
 # ── workspace_partial.html (hub-embedded mount) ──────────────────────────────
