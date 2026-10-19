@@ -1572,3 +1572,15 @@ msgstr "%s を元に戻す"
 #: frontend/components/DataTablePane/DataTablePane.tsx
 msgid "Undo last table change"
 msgstr "直前のテーブル変更を元に戻す"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Check the connection, then try again — your tables are still stored."
+msgstr "接続を確認してから再試行してください — テーブルは保存されています。"
+
+#: frontend/components/DataTablePane/DataTablePane.tsx
+msgid "Retry"
+msgstr "再試行"
+
+#: frontend/store/useEditorStore.ts
+msgid "Could not load the data table"
+msgstr "データテーブルを読み込めませんでした"
