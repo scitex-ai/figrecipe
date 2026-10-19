@@ -67,12 +67,19 @@ check(
   /{%\s*if\s+app_version\s*%}/.test(partial),
 );
 
-// Both SPA shells include it under the host guard (Writer precedent: a host
-// rendering its own header sets app_header_rendered, never two headers).
-for (const [name, tpl] of [
-  ["standalone.html", standalone],
-  ["workspace_partial.html", workspacePartial],
-] as const) {
+// Standalone shell owns NO server header row (operator CCT4601): the row
+// the templates used to include rendered as a first title above the
+// React-owned fallback header (which renders whenever no server SSoT row
+// is present) — two stacked "FigRecipe v…" rows. Standalone therefore
+// renders no server row; the owned React header is the single header.
+// The hub-embedded partial keeps the SSoT row for its mount (host mount
+// path untouched), and InnerEditor still portals the live picker into any
+// server slot when one is present.
+check(
+  "standalone.html renders no server header row (React-owned row is single)",
+  !standalone.includes('figrecipe/_app_header.html'),
+);
+for (const [name, tpl] of [["workspace_partial.html", workspacePartial]] as const) {
   check(
     `${name} includes the SSoT partial`,
     tpl.includes('{% include "figrecipe/_app_header.html" %}'),
