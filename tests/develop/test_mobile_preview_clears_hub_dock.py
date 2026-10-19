@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The figure preview must stay visible above the scitex-hub site dock at 390px.
+"""The figure preview must stay reachable at 390px with no dock-strip reserve.
 
 Site-audit D15: on the hub the stacked mobile layout put the 56px-wide
 plot-type rail (~530px tall as a column) above the preview, pushing the
-preview below the viewport and under the hub's fixed site dock. The fix
-orders the preview first, turns the rail into a horizontal strip, and gives
-the preview a scroll margin equal to the hub's ``--site-dock-height``
-(0 in standalone, where no dock exists).
+preview below the viewport. The fix orders the preview first and turns
+the rail into a horizontal strip.
+
+Hub PR 923 S4 SSOT (SDK panes.css precedent): the floating launcher
+overlays content and reserves no full-width bottom strip, so apps use
+the full available viewport — no app-side ``--site-dock-height`` reserve.
+Only the iOS home-bar ``env(safe-area-inset-bottom)`` remains, which a
+floating overlay never covers for.
 
 Same species as ``test_mobile_figure_export_no_label_overlap.py``: a
 source-conformance gate, because a missing rule fails silently and only
@@ -61,20 +65,25 @@ def _rule_bodies(selector: str, css: str) -> list[str]:
     return bodies
 
 
-def test_preview_reserves_hub_dock_height_with_standalone_fallback():
+def test_preview_keeps_only_safe_area_inset_no_dock_reserve():
+    # Hub PR 923 S4 SSOT: no app-side --site-dock-height reserve; only the
+    # iOS home-bar safe-area inset remains on .split-pane-center.
     # Arrange
     layout = _LAYOUT.read_text(encoding="utf-8")
     # Act
     bodies = _rule_bodies(".split-pane-center", layout)
     # Assert
+    assert bodies, "layout.css has no .split-pane-center rule"
+    assert all(
+        "--site-dock-height" not in body for body in bodies
+    ), f".split-pane-center must not reserve a dock strip. Found: {bodies}"
     assert any(
         re.search(
-            r"scroll-margin-bottom\s*:\s*calc\(\s*var\(\s*--site-dock-height\s*,\s*0px\s*\)"
-            r"\s*\+\s*env\(\s*safe-area-inset-bottom",
+            r"scroll-margin-bottom\s*:\s*env\(\s*safe-area-inset-bottom",
             body,
         )
         for body in bodies
-    ), f"layout.css .split-pane-center must reserve var(--site-dock-height, 0px) + safe area. Found: {bodies}"
+    ), f".split-pane-center must keep the safe-area inset. Found: {bodies}"
 
 
 def test_mobile_orders_preview_before_data():

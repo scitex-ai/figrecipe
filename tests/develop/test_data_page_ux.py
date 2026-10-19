@@ -144,7 +144,10 @@ def test_viewer_names_loading_instead_of_going_black():
     assert problems == []
 
 
-def test_desktop_layout_reserves_the_hub_dock():
+def test_desktop_layout_uses_full_viewport_no_dock_reserve():
+    # Hub PR 923 S4 SSOT: the floating launcher overlays content and reserves
+    # no full-width bottom strip, so apps use the full available viewport
+    # (SDK panes.css precedent). No app-side --site-dock-height reserve.
     # Arrange
     css = (_STYLES / "layout.css").read_text(encoding="utf-8")
     # Act
@@ -154,9 +157,10 @@ def test_desktop_layout_reserves_the_hub_dock():
         if ".editor-body" in [s.strip() for s in selectors.split(",")]
     ]
     # Assert
-    assert any(
-        "var(--site-dock-height, 0px)" in body for body in bodies
-    ), f".editor-body must reserve var(--site-dock-height, 0px); found: {bodies}"
+    assert bodies, ".editor-body rule missing from layout.css"
+    assert all(
+        "--site-dock-height" not in body for body in bodies
+    ), f".editor-body must not reserve a dock strip; found: {bodies}"
 
 
 def test_pane_actions_carry_visible_text_labels():
