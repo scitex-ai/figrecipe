@@ -259,7 +259,10 @@ ok("every table write goes through the queue", () => {
   assert.match(pane, /createTableSaveQueue\(/);
   assert.match(
     pane,
-    /createTableSaveQueue\(async \(csv: string\) => \{[\s\S]{0,240}?api\.post\("datatable\/import", \{ content: csv, format: "csv" \}\)/,
+    // Revision-gated since #469: the write carries base_revision so a stale
+    // save is refused instead of clobbering newer edits. Shape-agnostic
+    // across the multiline api.post call.
+    /createTableSaveQueue\(async \(csv: string\) => \{[\s\S]{0,800}?base_revision: base/,
   );
   assert.match(
     pane,
@@ -273,11 +276,19 @@ ok("the pane adopts the server's table only for an applied save", () => {
   // Act / Assert
   assert.match(pane, /if \(outcome\.status === "failed"\)/);
   assert.match(pane, /if \(outcome\.status !== "applied"\) return;/);
-  // The reload sits behind that gate.
+  // The conflict branch reloads only when no newer edit is queued
+  // (outcome.revision === saveQueue.revision); the applied branch reloads
+  // only for the newest completion. Either way a superseded or failed save
+  // never puts an older table back on screen.
   assert.ok(
     pane.indexOf('if (outcome.status !== "applied") return;') <
-      pane.indexOf("await loadDatatable("),
+      pane.indexOf("await loadDatatable({"),
     "the reload must not run for a superseded or failed save",
+  );
+  assert.ok(
+    pane.indexOf("const reloaded = outcome.revision === saveQueue.revision;") <
+      pane.indexOf("await loadDatatable();"),
+    "the conflict reload must not run when a newer edit is queued",
   );
 });
 
@@ -304,7 +315,9 @@ ok("a user-file import waits for pending table edits to drain", () => {
   // the one text-content path, and THAT path drains the queue first.
   assert.match(
     pane,
-    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string[^)]*\) => \{[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post\("datatable\/import", \{ content, format \}\);/,
+    // Import is an explicit replace (no base_revision): the signature carries
+    // a `retried` flag and the post is multiline — match shape-agnostically.
+    /const handleImportTextContent = useCallback\(\s*async \(content: string, format: string[\s\S]*?await saveQueue\.idle\(\);[\s\S]*?await api\.post<\{ revision\?: string \| null \}>\(\s*"datatable\/import",\s*\{ content, format \},?\s*\);/,
   );
   assert.match(pane, /await handleImportTextContent\(content, format\);/);
   assert.match(pane, /await handleImportTextContent\(pasted\.content, pasted\.format\);/);
