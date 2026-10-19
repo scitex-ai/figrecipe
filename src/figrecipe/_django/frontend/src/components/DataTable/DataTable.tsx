@@ -54,7 +54,16 @@ export function DataTable() {
         const content = await file.text();
         const ext = file.name.split(".").pop()?.toLowerCase();
         const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
-        await api.post("datatable/import", { content, format });
+        const res = await api.post<{ revision?: string | null }>(
+          "datatable/import",
+          { content, format },
+        );
+        // Explicit replace: adopt the new revision like the pane does, so a
+        // later queued edit is based on what the server just kept.
+        useEditorStore.setState({
+          datatableRevision:
+            typeof res?.revision === "string" ? res.revision : null,
+        });
         showToast(gettext("Imported data"), "success");
         loadDatatable();
       } catch (e) {

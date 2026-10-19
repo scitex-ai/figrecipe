@@ -112,7 +112,24 @@ if (!root && document.querySelector('[data-app-slug="figrecipe"][data-embedded="
 }
 
 if (root) {
-  document.documentElement.setAttribute("data-theme", "dark");
+  // Respect the stored theme (figrecipe-dark-theme-forced-20261018): the
+  // shell theme boot already applied localStorage `stx-theme` (fallback
+  // `scitex-theme-preference`, else the shell default) pre-paint — forcing
+  // "dark" here clobbered a stored light preference on every load. Only
+  // stamp the legacy dark default when no theme was resolved at all (raw SPA
+  // fallback with no shell boot). Storage reads are guarded: blocked storage
+  // must not break the mount (boot-resilience precedent).
+  let storedTheme: string | null = null;
+  try {
+    storedTheme =
+      localStorage.getItem("stx-theme") ||
+      localStorage.getItem("scitex-theme-preference");
+  } catch {
+    storedTheme = null;
+  }
+  if (!storedTheme && !document.documentElement.hasAttribute("data-theme")) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <InnerEditor embedded={embedded} />
