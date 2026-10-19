@@ -45,12 +45,19 @@ check(
   /<header\s+className="stx-app-header"/.test(inner),
 );
 
-// 2. The project selector is INSIDE the canonical slot, not the tab row.
+// 2. The project selector is INSIDE a canonical slot, not the tab row —
+// either the owned slot (fallback header, no server row) or the server SSoT
+// slot via portal (figrecipe-ssot-header-row-20261017: header[data-ssot]
+// present). Exactly one of the two renders at runtime; the single `picker`
+// element below is shared by both paths.
 check(
   "selector wrapped in .stx-app-header__slot--project-selector",
-  /<div\s+className="stx-app-header__slot--project-selector">[\s\S]*?<ProjectScopeSelector\s*\/>[\s\S]*?<\/div>/.test(
+  /<div\s+className="stx-app-header__slot--project-selector">[\s\S]*?\{picker\}[\s\S]*?<\/div>/.test(
     inner,
-  ),
+  ) &&
+    /header\.stx-app-header\[data-ssot\][\s\S]*?\.stx-app-header__slot--project-selector/.test(
+      inner,
+    ),
 );
 check(
   "ProjectScopeSelector appears exactly once (no duplicate picker)",

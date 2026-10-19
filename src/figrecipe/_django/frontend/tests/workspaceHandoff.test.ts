@@ -48,15 +48,19 @@ check(
   ),
 );
 // The handoff pulls in the workspace sync (separate chunk), and a failed
-// pull never kills module evaluation.
+// pull never kills module evaluation. Shape since #464: void + .then with
+// the rejection handler as second arg (top-level await needed a module
+// type the bundle does not use).
 check(
   "handoff dynamically imports ./workspace with a caught failure",
-  /await\s+import\("\.\/workspace"\)\.catch\(/.test(main),
+  /void\s+import\("\.\/workspace"\)\.then\([\s\S]*?,\s*\([\s\S]*?\)\s*=>/.test(
+    main,
+  ),
 );
 // The standalone shell init is skipped without #root.
 {
-  const handoffAt = main.indexOf('await import("./workspace")');
-  const guardAt = main.indexOf("if (root) {\nconst figrecipeFileTreeAdapter");
+  const handoffAt = main.indexOf('void import("./workspace")');
+  const guardAt = main.indexOf("if (root) {\nconst _fileTreeFetcher");
   check(
     "standalone shell init wrapped in if (root) after the handoff",
     handoffAt >= 0 && guardAt > handoffAt,

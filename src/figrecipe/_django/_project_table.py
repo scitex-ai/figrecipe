@@ -42,6 +42,21 @@ except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
 
 logger = slogging.getLogger(__name__)
 
+
+class TableRevisionConflict(Exception):
+    """A conditional table write lost to a newer stored table.
+
+    Raised by :func:`save_project_table` when ``expected_revision`` does not
+    match the stored table's current revision. Carries that current revision
+    so the caller can report it — and the client can reload from it — instead
+    of silently discarding newer edits. Never raised for legacy unconditional
+    writes (no ``expected_revision`` given).
+    """
+
+    def __init__(self, current_revision):
+        super().__init__("Table changed since it was read")
+        self.current_revision = current_revision
+
 #: Same suffix the CSV export uses, so the file the user downloads and the file
 #: the project keeps are recognisably the same artifact.
 PROJECT_TABLE_SUFFIX = "_data.csv"
@@ -155,17 +170,62 @@ def read_table_csv(text: str) -> Optional[Tuple[List[str], List[List[Any]]]]:
     return names, rows
 
 
+def table_revision(
+    recipe_path: Optional[Any] = None,
+    working_dir: Optional[Any] = None,
+) -> Optional[str]:
+    """The stored table's revision, or None when this project stores no table.
+
+    The revision is the hex SHA-256 of the stored CSV bytes, as a string.
+    Content-addressed on purpose: ``mtime`` was measured colliding on
+    back-to-back writes (coarse filesystem timestamps), which would hand two
+    different tables the same revision and reopen the silent-overwrite hole.
+    A hash changes if and only if the bytes change — an identical rewrite
+    keeps its revision (nothing to lose), any real edit advances it. A number
+    would be dishonest on the wire besides: JS doubles cannot round-trip
+    integers this size, so a numeric revision would come back corrupted and
+    every conditional write would spuriously conflict. Clients treat the
+    string as opaque.
+    """
+    path = project_table_path(recipe_path, working_dir)
+    project = project_dir_for(recipe_path, working_dir)
+    if path is None or project is None or not is_within_project(path, project):
+        return None
+    try:
+        if not path.is_file():
+            return None
+        import hashlib
+
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError as exc:
+        logger.warning("[FigRecipe] Could not read the project table: %s", exc)
+        return None
+
+
 def save_project_table(
     recipe_path: Optional[Any],
     working_dir: Optional[Any],
     names: Sequence[str],
     rows: Sequence[Sequence[Any]],
+    expected_revision: Optional[str] = None,
 ) -> Optional[Path]:
     """Write the edited table into the project; return the path, or None.
 
-    Never raises: a table the project cannot store must not fail the edit the
-    user already made in the pane (it stays live in ``imported_table``), so the
-    reason is logged and the caller carries on.
+    Never raises, EXCEPT :class:`TableRevisionConflict`: a table the project
+    cannot store must not fail the edit the user already made in the pane (it
+    stays live in ``imported_table``), so the reason is logged and the caller
+    carries on. A revision conflict is different — silencing it would discard
+    someone's newer edits — so it propagates for the handler to answer 409.
+
+    Conditional writes (``expected_revision`` given): the write lands only
+    when the stored table still carries that revision; otherwise the table is
+    left untouched and the conflict carries the CURRENT revision. Absent
+    ``expected_revision`` keeps the legacy blind write (explicit-replace
+    paths: file import, sample data).
+
+    The write is atomic (temp file + ``os.replace``): a concurrent reader
+    never sees a torn CSV, and the revision read after a write belongs to
+    exactly what was written.
     """
     path = project_table_path(recipe_path, working_dir)
     project = project_dir_for(recipe_path, working_dir)
@@ -180,9 +240,34 @@ def save_project_table(
             project,
         )
         return None
+    if expected_revision is not None:
+        current = table_revision(recipe_path, working_dir)
+        if current != expected_revision:
+            logger.warning(
+                "[FigRecipe] Refusing a stale table write: based on %s, "
+                "stored is %s",
+                expected_revision,
+                current,
+            )
+            raise TableRevisionConflict(current)
     try:
+        import os
+        import tempfile
+
         project.mkdir(parents=True, exist_ok=True)
-        path.write_text(table_to_csv(names, rows), encoding="utf-8")
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(project), prefix=path.name + ".", suffix=".tmp"
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as tmp:
+                tmp.write(table_to_csv(names, rows))
+            os.replace(tmp_name, path)
+        except BaseException:
+            try:
+                os.unlink(tmp_name)
+            except OSError:
+                pass
+            raise
         return path
     except OSError as exc:
         logger.warning("[FigRecipe] Could not store the edited table: %s", exc)

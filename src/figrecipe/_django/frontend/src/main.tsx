@@ -112,7 +112,24 @@ if (!root && document.querySelector('[data-app-slug="figrecipe"][data-embedded="
 }
 
 if (root) {
-  document.documentElement.setAttribute("data-theme", "dark");
+  // Respect the stored theme (figrecipe-dark-theme-forced-20261018): the
+  // shell theme boot already applied localStorage `stx-theme` (fallback
+  // `scitex-theme-preference`, else the shell default) pre-paint — forcing
+  // "dark" here clobbered a stored light preference on every load. Only
+  // stamp the legacy dark default when no theme was resolved at all (raw SPA
+  // fallback with no shell boot). Storage reads are guarded: blocked storage
+  // must not break the mount (boot-resilience precedent).
+  let storedTheme: string | null = null;
+  try {
+    storedTheme =
+      localStorage.getItem("stx-theme") ||
+      localStorage.getItem("scitex-theme-preference");
+  } catch {
+    storedTheme = null;
+  }
+  if (!storedTheme && !document.documentElement.hasAttribute("data-theme")) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <InnerEditor embedded={embedded} />
@@ -127,8 +144,13 @@ if (root) {
 // Fetch bodies live in ./bootstrap/bootFetch: every failure class (blocked
 // fetch, HTTP error, malformed body) resolves to the degraded {success:false}
 // value instead of an unhandled rejection (boot-resilience-20261016).
+// A detached `fetch` reference loses its Window receiver and throws
+// "Illegal invocation" on the first call (Files pane, 2026-10-19). Wrap
+// the global so the injected impl always calls it as a bare global.
+// (Card figrecipe-files-pane-fetch-illegal-invocation-20261019.)
+const boundFetch = (url: string) => fetch(url);
 if (root) {
-const _fileTreeFetcher = createFileTreeFetcher({ fetchImpl: fetch, apiUrl });
+const _fileTreeFetcher = createFileTreeFetcher({ fetchImpl: boundFetch, apiUrl });
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
   fetchTree: (rootPath?: string) =>
     _fileTreeFetcher
@@ -164,7 +186,7 @@ fileTree.initialize();
 // Shell repo monitor — polls api/files for recently modified files.
 // Degraded [] on any failure class (boot-resilience-20261016); the monitor
 // retries on its next poll interval.
-const _recentFilesFetcher = createRecentFilesFetcher({ fetchImpl: fetch, apiUrl });
+const _recentFilesFetcher = createRecentFilesFetcher({ fetchImpl: boundFetch, apiUrl });
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
   fetchRecentFiles: () =>
     _recentFilesFetcher

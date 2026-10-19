@@ -71,4 +71,5 @@ def test_imported_csv_is_what_the_next_data_read_shows(_django_ready):
         ],
         "rows": [[0.0, 1.5], [1.0, 2.5]],
         "source": "import",
+        "revision": None,
     }

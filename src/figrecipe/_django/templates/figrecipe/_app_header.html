@@ -1,0 +1,45 @@
+{% load static %}{% comment %}
+ FigRecipe leaf header — the shared SDK SSoT header row (Storage PR #128 /
+ Writer editor.html shape, operator CCT4254).
+
+ The ROW is the shared `.stx-app-header` (scitex-sdk, css/app/app-header.css
+ — linked below): identity (title + live leaf version) on the left, the
+ canonical project-selector slot, then the actions slot. The leaf owns the
+ VALUES, the SDK owns the chrome.
+
+ Contract:
+   * identity — `app_label` (standalone view brands this "FigRecipe Editor",
+     rebrandable via FIGRECIPE_APP_LABEL; workspace passes "FigRecipe") + the
+     LEAF package version (`app_version`, figrecipe.__version__), never the
+     host's version. The badge renders only when a version was passed: an
+     unknown version stays absent, never a plausible-looking wrong one.
+   * picker — `.stx-app-header__slot--project-selector`, EMPTY on purpose.
+     The interactive picker stays the React `ProjectScopeSelector`, which the
+     mounted editor portals into this slot (InnerEditor yields its owned row
+     while a `header[data-ssot]` is present) — one picker, never two sources
+     of truth for the project. Wiring a second server-side picker is out of
+     scope (card figrecipe-ssot-ui-standard-20261016 item 4 tracks tabs/picker
+     convergence).
+   * actions — `.stx-app-header__actions`, EMPTY on purpose. FigRecipe's
+     actions live in the editor's own toolbars, which already know their
+     state; a second set here would be a second source of truth.
+
+ Included by standalone.html (above #root) and workspace_partial.html
+ (above #app-mount), guarded by `app_header_rendered` like Writer: a host
+ that renders its own header sets it, so the page never carries two.
+
+ `data-ssot="sdk"` marks the row the React editor yields to (see InnerEditor:
+ owned header renders only when no server SSoT row is present, e.g. the raw
+ SPA fallback with no Django template).
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'scitex_sdk/ui/css/app/app-header.css' %}">
+<header class="stx-app-header figrecipe-app-header" data-ssot="sdk" id="figrecipe-app-header">
+    <div class="stx-app-header__identity">
+        <span class="stx-app-header__title">{{ app_label|default:"FigRecipe" }}</span>
+        {% if app_version %}<span class="stx-app-header__version"
+              title="figrecipe package serving this page">v{{ app_version }}</span>{% endif %}
+    </div>
+    <div class="stx-app-header__slot--project-selector">
+    </div>
+    <div class="stx-app-header__actions"></div>
+</header>
