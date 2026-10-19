@@ -73,17 +73,17 @@ def test_preview_keeps_only_safe_area_inset_no_dock_reserve():
     # Act
     bodies = _rule_bodies(".split-pane-center", layout)
     # Assert
-    assert bodies, "layout.css has no .split-pane-center rule"
-    assert all(
-        "--site-dock-height" not in body for body in bodies
-    ), f".split-pane-center must not reserve a dock strip. Found: {bodies}"
-    assert any(
-        re.search(
-            r"scroll-margin-bottom\s*:\s*env\(\s*safe-area-inset-bottom",
-            body,
+    assert (
+        bodies
+        and all("--site-dock-height" not in body for body in bodies)
+        and any(
+            re.search(
+                r"scroll-margin-bottom\s*:\s*env\(\s*safe-area-inset-bottom",
+                body,
+            )
+            for body in bodies
         )
-        for body in bodies
-    ), f".split-pane-center must keep the safe-area inset. Found: {bodies}"
+    ), f".split-pane-center must keep only the safe-area inset, no dock strip. Found: {bodies}"
 
 
 def test_mobile_orders_preview_before_data():

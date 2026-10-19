@@ -157,8 +157,7 @@ def test_desktop_layout_uses_full_viewport_no_dock_reserve():
         if ".editor-body" in [s.strip() for s in selectors.split(",")]
     ]
     # Assert
-    assert bodies, ".editor-body rule missing from layout.css"
-    assert all(
+    assert bodies and all(
         "--site-dock-height" not in body for body in bodies
     ), f".editor-body must not reserve a dock strip; found: {bodies}"
 
