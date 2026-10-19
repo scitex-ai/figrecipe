@@ -144,8 +144,13 @@ if (root) {
 // Fetch bodies live in ./bootstrap/bootFetch: every failure class (blocked
 // fetch, HTTP error, malformed body) resolves to the degraded {success:false}
 // value instead of an unhandled rejection (boot-resilience-20261016).
+// A detached `fetch` reference loses its Window receiver and throws
+// "Illegal invocation" on the first call (Files pane, 2026-10-19). Wrap
+// the global so the injected impl always calls it as a bare global.
+// (Card figrecipe-files-pane-fetch-illegal-invocation-20261019.)
+const boundFetch = (url: string) => fetch(url);
 if (root) {
-const _fileTreeFetcher = createFileTreeFetcher({ fetchImpl: fetch, apiUrl });
+const _fileTreeFetcher = createFileTreeFetcher({ fetchImpl: boundFetch, apiUrl });
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
   fetchTree: (rootPath?: string) =>
     _fileTreeFetcher
@@ -181,7 +186,7 @@ fileTree.initialize();
 // Shell repo monitor — polls api/files for recently modified files.
 // Degraded [] on any failure class (boot-resilience-20261016); the monitor
 // retries on its next poll interval.
-const _recentFilesFetcher = createRecentFilesFetcher({ fetchImpl: fetch, apiUrl });
+const _recentFilesFetcher = createRecentFilesFetcher({ fetchImpl: boundFetch, apiUrl });
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
   fetchRecentFiles: () =>
     _recentFilesFetcher
