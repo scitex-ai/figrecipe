@@ -192,10 +192,9 @@
   overflow: hidden;
   max-width: 100%;
   width: 100%;
-  /* Inside scitex-hub a fixed site dock covers the viewport bottom; without
-     this reserve the dock sits on top of the lowest grid rows. Standalone
-     defines no --site-dock-height, so this is 0 there. */
-  padding-bottom: var(--site-dock-height, 0px);
+  /* The hub launcher is a movable transparent overlay that reserves no
+     viewport (SDK panes.css precedent, hub PR 923 S4) — no app-side dock
+     reserve, so the lowest grid rows use the full height. */
 }
 
 /* Stable SDK panes retain their DOM identity across desktop page switches.
@@ -256,10 +255,9 @@
   min-width: 40px;
   background: var(--vis-bg-primary);
   position: relative;
-  /* Inside scitex-hub a fixed site dock covers the viewport bottom; standalone has no dock, so this is 0. */
-  scroll-margin-bottom: calc(
-    var(--site-dock-height, 0px) + env(safe-area-inset-bottom, 0px)
-  );
+  /* No launcher reserve here either — only the iOS home-bar inset, which a
+     floating overlay never covers for. */
+  scroll-margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .split-pane-right {
