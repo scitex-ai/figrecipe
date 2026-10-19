@@ -86,20 +86,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     }
   });
 
-  const [stepsDismissed, setStepsDismissed] = useState(() => {
-    try {
-      return localStorage.getItem("figrecipe-steps-dismissed") === "1";
-    } catch {
-      return false;
-    }
-  });
-  const dismissSteps = () => {
-    setStepsDismissed(true);
-    try {
-      localStorage.setItem("figrecipe-steps-dismissed", "1");
-    } catch {}
-  };
-
   useEffect(() => {
     try {
       localStorage.setItem("figrecipe-app-tab", activeTab);
@@ -195,7 +181,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     setActiveTab(tab);
     showEditorPane(tab === "canvas" ? "figure" : tab);
   };
-  const plotActive = phone ? phonePane === "plot" : activeTab === "plot";
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
   const detailsCollapsed = rightPanel.collapsed && !phone;
@@ -281,25 +266,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           <i className="fas fa-object-group" /> {gettext("Figure")}
         </button>
       </div>
-
-      {!stepsDismissed && plotActive && (
-        <div className="fr-steps" role="note">
-          <ol className="fr-steps__list">
-            <li>{gettext("1. Pick or import data")}</li>
-            <li>{gettext("2. Choose a plot type")}</li>
-            <li>{gettext("3. Adjust & export")}</li>
-          </ol>
-          <button
-            type="button"
-            className="fr-steps__close"
-            onClick={dismissSteps}
-            aria-label={gettext("Close")}
-            title={gettext("Close")}
-          >
-            <i className="fas fa-times" aria-hidden="true" />
-          </button>
-        </div>
-      )}
 
       {/* ── Tab Content ─────────────────────────────── */}
       <div
