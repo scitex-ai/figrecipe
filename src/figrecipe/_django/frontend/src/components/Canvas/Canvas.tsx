@@ -86,16 +86,34 @@ export function Canvas({ active = true }: { active?: boolean }) {
     // The phone pane is stable even while hidden. Do not fit a zero-sized
     // viewport or mark a new figure set fitted before the Figure pane opens.
     if (!active) return;
+    // Empty canvas: fit the PAGE max-size (not the 0.22 default). Skip when
+    // the pane is still zero-size — retry on the next effect run instead of
+    // poisoning the key with an unfitted mark.
+    if (placedFigures.length === 0) {
+      const el = outerRef.current;
+      if (!el || el.clientWidth <= 0 || el.clientHeight <= 0) return;
+      const store = useEditorStore.getState();
+      if (store.canvasFitKey === figuresKey) return;
+      zoomToFit(CANVAS_W, CANVAS_H);
+      store.setCanvasFitKey(figuresKey);
+      return;
+    }
     const store = useEditorStore.getState();
     if (store.canvasFitKey === figuresKey) return;
-    store.setCanvasFitKey(figuresKey);
-    // Max-size default (operator mandate): fit the FIGURE content centered;
-    // an empty canvas falls back to the page.
-    if (placedFigures.length > 0) {
-      const box = unionFigureBox(placedFigures);
-      if (box) zoomToContent(box);
-      else zoomToFit(CANVAS_W, CANVAS_H);
+    // Max-size default (operator mandate): fit the FIGURE content centered.
+    // Mark fitted ONLY when a fit actually applied — a zero-size container
+    // returns null from zoomToContent, and marking it would lock the tiny
+    // default view in (hard-reload shrink bug 2026-10-20).
+    const box = unionFigureBox(placedFigures);
+    if (!box) {
+      zoomToFit(CANVAS_W, CANVAS_H);
+      store.setCanvasFitKey(figuresKey);
+      return;
     }
+    const el = outerRef.current;
+    if (!el || el.clientWidth <= 0 || el.clientHeight <= 0) return;
+    zoomToContent(box);
+    store.setCanvasFitKey(figuresKey);
   }, [active, figuresKey, placedFigures.length, zoomToContent, zoomToFit]);
 
   // Mousedown on empty canvas → the view pans (useZoomPan reads the same
