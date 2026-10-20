@@ -281,7 +281,10 @@
   min-height: 30px;
   padding: 4px 10px;
   border: 1px solid var(--color-btn-border);
-  border-radius: 15px;
+  /* Straight edges only — no pill (operator). Selected state is the
+     shared 2px accent underline: selected chips read as tabs, not toys. */
+  border-bottom-width: 2px;
+  border-radius: 0;
   background: var(--color-btn-bg);
   color: var(--vis-text-secondary);
   font-size: 12px;
@@ -293,10 +296,11 @@
 }
 
 .plot-from-columns__chip.active {
-  border-color: var(--accent-primary);
+  border-color: var(--color-btn-border);
+  border-bottom-color: var(--accent-primary);
   background: var(--vis-accent-bg);
   color: var(--vis-text-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .plot-from-columns__select {
@@ -356,7 +360,8 @@
 
   .plot-from-columns__chip {
     min-width: 44px;
-    border-radius: 22px;
+    /* Straight even at touch size — no pill (operator). */
+    border-radius: 0;
   }
 
   .plot-from-columns__select {
