@@ -360,20 +360,16 @@
 }
 
 /* Phones: the project selector (now in the app header) spans full width and
-   its panel drops over the editor instead of being clipped. scitex-ui's slot
-   CSS already makes .stx-app-header__slot--project-selector order:0/width:100%
-   on ≤600px/coarse (so it wraps to its own full-width row below the title);
-   we add the header-row chrome (overflow/z-index/flex-wrap) + the 44px tap
-   target + larger font for the trigger. */
+   its panel drops over the editor instead of being clipped. The SDK SSoT owns
+   the phone header geometry (wrap, 52px min-height, 44px trigger at ≤600px /
+   coarse per [infra/fig-header]) — the leaf adds ONLY what the SDK lacks:
+   visible overflow + stacking for the dropdown panel, and full-width leaf
+   wrapper so the trigger fills its row. */
 @media (max-width: 768px) {
   .stx-app-header {
-    height: auto;
-    min-height: 52px;
-    padding: 4px 12px;
     overflow: visible;
     position: relative;
     z-index: 20;
-    flex-wrap: wrap;
   }
 
   .stx-app-header .project-scope-selector {
@@ -385,11 +381,5 @@
 
   .stx-app-header .stx-app-project-selector {
     width: 100%;
-  }
-
-  .stx-app-header .stx-app-project-selector__trigger {
-    width: 100%;
-    height: 44px;
-    font-size: 14px;
   }
 }
