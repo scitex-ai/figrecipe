@@ -244,7 +244,7 @@ msgid "Group All"
 msgstr "すべてグループ化"
 
 #: frontend/src/components/ContextMenu/ContextMenu.tsx
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ungroup"
 msgstr "グループ解除"
@@ -600,7 +600,7 @@ msgid "Lower Right"
 msgstr "右下"
 
 #: frontend/src/components/Properties/LegendSection.tsx
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Right"
 msgstr "右"
@@ -642,259 +642,271 @@ msgstr "表示"
 msgid "Location"
 msgstr "位置"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #, javascript-format, python-format
 msgid "Update failed: %s"
 msgstr "更新に失敗しました: %s"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "No selection"
 msgstr "未選択"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Select an item from the tree to view properties"
 msgstr "ツリーから項目を選ぶとプロパティが表示されます"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
+msgid "Edit"
+msgstr "編集"
+
+#: frontend/components/Properties/Properties.tsx
+msgid "Arrange"
+msgstr "配置"
+
+#: frontend/components/Properties/Properties.tsx
+msgid "Display"
+msgstr "表示"
+
+#: frontend/components/Properties/Properties.tsx
 msgid "Current"
 msgstr "現在"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Preset"
 msgstr "プリセット"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Layout"
 msgstr "レイアウト"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "View"
 msgstr "表示"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Style"
 msgstr "スタイル"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Traces"
 msgstr "トレース"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Element Info"
 msgstr "要素の情報"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "ID"
 msgstr "ID"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Type"
 msgstr "種類"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "unknown"
 msgstr "不明"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Call ID"
 msgstr "呼び出し ID"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Panel"
 msgstr "パネル"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #, javascript-format, python-format
 msgid "Axes %s"
 msgstr "軸 %s"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Figure Align"
 msgstr "図の整列"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Align left"
 msgstr "左揃え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Left"
 msgstr "左"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Align right"
 msgstr "右揃え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Align top"
 msgstr "上揃え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Top"
 msgstr "上"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Align bottom"
 msgstr "下揃え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Bottom"
 msgstr "下"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Center horizontal"
 msgstr "水平方向に中央揃え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ctr H"
 msgstr "水平中央"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Center vertical"
 msgstr "垂直方向に中央揃え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ctr V"
 msgstr "垂直中央"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Axes Align"
 msgstr "軸の整列"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ax Left"
 msgstr "軸 左"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ax Right"
 msgstr "軸 右"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ax Top"
 msgstr "軸 上"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Ax Bot"
 msgstr "軸 下"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Distribute"
 msgstr "等間隔に配置"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Horizontal"
 msgstr "水平"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Vertical"
 msgstr "垂直"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Panels"
 msgstr "パネル"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Reorder panel letters by position"
 msgstr "位置に合わせてパネル記号を並べ替え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Reorder"
 msgstr "並べ替え"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Group all figures"
 msgstr "すべての図をグループ化"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Group"
 msgstr "グループ化"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Ungroup selected"
 msgstr "選択をグループ解除"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Theme"
 msgstr "テーマ"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Matplotlib Theme"
 msgstr "Matplotlib テーマ"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 #: frontend/src/components/Toolbar/Toolbar.tsx
 msgid "Dark"
 msgstr "ダーク"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Light"
 msgstr "ライト"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Zoom"
 msgstr "ズーム"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Out"
 msgstr "縮小"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 #: frontend/src/components/Toolbar/Toolbar.tsx
 msgid "Fit"
 msgstr "全体表示"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "In"
 msgstr "拡大"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Reset"
 msgstr "リセット"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Guides"
 msgstr "ガイド"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Snap ON"
 msgstr "スナップ オン"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Snap OFF"
 msgstr "スナップ オフ"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 msgid "Rulers"
 msgstr "ルーラー"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 #: frontend/src/components/Ribbon/Ribbon.tsx
 #: frontend/src/components/Toolbar/Toolbar.tsx
 msgid "Hitmap"
@@ -1264,7 +1276,7 @@ msgstr "フィルター"
 msgid "Regions"
 msgstr "領域"
 
-#: frontend/src/components/Properties/Properties.tsx
+#: frontend/components/Properties/Properties.tsx
 msgid "Nothing open yet? Pick a figure in Objects above, or enter data on the Data page."
 msgstr "まだ何も開いていません。上のオブジェクトから図を選ぶか、データページでデータを入力してください。"
 
@@ -1584,3 +1596,15 @@ msgstr "再試行"
 #: frontend/store/useEditorStore.ts
 msgid "Could not load the data table"
 msgstr "データテーブルを読み込めませんでした"
+
+#: frontend/components/Properties/Properties.tsx
+msgid "Edit"
+msgstr "編集"
+
+#: frontend/components/Properties/Properties.tsx
+msgid "Arrange"
+msgstr "配置"
+
+#: frontend/components/Properties/Properties.tsx
+msgid "Display"
+msgstr "表示"
