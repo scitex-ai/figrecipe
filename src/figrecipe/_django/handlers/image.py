@@ -4,12 +4,22 @@
 
 import base64
 import io
-import logging
 import urllib.request
 
-from django.http import JsonResponse
+from ..._utils._optional import missing_extra
 
-logger = logging.getLogger(__name__)
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def _add_image_panel(editor, img_array, filename, drop_x, drop_y):
@@ -63,7 +73,10 @@ def handle_add_image_panel(request, editor):
     import json
 
     import numpy as np
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     data = json.loads(request.body) if request.body else {}
     image_data = data.get("image_data")
@@ -90,7 +103,10 @@ def handle_add_image_from_url(request, editor):
     import json
 
     import numpy as np
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     data = json.loads(request.body) if request.body else {}
     url = data.get("url")
@@ -129,11 +145,22 @@ def handle_load_recipe(request, editor):
         return JsonResponse({"error": "Missing recipe_content"}, status=400)
 
     try:
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        access = getattr(request, "_figrecipe_project", None)
+        working_dir = getattr(request, "_figrecipe_working_dir", None)
+        if access is not None:
+            from ruamel.yaml import YAML
+            from .._project_recipe import validate_data
+
+            validate_data(access, YAML(typ="safe").load(recipe_content), working_dir)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False, dir=working_dir if access else None) as f:
             f.write(recipe_content)
             temp_path = f.name
+        try:
+            fig, _ = fr.reproduce(temp_path)
+        finally:
+            from pathlib import Path
 
-        fig, _ = fr.reproduce(temp_path)
+            Path(temp_path).unlink(missing_ok=True)
         editor.fig = fig
         editor._hitmap_generated = False
         editor._color_map = {}

@@ -6,7 +6,7 @@
  *   TS managers (file tree clicks)  → CustomEvent → React (store updates)
  */
 
-import { emitBridgeEvent, onBridgeEvent } from "scitex-ui/react/app/bridge";
+import { emitBridgeEvent, onBridgeEvent } from "@scitex/sdk/ui/react/app/bridge";
 
 const SLUG = "figrecipe";
 

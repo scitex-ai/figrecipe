@@ -10,6 +10,7 @@ applied, enabling real-time preview updates in the GUI editor.
 import io
 from typing import Any, Dict, Optional, Tuple
 
+from .._utils._optional import missing_extra
 from .._wrappers import RecordingFigure
 from ._bbox import extract_bboxes
 from ._render_overrides import apply_dark_mode, apply_overrides
@@ -103,7 +104,10 @@ def render_preview(
     buf.seek(0)
     png_bytes = buf.read()
 
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     buf.seek(0)
     img = Image.open(buf)

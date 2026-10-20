@@ -10,7 +10,16 @@ import json
 from pathlib import Path
 from typing import Any, Union
 
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
 from ._editable_export import export_editable_figure
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def save_editable(
@@ -52,7 +61,7 @@ def save_editable(
     json_path = Path(image_path).with_suffix(".json")
     json_path.write_text(json.dumps(data, indent=2))
     if verbose:
-        print(f"Saved editable: {json_path}")
+        console.info(f"Saved editable: {json_path}")
     return json_path
 
 

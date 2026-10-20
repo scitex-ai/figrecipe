@@ -4,6 +4,12 @@
 
 Applies mm-based styling to matplotlib axes for publication-quality figures.
 """
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __all__ = [
     "apply_style_mm",
@@ -35,6 +41,8 @@ from ._plot_styles import (
     apply_violinplot_style,
 )
 from ._themes import THEME_COLORS, apply_theme_colors
+
+console = slogging.getConsole(f"{__name__}.console")
 
 
 def _normalize_style_keys(style: Dict[str, Any]) -> Dict[str, Any]:
@@ -390,7 +398,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
 
-    print("Testing style application...")
+    console.info("Testing style application...")
 
     fig, ax = plt.subplots(figsize=(4, 3))
 
@@ -413,7 +421,7 @@ if __name__ == "__main__":
     ax.set_title("Test Plot")
 
     plt.savefig("/tmp/test_style.png", dpi=300, bbox_inches="tight")
-    print("Saved to /tmp/test_style.png")
+    console.info("Saved to /tmp/test_style.png")
     plt.close()
 
 # EOF

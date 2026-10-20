@@ -1,15 +1,12 @@
-"""Smoke tests for scitex_dev.plt.demo_plotters."""
+"""Smoke control for FigRecipe's owning demo-plotter package."""
 
-import pytest
-
-pytest.importorskip("numpy")
-pytest.importorskip("matplotlib")
-
-import scitex_dev.plt.demo_plotters as dp_mod  # noqa: E402
+from figrecipe._dev import demo_plotters
 
 
 def test_demo_plotters_module_loads():
     # Arrange
+    package = demo_plotters
     # Act
+    package_path = getattr(package, "__path__", None)
     # Assert
-    assert hasattr(dp_mod, "__path__")
+    assert package_path is not None

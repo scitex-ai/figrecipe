@@ -9,6 +9,8 @@ import click
 from rich.console import Console
 from rich.syntax import Syntax
 
+from .._utils._console import render_rich
+
 console = Console()
 
 
@@ -75,8 +77,8 @@ def create(
     else:
         content = d.to_yaml(output_path)
 
-    console.print(f"[green]✓[/green] Created diagram: {output_path}")
-    console.print(Syntax(content, "text" if output_format == "yaml" else output_format))
+    render_rich(f"[green]✓[/green] Created diagram: {output_path}", __name__)
+    render_rich(Syntax(content, "text" if output_format == "yaml" else output_format), __name__)
 
 
 @diagram.command("convert")
@@ -120,7 +122,7 @@ def convert(
     elif input_path.suffix == ".mmd":
         d = Diagram.from_mermaid(input_path)
     else:
-        console.print(f"[red]Error:[/red] Unknown input format: {input_path.suffix}")
+        render_rich(f"[red]Error:[/red] Unknown input format: {input_path.suffix}", __name__)
         raise SystemExit(1)
 
     # Detect output format
@@ -142,7 +144,7 @@ def convert(
     else:
         d.to_yaml(output_path)
 
-    console.print(f"[green]✓[/green] Converted: {input_path} → {output_path}")
+    render_rich(f"[green]✓[/green] Converted: {input_path} → {output_path}", __name__)
 
 
 @diagram.command("show-info")
@@ -166,7 +168,7 @@ def info(path: str, as_json: bool):
     elif input_path.suffix == ".mmd":
         d = Diagram.from_mermaid(input_path)
     else:
-        console.print(f"[red]Error:[/red] Unknown format: {input_path.suffix}")
+        render_rich(f"[red]Error:[/red] Unknown format: {input_path.suffix}", __name__)
         raise SystemExit(1)
 
     column = (
@@ -187,13 +189,13 @@ def info(path: str, as_json: bool):
         click.echo(_json.dumps(payload, indent=2))
         return
 
-    console.print(f"[bold]Diagram Info:[/bold] {input_path}")
-    console.print(f"  Type: {payload['type']}")
-    console.print(f"  Title: {payload['title'] or '(none)'}")
-    console.print(f"  Nodes: {payload['nodes']}")
-    console.print(f"  Edges: {payload['edges']}")
-    console.print(f"  Groups: {payload['groups']}")
-    console.print(f"  Column: {payload['column']}")
+    render_rich(f"[bold]Diagram Info:[/bold] {input_path}", __name__)
+    render_rich(f"  Type: {payload['type']}", __name__)
+    render_rich(f"  Title: {payload['title'] or '(none)'}", __name__)
+    render_rich(f"  Nodes: {payload['nodes']}", __name__)
+    render_rich(f"  Edges: {payload['edges']}", __name__)
+    render_rich(f"  Groups: {payload['groups']}", __name__)
+    render_rich(f"  Column: {payload['column']}", __name__)
 
 
 @diagram.command("show-presets")
@@ -214,9 +216,9 @@ def presets(as_json: bool):
         click.echo(_json.dumps(preset_info, indent=2))
         return
 
-    console.print("[bold]Available Diagram Presets:[/bold]")
+    render_rich("[bold]Available Diagram Presets:[/bold]", __name__)
     for name, desc in preset_info.items():
-        console.print(f"  [cyan]{name}[/cyan]: {desc}")
+        render_rich(f"  [cyan]{name}[/cyan]: {desc}", __name__)
 
 
 @diagram.command("split")
@@ -243,13 +245,13 @@ def split(input: str, max_nodes: int, strategy: str, output_dir: Optional[str]):
     if input_path.suffix in (".yaml", ".yml"):
         d = Diagram.from_yaml(input_path)
     else:
-        console.print("[red]Error:[/red] Split only supports YAML input")
+        render_rich("[red]Error:[/red] Split only supports YAML input", __name__)
         raise SystemExit(1)
 
     parts = d.split(max_nodes=max_nodes, strategy=strategy)
 
     if len(parts) == 1:
-        console.print("[yellow]Note:[/yellow] Diagram doesn't need splitting")
+        render_rich("[yellow]Note:[/yellow] Diagram doesn't need splitting", __name__)
         return
 
     out_dir = Path(output_dir) if output_dir else input_path.parent
@@ -259,11 +261,11 @@ def split(input: str, max_nodes: int, strategy: str, output_dir: Optional[str]):
         out_name = f"{input_path.stem}_part{i + 1}.mmd"
         out_path = out_dir / out_name
         part.to_mermaid(out_path)
-        console.print(
+        render_rich(
             f"[green]✓[/green] Created: {out_path} ({len(part.spec.nodes)} nodes)"
-        )
+        , __name__)
 
-    console.print(f"\n[bold]Split into {len(parts)} parts[/bold]")
+    render_rich(f"\n[bold]Split into {len(parts)} parts[/bold]", __name__)
 
 
 @diagram.command("render")
@@ -313,14 +315,14 @@ def render(
     elif input_path.suffix == ".mmd":
         d = Diagram.from_mermaid(input_path)
     else:
-        console.print(f"[red]Error:[/red] Unknown input format: {input_path.suffix}")
+        render_rich(f"[red]Error:[/red] Unknown input format: {input_path.suffix}", __name__)
         raise SystemExit(1)
 
     try:
         result = d.render(output_path, format=format, backend=backend, scale=scale)
-        console.print(f"[green]✓[/green] Rendered: {result}")
+        render_rich(f"[green]✓[/green] Rendered: {result}", __name__)
     except RuntimeError as e:
-        console.print(f"[red]Error:[/red] {e}")
+        render_rich(f"[red]Error:[/red] {e}", __name__)
         raise SystemExit(1)
 
 
@@ -342,10 +344,10 @@ def backends(as_json: bool):
         click.echo(_json.dumps(backend_info, indent=2))
         return
 
-    console.print("[bold]Diagram Rendering Backends:[/bold]")
+    render_rich("[bold]Diagram Rendering Backends:[/bold]", __name__)
     for name, info in backend_info.items():
         status = "[green]✓[/green]" if info["available"] else "[red]✗[/red]"
-        console.print(f"  {status} {name}")
-        console.print(f"      Formats: {', '.join(info['formats'])}")
+        render_rich(f"  {status} {name}", __name__)
+        render_rich(f"      Formats: {', '.join(info['formats'])}", __name__)
         if not info["available"]:
-            console.print(f"      Install: {info['install']}")
+            render_rich(f"      Install: {info['install']}", __name__)

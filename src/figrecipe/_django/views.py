@@ -3,12 +3,35 @@
 """Views for the figrecipe editor Django app."""
 
 import json
-import logging
 from pathlib import Path
 
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from .._utils._optional import missing_extra
 
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
+    from django.http import HttpResponse, JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+try:
+    from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+from scitex_sdk.host import CapabilityUnavailable
+
+from . import api_policy
+from ._project_access import (
+    AccessError,
+    bind_editor,
+    editor_key,
+    hub_mode,
+    prepare_request,
+)
 from .handlers import (
     HANDLERS,
     handle_download_fig,
@@ -16,7 +39,7 @@ from .handlers import (
 )
 from .services import get_or_create_editor
 
-logger = logging.getLogger(__name__)
+logger = slogging.getLogger(__name__)
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static" / "figrecipe"
 
@@ -50,6 +73,8 @@ def _get_recipe_path(request):
         data = json.loads(request.body) if request.body else {}
     except json.JSONDecodeError:
         data = {}
+    if not isinstance(data, dict):
+        return ""
     return data.get("recipe_path", "") or request.GET.get("recipe", "")
 
 
@@ -58,30 +83,18 @@ def _get_editor(request):
     recipe_path = _get_recipe_path(request)
     if not recipe_path:
         return None
-    session_key = f"figrecipe_{recipe_path}"
+    session_key = editor_key(request, recipe_path)
     try:
-        return get_or_create_editor(session_key, recipe_path)
+        editor = get_or_create_editor(session_key, recipe_path)
+        bind_editor(request, editor)
+        return editor
     except FileNotFoundError:
         logger.warning("[FigRecipe] Recipe not found: %s", recipe_path)
         return None
 
 
 # ── Endpoints that work without an editor ──────────────────────────
-_NO_EDITOR_ENDPOINTS = {
-    "ping",
-    "list_themes",
-    "api/tree",
-    "api/files",
-    "api/switch",
-    "api/new",
-    "api/gallery",
-    "api/gallery/add",
-    "api/gallery/demo",
-    "api/compose",
-    "api/import/stats-plot-spec",
-    "api/chat/stream",
-    "api/chat/sessions/",
-}
+_NO_EDITOR_ENDPOINTS = api_policy.NO_EDITOR_ENDPOINTS
 
 
 def _favicon_data_uri(hex_color: str) -> str:
@@ -100,15 +113,33 @@ def _favicon_data_uri(hex_color: str) -> str:
     return f"data:image/svg+xml,{quote(svg)}"
 
 
-def editor_page(request):
+def _access_response(exc):
+    if isinstance(exc, CapabilityUnavailable):
+        return JsonResponse({"error": "Project capability is unavailable"}, status=503)
+    return JsonResponse({"error": str(exc)}, status=exc.status)
+
+
+@ensure_csrf_cookie
+def editor_page(request, view_path=""):
     """Serve the React SPA inside the scitex-ui workspace shell."""
     import os
 
-    from django.template.loader import render_to_string
+    try:
+        prepare_request(request)
+    except (AccessError, CapabilityUnavailable) as exc:
+        return _access_response(exc)
+
+    from scitex_sdk import ui
+
+    try:
+        from django.template.loader import render_to_string
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Try scitex-ui shell template first (standalone with workspace frame)
     try:
-        working_dir = os.environ.get("FIGRECIPE_WORKING_DIR", "")
+        access = getattr(request, "_figrecipe_project", None)
+        working_dir = str(request._figrecipe_working_dir) if access else os.environ.get("FIGRECIPE_WORKING_DIR", "")
         working_dir_name = Path(working_dir).name if working_dir else "Files"
         from figrecipe import __version__ as app_version
         # Consumer packages that alias this same CLI/Django app under their
@@ -117,6 +148,8 @@ def editor_page(request):
         # editor (see figrecipe._cli._main's program-name detection) rather
         # than forking the template.
         favicon_color = os.environ.get("FIGRECIPE_FAVICON_COLOR", "")
+        from scitex_sdk.ui import branding
+
         html = render_to_string(
             "figrecipe/standalone.html",
             {
@@ -124,15 +157,26 @@ def editor_page(request):
                 "app_label": os.environ.get("FIGRECIPE_APP_LABEL", "FigRecipe Editor"),
                 "app_version": app_version,
                 "working_dir": working_dir,
-                "working_dir_name": working_dir_name,
+                "working_dir_name": access.name if access else working_dir_name,
+                "hosted": access is not None,
+                **ui.mount_context(request, view_path=view_path),
                 "favicon_href": (
                     _favicon_data_uri(favicon_color) if favicon_color else ""
                 ),
+                # The SDK shell defaults an absent key to 'en'; populate ONLY
+                # the language from the public shell_context (active Django
+                # language, 'en' fallback) so every other value stays exactly
+                # as it was (card figrecipe-ja-shell-lang-context-20261003).
+                # Placed after the mount spread so it cannot be shadowed.
+                "shell_lang": branding.shell_context("figrecipe")["shell_lang"],
             },
             request=request,
         )
         return HttpResponse(html)
     except Exception:
+        if hub_mode():
+            logger.exception("[FigRecipe] Hosted editor shell is unavailable")
+            return JsonResponse({"error": "Editor shell is unavailable"}, status=503)
         # Fallback: serve raw React SPA (no shell)
         react_html = _STATIC_DIR / "index.html"
         if react_html.exists():
@@ -142,20 +186,48 @@ def editor_page(request):
         )
 
 
-@csrf_exempt
+@ensure_csrf_cookie
+def workspace_page(request):
+    """Serve the same embedded editor content at any declared leaf mount."""
+    try:
+        from django.shortcuts import render
+    except ImportError as exc:
+        raise missing_extra(exc) from exc
+    from scitex_sdk import ui
+
+    from .workspace import build_workspace_context
+
+    try:
+        context = build_workspace_context(request)
+    except (AccessError, CapabilityUnavailable) as exc:
+        return _access_response(exc)
+    mount = ui.mount_context(request, view_path="workspace/")
+    context.update(mount, stx_mount=mount["stx_mount_prefix"])
+    return render(request, "figrecipe/workspace.html", context)
+
+
 def api_dispatch(request, endpoint):
+    """Keep CSRF protection at the leaf boundary when mounted in a host."""
+    if hub_mode():
+        return _hosted_api_dispatch(request, endpoint)
+    return _dispatch(request, endpoint)
+
+
+@csrf_protect
+def _hosted_api_dispatch(request, endpoint):
+    try:
+        prepare_request(request, endpoint)
+        return _dispatch(request, endpoint)
+    except (AccessError, CapabilityUnavailable) as exc:
+        return _access_response(exc)
+
+
+def _dispatch(request, endpoint):
     """Dispatch API calls to handler functions."""
     editor = _get_editor(request)
 
     # Some endpoints require an editor
-    _no_editor = endpoint in _NO_EDITOR_ENDPOINTS or endpoint.startswith(
-        (
-            "api/compose/export/",
-            "api/gallery/thumbnail/",
-            "api/file-content/",
-            "api/chat/sessions/",
-        )
-    )
+    _no_editor = api_policy.allows_no_editor(endpoint)
     if editor is None and not _no_editor:
         handler = HANDLERS.get(endpoint)
         if handler:
@@ -168,6 +240,8 @@ def api_dispatch(request, endpoint):
     if handler:
         try:
             return handler(request, editor)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] API error on /%s", endpoint)
             return JsonResponse({"error": str(e)}, status=500)
@@ -179,6 +253,8 @@ def api_dispatch(request, endpoint):
         name = endpoint[len("api/gallery/thumbnail/") :]
         try:
             return handle_gallery_thumbnail(request, editor, name)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] gallery thumbnail/%s", name)
             return JsonResponse({"error": str(e)}, status=500)
@@ -189,6 +265,8 @@ def api_dispatch(request, endpoint):
         call_id = endpoint[5:]
         try:
             return handle_single_call(request, editor, call_id)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] API error on /call/%s", call_id)
             return JsonResponse({"error": str(e)}, status=500)
@@ -199,6 +277,8 @@ def api_dispatch(request, endpoint):
         fmt = endpoint[9:]
         try:
             return handle_download_fig(request, editor, fmt)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] API error on /download/%s", fmt)
             return JsonResponse({"error": str(e)}, status=500)
@@ -209,6 +289,8 @@ def api_dispatch(request, endpoint):
         fmt = endpoint[len("api/compose/export/") :]
         try:
             return handle_compose_export(request, editor, fmt)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] compose export/%s", fmt)
             return JsonResponse({"error": str(e)}, status=500)
@@ -219,6 +301,8 @@ def api_dispatch(request, endpoint):
         file_path = endpoint[len("api/file-content/") :]
         try:
             return handle_api_file_content(request, editor, file_path)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] file-content/%s", file_path)
             return JsonResponse({"error": str(e)}, status=500)
@@ -241,6 +325,8 @@ def api_dispatch(request, endpoint):
             if len(parts) >= 2 and parts[1] == "messages":
                 return handle_api_session_messages(request, editor, session_id)
             return handle_api_session_detail(request, editor, session_id)
+        except AccessError as exc:
+            return _access_response(exc)
         except Exception as e:
             logger.exception("[FigRecipe] session/%s", rest)
             return JsonResponse({"error": str(e)}, status=500)

@@ -65,6 +65,7 @@ def imshow_plot(
     position: tuple,
     track: bool,
     call_id: Optional[str],
+    artist_refs: Optional[dict] = None,
     **kwargs,
 ):
     """Display image with automatic SCITEX styling.
@@ -75,6 +76,12 @@ def imshow_plot(
     those callers restore the axes with a plain ``ax.set_xticks(...)`` /
     ``set_yticks(...)`` AFTER the imshow, which both the live render and replay
     honour (see ``apply_imshow_axes_visibility`` and ``finalize_imshow_axes``).
+
+    ``artist_refs`` is the owning RecordingAxes' ``_artist_refs`` map. This
+    method records OUTSIDE the generic funnel (``record_call_with_color_capture``
+    is not used here), so the AxesImage result must be noted for the save-time
+    visibility annotation HERE, or a hidden ``ax.imshow()`` replays drawn (card
+    figrecipe-hidden-bar-imshow-not-registered-in-artist-funnel-20260927).
     """
     from ..styles._internal import get_style
     from ._axes_helpers import inject_clip_on_from_style
@@ -98,13 +105,18 @@ def imshow_plot(
 
     # Record the call if tracking is enabled
     if track:
-        recorder.record_call(
+        record = recorder.record_call(
             ax_position=position,
             method_name="imshow",
             args=(X,),
             kwargs=kwargs,
             call_id=call_id,
         )
+        # Note the AxesImage for the save-time visibility annotation; this
+        # record site bypasses the generic funnel that notes artists.
+        from .._recorder._artists import note_call_artists
+
+        note_call_artists(artist_refs, "imshow", record, result)
 
     return result
 
@@ -412,8 +424,16 @@ def bar_plot(
     position: tuple,
     track: bool,
     call_id: Optional[str],
+    artist_refs: Optional[dict] = None,
 ):
-    """Bar chart with SCITEX error bar styling."""
+    """Bar chart with SCITEX error bar styling.
+
+    ``artist_refs`` is the owning RecordingAxes' ``_artist_refs`` map. This
+    method records OUTSIDE the generic funnel, so the BarContainer's patches
+    must be noted for the save-time visibility annotation HERE, or a hidden
+    ``ax.bar()`` replays drawn (card
+    figrecipe-hidden-bar-imshow-not-registered-in-artist-funnel-20260927).
+    """
     from .._utils._units import mm_to_pt
     from ..styles._internal import get_style, resolve_colors_in_kwargs
     from ._axes_helpers import inject_clip_on_from_style
@@ -477,13 +497,18 @@ def bar_plot(
             if actual_color is not None:
                 recorded_kwargs["color"] = actual_color
 
-        recorder.record_call(
+        record = recorder.record_call(
             ax_position=position,
             method_name="bar",
             args=args,
             kwargs=recorded_kwargs,
             call_id=call_id,
         )
+        # Note the BarContainer's patches for the save-time visibility
+        # annotation; this record site bypasses the generic funnel.
+        from .._recorder._artists import note_call_artists
+
+        note_call_artists(artist_refs, "bar", record, result)
 
     return result
 

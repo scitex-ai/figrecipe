@@ -1,12 +1,12 @@
 /** Save / Restore / Style / Theme actions — extracted from editor store. */
 
-import { api } from "../api/client";
+import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent } from "../api/client";
 import type {
   PlacedFigure,
   PreviewResponse,
   StyleOverrides,
 } from "../types/editor";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type Get = () => {
   placedFigures: PlacedFigure[];
@@ -45,6 +45,7 @@ function buildComposePayload(get: Get) {
 export function createPersistActions(set: Set, get: Get) {
   return {
     switchTheme: async (theme: string) => {
+      const session = apiSessionId();
       set({ loading: true });
       try {
         const data = await api.post<PreviewResponse & { theme: string }>(
@@ -71,14 +72,16 @@ export function createPersistActions(set: Set, get: Get) {
         }
         get().showToast(interpolate(gettext("Theme: %s"), [theme]), "success");
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
         console.error("[Editor] Failed to switch theme:", e);
         get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
-        set({ loading: false });
+        if (isApiSessionCurrent(session)) set({ loading: false });
       }
     },
 
     updateOverrides: async (overrides: StyleOverrides) => {
+      const session = apiSessionId();
       set({ loading: true });
       try {
         const data = await api.post<PreviewResponse>("update", { overrides });
@@ -99,10 +102,11 @@ export function createPersistActions(set: Set, get: Get) {
           }));
         }
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
         console.error("[Editor] Failed to update:", e);
         get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
-        set({ loading: false });
+        if (isApiSessionCurrent(session)) set({ loading: false });
       }
     },
 
@@ -113,11 +117,13 @@ export function createPersistActions(set: Set, get: Get) {
           await api.post("save", { overrides: get().overrides });
           get().showToast(gettext("Saved"), "success");
         } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
           console.error("[Editor] Failed to save:", e);
           get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
         }
         return;
       }
+      const session = apiSessionId();
       set({ loading: true });
       try {
         const payload = buildComposePayload(get);
@@ -127,14 +133,16 @@ export function createPersistActions(set: Set, get: Get) {
         );
         get().showToast(interpolate(gettext("Composed → %s"), [result.path]), "success");
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
         console.error("[Editor] Failed to compose:", e);
         get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
-        set({ loading: false });
+        if (isApiSessionCurrent(session)) set({ loading: false });
       }
     },
 
     restore: async () => {
+      const session = apiSessionId();
       set({ loading: true });
       try {
         const data = await api.post<PreviewResponse>("restore");
@@ -161,10 +169,11 @@ export function createPersistActions(set: Set, get: Get) {
         }
         get().showToast(gettext("Restored to original"), "success");
       } catch (e) {
+        if (e instanceof ApiSessionExpired) return;
         console.error("[Editor] Failed to restore:", e);
         get().showToast(interpolate(gettext("Error: %s"), [e]), "error");
       } finally {
-        set({ loading: false });
+        if (isApiSessionCurrent(session)) set({ loading: false });
       }
     },
   };

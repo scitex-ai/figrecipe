@@ -1,13 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Element/call handlers: calls, update_call, update_element_color."""
+"""Element/call handlers: calls, update_call, update_element_color, element_details."""
 
 import json
-import logging
+import re
 
-from django.http import JsonResponse
+from ..._utils._optional import missing_extra
 
-logger = logging.getLogger(__name__)
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
+    from django.http import JsonResponse
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
+
+# Hitmap element key: ax{axes_index}_{kind}{artist_index}, e.g. ax0_bar3,
+# ax2_image0, ax1_boxplot_box0. The kind itself may carry underscores.
+_ELEMENT_KEY_RE = re.compile(r"^ax(\d+)_(.*?)(\d+)$")
+
+
+def _num(value):
+    """Plain float for numpy scalars, else the value unchanged."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return value
 
 
 def _get_call_id(call):
@@ -258,3 +281,270 @@ def handle_update_element_color(request, editor):
     except Exception as e:
         logger.exception("[FigRecipe] update_element_color failed")
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def handle_element_details(request, editor):
+    """GET /element_details?element=<hitmap key>[&row=&col=][&index=].
+
+    Inspect one canvas element the hitmap hit-tested: bars report their
+    value and position, matrix images (imshow/matshow/pcolormesh) report
+    the cell value at ``row``/``col`` plus the matrix shape and range, and
+    scatter/line series report the point at ``index`` (or the series
+    summary without it). Series identity comes from the hitmap color map,
+    values from the live artists — so the panel shows what the click hit,
+    not a re-guess from the recipe.
+    """
+    from figrecipe._editor._helpers import to_json_serializable
+
+    key = request.GET.get("element", "")
+    match = _ELEMENT_KEY_RE.match(key or "")
+    if not match:
+        return JsonResponse(
+            {"error": "Please select a canvas element first"}, status=400
+        )
+    ax_index, kind, artist_index = (
+        int(match.group(1)),
+        match.group(2),
+        int(match.group(3)),
+    )
+
+    try:
+        axes = editor.fig.get_axes()
+    except Exception as e:
+        return JsonResponse({"error": f"No figure loaded: {e}"}, status=400)
+    if ax_index >= len(axes):
+        return JsonResponse({"error": f"Unknown panel: {key}"}, status=404)
+    ax = axes[ax_index]
+
+    color_map = getattr(editor, "_color_map", None) or {}
+    entry = color_map.get(key, {})
+    details = {
+        "element": key,
+        "type": entry.get("type", kind),
+        "label": entry.get("label", key),
+        "ax_index": ax_index,
+        "call_id": entry.get("call_id"),
+        "series": entry.get("label", key),
+    }
+
+    def opt_int(name):
+        try:
+            raw = request.GET.get(name)
+            return int(raw) if raw is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    try:
+        if kind in ("bar", "hist"):
+            _bar_details(ax, artist_index, details)
+        elif kind == "wedge":
+            _wedge_details(ax, artist_index, details)
+        elif kind == "scatter":
+            _points_details(ax, artist_index, details, opt_int("index"), "scatter")
+        elif kind in ("line", "step"):
+            _line_details(ax, artist_index, details, opt_int("index"))
+        elif kind == "image":
+            _matrix_details(
+                ax, artist_index, details, opt_int("row"), opt_int("col"), "image"
+            )
+        elif kind == "quadmesh":
+            _matrix_details(
+                ax, artist_index, details, opt_int("row"), opt_int("col"), "quadmesh"
+            )
+        elif kind == "contour":
+            _contour_details(ax, artist_index, details)
+    except (IndexError, ValueError):
+        return JsonResponse({"error": f"Could not find element: {key}"}, status=404)
+    return JsonResponse(to_json_serializable(details))
+
+
+def _bar_details(ax, artist_index, details):
+    """One Rectangle patch: value, position, and category label."""
+    from matplotlib.patches import Rectangle
+
+    # Hitmap bar keys carry the RAW ax.patches index (the key loop
+    # enumerates every patch and skips the background/invisible without
+    # renumbering) — resolve the same slot and validate it survived.
+    patch = ax.patches[artist_index]
+    if not isinstance(patch, Rectangle) or not patch.get_visible():
+        raise IndexError(f"no bar at patches[{artist_index}]")
+    x, y = patch.get_x(), patch.get_y()
+    w, h = patch.get_width(), patch.get_height()
+    horizontal = w > h
+    value = x + w if horizontal else y + h
+    pos = y + h / 2 if horizontal else x + w / 2
+    details.update(
+        {
+            "value": _num(value),
+            "position": _num(pos),
+            "orientation": "horizontal" if horizontal else "vertical",
+            "index": artist_index,
+            "row": artist_index,
+        }
+    )
+    labels = [t.get_text() for t in ax.get_xticklabels()]
+    if (
+        not horizontal
+        and labels
+        and artist_index < len(labels)
+        and labels[artist_index]
+    ):
+        details["column"] = labels[artist_index]
+    labels_y = [t.get_text() for t in ax.get_yticklabels()]
+    if (
+        horizontal
+        and labels_y
+        and artist_index < len(labels_y)
+        and labels_y[artist_index]
+    ):
+        details["column"] = labels_y[artist_index]
+
+
+def _wedge_details(ax, artist_index, details):
+    """One pie slice: share of the whole."""
+    from matplotlib.patches import Wedge
+
+    # Raw ax.patches index, like the hitmap key loop.
+    wedge = ax.patches[artist_index]
+    if not isinstance(wedge, Wedge) or not wedge.get_visible():
+        raise IndexError(f"no wedge at patches[{artist_index}]")
+    span = wedge.theta2 - wedge.theta1
+    details.update(
+        {
+            "value": _num(span / 360.0),
+            "index": artist_index,
+            "row": artist_index,
+        }
+    )
+
+
+def _points_details(ax, artist_index, details, point_index, collection_kind):
+    """One scatter collection: the point at ``index`` or the series summary."""
+    from matplotlib.collections import PathCollection
+
+    # Raw ax.collections index, like the hitmap key loop.
+    coll = ax.collections[artist_index]
+    if not isinstance(coll, PathCollection) or not coll.get_visible():
+        raise IndexError(f"no scatter at collections[{artist_index}]")
+    offsets = coll.get_offsets()
+    label = coll.get_label()
+    if label and not label.startswith("_"):
+        details["series"] = label
+    if point_index is not None:
+        pt = offsets[point_index]
+        details.update(
+            {
+                "value": [_num(pt[0]), _num(pt[1])],
+                "index": point_index,
+                "row": point_index,
+            }
+        )
+    else:
+        details.update(
+            {
+                "count": len(offsets),
+                "x_range": [_num(min(offsets[:, 0])), _num(max(offsets[:, 0]))]
+                if len(offsets)
+                else None,
+                "y_range": [_num(min(offsets[:, 1])), _num(max(offsets[:, 1]))]
+                if len(offsets)
+                else None,
+            }
+        )
+
+
+def _line_details(ax, artist_index, details, point_index):
+    """One line: the point at ``index`` or the series summary."""
+    lines = ax.get_lines()
+    line = lines[artist_index]
+    if not line.get_visible():
+        raise IndexError(f"no line at lines[{artist_index}]")
+    label = line.get_label()
+    if label and not label.startswith("_"):
+        details["series"] = label
+    xs, ys = list(line.get_xdata()), list(line.get_ydata())
+    if point_index is not None:
+        details.update(
+            {
+                "value": [_num(xs[point_index]), _num(ys[point_index])],
+                "index": point_index,
+                "row": point_index,
+            }
+        )
+    else:
+        details.update({"count": len(xs)})
+
+
+def _matrix_details(ax, artist_index, details, row, col, image_kind):
+    """One matrix image (imshow/matshow/pcolormesh cell grid): the cell value
+    at ``row``/``col`` with row/column labels, plus shape and value range."""
+    import numpy as np
+
+    if image_kind == "image":
+        from matplotlib.image import AxesImage
+
+        # Raw ax.images index, like the hitmap key loop.
+        artist = ax.images[artist_index]
+        if not isinstance(artist, AxesImage) or not artist.get_visible():
+            raise IndexError(f"no image at images[{artist_index}]")
+        array = np.asarray(artist.get_array())
+    else:
+        from matplotlib.collections import QuadMesh
+
+        # Raw ax.collections index, like the hitmap key loop.
+        artist = ax.collections[artist_index]
+        if not isinstance(artist, QuadMesh) or not artist.get_visible():
+            raise IndexError(f"no mesh at collections[{artist_index}]")
+        array = np.asarray(artist.get_array())
+    array = np.asarray(array, dtype=float).reshape(array.shape[:2])
+    n_rows, n_cols = array.shape
+    details.update(
+        {
+            "shape": [n_rows, n_cols],
+            "minimum": _num(np.nanmin(array)),
+            "maximum": _num(np.nanmax(array)),
+            "mean": _num(np.nanmean(array)),
+        }
+    )
+    x_labels = [t.get_text() for t in ax.get_xticklabels()]
+    y_labels = [t.get_text() for t in ax.get_yticklabels()]
+    if x_labels and len(x_labels) == n_cols:
+        details["column_labels"] = x_labels
+    if y_labels and len(y_labels) == n_rows:
+        details["row_labels"] = y_labels
+    if row is not None and col is not None:
+        if not (0 <= row < n_rows and 0 <= col < n_cols):
+            raise IndexError(f"cell ({row}, {col}) outside {n_rows}x{n_cols}")
+        details.update(
+            {
+                "value": _num(array[row, col]),
+                "row": row,
+                "col": col,
+            }
+        )
+        if "column_labels" in details:
+            details["column"] = details["column_labels"][col]
+        else:
+            details["column"] = col
+        if "row_labels" in details:
+            # y tick labels run bottom-up while matrix row 0 is the top.
+            details["row_label"] = details["row_labels"][n_rows - 1 - row]
+        else:
+            details["row_label"] = row
+
+
+def _contour_details(ax, artist_index, details):
+    """One contour set: its levels."""
+    from matplotlib.contour import QuadContourSet
+
+    # Raw ax.collections index, like the hitmap key loop.
+    artist = ax.collections[artist_index]
+    if not isinstance(artist, QuadContourSet):
+        raise IndexError(f"no contour at collections[{artist_index}]")
+    levels = list(artist.levels)
+    details.update(
+        {
+            "levels": [_num(v) for v in levels],
+            "count": len(levels),
+        }
+    )

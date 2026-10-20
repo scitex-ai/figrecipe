@@ -14,7 +14,7 @@
 
 import { useEffect, useMemo } from "react";
 import { InnerEditor } from "./InnerEditor";
-import { setApiBase, setRecipe, setWorkingDir } from "./api/client";
+import { setApiBase, setProject, setRecipe, setWorkingDir } from "./api/client";
 import { useEditorStore } from "./store/useEditorStore";
 import type { BBox, StatBracket } from "./types/editor";
 
@@ -23,6 +23,9 @@ export interface FigrecipeEditorProps {
   apiBaseUrl?: string;
   /** Project working directory (injected server-side). */
   workingDir?: string;
+  /** SDK-authorized project selected for this editor instance. */
+  projectId?: string;
+  projectName?: string;
   /**
    * figrecipe's own version for the header badge. A host mounts via
    * #app-mount (no #root[data-version]), so pass the derived version
@@ -49,6 +52,8 @@ export interface FigrecipeEditorProps {
 export function FigrecipeEditor({
   apiBaseUrl,
   workingDir,
+  projectId,
+  projectName,
   appVersion,
   recipe,
   darkMode,
@@ -57,10 +62,13 @@ export function FigrecipeEditor({
 }: FigrecipeEditorProps) {
   // Configure API client before first render
   useMemo(() => {
-    if (apiBaseUrl) setApiBase(apiBaseUrl);
-    if (workingDir) setWorkingDir(workingDir);
-    if (recipe) setRecipe(recipe);
-  }, [apiBaseUrl, workingDir, recipe]);
+    if (apiBaseUrl !== undefined) setApiBase(apiBaseUrl);
+    setWorkingDir(workingDir ?? "");
+    setRecipe(recipe ?? "");
+    setProject(projectId ?? null);
+    useEditorStore.setState({ projectId: projectId || null, projectName: projectName || null });
+    if (recipe) useEditorStore.setState({ currentFile: recipe });
+  }, [apiBaseUrl, workingDir, recipe, projectId, projectName]);
 
   // Subscribe to store changes and forward as callbacks
   useEffect(() => {
@@ -90,7 +98,7 @@ export function FigrecipeEditor({
     }
   }, [darkMode]);
 
-  return <InnerEditor embedded appVersion={appVersion} />;
+  return <InnerEditor embedded appVersion={appVersion} initialRecipe={recipe} />;
 }
 
 // Re-export types for consumers

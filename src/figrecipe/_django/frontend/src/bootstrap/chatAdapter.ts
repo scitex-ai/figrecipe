@@ -2,8 +2,8 @@
 // Extracted from main.tsx to keep the bootstrap orchestrator under the line
 // limit; main.tsx imports `figrecipeChatAdapter` and wires it into ChatMode.
 
-import type { ChatAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
-import { csrfToken } from "../api/client";
+import type { ChatAdapter } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
+import { apiUrl, csrfToken } from "../api/client";
 
 export const FIGRECIPE_SYSTEM =
   "You are a helpful AI assistant in the FigRecipe figure editor. " +
@@ -11,7 +11,7 @@ export const FIGRECIPE_SYSTEM =
 
 export const figrecipeChatAdapter: ChatAdapter = {
   async streamChat(message, _context, images) {
-    return fetch("api/chat/stream", {
+    return fetch(apiUrl("api/chat/stream"), {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({

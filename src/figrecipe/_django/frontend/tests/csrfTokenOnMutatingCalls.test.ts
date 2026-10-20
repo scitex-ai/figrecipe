@@ -35,7 +35,6 @@ function check(name: string, cond: boolean) {
 
 const client = read("api/client.ts");
 const main = read("main.tsx");
-const wsInt = read("bridge/WorkspaceIntegration.ts");
 const chatAd = read("bootstrap/chatAdapter.ts");
 
 console.log("csrfTokenOnMutatingCalls:");
@@ -65,7 +64,6 @@ check(
 const MUTATING = /method:\s*"(POST|PATCH|DELETE)"/g;
 for (const [file, code] of [
   ["main.tsx", main],
-  ["WorkspaceIntegration.ts", wsInt],
   ["chatAdapter.ts", chatAd],
 ] as const) {
   const sites = [...code.matchAll(MUTATING)];
@@ -80,6 +78,10 @@ for (const [file, code] of [
     );
   }
 }
+
+// WorkspaceIntegration now delegates both mutations to api.post rather than
+// owning raw fetch headers. workspaceApi.test.mjs executes those actual calls
+// and checks the CSRF header, custom mount and selected project together.
 
 if (failures) {
   console.error(`\n${failures} CSRF gate check(s) failed`);

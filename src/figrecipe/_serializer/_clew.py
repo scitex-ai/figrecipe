@@ -17,11 +17,17 @@ never breaks figrecipe's real save/load (which stays fail-loud on data errors).
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import Union
 
-_logger = logging.getLogger(__name__)
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+_logger = slogging.getLogger(__name__)
 
 
 def _active_tracker():

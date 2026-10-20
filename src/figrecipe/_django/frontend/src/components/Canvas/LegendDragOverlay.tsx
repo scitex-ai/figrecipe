@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface Props {
   /** Legend bbox in image pixels (x, y = top-left). */

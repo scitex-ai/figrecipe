@@ -9,7 +9,8 @@ import ReactDOM from "react-dom/client";
 // React app content (Plot/Canvas editor — NOT shell)
 import { InnerEditor } from "./InnerEditor";
 import { useEditorStore } from "./store/useEditorStore";
-import { csrfToken } from "./api/client";
+import { apiUrl, csrfToken, setApiBase, setWorkingDir } from "./api/client";
+import { mountPrefix } from "@scitex/sdk/ui/ts/_base/mount.ts";
 
 // Styles (app-specific)
 import "./styles/app-variables.css";
@@ -24,68 +25,111 @@ import "./styles/mobile.css";
 
 // scitex-ui CSS — single bundle import (shell + app + utils)
 // @ts-ignore
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/css/all.css";
+import "@scitex/sdk/ui/css/all.css";
 
 // Element inspector — debug overlay (Alt+I to toggle)
 // @ts-ignore
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/utils/element-inspector.ts";
+import "@scitex/sdk/ui/ts/utils/element-inspector.ts";
 
 // Context-aware zoom — app-specific panes only (shell panes use vanilla TS zoom)
-import { bootstrapContextZoom } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/utils/context-zoom.ts";
+import { bootstrapContextZoom } from "@scitex/sdk/ui/ts/utils/context-zoom.ts";
 
 // Vanilla TS workspace shell — panel resizer initialization
-import "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-panel-resizer/index.ts";
+import "@scitex/sdk/ui/ts/shell/workspace-panel-resizer/index.ts";
 
 // Vanilla TS shell terminal — unified factory with adapter pattern
-import { initTerminal } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/terminal/index.ts";
-import type { TerminalConnectionAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/terminal/index.ts";
+import { initTerminal } from "@scitex/sdk/ui/ts/shell/terminal/index.ts";
+import type { TerminalConnectionAdapter } from "@scitex/sdk/ui/ts/shell/terminal/index.ts";
 
 // Vanilla TS shell file tree — WorkspaceFilesTree (full-featured, adapter-based)
-import { WorkspaceFilesTree } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree/index.ts";
-import type { FileTreeAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/workspace-files-tree/index.ts";
+import { WorkspaceFilesTree } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
+import type { FileTreeAdapter } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
+import type { TreeItem } from "@scitex/sdk/ui/ts/shell/workspace-files-tree/index.ts";
+import type { RecentFileEntry } from "@scitex/sdk/ui/ts/shell/repo-monitor/index.ts";
 
 // Vanilla TS shell toolbar + keyboard shortcuts
 import {
   ToolbarManager,
   KeyboardShortcuts,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/toolbar/index.ts";
+} from "@scitex/sdk/ui/ts/shell/toolbar/index.ts";
 
 // Vanilla TS shell keyboard shortcuts + modal (Alt+A, Alt+T, pane cycling)
 import {
   initKeyboardShortcuts,
   registerShortcuts,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/keyboard-shortcuts/index.ts";
+} from "@scitex/sdk/ui/ts/shell/keyboard-shortcuts/index.ts";
 
 // Vanilla TS shell repo monitor — recent file changes (adapter-based polling)
 import {
   initRepoMonitor,
   initMonitorToggle,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor/index.ts";
-import type { RepoMonitorAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/repo-monitor/index.ts";
+} from "@scitex/sdk/ui/ts/shell/repo-monitor/index.ts";
+import type { RepoMonitorAdapter } from "@scitex/sdk/ui/ts/shell/repo-monitor/index.ts";
 
 // Vanilla TS shell viewer — file viewing (images, PDFs, text)
-import { ViewerManager } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/viewer/index.ts";
-import type { ViewerAdapter } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/viewer/index.ts";
+import { ViewerManager } from "@scitex/sdk/ui/ts/shell/viewer/index.ts";
+import type { ViewerAdapter } from "@scitex/sdk/ui/ts/shell/viewer/index.ts";
 
 // Vanilla TS shell ChatMode — full chat orchestration (scitex-ui)
-import { ChatMode } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
+import { ChatMode } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
 import { figrecipeChatAdapter } from "./bootstrap/chatAdapter";
 
 // Vanilla TS shell SessionsPanel — chat session management (scitex-ui)
-import { SessionsPanel } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
+import { SessionsPanel } from "@scitex/sdk/ui/ts/shell/chat/index.ts";
 import type {
   SessionAdapter,
   SessionMessage,
-} from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/shell/chat/index.ts";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+} from "@scitex/sdk/ui/ts/shell/chat/index.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import {
+  createFileTreeFetcher,
+  createRecentFilesFetcher,
+} from "./bootstrap/bootFetch";
 
 // Mount React InnerEditor into app content area ONLY
 const root = document.getElementById("root");
+if (root) {
+  setApiBase(mountPrefix());
+  if (root.dataset.workingDir) setWorkingDir(root.dataset.workingDir);
+}
+const hosted = root?.dataset.hosted === "true";
 const params = new URLSearchParams(window.location.search);
 const embedded = params.get("mode") === "embedded";
 
+// Hub-embedded handoff (live defect 2026-10-16: the hub page loads this
+// index.js bundle only, never workspace.js, so the body never mounts).
+// When this standalone bundle lands on a hub-embedded figrecipe container
+// instead of its own #root, pull in the workspace sync and skip the
+// standalone shell init below — there is no #root to mount into, and the
+// standalone shell must not drive the host's DOM. The workspace sync then
+// mounts with the container's declared mount (or logs + retries when the
+// host has not declared one).
+if (!root && document.querySelector('[data-app-slug="figrecipe"][data-embedded="true"]')) {
+  void import("./workspace").then(
+    () => undefined,
+    (e) => console.error("[figrecipe] workspace handoff failed:", e),
+  );
+}
+
 if (root) {
-  document.documentElement.setAttribute("data-theme", "dark");
+  // Respect the stored theme (figrecipe-dark-theme-forced-20261018): the
+  // shell theme boot already applied localStorage `stx-theme` (fallback
+  // `scitex-theme-preference`, else the shell default) pre-paint — forcing
+  // "dark" here clobbered a stored light preference on every load. Only
+  // stamp the legacy dark default when no theme was resolved at all (raw SPA
+  // fallback with no shell boot). Storage reads are guarded: blocked storage
+  // must not break the mount (boot-resilience precedent).
+  let storedTheme: string | null = null;
+  try {
+    storedTheme =
+      localStorage.getItem("stx-theme") ||
+      localStorage.getItem("scitex-theme-preference");
+  } catch {
+    storedTheme = null;
+  }
+  if (!storedTheme && !document.documentElement.hasAttribute("data-theme")) {
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <InnerEditor embedded={embedded} />
@@ -93,26 +137,25 @@ if (root) {
   );
 }
 
-// Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint
+// The standalone shell init below runs only on the standalone page (#root).
+// On a hub-embedded container the handoff above owns the mount; running
+// this here would drive the host's shell DOM a second time.
+// Shell file tree — WorkspaceFilesTree connects to figrecipe's api/tree endpoint.
+// Fetch bodies live in ./bootstrap/bootFetch: every failure class (blocked
+// fetch, HTTP error, malformed body) resolves to the degraded {success:false}
+// value instead of an unhandled rejection (boot-resilience-20261016).
+// A detached `fetch` reference loses its Window receiver and throws
+// "Illegal invocation" on the first call (Files pane, 2026-10-19). Wrap
+// the global so the injected impl always calls it as a bare global.
+// (Card figrecipe-files-pane-fetch-illegal-invocation-20261019.)
+const boundFetch = (url: string) => fetch(url);
+if (root) {
+const _fileTreeFetcher = createFileTreeFetcher({ fetchImpl: boundFetch, apiUrl });
 const figrecipeFileTreeAdapter: FileTreeAdapter = {
-  async fetchTree(rootPath?: string) {
-    // rootPath (breadcrumb navigation) re-roots the backend tree via the
-    // working_dir query param; omit it for the default launch folder.
-    const url = rootPath
-      ? `api/tree?working_dir=${encodeURIComponent(rootPath)}`
-      : "api/tree";
-    const resp = await fetch(url);
-    if (!resp.ok)
-      return {
-        success: false,
-        tree: [],
-        error: `HTTP ${resp.status}: ${resp.statusText}`,
-      };
-    const data = await resp.json();
-    // Return the absolute root the backend resolved so the breadcrumb shows the
-    // path from filesystem root.
-    return { success: true, tree: data.tree ?? [], rootPath: data.working_dir };
-  },
+  fetchTree: (rootPath?: string) =>
+    _fileTreeFetcher
+      .fetchTree(rootPath)
+      .then((result) => ({ ...result, tree: result.tree as TreeItem[] })),
   getCsrfToken() {
     const meta = document.querySelector<HTMLMetaElement>(
       'meta[name="csrf-token"]',
@@ -129,7 +172,7 @@ const fileTree = new WorkspaceFilesTree({
   adapter: figrecipeFileTreeAdapter,
   showGitStatus: false,
   showFolderActions: false,
-  showBreadcrumb: true,
+  showBreadcrumb: !hosted,
   onFileSelect: (_path, item) => {
     window.dispatchEvent(
       new CustomEvent("figrecipe:file-select", {
@@ -140,32 +183,15 @@ const fileTree = new WorkspaceFilesTree({
 });
 fileTree.initialize();
 
-// Shell repo monitor — polls api/files for recently modified files
+// Shell repo monitor — polls api/files for recently modified files.
+// Degraded [] on any failure class (boot-resilience-20261016); the monitor
+// retries on its next poll interval.
+const _recentFilesFetcher = createRecentFilesFetcher({ fetchImpl: boundFetch, apiUrl });
 const figrecipeRepoMonitorAdapter: RepoMonitorAdapter = {
-  async fetchRecentFiles() {
-    const resp = await fetch("api/files?recent=true&limit=50");
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    // Normalize response: api/files returns { files: [...] }
-    const files = data.files ?? data ?? [];
-    return files.map(
-      (f: {
-        path: string;
-        name?: string;
-        modified_at?: string;
-        mtime?: string;
-        action?: string;
-      }) => ({
-        path: f.path,
-        name: f.name ?? f.path.split("/").pop() ?? f.path,
-        modified_at: f.modified_at ?? f.mtime ?? new Date().toISOString(),
-        action: f.action,
-      }),
-    );
-  },
-  getFileUrl(path: string) {
-    return `api/file-content/${path}?raw=true`;
-  },
+  fetchRecentFiles: () =>
+    _recentFilesFetcher
+      .fetchRecentFiles()
+      .then((files) => files as RecentFileEntry[]),
 };
 
 initMonitorToggle();
@@ -181,7 +207,7 @@ const figrecipeTerminalAdapter: TerminalConnectionAdapter = {
     return `ws://127.0.0.1:${port + 1}/`;
   },
 };
-initTerminal({
+if (!hosted) initTerminal({
   container: "#stx-shell-ai-console-terminal",
   adapter: figrecipeTerminalAdapter,
   clipboard: true,
@@ -210,7 +236,7 @@ registerShortcuts("figrecipe", [
 // Shell viewer — opens files from file tree in the viewer pane
 const figrecipeViewerAdapter: ViewerAdapter = {
   async readFile(path: string) {
-    const resp = await fetch(`api/file-content/${path}`);
+    const resp = await fetch(apiUrl(`api/file-content/${path}`));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     return { content: data.content ?? "" };
@@ -297,18 +323,18 @@ chatMode.restoreConversation();
 // SessionsPanel — chat session CRUD backed by scitex-app session API
 const figrecipeSessionAdapter: SessionAdapter = {
   async listSessions() {
-    const resp = await fetch("api/chat/sessions/");
+    const resp = await fetch(apiUrl("api/chat/sessions/"));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     return data.sessions ?? [];
   },
   async getMessages(sessionId: number) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/messages/`);
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/messages/`));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return resp.json();
   },
   async createSession(title?: string) {
-    const resp = await fetch("api/chat/sessions/", {
+    const resp = await fetch(apiUrl("api/chat/sessions/"), {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ title: title || gettext("New Chat") }),
@@ -317,14 +343,14 @@ const figrecipeSessionAdapter: SessionAdapter = {
     return resp.json();
   },
   async deleteSession(sessionId: number) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/`, {
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/`), {
       method: "DELETE",
       headers: { "X-CSRFToken": csrfToken() },
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   },
   async addMessage(sessionId: number, role: string, content: string) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/messages/`, {
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/messages/`), {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ role, content }),
@@ -332,7 +358,7 @@ const figrecipeSessionAdapter: SessionAdapter = {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   },
   async renameSession(sessionId: number, title: string) {
-    const resp = await fetch(`api/chat/sessions/${sessionId}/`, {
+    const resp = await fetch(apiUrl(`api/chat/sessions/${sessionId}/`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
       body: JSON.stringify({ title }),
@@ -486,7 +512,7 @@ document.addEventListener("stx-shell:files-changed", () => {
 bootstrapContextZoom(
   [
     {
-      selector: ".split-pane-left",
+      selector: ".data-page",
       storageKey: "figrecipe-table-zoom",
       min: 0.7,
       max: 1.6,
@@ -506,3 +532,4 @@ bootstrapContextZoom(
   ],
   [],
 );
+} // end if (root): standalone shell init only

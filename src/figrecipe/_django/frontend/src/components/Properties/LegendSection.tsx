@@ -5,7 +5,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
-import { gettext, gettext_noop, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface LegendInfo {
   has_legend: boolean;

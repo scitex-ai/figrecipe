@@ -9,7 +9,7 @@ import { useEditorStore } from "../../store/useEditorStore";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { RibbonButton } from "./RibbonButton";
 import { RibbonGroup } from "./RibbonGroup";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type TabId = "home" | "layout" | "style" | "view";
 
@@ -339,7 +339,7 @@ function StylePanel({ active }: { active: boolean }) {
 
       <RibbonGroup label={gettext("Appearance")} separator={false}>
         <RibbonButton
-          icon={darkMode ? "fas fa-moon" : "fas fa-sun"}
+          icon={darkMode ? "fas fa-moon" : "fas fa-circle-half-stroke"}
           label={darkMode ? gettext("Dark") : gettext("Light")}
           onClick={() => setDarkMode(!darkMode)}
           active={darkMode}

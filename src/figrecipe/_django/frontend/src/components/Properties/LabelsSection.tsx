@@ -5,7 +5,7 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { DebouncedInput } from "./DebouncedInput";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function LabelsSection({ axIndex }: { axIndex: number }) {
   const labelsMap = useEditorStore((s) => s.labels);

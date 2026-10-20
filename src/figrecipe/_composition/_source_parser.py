@@ -13,6 +13,7 @@ from typing import Optional, Tuple, Union
 from .._recorder import FigureRecord
 from .._serializer import load_recipe
 from .._utils._grid import grid_id
+from .._utils._optional import missing_extra
 
 _DEFAULT_AX_KEY = grid_id(0, 0)
 
@@ -46,7 +47,10 @@ def create_image_record(image_path: Path) -> FigureRecord:
 
     import matplotlib
     import numpy as np
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     from .._recorder import AxesRecord, CallRecord
 

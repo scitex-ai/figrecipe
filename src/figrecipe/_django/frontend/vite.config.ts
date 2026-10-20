@@ -1,4 +1,3 @@
-import { execSync } from "child_process";
 import { readFileSync } from "fs";
 import { dirname, resolve } from "path";
 import react from "@vitejs/plugin-react";
@@ -30,45 +29,12 @@ function deriveFigrecipeVersion(): string {
 
 const FIGRECIPE_VERSION = deriveFigrecipeVersion();
 
-/**
- * Discover scitex-ui static directory from the Python environment.
- * Works for both pip-installed packages and editable (dev) installs.
- * Falls back to SCITEX_UI_STATIC env var if Python discovery fails.
- */
-function discoverScitexUiStatic(): string {
-  // 1. Environment variable override (for CI, Docker, custom setups)
-  if (process.env.SCITEX_UI_STATIC) {
-    return process.env.SCITEX_UI_STATIC;
-  }
-
-  // 2. Auto-discover via scitex_ui.get_static_dir() (pip-installed or editable)
-  try {
-    const pkgPath = execSync(
-      'python3 -c "import scitex_ui; print(scitex_ui.get_static_dir())"',
-      { encoding: "utf-8", timeout: 5000 },
-    ).trim();
-    if (pkgPath) return pkgPath;
-  } catch {
-    // scitex_ui not installed — fall through
-  }
-
-  throw new Error(
-    "scitex-ui not found. Install it (pip install scitex-ui) or set SCITEX_UI_STATIC env var.",
-  );
-}
-
-const SCITEX_UI_STATIC = discoverScitexUiStatic();
-
+// Resolve canonical SDK exports without source aliases.
 export default defineConfig({
   plugins: [react()],
   base: "/static/figrecipe/",
   resolve: {
-    alias: {
-      "@scitex/ui": SCITEX_UI_STATIC.replace(
-        /\/src\/scitex_ui\/static\/scitex_ui$/,
-        "",
-      ),
-    },
+    dedupe: ["react", "react-dom"],
   },
   // figrecipe's own version, derived from pyproject.toml at build time.
   // Referenced from the frontend as __FIGRECIPE_VERSION__ (the header's
@@ -83,13 +49,15 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     manifest: true,
+    cssCodeSplit: false,
     rollupOptions: {
+      input: { index: resolve(__here, "index.html"), workspace: resolve(__here, "src/workspace.ts") },
       // mermaid and graphviz are optional lazy-loaded viewers — not bundled
       external: ["mermaid", "@hpcc-js/wasm-graphviz"],
       output: {
-        entryFileNames: "assets/index.js",
+        entryFileNames: "assets/[name].js",
         chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+        assetFileNames: (asset) => asset.name === "style.css" ? "assets/index.css" : "assets/[name][extname]",
       },
     },
   },

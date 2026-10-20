@@ -187,3 +187,96 @@ def test_pyplot_colorbar_is_recording_wrapper():
     is_passthrough = plt.colorbar is _mpl_plt.colorbar
     # Assert
     assert not is_passthrough
+
+
+@pytest.fixture
+def styled_cax_roundtrip(tmp_path):
+    """Build + save + reproduce a fig whose colorbar went through add_colorbar.
+
+    Returns ``(recipe_dict, reproduced_fig)``.
+    """
+    import yaml
+
+    from figrecipe._utils._colorbar import add_colorbar
+
+    values = np.linspace(-3, 3, 50)
+    x, y = np.meshgrid(values, values)
+    z = np.exp(-(x * x + y * y))
+    fig, ax = fr.subplots()
+    mappable = ax.contourf(x, y, z, id="contourf")
+    add_colorbar(fig, mappable, ax=ax)
+
+    image_path = tmp_path / "styled_cax.png"
+    fr.save(fig, str(image_path), validate=False, verbose=False)
+    recipe = yaml.safe_load(image_path.with_suffix(".yaml").read_text())
+
+    reproduced = fr.reproduce(str(image_path.with_suffix(".yaml")))
+    rfig = reproduced[0] if isinstance(reproduced, tuple) else reproduced
+    return recipe, rfig
+
+
+def test_styled_colorbar_captures_presentation(styled_cax_roundtrip):
+    # Arrange
+    recipe, _rfig = styled_cax_roundtrip
+    # Act
+    presentation = recipe["figure"]["colorbars"][0].get("cax_presentation")
+    # Assert
+    assert set(presentation) == {
+        "outline_linewidth",
+        "tick_width",
+        "tick_length",
+        "tick_pad",
+        "label_fontsize",
+    }
+
+
+def _artist_state(colorbar_ax):
+    ticks = colorbar_ax.yaxis.get_major_ticks()
+    return (
+        float(colorbar_ax.spines["outline"].get_linewidth()),
+        float(ticks[0].tick2line.get_markeredgewidth()),
+        float(ticks[0].tick2line.get_markersize()),
+        float(ticks[0].label2.get_fontsize()),
+    )
+
+
+def test_styled_colorbar_replay_matches_presentation(styled_cax_roundtrip):
+    # Arrange
+    recipe, rfig = styled_cax_roundtrip
+    # Act
+    expected = recipe["figure"]["colorbars"][0]["cax_presentation"]
+    replay_ax = _raw_colorbar_axes(rfig)[0]
+    # Assert
+    assert _artist_state(replay_ax) == (
+        expected["outline_linewidth"],
+        expected["tick_width"],
+        expected["tick_length"],
+        expected["label_fontsize"],
+    )
+
+
+def test_styled_colorbar_reproduces_byte_identical(tmp_path):
+    # Arrange
+    import hashlib
+
+    values = np.linspace(-3, 3, 50)
+    x, y = np.meshgrid(values, values)
+    z = np.exp(-(x * x + y * y))
+    fig, ax = fr.subplots()
+    mappable = ax.contourf(x, y, z, id="contourf")
+    from figrecipe._utils._colorbar import add_colorbar
+
+    add_colorbar(fig, mappable, ax=ax)
+    image_path = tmp_path / "styled_cax_bytes.png"
+    fr.save(fig, str(image_path), validate=False, verbose=False)
+
+    # Act
+    reproduced = fr.reproduce(str(image_path.with_suffix(".yaml")))
+    rfig = reproduced[0] if isinstance(reproduced, tuple) else reproduced
+    replay_path = tmp_path / "styled_cax_bytes_replay.png"
+    fr.save(rfig, str(replay_path), validate=False, verbose=False)
+
+    # Assert
+    assert hashlib.sha256(image_path.read_bytes()).digest() == hashlib.sha256(
+        replay_path.read_bytes()
+    ).digest()

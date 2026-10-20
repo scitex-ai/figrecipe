@@ -12,7 +12,7 @@
  * Node without React, the DOM, or the SDK component.
  */
 
-import type { ProjectOption } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/app/project-selector/types";
+import type { ProjectOption } from "@scitex/sdk/ui/ts/app/project-selector/types.ts";
 
 /** A directory's display name: its last path segment, or the raw path when it
  * has none (root or empty). */

@@ -28,6 +28,7 @@ class RecordingAxesMethods:
     _position: tuple
     _track: bool
     _result_refs: Dict[int, str]
+    _artist_refs: Dict[int, tuple]
     _RESULT_REFERENCING_METHODS: set
     _RESULT_REFERENCEABLE_METHODS: set
 
@@ -70,6 +71,7 @@ class RecordingAxesMethods:
             self._position,
             self._track and track,
             id,
+            artist_refs=self._artist_refs,
             **kwargs,
         )
 
@@ -362,6 +364,7 @@ class RecordingAxesMethods:
                 self._result_refs,
                 self._RESULT_REFERENCING_METHODS,
                 self._RESULT_REFERENCEABLE_METHODS,
+                self._artist_refs,
             )
 
         return result
@@ -420,6 +423,7 @@ class RecordingAxesMethods:
                 self._result_refs,
                 self._RESULT_REFERENCING_METHODS,
                 self._RESULT_REFERENCEABLE_METHODS,
+                self._artist_refs,
             )
 
         return result

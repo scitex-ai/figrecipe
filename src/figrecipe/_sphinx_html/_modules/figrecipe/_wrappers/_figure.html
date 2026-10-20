@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._wrappers._figure &mdash; FigRecipe v0.28.12</title>
+  <title>figrecipe._wrappers._figure &mdash; FigRecipe v0.36.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
@@ -14,7 +14,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=29f6473e"></script>
+      <script src="../../../_static/documentation_options.js?v=5864e6e0"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -236,6 +236,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.align_panels"><code class="docutils literal notranslate"><span class="pre">align_panels()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.distribute_panels"><code class="docutils literal notranslate"><span class="pre">distribute_panels()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.align_smart"><code class="docutils literal notranslate"><span class="pre">align_smart()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.empty_cells"><code class="docutils literal notranslate"><span class="pre">empty_cells()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.layout_report"><code class="docutils literal notranslate"><span class="pre">layout_report()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.auto_tile_layout"><code class="docutils literal notranslate"><span class="pre">auto_tile_layout()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.gui"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.crop"><code class="docutils literal notranslate"><span class="pre">crop()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
@@ -244,6 +247,9 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_qr_to_figure"><code class="docutils literal notranslate"><span class="pre">add_qr_to_figure()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_figure_caption"><code class="docutils literal notranslate"><span class="pre">add_figure_caption()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.add_panel_captions"><code class="docutils literal notranslate"><span class="pre">add_panel_captions()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.set_manuscript_mode"><code class="docutils literal notranslate"><span class="pre">set_manuscript_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.manuscript_mode"><code class="docutils literal notranslate"><span class="pre">manuscript_mode()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.is_manuscript_mode"><code class="docutils literal notranslate"><span class="pre">is_manuscript_mode()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.panel_label"><code class="docutils literal notranslate"><span class="pre">panel_label()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz"><code class="docutils literal notranslate"><span class="pre">Figz</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Figz.__init__"><code class="docutils literal notranslate"><span class="pre">Figz.__init__()</span></code></a></li>
@@ -296,9 +302,40 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.Diagram.from_dict"><code class="docutils literal notranslate"><span class="pre">Diagram.from_dict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult"><code class="docutils literal notranslate"><span class="pre">StatResult</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.p_value"><code class="docutils literal notranslate"><span class="pre">StatResult.p_value</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.method"><code class="docutils literal notranslate"><span class="pre">StatResult.method</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.statistic"><code class="docutils literal notranslate"><span class="pre">StatResult.statistic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.statistic_name"><code class="docutils literal notranslate"><span class="pre">StatResult.statistic_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.dof"><code class="docutils literal notranslate"><span class="pre">StatResult.dof</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.effect_size"><code class="docutils literal notranslate"><span class="pre">StatResult.effect_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.effect_name"><code class="docutils literal notranslate"><span class="pre">StatResult.effect_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.ci"><code class="docutils literal notranslate"><span class="pre">StatResult.ci</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.ci_level"><code class="docutils literal notranslate"><span class="pre">StatResult.ci_level</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n"><code class="docutils literal notranslate"><span class="pre">StatResult.n</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n_subjects"><code class="docutils literal notranslate"><span class="pre">StatResult.n_subjects</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n_unit"><code class="docutils literal notranslate"><span class="pre">StatResult.n_unit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.n_subjects_unit"><code class="docutils literal notranslate"><span class="pre">StatResult.n_subjects_unit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.extras"><code class="docutils literal notranslate"><span class="pre">StatResult.extras</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.stars"><code class="docutils literal notranslate"><span class="pre">StatResult.stars</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.missing_fields"><code class="docutils literal notranslate"><span class="pre">StatResult.missing_fields()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.annotation"><code class="docutils literal notranslate"><span class="pre">StatResult.annotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.from_mapping"><code class="docutils literal notranslate"><span class="pre">StatResult.from_mapping()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.StatResult.__init__"><code class="docutils literal notranslate"><span class="pre">StatResult.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.hints_for"><code class="docutils literal notranslate"><span class="pre">hints_for()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.known_figure_types"><code class="docutils literal notranslate"><span class="pre">known_figure_types()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry.BRACKET_ABOVE"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry.BRACKET_ABOVE</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry.INLINE_TEXT"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry.INLINE_TEXT</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.ComparisonGeometry.COLORBAR_ANNOTATION"><code class="docutils literal notranslate"><span class="pre">ComparisonGeometry.COLORBAR_ANNOTATION</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.build_spec"><code class="docutils literal notranslate"><span class="pre">build_spec()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.build_spec_from_csv"><code class="docutils literal notranslate"><span class="pre">build_spec_from_csv()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.render_spec_to_bytes"><code class="docutils literal notranslate"><span class="pre">render_spec_to_bytes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.from_stats_plot_spec"><code class="docutils literal notranslate"><span class="pre">from_stats_plot_spec()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.termplot"><code class="docutils literal notranslate"><span class="pre">termplot()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.draw_graph"><code class="docutils literal notranslate"><span class="pre">draw_graph()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.smart_align"><code class="docutils literal notranslate"><span class="pre">smart_align()</span></code></a></li>
@@ -319,6 +356,8 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.flat"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.flat</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.record"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.record</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontsize"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontsize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontweight"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_style_fontweight()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_resolved_font_family"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_resolved_font_family()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color"><code class="docutils literal notranslate"><span class="pre">RecordingFigure._get_theme_text_color()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.colorbar()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.add_panel_labels"><code class="docutils literal notranslate"><span class="pre">RecordingFigure.add_panel_labels()</span></code></a></li>
@@ -397,15 +436,15 @@
   <h1>Source code for figrecipe._wrappers._figure</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Wrapped Figure that manages recording.&quot;&quot;&quot;</span>
+<span class="sd">"""Wrapped Figure that manages recording."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">grid_id</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._axes</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._figure_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_recording_figure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._figure_text</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureTextMixin</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -415,7 +454,7 @@
 <div class="viewcode-block" id="RecordingFigure">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecordingFigure</span><span class="p">(</span><span class="n">FigureTextMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper around matplotlib Figure that manages recording.</span>
+<span class="w">    </span><span class="sd">"""Wrapper around matplotlib Figure that manages recording.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -431,15 +470,15 @@
 <span class="sd">    &gt;&gt;&gt; import figrecipe as ps</span>
 <span class="sd">    &gt;&gt;&gt; fig, ax = ps.subplots()</span>
 <span class="sd">    &gt;&gt;&gt; ax.plot([1, 2, 3], [4, 5, 6])</span>
-<span class="sd">    &gt;&gt;&gt; ps.save(fig, &quot;my_figure.yaml&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; ps.save(fig, "my_figure.yaml")</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="RecordingFigure.__init__">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">fig</span><span class="p">:</span> <span class="n">Figure</span><span class="p">,</span>
-        <span class="n">recorder</span><span class="p">:</span> <span class="s2">&quot;Recorder&quot;</span><span class="p">,</span>
+        <span class="n">recorder</span><span class="p">:</span> <span class="s2">"Recorder"</span><span class="p">,</span>
         <span class="n">axes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">]],</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span> <span class="o">=</span> <span class="n">fig</span>
@@ -463,15 +502,20 @@
         <span class="c1"># AutoLocator defaults win.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_figrecipe_finalize_in_progress</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">mpl_connect</span><span class="p">(</span><span class="s2">&quot;draw_event&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_on_draw_finalize</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">mpl_connect</span><span class="p">(</span><span class="s2">"draw_event"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_on_draw_finalize</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">pass</span>  <span class="c1"># headless / mock canvas (e.g. some test fixtures)</span></div>
+            <span class="k">pass</span>  <span class="c1"># headless / mock canvas (e.g. some test fixtures)</span>
+
+        <span class="c1"># Register raw-figure -&gt; wrapper so the module-level</span>
+        <span class="c1"># ``figrecipe.pyplot.colorbar`` can route a manual ``plt.colorbar(...)``</span>
+        <span class="c1"># back through ``self.colorbar`` (recording it for round-trip).</span>
+        <span class="n">register_recording_figure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecordingFigure._on_draw_finalize">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._on_draw_finalize">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_on_draw_finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply figrecipe finalize hooks once per figure lifetime.</span>
+<span class="w">        </span><span class="sd">"""Apply figrecipe finalize hooks once per figure lifetime.</span>
 
 <span class="sd">        Run-once: setting a new locator marks the canvas stale, which</span>
 <span class="sd">        on the inline notebook backend triggers another draw and a</span>
@@ -482,10 +526,10 @@
 <span class="sd">        Re-entrancy guard: finalize_ticks may swap a locator, which on</span>
 <span class="sd">        some backends triggers another draw and would recurse. The</span>
 <span class="sd">        flag breaks the loop.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_figrecipe_finalize_in_progress&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_figrecipe_finalize_in_progress"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="k">return</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_figrecipe_finalized&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_figrecipe_finalized"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
             <span class="k">return</span>  <span class="c1"># already finalized — avoid the inline re-render cascade</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_figrecipe_finalize_in_progress</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">try</span><span class="p">:</span>
@@ -507,21 +551,21 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fig</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Figure</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the underlying matplotlib figure.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the underlying matplotlib figure."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get axes as 2D array.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get axes as 2D array."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dpi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Proxy dpi to underlying figure.</span>
+<span class="w">        </span><span class="sd">"""Proxy dpi to underlying figure.</span>
 
-<span class="sd">        Needed as a class-level descriptor so matplotlib&#39;s _setattr_cm</span>
-<span class="sd">        can do getattr(type(obj), &#39;dpi&#39;) during savefig/print_figure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Needed as a class-level descriptor so matplotlib's _setattr_cm</span>
+<span class="sd">        can do getattr(type(obj), 'dpi') during savefig/print_figure.</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">dpi</span>
 
     <span class="nd">@dpi</span><span class="o">.</span><span class="n">setter</span>
@@ -531,17 +575,17 @@
 <div class="viewcode-block" id="RecordingFigure.draw">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.draw">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Proxy draw to underlying figure.</span>
+<span class="w">        </span><span class="sd">"""Proxy draw to underlying figure.</span>
 
-<span class="sd">        Needed as a class-level method so matplotlib&#39;s _setattr_cm</span>
-<span class="sd">        can do getattr(type(obj), &#39;draw&#39;) during _get_renderer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Needed as a class-level method so matplotlib's _setattr_cm</span>
+<span class="sd">        can do getattr(type(obj), 'draw') during _get_renderer.</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">renderer</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">flat</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">RecordingAxes</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get flattened list of all axes.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get flattened list of all axes."""</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
@@ -549,19 +593,19 @@
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FigureRecord&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the figure record.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"FigureRecord"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Get the figure record."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span>
 
 <div class="viewcode-block" id="RecordingFigure._get_style_fontsize">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontsize">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_style_fontsize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get fontsize from loaded style.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get fontsize from loaded style."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._style_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">_STYLE_CACHE</span>
 
             <span class="k">if</span> <span class="n">_STYLE_CACHE</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">fonts</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_STYLE_CACHE</span><span class="p">,</span> <span class="s2">&quot;fonts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">fonts</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_STYLE_CACHE</span><span class="p">,</span> <span class="s2">"fonts"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">fonts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fonts</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -569,20 +613,67 @@
         <span class="k">return</span> <span class="n">default</span></div>
 
 
-<div class="viewcode-block" id="RecordingFigure._get_theme_text_color">
-<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_theme_text_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get text color from loaded style&#39;s theme settings.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="RecordingFigure._get_style_fontweight">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_style_fontweight">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_style_fontweight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Get a font WEIGHT string from the loaded style's fonts block.</span>
+
+<span class="sd">        Sibling of ``_get_style_fontsize`` for weight-valued keys (e.g.</span>
+<span class="sd">        ``panel_label_weight``) so the weight is a style-owned field, not a</span>
+<span class="sd">        hardcoded code default. Falls back to ``default`` when no style is</span>
+<span class="sd">        loaded or the key is absent (older styles), so behaviour is unchanged.</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._style_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">_STYLE_CACHE</span>
 
             <span class="k">if</span> <span class="n">_STYLE_CACHE</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">theme</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_STYLE_CACHE</span><span class="p">,</span> <span class="s2">&quot;theme&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">fonts</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_STYLE_CACHE</span><span class="p">,</span> <span class="s2">"fonts"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">fonts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fonts</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="n">default</span></div>
+
+
+<div class="viewcode-block" id="RecordingFigure._get_resolved_font_family">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_resolved_font_family">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_resolved_font_family</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Resolve the font family LIST the active style pins on the body.</span>
+
+<span class="sd">        Returns the same chain the style applier gives the axis labels, ticks</span>
+<span class="sd">        and title -- the requested font (or its available fallback) followed</span>
+<span class="sd">        by the CJK face when one exists -- so the auto panel labels render in</span>
+<span class="sd">        the SAME faces, glyph for glyph. A bare string here was the one path</span>
+<span class="sd">        left that could not fall back for CJK, and it made the panel labels</span>
+<span class="sd">        disagree with the body whenever a CJK face was installed. ``None``</span>
+<span class="sd">        when nothing can be resolved.</span>
+<span class="sd">        """</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._fonts</span><span class="w"> </span><span class="kn">import</span> <span class="n">font_family_chain</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._style_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">_STYLE_CACHE</span>
+
+            <span class="n">requested</span> <span class="o">=</span> <span class="s2">"Arial"</span>
+            <span class="k">if</span> <span class="n">_STYLE_CACHE</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">requested</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_STYLE_CACHE</span><span class="p">,</span> <span class="s2">"font_family"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">requested</span>
+            <span class="k">return</span> <span class="n">font_family_chain</span><span class="p">(</span><span class="n">requested</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="RecordingFigure._get_theme_text_color">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure._get_theme_text_color">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_theme_text_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"black"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Get text color from loaded style's theme settings."""</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._style_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">_STYLE_CACHE</span>
+
+            <span class="k">if</span> <span class="n">_STYLE_CACHE</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">theme</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_STYLE_CACHE</span><span class="p">,</span> <span class="s2">"theme"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">theme</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">mode</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theme</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;light&quot;</span><span class="p">)</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theme</span><span class="p">,</span> <span class="s2">"mode"</span><span class="p">,</span> <span class="s2">"light"</span><span class="p">)</span>
                     <span class="n">theme_colors</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theme</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">theme_colors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theme_colors</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">theme_colors</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">return</span> <span class="n">default</span></div>
@@ -595,78 +686,21 @@
 <div class="viewcode-block" id="RecordingFigure.colorbar">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.colorbar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a colorbar and record it for reproduction.</span>
+<span class="w">        </span><span class="sd">"""Add a colorbar and record it for reproduction.</span>
 
 <span class="sd">        ``ax`` may be a single axes OR a list/array of axes (a shared colorbar</span>
 <span class="sd">        that steals space from several panels, e.g.</span>
-<span class="sd">        ``fig.colorbar(im, ax=axes.ravel().tolist())``). Every source axes is</span>
-<span class="sd">        recorded in ``ax_keys`` so replay knows the full steal set; the colorbar&#39;s</span>
-<span class="sd">        resolved geometry is captured later at SAVE time (see</span>
-<span class="sd">        ``_capture_colorbar_geometry``) so reproduction can pin it exactly.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Normalize ``ax`` to a flat list of raw matplotlib axes, unwrapping any</span>
-        <span class="c1"># RecordingAxes. Build the matching grid keys in the same order.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
-            <span class="n">ax_seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;ravel&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="s2">&quot;_ax&quot;</span><span class="p">):</span>
-            <span class="c1"># numpy array of axes</span>
-            <span class="n">ax_seq</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
-        <span class="k">elif</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ax_seq</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ax_seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax</span><span class="p">]</span>
+<span class="sd">        ``fig.colorbar(im, ax=axes.ravel().tolist())``). An explicit</span>
+<span class="sd">        ``cax=&lt;axes&gt;`` (the colorbar is drawn into a caller-provided axes) and a</span>
+<span class="sd">        standalone ``ScalarMappable`` are also handled. Every source axes is</span>
+<span class="sd">        recorded in ``ax_keys``; the colorbar's resolved geometry is captured</span>
+<span class="sd">        later at SAVE time (see ``_capture_colorbar_geometry``) so reproduction</span>
+<span class="sd">        can pin it exactly. Recording logic lives in ``_figure_colorbar`` to keep</span>
+<span class="sd">        this module within the per-file line budget.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">._figure_colorbar</span><span class="w"> </span><span class="kn">import</span> <span class="n">record_colorbar</span>
 
-        <span class="n">mpl_axes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="s2">&quot;_ax&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ax_seq</span><span class="p">]</span>
-
-        <span class="n">ax_keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">mpl_ax</span> <span class="ow">in</span> <span class="n">mpl_axes</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">rec_ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="ow">is</span> <span class="n">mpl_ax</span><span class="p">:</span>
-                        <span class="n">ax_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="n">grid_id</span><span class="p">(</span><span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                        <span class="p">)</span>
-                        <span class="k">break</span>
-
-        <span class="c1"># Identify the axes that OWNS the mappable (``mappable.axes``). With a</span>
-        <span class="c1"># shared colorbar over a list of panels, the mappable belongs to ONE</span>
-        <span class="c1"># specific panel (e.g. the last ``imshow``); its clim drives the</span>
-        <span class="c1"># colorbar ticks. Recording this key lets replay pick the SAME mappable</span>
-        <span class="c1"># (hence the same clim/ticks) rather than guessing the first panel.</span>
-        <span class="n">mappable_ax_key</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">owner_ax</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="s2">&quot;axes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">owner_ax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">rec_ax</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_ax</span> <span class="ow">is</span> <span class="n">owner_ax</span><span class="p">:</span>
-                        <span class="n">mappable_ax_key</span> <span class="o">=</span> <span class="n">grid_id</span><span class="p">(</span>
-                            <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rec_ax</span><span class="o">.</span><span class="n">_position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                        <span class="p">)</span>
-                        <span class="k">break</span>
-
-        <span class="c1"># First matched key locates the mappable on replay (back-compat field).</span>
-        <span class="n">ax_key</span> <span class="o">=</span> <span class="n">mappable_ax_key</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ax_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">ax_keys</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
-
-        <span class="n">ser_kw</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
-        <span class="p">}</span>
-        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ax_key&quot;</span><span class="p">:</span> <span class="n">ax_key</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="n">ser_kw</span><span class="p">}</span>
-        <span class="k">if</span> <span class="n">ax_keys</span><span class="p">:</span>
-            <span class="n">record</span><span class="p">[</span><span class="s2">&quot;ax_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax_keys</span>
-        <span class="k">if</span> <span class="n">mappable_ax_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">record</span><span class="p">[</span><span class="s2">&quot;mappable_ax_key&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mappable_ax_key</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">colorbars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
-
-        <span class="c1"># ``fig.colorbar`` accepts a single axes or a sequence; pass the</span>
-        <span class="c1"># unwrapped form so matplotlib never sees a RecordingAxes wrapper.</span>
-        <span class="n">cbar_ax</span> <span class="o">=</span> <span class="n">mpl_axes</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mpl_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">(</span><span class="n">mpl_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">mpl_axes</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="n">cbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">cbar_ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="c1"># Stash the live colorbar so the save path can read its resolved cax</span>
-        <span class="c1"># position (index-aligned with ``colorbars``).</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">live_colorbars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cbar</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">cbar</span></div>
+        <span class="k">return</span> <span class="n">record_colorbar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mappable</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecordingFigure.add_panel_labels">
@@ -674,27 +708,28 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">add_panel_labels</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;upper left&quot;</span><span class="p">,</span>
+        <span class="n">loc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"upper left"</span><span class="p">,</span>
         <span class="n">offset</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">),</span>
         <span class="n">fontsize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">fontweight</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bold&quot;</span><span class="p">,</span>
+        <span class="n">fontweight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add panel labels (A, B, C, D, etc.) to multi-panel figures.</span>
+<span class="w">        </span><span class="sd">"""Add panel labels (A, B, C, D, etc.) to multi-panel figures.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        labels : list of str, optional</span>
 <span class="sd">            Custom labels. If None, uses uppercase letters (A, B, C, ...).</span>
 <span class="sd">        loc : str</span>
-<span class="sd">            Location hint: &#39;upper left&#39; (default), &#39;upper right&#39;, &#39;lower left&#39;, &#39;lower right&#39;.</span>
+<span class="sd">            Location hint: 'upper left' (default), 'upper right', 'lower left', 'lower right'.</span>
 <span class="sd">        offset : tuple of float</span>
 <span class="sd">            (x, y) offset in axes coordinates from the corner.</span>
 <span class="sd">            Default is (-0.1, 1.05) for upper left positioning.</span>
 <span class="sd">        fontsize : float, optional</span>
-<span class="sd">            Font size in points. If None, uses style&#39;s title_pt or 10.</span>
-<span class="sd">        fontweight : str</span>
-<span class="sd">            Font weight (default: &#39;bold&#39;).</span>
+<span class="sd">            Font size in points. If None, uses style's panel_label_pt or 10.</span>
+<span class="sd">        fontweight : str, optional</span>
+<span class="sd">            Font weight. If None, uses the style's ``panel_label_weight``</span>
+<span class="sd">            (SCITEX: 'bold'), falling back to 'bold'.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional arguments passed to ax.text().</span>
 
@@ -707,23 +742,47 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; fig, axes = fr.subplots(2, 2)</span>
 <span class="sd">        &gt;&gt;&gt; fig.add_panel_labels()  # Adds A, B, C, D</span>
-<span class="sd">        &gt;&gt;&gt; fig.add_panel_labels([&#39;i&#39;, &#39;ii&#39;, &#39;iii&#39;, &#39;iv&#39;])  # Custom labels</span>
-<span class="sd">        &gt;&gt;&gt; fig.add_panel_labels(loc=&#39;upper right&#39;, offset=(1.05, 1.05))</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; fig.add_panel_labels(['i', 'ii', 'iii', 'iv'])  # Custom labels</span>
+<span class="sd">        &gt;&gt;&gt; fig.add_panel_labels(loc='upper right', offset=(1.05, 1.05))</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">._panel_labels</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_panel_labels</span> <span class="k">as</span> <span class="n">_add_panel_labels</span>
 
-        <span class="c1"># Get fontsize from style if not specified</span>
+        <span class="c1"># Get fontsize from style if not specified. Panel labels follow the</span>
+        <span class="c1"># panel_label_pt convention (10pt bold in SCITEX), NOT title_pt (the</span>
+        <span class="c1"># plot-title size, 8pt) — the previous title_pt lookup made the auto</span>
+        <span class="c1"># (A)/(B) labels the wrong size.</span>
         <span class="k">if</span> <span class="n">fontsize</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">fontsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_style_fontsize</span><span class="p">(</span><span class="s2">&quot;title_pt&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="n">fontsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_style_fontsize</span><span class="p">(</span><span class="s2">"panel_label_pt"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
-        <span class="c1"># Get theme text color (unless user provided &#39;color&#39; in kwargs)</span>
-        <span class="k">if</span> <span class="s2">&quot;color&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="c1"># Resolve weight from the style (panel_label_weight) when the caller</span>
+        <span class="c1"># didn't pass one, so the weight is style-owned like the size/family --</span>
+        <span class="c1"># 'bold' is only the ultimate fallback for styles without the field.</span>
+        <span class="k">if</span> <span class="n">fontweight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fontweight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_style_fontweight</span><span class="p">(</span><span class="s2">"panel_label_weight"</span><span class="p">,</span> <span class="s2">"bold"</span><span class="p">)</span>
+
+        <span class="c1"># Get theme text color (unless user provided 'color' in kwargs)</span>
+        <span class="k">if</span> <span class="s2">"color"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">text_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_theme_text_color</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">text_color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">)</span>
+            <span class="n">text_color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"color"</span><span class="p">)</span>
+
+        <span class="c1"># Match the body's explicitly-resolved font family. The style applier</span>
+        <span class="c1"># pins the resolved family (e.g. Arial, or its DejaVu fallback) on the</span>
+        <span class="c1"># axis labels/ticks/title, but the auto panel labels otherwise inherit a</span>
+        <span class="c1"># generic 'sans-serif' that can resolve to a different/heavier face,</span>
+        <span class="c1"># making the labels look inconsistent with the rest of the figure.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"fontfamily"</span><span class="p">,</span> <span class="s2">"fontname"</span><span class="p">,</span> <span class="s2">"family"</span><span class="p">)):</span>
+            <span class="n">family</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_resolved_font_family</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">family</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">"fontfamily"</span><span class="p">]</span> <span class="o">=</span> <span class="n">family</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">record_callback</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">panel_labels</span> <span class="o">=</span> <span class="n">info</span>
+
+        <span class="c1"># Title-awareness applies only to the default upper-position placement.</span>
+        <span class="c1"># When the user passes an explicit offset we honor it verbatim (the</span>
+        <span class="c1"># label is then their responsibility), preserving back-compat.</span>
+        <span class="n">title_aware</span> <span class="o">=</span> <span class="n">loc</span> <span class="o">==</span> <span class="s2">"upper left"</span> <span class="ow">and</span> <span class="n">offset</span> <span class="o">==</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">_add_panel_labels</span><span class="p">(</span>
             <span class="n">all_axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span>
@@ -734,14 +793,15 @@
             <span class="n">fontweight</span><span class="o">=</span><span class="n">fontweight</span><span class="p">,</span>
             <span class="n">text_color</span><span class="o">=</span><span class="n">text_color</span><span class="p">,</span>
             <span class="n">record_callback</span><span class="o">=</span><span class="n">record_callback</span><span class="p">,</span>
+            <span class="n">title_aware</span><span class="o">=</span><span class="n">title_aware</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RecordingFigure.set_title_metadata">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_title_metadata">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_title_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RecordingFigure&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set figure title metadata (not rendered, stored in recipe).</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_title_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"RecordingFigure"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Set figure title metadata (not rendered, stored in recipe).</span>
 
 <span class="sd">        This is for storing a publication/reference title for the figure,</span>
 <span class="sd">        separate from suptitle which is rendered on the figure.</span>
@@ -759,20 +819,20 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; fig, ax = fr.subplots()</span>
-<span class="sd">        &gt;&gt;&gt; fig.set_title_metadata(&quot;Effect of temperature on reaction rate&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; fig.set_caption(&quot;Figure 1. Reaction rates measured at various temperatures.&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; fig.set_title_metadata("Effect of temperature on reaction rate")</span>
+<span class="sd">        &gt;&gt;&gt; fig.set_caption("Figure 1. Reaction rates measured at various temperatures.")</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">title_metadata</span> <span class="o">=</span> <span class="n">title</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="RecordingFigure.set_caption">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_caption">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_caption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">caption</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RecordingFigure&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set figure caption metadata (not rendered, stored in recipe).</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_caption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">caption</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"RecordingFigure"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Set figure caption metadata (not rendered, stored in recipe).</span>
 
 <span class="sd">        This is for storing a publication caption for the figure,</span>
-<span class="sd">        typically used in scientific papers (e.g., &quot;Fig. 1. Description...&quot;).</span>
+<span class="sd">        typically used in scientific papers (e.g., "Fig. 1. Description...").</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -787,45 +847,45 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; fig, ax = fr.subplots()</span>
-<span class="sd">        &gt;&gt;&gt; fig.set_caption(&quot;Figure 1. Temperature dependence of reaction rates.&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; fig.set_caption("Figure 1. Temperature dependence of reaction rates.")</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="n">caption</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">title_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the figure title metadata.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the figure title metadata."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">title_metadata</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">caption</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the figure caption metadata.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the figure caption metadata."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">caption</span>
 
 <div class="viewcode-block" id="RecordingFigure.set_stats">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.set_stats">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">set_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stats</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;RecordingFigure&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set figure-level statistics metadata (not rendered, stored in recipe).</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stats</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">"RecordingFigure"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Set figure-level statistics metadata (not rendered, stored in recipe).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        stats : dict</span>
 <span class="sd">            Statistics dictionary (comparisons, summary, correction_method, alpha).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="n">stats</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the figure-level statistics metadata.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the figure-level statistics metadata."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">stats</span>
 
 <div class="viewcode-block" id="RecordingFigure.generate_caption">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.generate_caption">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">generate_caption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;publication&quot;</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate caption from stored stats. Styles: publication, brief, detailed.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_caption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"publication"</span><span class="p">,</span> <span class="n">template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Generate caption from stored stats. Styles: publication, brief, detailed."""</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">._caption_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_figure_caption</span>
 
         <span class="n">panels</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">caption</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flat</span> <span class="k">if</span> <span class="n">ax</span><span class="o">.</span><span class="n">caption</span><span class="p">]</span>
@@ -837,7 +897,7 @@
 <div class="viewcode-block" id="RecordingFigure.__getattr__">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingFigure.__getattr__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delegate attribute access to underlying figure.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Delegate attribute access to underlying figure."""</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
 
 
@@ -848,11 +908,11 @@
         <span class="n">fname</span><span class="p">,</span>
         <span class="n">save_recipe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">include_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span> <span class="s2">&quot;npz&quot;</span><span class="p">,</span> <span class="s2">&quot;inline&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
-        <span class="n">csv_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;separate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;separate&quot;</span><span class="p">,</span>
+        <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"csv"</span><span class="p">,</span> <span class="s2">"npz"</span><span class="p">,</span> <span class="s2">"inline"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"csv"</span><span class="p">,</span>
+        <span class="n">csv_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"single"</span><span class="p">,</span> <span class="s2">"separate"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"separate"</span><span class="p">,</span>
         <span class="n">validate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">validate_mse_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
-        <span class="n">validate_error_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span><span class="p">,</span>
+        <span class="n">validate_error_level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"error"</span><span class="p">,</span>
         <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">dpi</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">image_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -860,18 +920,18 @@
         <span class="n">save_hitmap</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save figure — equivalent to fr.save(). Same DPI, crop, recipe.</span>
+<span class="w">        </span><span class="sd">"""Save figure — equivalent to fr.save(). Same DPI, crop, recipe.</span>
 
 <span class="sd">        Returns (image_path, yaml_path, result).</span>
 <span class="sd">        ``**kwargs`` passed to matplotlib savefig for file-like objects.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Handle file-like objects (BytesIO, etc.) - direct matplotlib save</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">&quot;write&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">):</span>
             <span class="n">save_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">dpi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">save_kwargs</span><span class="p">[</span><span class="s2">&quot;dpi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dpi</span>
+                <span class="n">save_kwargs</span><span class="p">[</span><span class="s2">"dpi"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dpi</span>
             <span class="k">if</span> <span class="n">facecolor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">save_kwargs</span><span class="p">[</span><span class="s2">&quot;facecolor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">facecolor</span>
+                <span class="n">save_kwargs</span><span class="p">[</span><span class="s2">"facecolor"</span><span class="p">]</span> <span class="o">=</span> <span class="n">facecolor</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">save_kwargs</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fname</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
@@ -903,10 +963,10 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
         <span class="n">include_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span> <span class="s2">&quot;npz&quot;</span><span class="p">,</span> <span class="s2">&quot;inline&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span><span class="p">,</span>
-        <span class="n">csv_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;separate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;separate&quot;</span><span class="p">,</span>
+        <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"csv"</span><span class="p">,</span> <span class="s2">"npz"</span><span class="p">,</span> <span class="s2">"inline"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"csv"</span><span class="p">,</span>
+        <span class="n">csv_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"single"</span><span class="p">,</span> <span class="s2">"separate"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"separate"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the recording recipe to YAML.</span>
+<span class="w">        </span><span class="sd">"""Save the recording recipe to YAML.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -915,10 +975,10 @@
 <span class="sd">        include_data : bool</span>
 <span class="sd">            If True, save array data alongside recipe.</span>
 <span class="sd">        data_format : str</span>
-<span class="sd">            Format for data files: &#39;csv&#39; (default), &#39;npz&#39;, or &#39;inline&#39;.</span>
+<span class="sd">            Format for data files: 'csv' (default), 'npz', or 'inline'.</span>
 <span class="sd">        csv_format : str</span>
-<span class="sd">            CSV structure: &#39;separate&#39; (default) or &#39;single&#39; (scitex-compatible).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            CSV structure: 'separate' (default) or 'single' (scitex-compatible).</span>
+<span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_recipe</span>
 
         <span class="k">return</span> <span class="n">save_recipe</span><span class="p">(</span>

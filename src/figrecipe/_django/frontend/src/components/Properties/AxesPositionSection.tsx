@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 interface AxesPosition {
   left: number;

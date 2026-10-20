@@ -1,5 +1,5 @@
 /** Plot-from-columns decisions for the Data pane, kept free of React and the
- * @scitex/ui alias so they run under `node --experimental-strip-types`. */
+ * @scitex/sdk/ui alias so they run under `node --experimental-strip-types`. */
 
 import type { ColumnDef } from "../../types/editor.ts";
 

@@ -12,6 +12,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import numpy as np
 from matplotlib.axes import Axes
 
+from .._utils._optional import missing_extra
+
 LAYOUTS = {
     "spring": "spring_layout",
     "circular": "circular_layout",
@@ -48,7 +50,10 @@ def _get_layout(
     dict
         Node positions {node: (x, y)}.
     """
-    import networkx as nx
+    try:
+        import networkx as nx
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     if pos is not None:
         return pos
@@ -159,7 +164,10 @@ def _validate_graph(G):
     TypeError
         If the graph type is not supported or node IDs are not serializable.
     """
-    import networkx as nx
+    try:
+        import networkx as nx
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Check for MultiGraph/MultiDiGraph
     if isinstance(G, (nx.MultiGraph, nx.MultiDiGraph)):
@@ -283,7 +291,10 @@ def draw_graph(
     dict
         Dictionary with 'pos', 'node_collection', 'edge_collection'.
     """
-    import networkx as nx
+    try:
+        import networkx as nx
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Validate graph type
     _validate_graph(G)
@@ -478,7 +489,10 @@ def record_to_graph(record: Dict[str, Any]):
     -----
     This function does not modify the input record.
     """
-    import networkx as nx
+    try:
+        import networkx as nx
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     if record.get("directed", False):
         G = nx.DiGraph()

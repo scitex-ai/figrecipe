@@ -7,6 +7,289 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-10-19
+
+Datatable revision safety + error-state retry, SSoT header adoption
+(PR #466-#475):
+
+### Added
+- Datatable revision-gated project saves: stale writes refused
+  (PR #469).
+- Datatable failed loads render an error state with retry (PR #471).
+- Shared SSoT header row adopted in FigRecipe templates (PR #466).
+
+### Fixed
+- Standalone editor respects stored theme instead of forcing dark on
+  boot (PR #468).
+- Injected fetchImpl binding so the Files pane loads (PR #473).
+- Single header row in the standalone editor (PR #474).
+- Plot-tab onboarding strip dropped; app-side launcher space reserves
+  reclaimed (PR #475).
+- JA catalog coverage backfilled for 50+ frontend strings (PR #472).
+
+## [0.36.4] - 2026-10-15
+
+Leaf-migration pilot, logging ownership, composition adoption (PR #453, #454,
+#455, #456; composition/diagram source-adoption):
+
+### Added
+- Leaf `mount_policy` jail declaration in the Django manifest (PR #456, on top
+  of the #455 login boundary): login_required + touches_files with a
+  user-scoped jail (working_dir_param `working_dir`, path_params `path`,
+  `recipe`, `recipe_path`) — verbatim SDK FIGRECIPE reference, so the hub
+  generic mount enforces containment with zero per-app host code.
+- Deterministic composition layout helpers: radial positions and Poisson-disk
+  sampling (pure NumPy, seeded), circular-layout trig dedup onto the tested
+  helper, dimmed `context` emphasis level, and named compose layout aliases
+  (single/side_by_side/stacked/triptych/quad).
+
+### Fixed
+- Exact content rendering uses scitex-logging's plain stdout writer without
+  builtin print, while preserving the existing newline, return value, aliases,
+  and caller-controlled flushing. Require scitex-logging 0.2.3 in the owning
+  SciTeX and developer extras, and scitex-dev 0.62.4.dev0 in the developer extra
+  for mandatory auditor activation; missing logging retains its installation hint.
+- Unserializable recorder kwargs no longer vanish into a silent `str()`
+  fallback (explicit marker instead).
+
+### Changed
+- CI is the canonical org-shared `ci.yml` only; the four legacy per-repo
+  workflows are removed (PR #453).
+
+## [0.36.2] - 2026-10-10
+
+Recorder and Django fixes since 0.36.1 (PR #447, #448, #449, #450; main #440, #441):
+
+### Fixed
+- A hidden `ax.bar()` / `ax.imshow()` no longer replays drawn (visible: false
+  annotated at their own record sites; MSE 9129.84 / 23248.60 -> 0.00).
+- `ax.cla()` now resets the axes' recorded state, not just its live artists.
+- `line.set_data()` / `line.set_color()` after draw now reach the recipe
+  (save-time final-state re-read; MSE 802.13 / 563.65 -> 0.00).
+- `ax.add_line()` / `ax.add_artist()` / `ax.add_collection()` are now recorded
+  via serializable specs and replayed (-> 0.00).
+- Standalone shell renders the request language (`shell_lang` at both
+  consumers; JA no longer renders `<html lang="en">`).
+- Mount docstring names both apps so hosts keep chat models.
+- Tests expect the SDK 0.3.4 `scitex_sdk_ui` Django label.
+
+## [0.36.1] - 2026-10-08
+
+Migrate completion install to drop-in contract v1 (PR #445):
+vendored completion module (stdlib+click only), atomic+idempotent
+drop-in write, never touches rc files.
+>>>>>>> origin/main
+
+## [0.36.0] - 2026-10-02
+
+### Added
+- Canonical SDK 0.3.0 app/UI ownership, public frontend exports, and project
+  capability checks across the standalone and hosted editor entry points.
+  Hosted file access resolves the SDK project provider and storage capability;
+  the caller's working directory does not authorize a project.
+
+### Changed
+- Include the generated documentation images, fonts and source links in the
+  wheel, so installed documentation resolves its actual served assets.
+- Load the optional-capability error helper before guarded logging imports, so
+  unavailable logging reports the owning `figrecipe[scitex]` hint.
+- The frontend source pin now matches the immutable SDK source published as
+  0.3.0. Native npm, strict app/library builds and owning frontend controls run
+  before tag artifacts are built.
+- CI verifies the reused image digest and places each job's temporary files,
+  state and caches in its own runner scratch. The full owning dependencies must
+  install successfully, and end-to-end save/info assertions run with RUN_E2E=1.
+- Legacy plotting import checks now exercise FigRecipe's current plotting and
+  demo owners. The protocol and packaging controls retain their original
+  assertions and use the published scitex-dev 0.62.1 source audit.
+
+### Changed
+- **figrecipe's status, progress and CLI output now go through scitex-logging
+  instead of a bare `print`.** A `print` in library code writes unconditionally
+  to stdout, so a caller cannot silence, redirect or level it — the ecosystem's
+  PS-220 rule forbids it, and the tightened scitex-dev audit (v0.60.2) turned
+  figrecipe's 220 of them into a red gate on every PR. `_utils/_console.py` now
+  carries one transport per kind of output, each matching a carve-out the rule
+  recognises structurally rather than by comment: `get_logger` for diagnostics,
+  `get_console` for human-facing stdout (CLI results, report tables, demo runs —
+  same stream, plus a level), and `render_content` for the outputs whose exact
+  bytes are a published contract (`--version`, the completion script). Every
+  module emits through one of them; `console.info`/`.warning`/`.error` replaces
+  the prints, so output is filterable by level and redirectable by the caller.
+- **An optional dependency that is missing now names the extra to install.**
+  `_utils/_optional.py` wraps the hard imports of the extra-only distributions
+  (`PIL` → `[imaging]`, `django` → `[editor]`, `networkx` → `[graph]`,
+  `fastmcp` → `[mcp]`, the `scitex_*` readers → `[scitex]`) so a fresh install
+  without them reports *which* extra supplies the capability instead of a bare
+  `ModuleNotFoundError`, and the dependency shape is visible to a static reader
+  (PS-233). The guard does not degrade the capability: the error is re-raised, at
+  import time for a module-level import and at call time for a lazy one.
+
+### Fixed
+- QR diagnostics now load when the public QR capability is requested, so an
+  optional logging guard cannot import the plotting utility graph during bare
+  package startup. The same QR function and export remain available.
+- The Sphinx image-generator source uses the canonical console transport, so
+  rebuilding the shipped documentation retains the output contract.
+- **The removed-artist check could not see the case it exists for, and missed
+  most plotters besides.** `fr.save` warns when a figure holds fewer artists than
+  its recipe still draws, but the check was handed only the `calls` half of the
+  axes record — while `ax.text()`, `ax.annotate()` and the reference lines are
+  recorded as `decorations`. A text drawn and then removed (the shape this check
+  was written for) therefore passed silently. Both halves of the record are now
+  counted, and the plotting vocabulary is taken from the recorder's own list
+  rather than a copy holding 24 of its 49 names: the other 26 (`vlines`,
+  `hlines`, `fill`, `quiver`, `psd`, ...) could have their artist removed with no
+  warning at all. Methods whose artist the live count cannot see (`table`,
+  `legend`, the axis setters) stay deliberately excluded — counting them would
+  warn on a figure that lost nothing.
+- **A recorded call whose artist was removed no longer reaches the recipe.**
+  The check above reports the divergence; this closes it. At save time the
+  record is reconciled to the artists the live figure actually holds, so a figure
+  that draws an artist and then removes it saves a recipe that describes the
+  figure it saved — and `validate=True` no longer rejects a figure that is
+  correct (the card's headline case measured MSE 353.09 and an *error*; it is
+  0.00 and valid now, and a removed `vlines` goes from a silent MSE 48.72 to
+  0.00). An artist's liveness is read off the figure itself: `Artist.remove()` and
+  `ax.cla()` are removals, `set_visible(False)` is not — the artist is still the
+  axes' business, and dropping its call would delete the data behind a series a
+  user may toggle back on. A call that created several artists and lost only some
+  of them keeps its record (the record cannot express half a call), as does a call
+  that another surviving record references (`contour` → `clabel`), and the drop is
+  announced by name rather than performed silently. The drop is keyed on the
+  RECORD's identity, not on its recorded id: a recorded id is the user's own
+  `id=` kwarg whenever they pass one, so two calls can share it, and keyed on it
+  the later call's entry overwrote the earlier, removed one's — which silently
+  disabled the drop for exactly the "remove it, then re-plot under the same id"
+  case (`plot(id="dup")` → `remove()` → `plot(id="dup")` kept both calls; it
+  drops the removed one and validates at MSE 0.00 now). The count check above
+  stays the catch-all for the paths that record outside the artist funnel
+  (`ax.bar()`, `boxplot`, the legend wrapper). Measured over the repo's own
+  gallery — all 49 demo plotters, faithful figures — zero calls dropped and zero
+  warnings, the same 49/49 as before the repair. Not repaired, and measured
+  rather than assumed: `ax.cla()` drops the calls its axes recorded (the recipe
+  no longer claims them) but the figure still fails validation at MSE 428.51,
+  from a small high-contrast region and not from the removed artists — the
+  whole-image difference between the figure and its replay is 0.006 mean, 1/255
+  max, while validation reports 428.51 — so the remaining divergence is a
+  separate root cause, still open. An artist whose HANDLE is mutated after the
+  call (`set_linewidth`, `set_data`) is likewise untouched: only removals are
+  this slice's business.
+- **An artist HIDDEN after being drawn is no longer drawn by the recipe.**
+  `line.set_visible(False)` before saving left the call in the record exactly as
+  it was made, so the replay painted an artist the saved PNG does not show — and
+  the DEFAULT `fr.save(fig, path)` path then RAISED on a figure that is correct
+  (measured 406.02, 1.8% of pixels changed; a hidden `axhline` 198.34 and a hidden
+  `ax.text()` 353.09, while a hidden `scatter` at 21.04 and a hidden `vlines` at
+  48.72 passed the pixel validator in silence with the recipe still wrong). At
+  save time the record gains the artist's FINAL visibility (`visible: false`), so
+  the replay builds the artist and leaves it unpainted, and all five go to MSE
+  0.00 — as do a hidden `fill_between` (2362.62 → 0.00) and a hidden `hist`
+  (20760.35 → 0.00). The call is kept, not dropped: a hidden artist still carries
+  the user's data, matplotlib keeps it in `ax.lines`, and hiding asks not to paint
+  a series, not to forget it. The same conservatism as the removal repair guards
+  the write — a call is annotated only when EVERY artist it made is still on the
+  figure and all of them are hidden (a half-hidden call is not expressible as one
+  `visible`), and only when the REPLAY honours the kwarg, decided from the
+  reproducer's own dispatch table plus matplotlib's own `Axes` signature rather
+  than from a list kept here. Measured, that refuses `pie` and `streamplot`
+  (closed signatures — the kwarg would make the recipe unreplayable) and the four
+  methods with a special replay handler (`boxplot`, `graph`, `stem`,
+  `violinplot`). What it does not reach is measured too, and unchanged: an artist
+  whose call records outside the recorder's artist funnel (a hidden `bar`,
+  9129.84, and a hidden `imshow`, 23248.60, are still replayed drawn), and a call
+  that hides only SOME of the artists it made (a hidden `errorbar` line while its
+  cap lines stay visible, 387.38 — no single `visible` value can describe it).
+  Nothing is written for a figure that hides nothing, and hide-then-show leaves
+  the recipe alone because the net live state is what it describes. Reported
+  without a warning, deliberately: hiding a series is a deliberate act and the
+  recipe now matches the figure, so a message per hidden artist would only dilute
+  the one the removal repair raises when a recipe has LOST data.
+
+## [0.35.0] - 2026-09-19
+
+### Added
+- **The data pane and canvas now meet the operator's augmented acceptance
+  (cards 7692/7694).** Five gaps the first review round left open.
+  - **Undo AND redo.** Undo alone could not recover the case its own existence
+    creates — deleting the wrong column, undoing it, then wanting the delete
+    back. Every undo parks the state it reversed, redo puts it back (Ctrl+Shift+Z
+    or the header button, same pane-scoped capture rule as Ctrl+Z so one
+    keystroke never reaches the canvas too), and any new edit clears the redo
+    branch, which no longer follows from what is on screen.
+  - **Duplicate column** (definition + every cell, inserted right after itself,
+    named with the module's unique-name rule) — "create/rename/delete" was not
+    the whole set the acceptance names.
+  - **Deleting a column assigned to X or Y now says so and clears it in the same
+    step.** The delete asks `assignmentImpact` first, so the confirm reads "It is
+    the X column — that assignment will be cleared", and the selection
+    reconciler drops the name atomically: no chip or plot binding is ever left
+    pointing at a column that no longer exists.
+  - **The canvas viewport survives tab changes.** Switching editor tabs unmounts
+    the canvas, so a view kept in component state was thrown away on every
+    switch; zoom/pan now live in the session store and a remount resumes them.
+  - **The hitmap selects on touch, and a selection opens the property controls.**
+    Touch/pen taps are handled on `pointerup` (a tap is not reliably a click
+    once `touch-action` is set) through the same `applySelection` the mouse and
+    keyboard use, and selecting now opens the Details pane, where the chosen
+    artist's controls live.
+- **Example content and table edits belong to the project, and only on request
+  (Private Beta spec, scitex-hub PR 923).** Two things the editor did to a
+  project behind the user's back, both now explicit and project-scoped.
+  - **No example is seeded into a project by simply opening it.** The
+    empty-canvas surface POSTed `api/gallery/demo` from a mount effect, and the
+    server seeds a demo recipe plus its `<stem>_data/` directory into the
+    workspace — so opening a project created example artifacts nobody asked for
+    (measured: `demo_first_figure.yaml` + `demo_first_figure_data/` appearing in
+    an empty project on load). The example is now OFFERED ("Open an example
+    figure") and written only when that button is pressed; the property "nothing
+    seeds without a user request" is a tested transition table
+    (`Gallery/exampleSeed.ts`), not a comment.
+  - **An edited table is stored in the project, not in the server process.**
+    `datatable/import` (the Data pane's CRUD write path) only set
+    `editor.imported_table` — one attribute on one EditorState — so a restart (or
+    a second process opening the same project) silently lost the user's edits,
+    because the table had never been part of the project. It is now written
+    beside the recipe as `<recipe stem>_data.csv`, under the same name the CSV
+    export offers, and read back from there before the in-memory copy
+    (`source: "project"`). A session whose only candidate directory is the
+    process CWD stores nothing: the server's launch directory is not a project
+    the user selected, and attaching their data to it is the same silent
+    mis-association the rule above forbids.
+- **The editor's five worst UX dead ends, fixed together (data-column and
+  plot-variant card, 2026-09-16).** Each was a control that looked live and was
+  not: the X/Y badges could not see the table, the table could not be edited,
+  the hitmap could not select, the canvas could not be dragged, and a plot-type
+  category could not show which variants it holds.
+  - **X/Y columns are highlighted in the table, in both directions.** Clicking a
+    column header (or any cell) selects that column for the plot and moves the
+    X/Y badges; toggling a badge — or merely hovering it — lights up that
+    column's header and cells. The mark carries a role attribute and the letter
+    `X`/`Y`, so it is not colour alone.
+  - **The Data pane edits the table for real, and a delete is undoable.** Insert
+    and delete rows, add/rename/delete columns, edit cells — persisted through
+    the existing `datatable/import` write path, so a reload shows the change. An
+    Undo button and Ctrl+Z (only while the pane was the last thing touched, so a
+    single keystroke never undoes the canvas too) restore the exact previous
+    table; the last remaining column requires an explicit confirm.
+  - **Plot elements are selectable through the hitmap.** Clicking resolves the
+    element under the cursor and selects it visibly; background and Escape clear
+    it; arrow keys plus Enter select from the keyboard. A not-yet-loaded or
+    resized raster is a no-op rather than a thrown canvas.
+  - **The canvas pans by drag and by touch, and shows a grid.** Left-drag or one
+    finger pans, two fingers pinch about the centroid, and Ctrl+wheel / middle /
+    right-drag are unchanged; the grid is a zoom-aware 1-2-5 mm ladder that pans
+    and scales with the page instead of a fixed CSS pattern. A drag that starts
+    on a figure still moves the figure — the marquee that used to own plain
+    left-drag now takes Shift+left-drag.
+  - **Pointing at a plot type shows its variants as thumbnails.** The rail's
+    read-only example list became a chooser: hover/focus on a fine pointer, tap
+    on a touch screen, one click to add a variant, plus "See all templates…" and
+    (with a table loaded) "Plot from data columns…". On touch the chooser takes
+    the tap that used to jump to the Data pane, which is why it carries that
+    route itself.
+## [0.34.8] - 2026-09-17
+
 ### Fixed
 - **A CI leg orphaned its own ~2G scratch on every job — the EXIT trap could
   never fire.** `.github/ci/run-in-sif.sh` removed its run-unique `/tmp`
@@ -37,6 +320,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generator can never be faithful. `np.int64`-style values are coerced to native
   Python first, so the ordinary numeric path stays silent (pinned by tests in
   `tests/figrecipe/_recorder/test__utils.py`).
+- **A misspelled style key is no longer silently ignored.** `SCITEX_STYLE`
+  advertises 33 keys, the applier honors a different set and the layout path a
+  third — three vocabularies with no single declaration of which one a consumer
+  honors — so a key that matched none of them (`style={"font_famly": "Arial"}`)
+  was simply carried through the merge in `_api/_subplots.py`: no error, no log,
+  and a figure that just did not change. The merge site now reports keys that
+  belong to neither the loaded style nor `SCITEX_STYLE`, and names the nearest
+  known key when there is one (`Did you mean 'font_family'?`). It is a warning,
+  not an error, because styles merge from several sources and a key this module
+  cannot see may still be honored by a consumer it cannot see — failing the call
+  would break working figures, saying which key was dropped does not. The
+  vocabularies themselves are NOT unified here; the measured split (15 keys never
+  read by the applier, 9 owned by the layout path, 6 referenced nowhere) is
+  recorded on card `figrecipe-three-style-key-vocabularies-disagree-20260907`.
+- **An artist removed after being drawn is now reported at save time instead of
+  passing unnoticed.** `ax.plot(...)` followed by `line.remove()` leaves the call
+  in the record, so a replay draws an artist the saved figure does not show. The
+  full repair is a multi-part design change (the record carries NO handle to the
+  artist it created, and the `track=False` escape hatch was measured not to cover
+  the family), so this takes the *detection* half: at save, where a live axes sits
+  next to its record, the axes' artist count is compared against the LOWER BOUND
+  the recorded plotting calls require. Fewer artists than calls means something
+  drawn is gone, and a nonblocking `ArtistLifecycleWarning` says so, with the
+  consequence and the action a user has. The check is conservative by
+  construction — it can miss a removal, it cannot invent one — and nothing is
+  removed, re-created or hidden for the user. Measured: with validation on, the
+  existing pixel validator already errors on the headline case (MSE 361.4), so
+  this covers the paths it cannot — `validate=False`, and sub-threshold
+  differences where the pixels pass but the recipe is still not faithful.
+
 - **A partial `style=` dict silently discarded every key you did not pass.**
   `fr.subplots(style={"font_family": ...})` replaced the whole style rather
   than overriding one key, and the keys left out did not fall back to the

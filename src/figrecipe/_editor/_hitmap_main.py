@@ -17,7 +17,13 @@ import io
 from typing import Any, Dict, Optional, Tuple
 
 from matplotlib.figure import Figure
-from PIL import Image
+
+from .._utils._optional import missing_extra
+
+try:
+    from PIL import Image
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 
 def generate_hitmap(

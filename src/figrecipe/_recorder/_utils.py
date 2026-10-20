@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for recorder argument processing."""
 
+import warnings
 from typing import Any, Dict, List
 import warnings
 

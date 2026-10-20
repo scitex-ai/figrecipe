@@ -90,9 +90,22 @@ def _first_figure_name() -> str:
     import importlib.util
 
     path = _ASSET_DIR.parent / "handlers" / "gallery.py"
-    spec = importlib.util.spec_from_file_location("figrecipe_gallery_pkg", path)
+    # DOTTED name, load-bearing: a package-less module cannot resolve the
+    # relative imports gallery.py legitimately has (e.g.
+    # `from ..._utils._optional import missing_extra`), because `...` needs a
+    # parent package to climb. Three components give __package__ =
+    # figrecipe._django.handlers, so `...` means figrecipe here exactly as it
+    # does in production, while still avoiding handlers/__init__ and its
+    # Django-models import.
+    load_name = "figrecipe._django.handlers.gallery_under_test"
+    spec = importlib.util.spec_from_file_location(load_name, path)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.modules[load_name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(load_name, None)
+        raise
     return module.DEMO_TEMPLATE_NAME
 
 

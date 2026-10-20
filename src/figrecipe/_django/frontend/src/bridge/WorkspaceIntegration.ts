@@ -7,8 +7,8 @@
 
 import { onEvent } from "./EventBus";
 import { switchRecipeFile } from "./MountPoint";
-import { csrfToken } from "../api/client";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { api } from "../api/client";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 /** Cleanup functions for event subscriptions. */
 const cleanups: Array<() => void> = [];
@@ -116,26 +116,17 @@ export async function runStatAndRenderBracket(
   bracket_id: string;
   preview: string;
 }> {
-  const statResp = await fetch("/apps/figrecipe/figrecipe/stats/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
-    body: JSON.stringify({ test_name: testName, groups }),
-  });
-  const { result, annotation } = await statResp.json();
+  const { result, annotation } = await api.post<{ result: any; annotation: any }>(
+    "stats/run", { test_name: testName, groups },
+  );
 
-  const bracketResp = await fetch(
-    "/apps/figrecipe/figrecipe/stats/add_bracket",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
-      body: JSON.stringify({
+  const { bracket_id, preview } = await api.post<{ bracket_id: string; preview: string }>(
+    "stats/add_bracket", {
         annotation,
         ax_index: axIndex,
         group_positions: groupPositions,
-      }),
     },
   );
-  const { bracket_id, preview } = await bracketResp.json();
 
   console.log(
     `[Bridge] Stat → bracket: ${testName} → ${annotation.stars} (${bracket_id})`,

@@ -241,6 +241,12 @@ data/*
 !src/figrecipe/_django/gallery_templates/*.png
 !src/figrecipe/_django/gallery_templates/*.yaml
 
+# Browser evidence for an editor UX change (docs/images/editor-ux-20260916).
+# A canvas/rail/data-pane change cannot be reviewed from the diff alone, so the
+# screenshots are deliberate artefacts rather than run output — the same reason
+# the example figures above need an exception.
+!docs/images/editor-ux-20260916/*.png
+
 !examples/02_composition_out/gallery.jpg
 !docs/style_granularity.jpg
 !docs/sphinx/_static/*.png
@@ -879,3 +885,20 @@ src/*/_docs/
 
 ### Sphinx build cache (intermediate doctrees, never served)
 .doctrees/
+
+# Bundled Sphinx documentation assets are deliberate wheel data.
+# Images, fonts and source links are required by the generated HTML.
+!src/figrecipe/_sphinx_html/**/*.png
+!src/figrecipe/_sphinx_html/**/*.jpg
+!src/figrecipe/_sphinx_html/**/*.svg
+!src/figrecipe/_sphinx_html/**/*.eot
+!src/figrecipe/_sphinx_html/**/*.ttf
+!src/figrecipe/_sphinx_html/**/*.woff
+!src/figrecipe/_sphinx_html/**/*.woff2
+!src/figrecipe/_sphinx_html/_sources/**/*.rst.txt
+# This 20 MB producer copy has no HTML/CSS/JS/source-link references.
+# The style-reference page serves scitex_style_anatomy.jpg instead.
+src/figrecipe/_sphinx_html/_static/style_anatomy.png
+# Sphinx intermediate state is not served.
+src/figrecipe/_sphinx_html/.doctrees/
+src/figrecipe/_sphinx_html/.buildinfo

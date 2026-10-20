@@ -14,7 +14,12 @@ Usage:
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from fastmcp import FastMCP
+from .._utils._optional import missing_extra
+
+try:
+    from fastmcp import FastMCP
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 from .._branding import get_mcp_instructions, get_mcp_server_name
 from ._diagram_tools import register_diagram_tools

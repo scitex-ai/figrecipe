@@ -5,11 +5,11 @@
  */
 
 import { useCallback, useMemo, useRef } from "react";
-import { DataTable as StxDataTable } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
-import type { Dataset } from "@scitex/ui/src/scitex_ui/static/scitex_ui/react/app/data-table";
+import { DataTable as StxDataTable } from "@scitex/sdk/ui/react/app/data-table";
+import type { Dataset } from "@scitex/sdk/ui/react/app/data-table";
 import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function DataTable() {
   const { datatableTabs, activeTabId, showToast, loadDatatable } =
@@ -54,7 +54,16 @@ export function DataTable() {
         const content = await file.text();
         const ext = file.name.split(".").pop()?.toLowerCase();
         const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
-        await api.post("datatable/import", { content, format });
+        const res = await api.post<{ revision?: string | null }>(
+          "datatable/import",
+          { content, format },
+        );
+        // Explicit replace: adopt the new revision like the pane does, so a
+        // later queued edit is based on what the server just kept.
+        useEditorStore.setState({
+          datatableRevision:
+            typeof res?.revision === "string" ? res.revision : null,
+        });
         showToast(gettext("Imported data"), "success");
         loadDatatable();
       } catch (e) {

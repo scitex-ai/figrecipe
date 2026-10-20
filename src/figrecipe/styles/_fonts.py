@@ -4,6 +4,12 @@
 
 Provides font availability checking and listing for publication-quality figures.
 """
+from .._utils._optional import missing_extra
+
+try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
 
 __all__ = [
     "CJK_FONT_ENV",
@@ -420,7 +426,7 @@ def _warn_font_fallback(preferred: str, fallback: str) -> None:
     )
     # Silence matplotlib's per-glyph findfont fallback log; our single warning
     # is the authoritative, deduped notice (avoids the unreadable spam).
-    logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+    slogging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 
     warnings.warn(msg, UserWarning, stacklevel=2)
     try:

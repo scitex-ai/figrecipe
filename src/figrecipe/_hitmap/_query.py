@@ -12,6 +12,8 @@ from typing import Any, Dict, List
 
 import numpy as np
 
+from .._utils._optional import missing_extra
+
 __all__ = [
     "query_hitmap_neighborhood",
     "save_hitmap_png",
@@ -96,7 +98,10 @@ def save_hitmap_png(hitmap: np.ndarray, path: str, color_map: Dict = None):
     color_map : dict, optional
         Color map for visualization (unused, kept for API compatibility).
     """
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     # Convert 24-bit IDs back to RGB for PNG storage
     h, w = hitmap.shape

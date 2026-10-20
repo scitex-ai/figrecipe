@@ -23,6 +23,7 @@ Arrange/Act and folded into one Assert.
 """
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -113,7 +114,9 @@ class TestPlotTabExportSurface:
         # Arrange -- read the component source by path (importing the frontend
         # is a build concern, not a Python one).
         src = (
-            _package_root()
+            Path(__file__).resolve().parents[4]
+            / "src"
+            / "figrecipe"
             / "_django"
             / "frontend"
             / "src"

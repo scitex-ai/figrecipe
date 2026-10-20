@@ -20,7 +20,7 @@ contributes what it implies.
 # from name resolution. Until that release this file carried scholar's block
 # verbatim; the copy is gone, this import is what runs. ``hosts_to_allow`` is
 # scitex-app's PUBLIC name for it (0.11.0, declared in its ``__all__``).
-from scitex_app import hosts_to_allow
+from scitex_sdk.app import hosts_to_allow
 
 # ── figrecipe's wiring ────────────────────────────────────────────────────────
 

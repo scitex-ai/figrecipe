@@ -1,5 +1,14 @@
 /** Properties panel — orchestrator for element property editing.
- * Tabs: Current | Preset | Layout | View
+ *
+ * Three labeled zones, top to bottom:
+ *   1. Selection card — WHAT is selected (element id/type/panel/call).
+ *      Always visible; the Preset tab's Element Info rows live here now
+ *      instead of behind a second tab, so identity never hides.
+ *   2. Objects tree (in PropertiesPane, above) — WHERE things live.
+ *   3. Tabbed editor — WHAT KIND of edit: Edit (was Current: labels,
+ *      style, legend), Arrange (was Layout: align/distribute/panels),
+ *      Display (was View: theme/zoom/guides).
+ * Tabs always name the verb. No separate Preset tab.
  */
 
 import { useCallback, useState } from "react";
@@ -7,13 +16,14 @@ import { api } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { StatsOverlay } from "../StatsOverlay/StatsOverlay";
 import { AxesPositionSection } from "./AxesPositionSection";
+import { ElementDetails } from "./ElementDetails";
 import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-type TabId = "current" | "preset" | "layout" | "view";
+type TabId = "edit" | "arrange" | "display";
 
 export function Properties() {
   const {
@@ -23,7 +33,7 @@ export function Properties() {
     showToast,
     refreshAfterMutation,
   } = useEditorStore();
-  const [activeTab, setActiveTab] = useState<TabId>("current");
+  const [activeTab, setActiveTab] = useState<TabId>("edit");
 
   // Read calls from centralized store (loaded by selectElement action)
   const axKey =
@@ -50,63 +60,86 @@ export function Properties() {
 
   return (
     <div className="properties-panel">
-      {/* Selected element info — or empty state */}
+      {/* Selected element info — or an empty state that says what to do
+          next. The Objects tree above is always visible, so "from the tree"
+          now names something on screen. */}
+      {/* Zone 1 — Selection card: WHAT is selected. Identity rows
+          (ex-Preset Element Info) live here, always visible, never behind
+          a tab. Zone 2 (Objects tree) is above in PropertiesPane. */}
       {selectedElement ? (
         <div className="selected-item-info">
           <div className="selected-item-header">{selectedElement}</div>
+          <div className="selected-item-identity">
+            <span className="selected-item-identity-row">
+              <span className="selected-item-identity-label">{gettext("Type")}</span>
+              <span>{selectedBbox?.type ?? gettext("unknown")}</span>
+            </span>
+            {selectedBbox?.call_id && (
+              <span className="selected-item-identity-row">
+                <span className="selected-item-identity-label">{gettext("Call ID")}</span>
+                <span>{selectedBbox.call_id}</span>
+              </span>
+            )}
+            {axIndex !== undefined && (
+              <span className="selected-item-identity-row">
+                <span className="selected-item-identity-label">{gettext("Panel")}</span>
+                <span>{interpolate(gettext("Axes %s"), [axIndex])}</span>
+              </span>
+            )}
+          </div>
           {selectedBbox?.label && selectedBbox.label !== selectedElement && (
             <div className="selected-item-label">{selectedBbox.label}</div>
           )}
         </div>
       ) : (
-        <div className="selected-item-info">
-          <div className="selected-item-header">
-            <i className="fas fa-info-circle" style={{ opacity: 0.5 }} />{" "}
+        <div className="properties-panel__empty">
+          <i
+            className="fas fa-info-circle properties-empty-icon"
+            aria-hidden="true"
+          />
+          <div className="properties-empty-title">
             {gettext("No selection")}
           </div>
-          <div className="selected-item-label">
+          <div className="properties-empty-hint">
             {gettext("Select an item from the tree to view properties")}
+          </div>
+          <div className="properties-empty-hint">
+            {gettext("Nothing open yet? Pick a figure in Objects above, or enter data on the Data page.")}
           </div>
         </div>
       )}
 
-      {/* Tabs — always visible (vis_app pattern) */}
+      {/* Zone 3 — Tabbed editor. Tab labels name the verb. */}
       <div className="properties-tabs">
         <button
-          className={`properties-tab${activeTab === "current" ? " active" : ""}`}
-          onClick={() => setActiveTab("current")}
+          className={`properties-tab${activeTab === "edit" ? " active" : ""}`}
+          onClick={() => setActiveTab("edit")}
           type="button"
         >
-          <i className="fas fa-edit" /> {gettext("Current")}
+          <i className="fas fa-edit" /> {gettext("Edit")}
         </button>
         <button
-          className={`properties-tab${activeTab === "preset" ? " active" : ""}`}
-          onClick={() => setActiveTab("preset")}
+          className={`properties-tab${activeTab === "arrange" ? " active" : ""}`}
+          onClick={() => setActiveTab("arrange")}
           type="button"
         >
-          <i className="fas fa-palette" /> {gettext("Preset")}
+          <i className="fas fa-th-large" /> {gettext("Arrange")}
         </button>
         <button
-          className={`properties-tab${activeTab === "layout" ? " active" : ""}`}
-          onClick={() => setActiveTab("layout")}
+          className={`properties-tab${activeTab === "display" ? " active" : ""}`}
+          onClick={() => setActiveTab("display")}
           type="button"
         >
-          <i className="fas fa-th-large" /> {gettext("Layout")}
-        </button>
-        <button
-          className={`properties-tab${activeTab === "view" ? " active" : ""}`}
-          onClick={() => setActiveTab("view")}
-          type="button"
-        >
-          <i className="fas fa-eye" /> {gettext("View")}
+          <i className="fas fa-eye" /> {gettext("Display")}
         </button>
       </div>
 
       <div className="properties-content">
-        {activeTab === "current" && (
+        {activeTab === "edit" && (
           <>
             {!selectedElement ? null : (
               <>
+                <ElementDetails />
                 {axIndex !== undefined && <LabelsSection axIndex={axIndex} />}
                 {axIndex !== undefined && (
                   <AxesPositionSection axIndex={axIndex} />
@@ -165,21 +198,8 @@ export function Properties() {
           </>
         )}
 
-        {activeTab === "preset" && selectedElement && (
-          <PropSection title={gettext("Element Info")}>
-            <PropRow label={gettext("ID")} value={selectedElement} />
-            <PropRow label={gettext("Type")} value={selectedBbox?.type ?? gettext("unknown")} />
-            {selectedBbox?.call_id && (
-              <PropRow label={gettext("Call ID")} value={selectedBbox.call_id} />
-            )}
-            {axIndex !== undefined && (
-              <PropRow label={gettext("Panel")} value={interpolate(gettext("Axes %s"), [axIndex])} />
-            )}
-          </PropSection>
-        )}
-
-        {activeTab === "layout" && <LayoutTab />}
-        {activeTab === "view" && <ViewTab />}
+        {activeTab === "arrange" && <LayoutTab />}
+        {activeTab === "display" && <ViewTab />}
       </div>
     </div>
   );
@@ -389,7 +409,7 @@ function ViewTab() {
             type="button"
             onClick={() => setDarkMode(!darkMode)}
           >
-            <i className={darkMode ? "fas fa-moon" : "fas fa-sun"} />
+            <i className={darkMode ? "fas fa-moon" : "fas fa-circle-half-stroke"} />
             {darkMode ? gettext("Dark") : gettext("Light")}
           </button>
         </div>

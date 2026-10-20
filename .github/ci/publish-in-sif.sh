@@ -57,18 +57,14 @@ ls -l dist
 # PREVIOUS run's directory. See the long note in run-in-sif.sh — 270G of orphaned
 # scratch on scitex-02, 2026-08-09. Same fix here.
 RUN_TAG="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-$$}"
-TMPDIR="/tmp/publish-figrecipe-$V-$RUN_TAG"
+TMPDIR="${TMPDIR:?verified wrapper must supply owned scratch}/publish-figrecipe-$V-$RUN_TAG"
 export TMPDIR
 trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 rm -rf "$TMPDIR" 2>/dev/null || echo "warning: pre-existing $TMPDIR not fully removable, continuing (run-unique path avoids reusing it)"
-mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache"
+mkdir -p "$TMPDIR/site" "$TMPDIR/uv-cache" "$TMPDIR/scitex" "$TMPDIR/pycache"
+export SCITEX_DIR="$TMPDIR/scitex" PYTHONPYCACHEPREFIX="$TMPDIR/pycache"
 
-# Age-gated sweep of orphans from jobs that never reached the trap. Concurrent
-# legs own minutes-old siblings and must survive, hence age rather than name.
-find /tmp -maxdepth 1 -type d -name 'publish-figrecipe-*' \
-    ! -path "$TMPDIR" \
-    -mmin "+${SCRATCH_REAP_MIN_AGE_MIN:-360}" \
-    -exec rm -rf {} + 2>/dev/null || true
+# Cleanup is limited to this invocation's fresh owned scratch.
 export UV_CACHE_DIR="$TMPDIR/uv-cache"
 export XDG_CACHE_HOME="$TMPDIR"
 export PIP_CACHE_DIR="$TMPDIR/pip-cache"

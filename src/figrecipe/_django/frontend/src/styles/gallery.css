@@ -209,6 +209,35 @@
   color: var(--text-secondary);
 }
 
+/* The explicit "open an example figure" action. It carries the accent because
+   it is the primary way into a blank project's first figure — and because it is
+   a deliberate click: the seeding behind it writes example artifacts into the
+   project, so it must never look like ambient chrome. */
+.gallery-start-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--accent-primary);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.gallery-start-demo:hover {
+  background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+}
+.gallery-start-demo i {
+  font-size: 15px;
+}
+
 /* TODO 131 — the fallback's "show examples" disclosure. Collapsed, the
    empty canvas shows this single button (and the plot-type rail), not all 18
    tiles; clicking it reveals the grid below. */

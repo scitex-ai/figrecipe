@@ -24,9 +24,21 @@ substitute standing in for anything.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
+
+# A DOTTED name is load-bearing, not cosmetic. Loading by file path under a
+# bare name makes the module a top-level package-less module, so any relative
+# import inside it dies with "attempted relative import with no known parent
+# package" — which is exactly what happened when gallery.py gained
+# `from ..._utils._optional import missing_extra`. The three-component name
+# gives the module __package__ = figrecipe._django.handlers, so its `...`
+# resolves to figrecipe as it does in production, WITHOUT importing
+# figrecipe._django.handlers.__init__ (which needs Django models and a
+# configured app registry — the whole reason this loads by path).
+_LOAD_NAME = "figrecipe._django.handlers.gallery_under_test"
 
 
 def _package_root() -> Path:
@@ -40,11 +52,16 @@ def _load_gallery_module():
     path = _package_root() / "_django" / "handlers" / "gallery.py"
     if not path.exists():
         pytest.fail(f"gallery handler missing from the installed package: {path}")
-    spec = importlib.util.spec_from_file_location(
-        "figrecipe_gallery_under_test", path
-    )
+    spec = importlib.util.spec_from_file_location(_LOAD_NAME, path)
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    # Registered so the module is findable while its own body executes.
+    sys.modules[_LOAD_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        # Leave no half-initialised module behind for a later import to find.
+        sys.modules.pop(_LOAD_NAME, None)
+        raise
     return module
 
 

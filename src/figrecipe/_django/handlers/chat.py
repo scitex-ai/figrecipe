@@ -8,13 +8,15 @@ standalone editor runs with no database -- see ``_database_is_configured``.
 """
 
 # Chat: single source of truth from scitex-app (no figrecipe-specific fallback).
-# `scitex_app.chat` is a lazily-exposed package attribute (PEP 562
-# `__getattr__`), not a real importable submodule -- `from scitex_app.chat
+# `scitex_sdk.app.chat` is a lazily-exposed package attribute (PEP 562
+# `__getattr__`), not a real importable submodule -- `from scitex_sdk.app.chat
 # import X` raises ModuleNotFoundError since that form requires the import
-# system to resolve `scitex_app.chat` as an actual submodule. `from
+# system to resolve `scitex_sdk.app.chat` as an actual submodule. `from
 # scitex_app import chat` works: it falls back to attribute lookup on the
-# already-imported `scitex_app` package.
-from scitex_app import chat as _chat
+# already-imported `scitex_sdk.app` package.
+from scitex_sdk.app import chat as _chat
+
+from ..._utils._optional import missing_extra
 
 _raw_chat_stream = _chat.chat_stream_view
 _raw_session_detail = _chat.session_detail_view
@@ -34,7 +36,10 @@ def _database_is_configured() -> bool:
     handlers -- scitex-hub, scitex-cloud -- configures a real database, and
     there the same endpoints must keep working; hence a check, not a deletion.
     """
-    from django.conf import settings
+    try:
+        from django.conf import settings
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     default = (getattr(settings, "DATABASES", None) or {}).get("default") or {}
     engine = default.get("ENGINE") or ""
@@ -49,7 +54,10 @@ def _chat_unavailable(request):
     about this deployment rather than a fault. 501 is the honest code -- the
     endpoint exists in the API and this server does not implement it.
     """
-    from django.http import JsonResponse
+    try:
+        from django.http import JsonResponse
+    except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+        raise missing_extra(exc) from exc
 
     return JsonResponse(
         {

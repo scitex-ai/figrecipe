@@ -2,6 +2,7 @@
 
 @import "./panel-resizer.css";
 @import "./panels/properties.css";
+@import "./panels/object-tree.css";
 @import "./panels/datatable.css";
 @import "./panels/data-dropdown.css";
 @import "./panels/figure-dropdown.css";

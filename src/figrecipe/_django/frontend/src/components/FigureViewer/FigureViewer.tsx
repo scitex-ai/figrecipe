@@ -14,7 +14,7 @@ import { useRef, useState, useCallback } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryStart } from "../Gallery/GalleryStart";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
-import { gettext } from "@scitex/ui/src/scitex_ui/static/scitex_ui/ts/_base/gettext.ts";
+import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function FigureViewer() {
   const { placedFigures, selectedFigureId, loading } = useEditorStore();
@@ -74,6 +74,19 @@ export function FigureViewer() {
     return (
       <div className="figure-viewer figure-viewer--start">
         <GalleryStart />
+      </div>
+    );
+  }
+
+  // A preview is on its way: say so. The bare dark surface used to read as a
+  // broken black viewer while the render was still in flight.
+  if (!previewImage) {
+    return (
+      <div className="figure-viewer figure-viewer--start">
+        <div className="gallery-start gallery-start--message">
+          <i className="fas fa-spinner fa-spin" aria-hidden="true" />
+          <p>{gettext("Preparing a figure…")}</p>
+        </div>
       </div>
     );
   }

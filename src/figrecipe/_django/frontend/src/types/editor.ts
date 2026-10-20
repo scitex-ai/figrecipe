@@ -99,6 +99,34 @@ export interface ElementDataLink {
   rowIndices: number[];
 }
 
+/** One inspected canvas element, from the element_details endpoint.
+ * Only the fields the element kind reports are present: a bar carries
+ * value/row/column, a matrix cell value/row/col, a series count/ranges. */
+export interface ElementDetails {
+  element: string;
+  type: string;
+  label: string;
+  ax_index: number;
+  call_id?: string | null;
+  series?: string | null;
+  value?: number | [number, number] | null;
+  row?: number | null;
+  row_label?: string | number | null;
+  col?: number | null;
+  column?: string | number | null;
+  index?: number | null;
+  position?: number | null;
+  orientation?: string | null;
+  count?: number | null;
+  shape?: [number, number] | null;
+  minimum?: number | null;
+  maximum?: number | null;
+  mean?: number | null;
+  levels?: number[] | null;
+  x_range?: [number, number] | null;
+  y_range?: [number, number] | null;
+}
+
 /** Statistical bracket annotation. */
 export interface StatBracket {
   bracket_id: string;

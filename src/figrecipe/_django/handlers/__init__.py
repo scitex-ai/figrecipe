@@ -5,7 +5,6 @@
 Exports HANDLERS dict for the catch-all dispatcher.
 """
 
-
 from .annotation import (
     handle_get_captions,
     handle_update_annotation_position,
@@ -39,6 +38,7 @@ from .datatable import (
 from .downloads import handle_download_csv, handle_download_fig
 from .elements import (
     handle_calls,
+    handle_element_details,
     handle_single_call,
     handle_update_call,
     handle_update_element_color,
@@ -112,6 +112,7 @@ HANDLERS = {
 
     # Elements
     "calls":                        handle_calls,
+    "element_details":              handle_element_details,
     "update_call":                  handle_update_call,
     "update_element_color":         handle_update_element_color,
 
