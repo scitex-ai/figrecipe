@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { redo, undo } from "../../hooks/useUndoRedo";
+import { useUndoRedoState } from "../../hooks/useUndoRedoState";
 import { useEditorStore } from "../../store/useEditorStore";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
@@ -25,6 +26,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
     showHitmap,
     toggleHitmap,
   } = useEditorStore();
+  const { canUndo, canRedo } = useUndoRedoState();
   const [exportOpen, setExportOpen] = useState(false);
   // Mount the drawing surface once, on its first visible visit. This leaves
   // session restoration ahead of its initial viewport read and keeps every
@@ -75,6 +77,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Undo (Ctrl+Z)")}
             aria-label={gettext("Undo (Ctrl+Z)")}
+            disabled={!canUndo}
             onClick={undo}
           >
             <i className="fas fa-undo" aria-hidden="true" />
@@ -85,6 +88,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Redo (Ctrl+Shift+Z)")}
             aria-label={gettext("Redo (Ctrl+Shift+Z)")}
+            disabled={!canRedo}
             onClick={redo}
           >
             <i className="fas fa-redo" aria-hidden="true" />
@@ -123,6 +127,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Zoom to fit")}
             aria-label={gettext("Zoom to fit")}
+            disabled={placedFigures.length === 0}
             onClick={zoomControls?.zoomToFit}
           >
             <i className="fas fa-compress-arrows-alt" aria-hidden="true" />
@@ -135,6 +140,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Toggle hit regions — click a plot element to select it")}
             aria-label={gettext("Toggle hit regions — click a plot element to select it")}
+            disabled={placedFigures.length === 0}
             onClick={toggleHitmap}
           >
             <i className="fas fa-bullseye" aria-hidden="true" />
@@ -149,6 +155,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Save (Ctrl+S)")}
             aria-label={gettext("Save (Ctrl+S)")}
+            disabled={placedFigures.length === 0}
             onClick={save}
           >
             <i className="fas fa-save" aria-hidden="true" />
@@ -159,6 +166,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Restore original")}
             aria-label={gettext("Restore original")}
+            disabled={placedFigures.length === 0}
             onClick={restore}
           >
             <i className="fas fa-undo-alt" aria-hidden="true" />
@@ -169,6 +177,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Export (PNG/SVG/PDF)")}
             aria-label={gettext("Export (PNG/SVG/PDF)")}
+            disabled={placedFigures.length === 0}
             onClick={() => setExportOpen(true)}
           >
             <i className="fas fa-download" aria-hidden="true" />
