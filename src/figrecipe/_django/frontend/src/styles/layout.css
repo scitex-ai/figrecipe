@@ -9,58 +9,10 @@
   overflow: hidden;
 }
 
-/* ── App header (figrecipe-owned) — canonical .stx-app-header ────────────
-   Flex row: title, then the shared project-selector slot, then app actions.
-   Geometry follows the SDK header mandate (min-height, not fixed height;
-   12px inline padding) at Writer title-row scale: 15px app name (writer
-   toolbar logo), 13px version (writer file label), SDK 36px selector
-   trigger (identical everywhere — no leaf override). The 44px min-height
-   fits the 36px trigger plus padding-block. The slot CSS itself
-   (.stx-app-header__slot--project-selector) comes from scitex-ui all.css
-   (pins the selector left-after-title on desktop, and full-width on phones
-   via its own media query). We only own the base row, the title, and the
-   actions order. ───────────────────────────────────────────────────────── */
-
-.stx-app-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 4px 12px;
-  background: var(--vis-bg-secondary);
-  border-bottom: 1px solid var(--vis-border);
-  flex-shrink: 0;
-}
-
-.stx-app-header__title {
-  font-weight: 600;
-  font-size: 15px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* figrecipe's own version badge (from #root[data-version] = figrecipe.__version__).
-   Quiet, secondary, right after the title; distinct from the Hub global header's
-   Hub-version. Hidden by JSX when the host stamps no data-version. */
-.stx-app-header__version {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--vis-text-secondary, var(--text-secondary, #aaa));
-  white-space: nowrap;
-  flex-shrink: 0;
-  letter-spacing: 0.01em;
-}
-
-.stx-app-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  /* SDK mandate pair: the slot's margin-right:auto pushes actions right;
-     a left auto-margin here would split the slack and drift the selector. */
-  order: 2;
-}
+/* ── App header: OWNED BY THE SDK SSoT ─────────────────────────────────
+   .stx-app-header (+__title, __version, __actions, project-selector slot) all
+   come from scitex-ui all.css (app-header.css). No leaf override — per
+   [infra/fig-header] the leaf must not redefine any of it. ─────────────── */
 
 /* ── App Tab Switcher (Plot | Canvas) ─────────────────── */
 
