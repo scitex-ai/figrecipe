@@ -33,6 +33,30 @@
   text-overflow: ellipsis;
 }
 
+/* Zone 1 identity rows — ID / Type / Call ID / Panel. Definition-list
+   rows: label left, value right, straight 1px separators, no pills. */
+.selected-item-identity {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  border-top: 1px solid var(--vis-border);
+}
+
+.selected-item-identity-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--vis-border);
+}
+
+.selected-item-identity-label {
+  flex: 0 0 64px;
+  color: var(--vis-text-muted);
+  font-weight: 500;
+}
+
 /* ── Tabs — vis_app style ───────────────────────────────── */
 
 .properties-tabs {
@@ -54,21 +78,24 @@
   font-weight: 500;
   color: var(--vis-text-muted);
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
+  /* Straight edges only — no curly fills or pills (operator). Selected
+     state is the shared underline, same as .inner-editor__tab--active:
+     2px accent bar, square corners, transparent fill. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 150ms;
 }
 
 .properties-tab:hover {
-  background: var(--vis-bg-hover);
   color: var(--vis-text-primary);
 }
 
 .properties-tab.active {
-  background: var(--accent-primary);
-  color: var(--text-inverse);
-  border-color: var(--accent-primary);
+  background: transparent;
+  color: var(--vis-text-primary);
+  border-bottom-color: var(--accent-primary);
 }
 
 /* ── Content ────────────────────────────────────────────── */
