@@ -95,7 +95,8 @@ for (const site of [
   );
 }
 
-// (3b) Full-outline actives, identical on every toggle control.
+// (3b) Underline-only actives, identical on every toggle control (operator:
+// the shared 2px accent bar is the only indicator — no fills, no outlines).
 for (const [file, cls] of [
   ["styles/layout.css", ".pane-header-btn--active"],
   ["styles/ribbon.css", ".ribbon-btn--active"],
@@ -103,11 +104,12 @@ for (const [file, cls] of [
   const css = read(file);
   const body = css.match(new RegExp(`${cls.replace(/\./g, "\\.")}\\s*{([^}]*)}`))?.[1] ?? "";
   check(
-    `${cls} uses full outline`,
-    /outline:\s*2px solid/.test(body),
+    `${cls} uses accent underline, no outline`,
+    /border-bottom-color:\s*var\(--accent-primary\)/.test(body) &&
+      !/outline:\s*2px solid/.test(body),
   );
   check(
-    `${cls} carries no border-color accent (outline is the indicator)`,
+    `${cls} carries no border-color accent box (underline is the indicator)`,
     !/border-color:\s*var\(--accent-primary\)/.test(body),
   );
 }
