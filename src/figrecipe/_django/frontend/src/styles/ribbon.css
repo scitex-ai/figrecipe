@@ -115,9 +115,12 @@
   justify-content: center;
   gap: 3px;
   padding: 6px 10px;
-  background: var(--vis-bg-secondary);
-  border: 1px solid var(--vis-border);
-  border-radius: var(--radius);
+  background: transparent;
+  /* Straight edges only (operator) — the shared underline is the only
+     indicator, on a transparent 2px bar with square corners. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   color: var(--vis-text-primary);
   font-size: 10px;
   font-weight: 500;
@@ -128,10 +131,8 @@
 }
 
 .ribbon-btn:hover {
-  background: var(--vis-bg-hover);
-  border-color: var(--vis-border-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: transparent;
+  color: var(--vis-text-primary);
 }
 
 .ribbon-btn:active {
@@ -147,12 +148,12 @@
   white-space: nowrap;
 }
 
-/* Active state (for toggles like snap, hitmap, rulers): full outline,
-   identical on every control (Snap-style) — no partial glows. */
+/* Active state (for toggles like snap, hitmap, rulers): the shared underline,
+   identical to tabs — no fills, no outlines. */
 .ribbon-btn--active {
-  background: rgba(139, 148, 158, 0.2);
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 1px;
+  background: transparent;
+  color: var(--vis-text-primary);
+  border-bottom-color: var(--accent-primary);
 }
 
 .ribbon-btn--active i {

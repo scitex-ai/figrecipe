@@ -403,17 +403,19 @@
   font-weight: 500;
   background: transparent;
   color: var(--vis-text-muted);
-  border: 1px solid transparent;
-  border-radius: var(--radius);
+  /* Straight edges only (operator) — the shared underline is the only
+     indicator, on a transparent 2px bar with square corners. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   transition: all var(--transition-fast) ease;
   flex-shrink: 0;
 }
 
 .pane-header-btn:hover {
-  background: var(--vis-bg-hover);
+  background: transparent;
   color: var(--vis-text-primary);
-  border-color: var(--vis-border);
 }
 
 .pane-header-btn:disabled {
@@ -422,12 +424,11 @@
 }
 
 .pane-header-btn--active {
-  background: rgba(139, 148, 158, 0.2);
+  background: transparent;
   color: var(--vis-text-primary);
-  /* Full-outline active state (Snap-style): the outline is the indicator,
-     identical on every control — no partial glows. */
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 1px;
+  /* Shared underline active state (operator): 2px accent bar, identical on
+     every control — tabs, snaps, rulers, hitmaps. No fills, no outlines. */
+  border-bottom-color: var(--accent-primary);
 }
 
 .pane-header-buttons {

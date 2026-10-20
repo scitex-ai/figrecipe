@@ -276,17 +276,20 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--vis-text-primary);
-  background: var(--vis-bg-primary);
-  border: 1px solid var(--vis-border);
-  border-radius: var(--radius);
+  background: transparent;
+  /* Straight edges only (operator) — the shared underline is the only
+     indicator, on a transparent 2px bar with square corners. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .details-btn:hover {
-  background: var(--vis-bg-hover);
-  border-color: var(--vis-text-muted);
+  background: transparent;
+  color: var(--vis-text-primary);
 }
 
 .details-btn:disabled {
@@ -295,9 +298,13 @@
 }
 
 .details-btn--active {
-  background: var(--accent-primary);
-  color: var(--text-inverse);
-  border-color: var(--accent-primary);
+  /* Shared underline active state (operator): 2px accent bar, square corners,
+     transparent fill — identical to tabs and pane-header toggles. */
+  background: transparent;
+  color: var(--vis-text-primary);
+  border: none;
+  border-bottom: 2px solid var(--accent-primary);
+  border-radius: 0;
 }
 
 .details-btn i {
