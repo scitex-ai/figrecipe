@@ -310,6 +310,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
           canvasHeight={CANVAS_H}
           dpi={DPI}
           gridArea="ruler-r"
+          mirror
           onMouseDown={handleRulerMouseDown}
           onDoubleClick={handleRulerDoubleClick}
         />

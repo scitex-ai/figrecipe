@@ -143,32 +143,38 @@ function generateVerticalRulerMm(
   dpi: number,
   rulerWidth: number,
   isDark: boolean,
+  mirror = false,
 ): string {
   const pxToMm = (px: number) => (px / dpi) * 25.4;
   const mmToPx = (mm: number) => (mm * dpi) / 25.4;
   const { majorColor, textColor, minorColor } = getRulerColors(isDark);
+  // Mirrored (right-hand) ruler: the tick roots sit at x=0 (page edge) and
+  // grow right; labels sit at rulerWidth-30. Otherwise roots at the right.
+  const root = (x: number) => (mirror ? rulerWidth - x : x);
+  const edge = mirror ? 0 : rulerWidth;
+  const labelX = mirror ? rulerWidth - 30 : 30;
 
   const maxMm = pxToMm(height);
   let svg = "";
 
   // 0 tick: bare number (unit once per axis, at the far end).
-  svg += `<line x1="40" y1="0" x2="${rulerWidth}" y2="0" stroke="${majorColor}" stroke-width="1.5"/>`;
-  svg += `<text x="30" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, 8)"><title>${interpolate(gettext("%s (click to toggle inch)"), ["0mm"])}</title>0</text>`;
+  svg += `<line x1="${root(40)}" y1="0" x2="${edge}" y2="0" stroke="${majorColor}" stroke-width="1.5"/>`;
+  svg += `<text x="${labelX}" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, ${labelX}, 8)"><title>${interpolate(gettext("%s (click to toggle inch)"), ["0mm"])}</title>0</text>`;
 
   for (let mm = 1; mm <= maxMm; mm++) {
     const y = mmToPx(mm);
     if (mm % 10 === 0) {
-      svg += `<line x1="40" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${majorColor}" stroke-width="1.5"/>`;
-      svg += `<text x="30" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, ${y})"><title>${interpolate(gettext("%s (click to toggle inch)"), [mm + "mm"])}</title>${mm}</text>`;
+      svg += `<line x1="${root(40)}" y1="${y}" x2="${edge}" y2="${y}" stroke="${majorColor}" stroke-width="1.5"/>`;
+      svg += `<text x="${labelX}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, ${labelX}, ${y})"><title>${interpolate(gettext("%s (click to toggle inch)"), [mm + "mm"])}</title>${mm}</text>`;
     } else if (mm % 5 === 0) {
-      svg += `<line x1="48" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${majorColor}" stroke-width="1"/>`;
+      svg += `<line x1="${root(48)}" y1="${y}" x2="${edge}" y2="${y}" stroke="${majorColor}" stroke-width="1"/>`;
     } else {
-      svg += `<line x1="54" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${minorColor}" stroke-width="0.5"/>`;
+      svg += `<line x1="${root(54)}" y1="${y}" x2="${edge}" y2="${y}" stroke="${minorColor}" stroke-width="0.5"/>`;
     }
   }
 
   // The unit, once per axis, at the far (bottom) end.
-  svg += `<text x="30" y="${height - 6}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" font-weight="600" transform="rotate(-90, 30, ${height - 6})">mm</text>`;
+  svg += `<text x="${labelX}" y="${height - 6}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" font-weight="600" transform="rotate(-90, ${labelX}, ${height - 6})">mm</text>`;
 
   return svg;
 }
@@ -178,20 +184,24 @@ function generateVerticalRulerInch(
   dpi: number,
   rulerWidth: number,
   isDark: boolean,
+  mirror = false,
 ): string {
   const inchToPx = (inch: number) => inch * dpi;
   const { majorColor, textColor, minorColor } = getRulerColors(isDark);
+  const root = (x: number) => (mirror ? rulerWidth - x : x);
+  const edge = mirror ? 0 : rulerWidth;
+  const labelX = mirror ? rulerWidth - 30 : 30;
 
   const maxInch = height / dpi;
   let svg = "";
 
   for (let inch = 0; inch <= maxInch; inch++) {
     const y = inchToPx(inch);
-    svg += `<line x1="40" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${majorColor}" stroke-width="1.5"/>`;
+    svg += `<line x1="${root(40)}" y1="${y}" x2="${edge}" y2="${y}" stroke="${majorColor}" stroke-width="1.5"/>`;
     if (inch === 0) {
-      svg += `<text x="30" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, 8)"><title>${interpolate(gettext("%s (click to toggle mm)"), ['0"'])}</title>0</text>`;
+      svg += `<text x="${labelX}" y="8" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, ${labelX}, 8)"><title>${interpolate(gettext("%s (click to toggle mm)"), ['0"'])}</title>0</text>`;
     } else {
-      svg += `<text x="30" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, 30, ${y})"><title>${interpolate(gettext("%s (click to toggle mm)"), [inch + '"'])}</title>${inch}</text>`;
+      svg += `<text x="${labelX}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" class="ruler-label" style="cursor:pointer" transform="rotate(-90, ${labelX}, ${y})"><title>${interpolate(gettext("%s (click to toggle mm)"), [inch + '"'])}</title>${inch}</text>`;
     }
   }
 
@@ -210,14 +220,14 @@ function generateVerticalRulerInch(
         if (i % 8 === 0 && frac.divisor > 8) continue;
         const y = inchToPx(inch + i / frac.divisor);
         if (y <= height) {
-          svg += `<line x1="${frac.x}" y1="${y}" x2="${rulerWidth}" y2="${y}" stroke="${frac.stroke}" stroke-width="${frac.width}"/>`;
+          svg += `<line x1="${root(frac.x)}" y1="${y}" x2="${edge}" y2="${y}" stroke="${frac.stroke}" stroke-width="${frac.width}"/>`;
         }
       }
     }
   });
 
   // The unit, once per axis, at the far (bottom) end.
-  svg += `<text x="30" y="${height - 6}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" font-weight="600" transform="rotate(-90, 30, ${height - 6})">in</text>`;
+  svg += `<text x="${labelX}" y="${height - 6}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${textColor}" font-weight="600" transform="rotate(-90, ${labelX}, ${height - 6})">in</text>`;
 
   return svg;
 }
@@ -261,20 +271,22 @@ interface VRulerProps {
   canvasHeight: number;
   dpi: number;
   gridArea: string;
+  /** Right-hand ruler: ticks + labels face the page (left edge) instead of out. */
+  mirror?: boolean;
   onMouseDown?: (e: React.MouseEvent) => void;
   onDoubleClick?: (e: React.MouseEvent) => void;
 }
 
-export function VerticalRuler({ canvasHeight, dpi, gridArea, onMouseDown, onDoubleClick }: VRulerProps) {
+export function VerticalRuler({ canvasHeight, dpi, gridArea, mirror, onMouseDown, onDoubleClick }: VRulerProps) {
   const darkMode = useEditorStore((s) => s.darkMode);
   const rulerUnit = useEditorStore((s) => s.rulerUnit);
   const toggleRulerUnit = useEditorStore((s) => s.toggleRulerUnit);
 
   const svgContent = useMemo(() => {
     if (rulerUnit === "mm")
-      return generateVerticalRulerMm(canvasHeight, dpi, RULER_SIZE, darkMode);
-    return generateVerticalRulerInch(canvasHeight, dpi, RULER_SIZE, darkMode);
-  }, [canvasHeight, dpi, rulerUnit, darkMode]);
+      return generateVerticalRulerMm(canvasHeight, dpi, RULER_SIZE, darkMode, mirror);
+    return generateVerticalRulerInch(canvasHeight, dpi, RULER_SIZE, darkMode, mirror);
+  }, [canvasHeight, dpi, rulerUnit, darkMode, mirror]);
 
   return (
     <div className="ruler ruler-vertical" style={{ gridArea }} onMouseDown={onMouseDown} onDoubleClick={onDoubleClick}>
