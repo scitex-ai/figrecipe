@@ -66,7 +66,8 @@ export function useGalleryTemplates() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-  const { addFigure, showToast } = useEditorStore();
+  const addFigure = useEditorStore((s) => s.addFigure);
+  const showToast = useEditorStore((s) => s.showToast);
 
   // Names already requested. Keying the fetch effect off `thumbnails` alone
   // re-fires it on every arrival, and an in-flight request has no entry yet —
