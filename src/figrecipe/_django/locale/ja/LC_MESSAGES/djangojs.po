@@ -1608,3 +1608,7 @@ msgstr "配置"
 #: frontend/components/Properties/Properties.tsx
 msgid "Display"
 msgstr "表示"
+
+#: frontend/components/Gallery/useGalleryTemplates.ts
+msgid "This project already has recipes — pick a template below"
+msgstr ""

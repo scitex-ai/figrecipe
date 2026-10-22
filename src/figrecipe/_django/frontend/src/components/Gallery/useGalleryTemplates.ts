@@ -148,7 +148,11 @@ export function useGalleryTemplates() {
    * user's own recipes — a real project must not be littered with a demo.
    *
    * Resolves to `true` only when a figure is now on the canvas, so the
-   * caller can fall back to the template grid on `false`.
+   * caller can fall back to the template grid on `false`. A decline is not
+   * silent: the workspace already holds recipes, so the toast says which
+   * door is open (pick a template tile below) instead of leaving the click
+   * looking dead. A real failure still degrades to the gallery silently —
+   * the visitor did not ask for an error.
    */
   const openDemoFigure = useCallback(async () => {
     try {
@@ -156,7 +160,13 @@ export function useGalleryTemplates() {
         "api/gallery/demo",
         {},
       );
-      if (!result.recipe_path) return false;
+      if (!result.recipe_path) {
+        showToast(
+          gettext("This project already has recipes — pick a template below"),
+          "info",
+        );
+        return false;
+      }
       await addFigure(result.recipe_path);
       return true;
     } catch (e) {
@@ -165,7 +175,7 @@ export function useGalleryTemplates() {
       console.error("[Gallery] Could not open the demo figure:", e);
       return false;
     }
-  }, [addFigure]);
+  }, [addFigure, showToast]);
 
   return { data, loading, failed, thumbnails, addTemplate, openDemoFigure };
 }
