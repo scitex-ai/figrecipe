@@ -3,12 +3,13 @@
  * Details used to open on "No selection — select an item from the tree" with
  * no tree anywhere on screen. This tree lists every placed figure, so the
  * pane always has something to point at; a click selects the figure the
- * viewer shows. With nothing open, the tree says so and offers the two ways
- * in (an example figure, the Data page) instead of going blank.
+ * viewer shows. With nothing open, the tree says so and offers the Data page
+ * instead of going blank. The example door lives once, on the canvas
+ * (GalleryStart actions row) — a second same-labelled button here made two
+ * identical doors on one screen.
  */
 
 import { useEditorStore } from "../../store/useEditorStore";
-import { useGalleryTemplates } from "../Gallery/useGalleryTemplates";
 import { figureTreeItems } from "./objectTree";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
@@ -19,7 +20,6 @@ interface ObjectTreeProps {
 
 export function ObjectTree({ onRequestDataTab }: ObjectTreeProps) {
   const { placedFigures, selectedFigureId, selectFigure } = useEditorStore();
-  const { openDemoFigure } = useGalleryTemplates();
   const items = figureTreeItems(placedFigures, selectedFigureId);
 
   return (
@@ -36,16 +36,11 @@ export function ObjectTree({ onRequestDataTab }: ObjectTreeProps) {
           <p className="object-tree__empty-text">
             {gettext("No figures yet.")}
           </p>
+          {/* The canvas holds the "Open an example figure" door (GalleryStart
+              actions row, primary) — a second same-labelled button here made
+              two identical doors on one screen (measured live 2026-10-22).
+              The tree keeps only the quiet "Go to Data" way in. */}
           <div className="object-tree__empty-actions">
-            <button
-              type="button"
-              className="data-pane__btn"
-              onClick={() => void openDemoFigure()}
-              title={gettext("Add an example recipe and its data to this project")}
-            >
-              <i className="fas fa-wand-magic-sparkles" aria-hidden="true" />
-              {gettext("Open an example figure")}
-            </button>
             <button
               type="button"
               className="data-pane__btn"

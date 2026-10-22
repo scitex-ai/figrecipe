@@ -32,6 +32,7 @@ export function Properties() {
     calls: callsMap,
     showToast,
     refreshAfterMutation,
+    placedFigures,
   } = useEditorStore();
   const [activeTab, setActiveTab] = useState<TabId>("edit");
 
@@ -100,12 +101,15 @@ export function Properties() {
           <div className="properties-empty-title">
             {gettext("No selection")}
           </div>
-          <div className="properties-empty-hint">
-            {gettext("Select an item from the tree to view properties")}
-          </div>
-          <div className="properties-empty-hint">
-            {gettext("Nothing open yet? Pick a figure in Objects above, or enter data on the Data page.")}
-          </div>
+          {placedFigures.length === 0 ? (
+            <div className="properties-empty-hint">
+              {gettext("No figures yet — open an example on the canvas to begin.")}
+            </div>
+          ) : (
+            <div className="properties-empty-hint">
+              {gettext("Select an item from the tree to view properties")}
+            </div>
+          )}
         </div>
       )}
 

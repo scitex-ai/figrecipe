@@ -156,6 +156,28 @@ if (failures > 0) {
   process.exit(1);
 }
 
+// (6) Empty-state copy never contradicts itself (measured live 2026-10-22:
+// the right panel said "Nothing open yet? Pick a figure in Objects above"
+// while OBJECTS was empty, and "Open an example figure" appeared twice on
+// one screen). Properties names ONE next step per state, and the tree keeps
+// only the quiet "Go to Data" way in.
+{
+  const props = read("components/Properties/Properties.tsx");
+  check(
+    "properties names one next step, never a pick-from-empty-tree",
+    !props.includes("Nothing open yet? Pick a figure in Objects above") &&
+      props.includes("No figures yet \u2014 open an example on the canvas to begin."),
+  );
+  const tree = read("components/ObjectTree/ObjectTree.tsx");
+  const demoInTree = (tree.match(/Open an example figure/g) || []).length;
+  check("example door lives once, on the canvas (never duplicated in the tree)", demoInTree <= 1);
+  const start = read("components/Gallery/GalleryStart.tsx");
+  check(
+    "canvas keeps the demo door exactly once",
+    (start.match(/gettext\("Open an example figure"\)/g) || []).length === 1,
+  );
+}
+
 // (5) One actions row on the empty canvas (measured live 2026-10-22: "Open
 // an example figure" and "Show 18 examples" sat as competing parallel
 // doors). GalleryStart must render both CTAs inside a single
