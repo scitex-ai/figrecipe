@@ -103,22 +103,43 @@ export function GalleryStart() {
         </p>
       </div>
 
-      {/* The example figure is OFFERED here and only opened on this click. The
-          server seeds its recipe and data into the project, so it must never
-          happen because the pane rendered. */}
-      {offersExampleSeed(seed) && (
-        <button
-          type="button"
-          className="gallery-start-demo"
-          onClick={openExampleFigure}
-          title={gettext("Add an example recipe and its data to this project")}
-        >
-          <i className="fas fa-wand-magic-sparkles" />
-          {gettext("Open an example figure")}
-        </button>
+      {/* One door into examples, not two: the explicit demo offer is the
+          primary action (seeding writes project artifacts, so it stays a
+          deliberate accent-framed click); the template grid opens beneath it
+          on the secondary disclosure. Before, "Open an example figure" and
+          "Show 18 examples" sat side by side as competing parallel doors
+          (measured live 2026-10-22: two different-styled CTAs, one choice).
+          The demo offer now anchors the actions row and the disclosure
+          follows it as the quieter sibling. */}
+      {(offersExampleSeed(seed) || !examplesExpanded) && (
+        <div className="gallery-start-actions">
+          {offersExampleSeed(seed) && (
+            <button
+              type="button"
+              className="gallery-start-demo"
+              onClick={openExampleFigure}
+              title={gettext("Add an example recipe and its data to this project")}
+            >
+              <i className="fas fa-wand-magic-sparkles" />
+              {gettext("Open an example figure")}
+            </button>
+          )}
+          {!examplesExpanded && (
+            <button
+              type="button"
+              className="gallery-start-expand"
+              onClick={() => setExamplesExpanded(true)}
+              title={gettext("Show example figures")}
+              aria-expanded={false}
+            >
+              <i className="fas fa-images" />
+              {interpolate(ngettext("Show %s example", "Show %s examples", templates.length), [templates.length])}
+            </button>
+          )}
+        </div>
       )}
 
-      {examplesExpanded ? (
+      {examplesExpanded && (
         <div className="gallery-start-grid">
           {visibleStartTemplates(templates, examplesExpanded).map((tmpl) => (
             <button
@@ -139,17 +160,6 @@ export function GalleryStart() {
             </button>
           ))}
         </div>
-      ) : (
-        <button
-          type="button"
-          className="gallery-start-expand"
-          onClick={() => setExamplesExpanded(true)}
-          title={gettext("Show example figures")}
-          aria-expanded={false}
-        >
-          <i className="fas fa-images" />
-          {interpolate(ngettext("Show %s example", "Show %s examples", templates.length), [templates.length])}
-        </button>
       )}
     </div>
   );

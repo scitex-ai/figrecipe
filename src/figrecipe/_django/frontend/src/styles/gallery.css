@@ -268,6 +268,27 @@
   font-size: 15px;
 }
 
+/* One actions row: the explicit demo offer (primary, accent-framed —
+   seeding writes project artifacts) anchors it, and the template-grid
+   disclosure follows as the quieter sibling. Before, the two CTAs sat as
+   competing parallel doors (measured live 2026-10-22). Centered as a row
+   under the head so the buttons read as a pair, not as left-hugging
+   strays against centered copy (the earlier left alignment left a lopsided
+   gutter the screenshots kept flagging). */
+.gallery-start-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.gallery-start-actions .gallery-start-demo,
+.gallery-start-actions .gallery-start-expand {
+  margin-top: 0;
+}
+
 .gallery-start-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

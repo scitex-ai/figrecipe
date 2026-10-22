@@ -155,4 +155,27 @@ if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED`);
   process.exit(1);
 }
+
+// (5) One actions row on the empty canvas (measured live 2026-10-22: "Open
+// an example figure" and "Show 18 examples" sat as competing parallel
+// doors). GalleryStart must render both CTAs inside a single
+// .gallery-start-actions row: demo offer first (primary), the grid
+// disclosure second — never two sibling buttons loose in the pane.
+{
+  const start = readFileSync(
+    join(here, "..", "src", "components", "Gallery", "GalleryStart.tsx"),
+    "utf8",
+  );
+  const rowAt = start.indexOf("gallery-start-actions");
+  const ordered =
+    rowAt !== -1 &&
+    (() => {
+      const rowBlock = start.slice(rowAt, rowAt + 2200);
+      const demoAt = rowBlock.indexOf("gallery-start-demo");
+      const expandAt = rowBlock.indexOf("gallery-start-expand");
+      return demoAt !== -1 && expandAt !== -1 && demoAt < expandAt;
+    })();
+  check("empty canvas offers one actions row, demo first", ordered);
+}
+
 console.log("\nAll ruler/guides/toggle checks passed.");
