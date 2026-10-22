@@ -103,6 +103,13 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
       loadPreview();
       loadHitmap();
       loadDatatable();
+      // A deep link names a figure to WORK on: land on the Figure canvas,
+      // not the Plot viewer. Without this the arrival renders the raster in
+      // the viewer while the canvas stays empty — the figure exists nowhere
+      // the user can drag, arrange, or export it. Measured live 2026-10-22:
+      // `?recipe=demo_first_figure.yaml` painted the viewer and left
+      // OBJECTS at "No figures yet".
+      setActiveTab("canvas");
     }
   }, [initialRecipe, loadPreview, loadHitmap, loadFiles, loadThemes, loadDatatable]);
 
