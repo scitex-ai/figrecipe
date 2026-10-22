@@ -118,4 +118,41 @@ if (failures > 0) {
   console.error(`\n${failures} check(s) FAILED`);
   process.exit(1);
 }
+
+// (4) Rulers-grid docking contract (evidence 2026-10-19/10-22, live 1920px:
+// the right ruler read ~700px off the page edge when the canvas cell pooled
+// spare pane pixels). The grid must shrink-wrap the fixed page so all four
+// rulers park OUTSIDE it: both axes exactly `60px auto 60px` (1fr forbidden),
+// rulers 60px on their minor axis, canvas cell start-aligned on both axes.
+const rulersGrid = canvasCss.match(/\.vis-rulers-area\s*{([^}]*)}/)?.[1] ?? "";
+check(
+  "vis-rulers-area columns are 60px auto 60px (canvas cell shrink-wraps page)",
+  /grid-template-columns:\s*60px\s+auto\s+60px/.test(rulersGrid),
+);
+check(
+  "vis-rulers-area rows are 60px auto 60px",
+  /grid-template-rows:\s*60px\s+auto\s+60px/.test(rulersGrid),
+);
+check(
+  "no 1fr track in vis-rulers-area (spare pane pixels must not pool at the page edge)",
+  !/1fr/.test(rulersGrid),
+);
+check(
+  "horizontal rulers are 60px tall",
+  /\.ruler-horizontal\s*{[^}]*height:\s*60px/.test(canvasCss),
+);
+check(
+  "vertical rulers are 60px wide",
+  /\.ruler-vertical\s*{[^}]*width:\s*60px/.test(canvasCss),
+);
+check(
+  "canvas cell is start-aligned on both axes (hugs top-left, pan math unaffected)",
+  /\.vis-canvas-container\s*{[^}]*justify-self:\s*start/.test(canvasCss) &&
+    /\.vis-canvas-container\s*{[^}]*align-self:\s*start/.test(canvasCss),
+);
+
+if (failures > 0) {
+  console.error(`\n${failures} check(s) FAILED`);
+  process.exit(1);
+}
 console.log("\nAll ruler/guides/toggle checks passed.");
