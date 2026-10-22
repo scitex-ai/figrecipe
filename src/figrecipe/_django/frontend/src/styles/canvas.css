@@ -31,7 +31,15 @@
   grid-template-rows: 60px auto 60px;
   grid-template-columns: 60px auto 60px;
   gap: 0;
-  flex: 1;
+  /* Shrink-wrap the fixed page, never stretch to the pane: flex:1 made the
+   * grid fill the 1486px outer and the `auto` middle cell pooled the surplus
+   * as ~686px of dead canvas between page edge and right ruler (measured
+   * live 2026-10-22, 1920px, Figure tab). width/max-width max-content sizes
+   * the grid to its tracks; justify-content:start pins it top-left so the
+   * translate/scale pan math is unaffected. */
+  width: max-content;
+  max-width: max-content;
+  justify-content: start;
   overflow: visible;
   position: relative;
   min-width: fit-content;

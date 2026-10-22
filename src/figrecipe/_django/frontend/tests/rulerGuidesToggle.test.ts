@@ -145,6 +145,18 @@ check(
   "vertical rulers are 60px wide",
   /\.ruler-vertical\s*{[^}]*width:\s*60px/.test(canvasCss),
 );
+{
+  // NOTE: [^}]* cannot span the multi-line comment inside the grid block —
+  // match across the whole stylesheet instead, scoped by the selector.
+  const gridBlock = canvasCss
+    .slice(canvasCss.indexOf(".vis-rulers-area"), canvasCss.indexOf(".ruler-corner"));
+  check(
+    "rulers grid shrink-wraps the page, never stretches to the pane",
+    /width:\s*max-content/.test(gridBlock) &&
+      /max-width:\s*max-content/.test(gridBlock) &&
+      !/flex:\s*1;/.test(gridBlock),
+  );
+}
 check(
   "canvas cell is start-aligned on both axes (hugs top-left, pan math unaffected)",
   /\.vis-canvas-container\s*{[^}]*justify-self:\s*start/.test(canvasCss) &&
