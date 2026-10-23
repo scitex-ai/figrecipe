@@ -313,7 +313,7 @@
 
 .plot-from-columns__chip.active {
   border-color: var(--color-btn-border);
-  border-bottom-color: var(--accent-primary);
+  border-bottom-color: var(--stx-accent);
   background: var(--vis-accent-bg);
   color: var(--vis-text-primary);
   font-weight: 600;
@@ -340,7 +340,7 @@
   border: none;
   border-radius: var(--radius);
   background: var(--color-cta);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
