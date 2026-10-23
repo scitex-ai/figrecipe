@@ -95,7 +95,7 @@
 .properties-tab.active {
   background: transparent;
   color: var(--vis-text-primary);
-  border-bottom-color: var(--accent-primary);
+  border-bottom-color: var(--stx-accent);
 }
 
 /* ── Content ────────────────────────────────────────────── */

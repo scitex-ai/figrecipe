@@ -96,7 +96,8 @@ for (const site of [
 }
 
 // (3b) Underline-only actives, identical on every toggle control (operator:
-// the shared 2px accent bar is the only indicator — no fills, no outlines).
+// the shared 2px brand-accent bar is the only indicator — no fills, no
+// outlines). SDK --stx-accent: navy in light, gold in dark.
 for (const [file, cls] of [
   ["styles/layout.css", ".pane-header-btn--active"],
   ["styles/ribbon.css", ".ribbon-btn--active"],
@@ -105,12 +106,13 @@ for (const [file, cls] of [
   const body = css.match(new RegExp(`${cls.replace(/\./g, "\\.")}\\s*{([^}]*)}`))?.[1] ?? "";
   check(
     `${cls} uses accent underline, no outline`,
-    /border-bottom-color:\s*var\(--accent-primary\)/.test(body) &&
+    /border-bottom-color:\s*var\(--stx-accent\)/.test(body) &&
       !/outline:\s*2px solid/.test(body),
   );
   check(
     `${cls} carries no border-color accent box (underline is the indicator)`,
-    !/border-color:\s*var\(--accent-primary\)/.test(body),
+    !/border-color:\s*var\(--accent-primary\)/.test(body) &&
+      !/border-color:\s*var\(--stx-accent\)/.test(body),
   );
 }
 
