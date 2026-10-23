@@ -62,7 +62,7 @@ export function PropertiesPane({
           dead "select from the tree" with no tree on screen. */}
       <div className="pane-content">
         <ObjectTree onRequestDataTab={onRequestDataTab ?? (() => {})} />
-        <Properties />
+        <Properties onRequestDataTab={onRequestDataTab} />
       </div>
     </>
   );

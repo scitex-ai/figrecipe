@@ -21,11 +21,12 @@ import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import { SelectorNav } from "@scitex/sdk/ui/react/app/selector-nav";
+import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type TabId = "edit" | "arrange" | "display";
 
-export function Properties() {
+export function Properties({ onRequestDataTab }: { onRequestDataTab?: () => void }) {
   const {
     selectedElement,
     selectedBbox,
@@ -103,7 +104,20 @@ export function Properties() {
           </div>
           {placedFigures.length === 0 ? (
             <div className="properties-empty-hint">
-              {gettext("No figures yet — open an example on the canvas to begin.")}
+              {gettext("No figures yet.")}
+              {/* Same quiet way in as the tree and the empty Panel: the
+                  example door is gone (operator batch
+                  apps-figrecipe-ui-feedback-20261023 item 2), so this hint
+                  must not point at it. */}
+              <button
+                type="button"
+                className="data-pane__btn"
+                onClick={onRequestDataTab}
+                title={gettext("Enter data on its own full-width page")}
+              >
+                <i className="fas fa-table" aria-hidden="true" />
+                {gettext("Go to Data")}
+              </button>
             </div>
           ) : (
             <div className="properties-empty-hint">
@@ -211,6 +225,32 @@ export function Properties() {
 
 /* ── Layout Tab — align, distribute, panels ──────────────── */
 
+/* Align actions as SDK shared controls (operator batch
+ * apps-figrecipe-ui-feedback-20261023 item 4): the bespoke Figure/Axes Align
+ * button grids are gone, replaced by the same SelectorNav the plot-type
+ * rail uses — one shared control, real <button>s (keyboard-operable),
+ * icon + translated label. Labels follow the PLOT_TYPES gettext_noop
+ * pattern (marked here, translated at render). */
+const FIGURE_ALIGN_ITEMS = [
+  { id: "left", icon: "fas fa-align-left", label: gettext_noop("Left") },
+  { id: "right", icon: "fas fa-align-right", label: gettext_noop("Right") },
+  { id: "top", icon: "fas fa-arrow-up", label: gettext_noop("Top") },
+  { id: "bottom", icon: "fas fa-arrow-down", label: gettext_noop("Bottom") },
+  { id: "center-h", icon: "fas fa-arrows-alt-h", label: gettext_noop("Ctr H") },
+  { id: "center-v", icon: "fas fa-arrows-alt-v", label: gettext_noop("Ctr V") },
+] as const;
+
+const AXES_ALIGN_ITEMS = [
+  { id: "axes-left", icon: "fas fa-align-left", label: gettext_noop("Ax Left") },
+  { id: "axes-right", icon: "fas fa-align-right", label: gettext_noop("Ax Right") },
+  { id: "axes-top", icon: "fas fa-arrow-up", label: gettext_noop("Ax Top") },
+  { id: "axes-bottom", icon: "fas fa-arrow-down", label: gettext_noop("Ax Bot") },
+] as const;
+
+type AlignItemId =
+  | (typeof FIGURE_ALIGN_ITEMS)[number]["id"]
+  | (typeof AXES_ALIGN_ITEMS)[number]["id"];
+
 function LayoutTab() {
   const {
     alignFigures,
@@ -227,89 +267,27 @@ function LayoutTab() {
   return (
     <>
       <PropSection title={gettext("Figure Align")}>
-        <div className="details-btn-grid">
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align left")}
-            onClick={() => alignFigures("left")}
-          >
-            <i className="fas fa-align-left" /> {gettext("Left")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align right")}
-            onClick={() => alignFigures("right")}
-          >
-            <i className="fas fa-align-right" /> {gettext("Right")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align top")}
-            onClick={() => alignFigures("top")}
-          >
-            <i className="fas fa-arrow-up" /> {gettext("Top")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align bottom")}
-            onClick={() => alignFigures("bottom")}
-          >
-            <i className="fas fa-arrow-down" /> {gettext("Bottom")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Center horizontal")}
-            onClick={() => alignFigures("center-h")}
-          >
-            <i className="fas fa-arrows-alt-h" /> {gettext("Ctr H")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Center vertical")}
-            onClick={() => alignFigures("center-v")}
-          >
-            <i className="fas fa-arrows-alt-v" /> {gettext("Ctr V")}
-          </button>
-        </div>
+        <SelectorNav
+          items={FIGURE_ALIGN_ITEMS.map((item) => ({
+            ...item,
+            label: gettext(item.label),
+          }))}
+          activeId={null}
+          onSelect={(id) => alignFigures(id as AlignItemId)}
+          style={{ width: "100%" }}
+        />
       </PropSection>
 
       <PropSection title={gettext("Axes Align")}>
-        <div className="details-btn-grid">
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-left")}
-          >
-            <i className="fas fa-align-left" /> {gettext("Ax Left")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-right")}
-          >
-            <i className="fas fa-align-right" /> {gettext("Ax Right")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-top")}
-          >
-            <i className="fas fa-arrow-up" /> {gettext("Ax Top")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-bottom")}
-          >
-            <i className="fas fa-arrow-down" /> {gettext("Ax Bot")}
-          </button>
-        </div>
+        <SelectorNav
+          items={AXES_ALIGN_ITEMS.map((item) => ({
+            ...item,
+            label: gettext(item.label),
+          }))}
+          activeId={null}
+          onSelect={(id) => alignFigures(id as AlignItemId)}
+          style={{ width: "100%" }}
+        />
       </PropSection>
 
       <PropSection title={gettext("Distribute")}>
@@ -420,11 +398,15 @@ function ViewTab() {
       </PropSection>
 
       <PropSection title={gettext("Zoom")}>
+        {/* Dead until the Figure canvas mounts and registers its controls
+            (operator batch apps-figrecipe-ui-feedback-20261023 item 4): a
+            click before that was a silent no-op, so the buttons stand down. */}
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomOut}
+            disabled={!zoomControls}
           >
             <i className="fas fa-search-minus" /> {gettext("Out")}
           </button>
@@ -432,6 +414,7 @@ function ViewTab() {
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomToFit}
+            disabled={!zoomControls}
           >
             <i className="fas fa-compress-arrows-alt" /> {gettext("Fit")}
           </button>
@@ -439,6 +422,7 @@ function ViewTab() {
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomIn}
+            disabled={!zoomControls}
           >
             <i className="fas fa-search-plus" /> {gettext("In")}
           </button>
@@ -446,6 +430,7 @@ function ViewTab() {
             className="details-btn"
             type="button"
             onClick={zoomControls?.resetView}
+            disabled={!zoomControls}
           >
             <i className="fas fa-undo-alt" /> {gettext("Reset")}
           </button>

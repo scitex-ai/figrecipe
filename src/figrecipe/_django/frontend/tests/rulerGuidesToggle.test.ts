@@ -168,48 +168,57 @@ if (failures > 0) {
   process.exit(1);
 }
 
-// (6) Empty-state copy never contradicts itself (measured live 2026-10-22:
-// the right panel said "Nothing open yet? Pick a figure in Objects above"
-// while OBJECTS was empty, and "Open an example figure" appeared twice on
-// one screen). Properties names ONE next step per state, and the tree keeps
-// only the quiet "Go to Data" way in.
+// (6) Empty-state copy never contradicts itself. The example door is gone
+// (operator batch apps-figrecipe-ui-feedback-20261023 item 2), so no
+// empty surface may point at it: Properties, the tree and the empty Panel
+// all name the same quiet "Go to Data" way in.
 {
   const props = read("components/Properties/Properties.tsx");
   check(
-    "properties names one next step, never a pick-from-empty-tree",
+    "properties names one next step, never the removed example door",
     !props.includes("Nothing open yet? Pick a figure in Objects above") &&
-      props.includes("No figures yet \u2014 open an example on the canvas to begin."),
+      !props.includes("open an example on the canvas to begin.") &&
+      props.includes('gettext("Go to Data")'),
   );
   const tree = read("components/ObjectTree/ObjectTree.tsx");
-  const demoInTree = (tree.match(/Open an example figure/g) || []).length;
-  check("example door lives once, on the canvas (never duplicated in the tree)", demoInTree <= 1);
+  check(
+    "tree keeps only the quiet Go to Data way in",
+    (tree.match(/Open an example figure/g) || []).length === 0 &&
+      tree.includes('gettext("Go to Data")'),
+  );
   const start = read("components/Gallery/GalleryStart.tsx");
   check(
-    "canvas keeps the demo door exactly once",
-    (start.match(/gettext\("Open an example figure"\)/g) || []).length === 1,
+    "empty Panel carries no example block",
+    !start.includes("Start from an example") &&
+      !start.includes("Open an example figure") &&
+      !start.includes("Show %s example") &&
+      (start.match(/gallery-start-demo|gallery-start-expand|gallery-start-grid|gallery-start-item/g) || []).length === 0 &&
+      start.includes('gettext("Go to Data")'),
   );
 }
 
-// (5) One actions row on the empty canvas (measured live 2026-10-22: "Open
-// an example figure" and "Show 18 examples" sat as competing parallel
-// doors). GalleryStart must render both CTAs inside a single
-// .gallery-start-actions row: demo offer first (primary), the grid
-// disclosure second — never two sibling buttons loose in the pane.
+// (5) One actions row on the empty canvas: the single Go-to-Data CTA,
+// centered under the head — never two sibling buttons loose in the pane,
+// and never the removed example doors.
 {
   const start = readFileSync(
     join(here, "..", "src", "components", "Gallery", "GalleryStart.tsx"),
     "utf8",
   );
   const rowAt = start.indexOf("gallery-start-actions");
-  const ordered =
+  const single =
     rowAt !== -1 &&
     (() => {
       const rowBlock = start.slice(rowAt, rowAt + 2200);
-      const demoAt = rowBlock.indexOf("gallery-start-demo");
-      const expandAt = rowBlock.indexOf("gallery-start-expand");
-      return demoAt !== -1 && expandAt !== -1 && demoAt < expandAt;
+      const primaryAt = rowBlock.indexOf("gallery-start-primary");
+      return (
+        primaryAt !== -1 &&
+        rowBlock.indexOf("gallery-start-demo") === -1 &&
+        rowBlock.indexOf("gallery-start-expand") === -1 &&
+        rowBlock.includes('gettext("Go to Data")')
+      );
     })();
-  check("empty canvas offers one actions row, demo first", ordered);
+  check("empty canvas offers one actions row, Go to Data only", single);
 }
 
 console.log("\nAll ruler/guides/toggle checks passed.");

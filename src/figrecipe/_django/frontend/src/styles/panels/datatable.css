@@ -1,5 +1,21 @@
 /* FigRecipe Editor — Data Table Panel (vis_app data-table.css pattern) */
 
+/* ── Data pane content: table-first column ────────────────────
+   The grid leads the page with the tab strip, plot form and CRUD toolbar
+   following it. A flex column keeps every sibling reachable: the SDK table
+   root sets height:100%, which as a flex item claims the whole pane and
+   pushes the chrome below the fold (measured live: shared tab strip at
+   viewport bottom edge) — so the table's inline style overrides it with
+   height:auto + min-height:0 and flex:1 distributes the remainder. Desktop
+   only: phones keep natural-height scrolling sections. */
+@media (min-width: 769px) {
+  .data-pane__content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
 /* ── DataTable empty state (vis_app pattern) ─────────── */
 
 .datatable-empty-state {

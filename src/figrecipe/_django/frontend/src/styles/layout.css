@@ -14,7 +14,7 @@
    come from scitex-ui all.css (app-header.css). No leaf override — per
    [infra/fig-header] the leaf must not redefine any of it. ─────────────── */
 
-/* ── App Tab Switcher (Plot | Canvas) ─────────────────── */
+/* ── App Tab Switcher (Data | Panel | Figure) ─────────────────── */
 
 .inner-editor__tabs {
   display: flex;
@@ -74,10 +74,14 @@
 
 .inner-editor__tab--active {
   color: var(--vis-text-primary);
-  border-bottom-color: var(--accent-primary);
+  /* Active tab state in the SDK CTA color (operator defect 2026-10-23: the
+     active tab rendered vivid/blue off-token). One token, no hard-coded
+     blue — the same --color-cta the plot submit CTA fills with
+     (datatable.css .plot-from-columns__submit). */
+  border-bottom-color: var(--color-cta);
 }
 
-/* ── Figure Viewer (Plot tab — shows rendered figure) ─── */
+/* ── Figure Viewer (Panel tab — shows rendered figure) ─── */
 
 .figure-viewer {
   display: flex;
@@ -150,8 +154,8 @@
 }
 
 /* Stable SDK panes retain their DOM identity across desktop page switches.
-   Plot keeps its category rail and the actual rendered viewer together. */
-.editor-plot-page {
+   Panel keeps its category rail and the actual rendered viewer together. */
+.editor-panel-page {
   display: flex;
   flex: 1;
   min-width: 0;
@@ -161,7 +165,7 @@
 
 @media (min-width: 641px) {
   .inner-editor:not([data-editor-tab="data"]) .editor-body > .data-page,
-  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-plot-page,
+  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-panel-page,
   .inner-editor:not([data-editor-tab="canvas"]) .editor-body > .editor-figure-page {
     display: none;
   }

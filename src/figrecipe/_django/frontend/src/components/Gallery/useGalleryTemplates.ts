@@ -2,7 +2,7 @@
  *
  * Two surfaces render the same templates and must not drift:
  *   - GalleryPanel  — the modal opened from the plot-type nav
- *   - GalleryStart  — what the Plot canvas shows before anything is open
+ *   - GalleryStart  — what the Panel canvas shows before anything is open
  *
  * Both need the same three things (categories, thumbnails, add-to-canvas), so
  * they share this hook rather than each keeping its own copy of the fetch

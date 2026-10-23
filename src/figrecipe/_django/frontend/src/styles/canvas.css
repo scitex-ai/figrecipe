@@ -47,6 +47,20 @@
   transform-origin: 0 0;
 }
 
+/* ── Rulers hidden (Toggle Rulers): collapse the ruler tracks to a single
+   canvas cell. display:none alone would keep the fixed 60px tracks as dead
+   gutters around the page, so the template itself collapses too. */
+.vis-rulers-area.rulers-hidden {
+  grid-template-areas: "canvas";
+  grid-template-rows: auto;
+  grid-template-columns: auto;
+}
+
+.vis-rulers-area.rulers-hidden .ruler-corner,
+.vis-rulers-area.rulers-hidden .ruler {
+  display: none;
+}
+
 /* ── Ruler corners (vis_app .ruler-corner) ───────────── */
 
 .ruler-corner {

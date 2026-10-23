@@ -1,9 +1,9 @@
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
- * Stable panes: Data -> Plot -> Figure -> Details. Desktop tabs keep the
+ * Stable panes: Data -> Panel -> Figure -> Details. Desktop tabs keep the
  * SigmaPlot-style full-width worksheet and the resizable Details column.
- *   - Plot: PlotTypeNav | FigureViewer | Objects + Details
+ *   - Panel: PlotTypeNav | FigureViewer + Objects + Details
  *   - Data: full-width DataTablePane (import, paste, sample, edit)
  *   - Canvas: Canvas | Objects + Details
  */
@@ -104,7 +104,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
       loadHitmap();
       loadDatatable();
       // A deep link names a figure to WORK on: land on the Figure canvas,
-      // not the Plot viewer. Without this the arrival renders the raster in
+      // not the Panel viewer. Without this the arrival renders the raster in
       // the viewer while the canvas stays empty — the figure exists nowhere
       // the user can drag, arrange, or export it. Measured live 2026-10-22:
       // `?recipe=demo_first_figure.yaml` painted the viewer and left
@@ -262,7 +262,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           role="tab"
           aria-selected={activeTab === "plot"}
         >
-          <i className="fas fa-chart-line" /> {gettext("Plot")}
+          <i className="fas fa-chart-line" /> {gettext("Panel")}
         </button>
         <button
           className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
@@ -289,12 +289,12 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
             <DataTablePane hideCollapse active={dataActive} />
           </div>
         </div>
-        <section className="editor-plot-page" {...paneAttrs("plot", gettext("Plot"), 2)}>
+        <section className="editor-panel-page" {...paneAttrs("plot", gettext("Panel"), 2)}>
           {/* Plot type selector nav — fixed width, not resizable. */}
           <PlotTypeNav />
           {/* Rendered figure viewer — always expanded. */}
           <main className="split-pane split-pane-center">
-            <FigureViewer />
+            <FigureViewer onRequestDataTab={() => selectTab("data")} />
           </main>
         </section>
         {/* Composition canvas — always expanded. */}

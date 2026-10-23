@@ -156,15 +156,15 @@ def test_phone_workflow_keeps_panes_and_canvas_view(browser, editor_server, lang
     page.locator('.stx-panes__tab[data-stx-pane-tab="figure"]').tap()
     _settle(page)
     labels = page.locator(".stx-panes__tab").all_text_contents()
-    expected = [catalog.get(label, label) if language == "ja" else label for label in ["Data", "Plot", "Figure", "Details"]]
+    expected = [catalog.get(label, label) if language == "ja" else label for label in ["Data", "Panel", "Figure", "Details"]]
 
     # Assert
     checks = {
         "labels": labels == expected,
         "one_visible_tablist": page.locator('.inner-editor [role="tablist"]:visible').count() == 1,
         "stable_panes": page.evaluate("window.paneRefs.length===4 && window.paneRefs.every(e=>e.isConnected && document.getElementById(e.id)===e)"),
-        "plot_navigation": page.locator(".editor-plot-page .plot-type-nav").count() == 1,
-        "plot_viewer": page.locator(".editor-plot-page .figure-viewer").count() == 1,
+        "plot_navigation": page.locator(".editor-panel-page .plot-type-nav").count() == 1,
+        "plot_viewer": page.locator(".editor-panel-page .figure-viewer").count() == 1,
         "one_canvas": page.locator(".canvas-outer").count() == 1,
         "viewport": rect["y"] + rect["height"] <= 844,
         "canvas_touch": surface.evaluate("e=>getComputedStyle(e).touchAction") == "none",
@@ -200,10 +200,10 @@ def test_desktop_table_routes_show_data_then_figure(browser, editor_server, data
         observed = {
             "loaded_table": ("GET", "/datatable/data") in requests,
             "initial_tab": editor.get_attribute("data-editor-tab"),
-            "initial_plot_visible": page.locator(".editor-plot-page").is_visible(),
+            "initial_plot_visible": page.locator(".editor-panel-page").is_visible(),
         }
 
-        page.locator(".editor-plot-page .plot-type-nav").get_by_role(
+        page.locator(".editor-panel-page .plot-type-nav").get_by_role(
             "button", name="Line", exact=True
         ).click()
         if data_route == "explicit":
@@ -215,7 +215,7 @@ def test_desktop_table_routes_show_data_then_figure(browser, editor_server, data
         _settle(page)
         observed["data_tab"] = editor.get_attribute("data-editor-tab")
         observed["plot_visible_after_data"] = page.locator(
-            ".editor-plot-page"
+            ".editor-panel-page"
         ).is_visible()
         plot = page.locator(".plot-from-columns").get_by_role(
             "button", name="Plot", exact=True
