@@ -84,11 +84,20 @@ ALLOWED_MISSING = {
 
 
 def _all_module_names() -> list[str]:
-    """Every importable module path under the installed figrecipe package."""
+    """Every importable module path under the installed figrecipe package.
+
+    Vendored third-party trees (node_modules/) are not package code: they are
+    gitignored npm artefacts that happen to contain .py helper scripts. They
+    must not be walked here — a broken helper (or a helper my earlier hygiene
+    touched) is not a package import failure. Found live 2026-10-24: the gate
+    walked katex's generate_fonts/extract_tfms/format_json via the editable
+    install and blocked the develop push on env-only failures."""
     root = pathlib.Path(figrecipe.__file__).parent
     names = []
     for path in sorted(root.rglob("*.py")):
         if "__pycache__" in str(path):
+            continue
+        if "node_modules" in path.parts:
             continue
         rel = path.relative_to(root).with_suffix("")
         parts = list(rel.parts)
