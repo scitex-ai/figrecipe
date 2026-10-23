@@ -26,7 +26,7 @@ import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gett
 
 type TabId = "edit" | "arrange" | "display";
 
-export function Properties({ onRequestDataTab }: { onRequestDataTab?: () => void }) {
+export function Properties() {
   const {
     selectedElement,
     selectedBbox,
@@ -105,19 +105,9 @@ export function Properties({ onRequestDataTab }: { onRequestDataTab?: () => void
           {placedFigures.length === 0 ? (
             <div className="properties-empty-hint">
               {gettext("No figures yet.")}
-              {/* Same quiet way in as the tree and the empty Panel: the
-                  example door is gone (operator batch
-                  apps-figrecipe-ui-feedback-20261023 item 2), so this hint
-                  must not point at it. */}
-              <button
-                type="button"
-                className="data-pane__btn"
-                onClick={onRequestDataTab}
-                title={gettext("Enter data on its own full-width page")}
-              >
-                <i className="fas fa-table" aria-hidden="true" />
-                {gettext("Go to Data")}
-              </button>
+              {/* Operator UI batch: no "Go to Data" door in the Details pane.
+                  The Data tab is its own full-width destination — Details
+                  must not route there. The empty Panel + tree hint remain. */}
             </div>
           ) : (
             <div className="properties-empty-hint">

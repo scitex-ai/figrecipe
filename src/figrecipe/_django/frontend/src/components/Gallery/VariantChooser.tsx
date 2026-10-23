@@ -42,8 +42,6 @@ interface Props {
    * list is operable without a pointer. */
   focusOnOpen?: boolean;
   onChoose: (choice: VariantChoice) => void;
-  /** "See all" hands the whole category back to the gallery modal. */
-  onSeeAll: () => void;
   /** Present only when this category can be plotted from the loaded table:
    * the chooser is then the touch user's only way to reach the Data pane. */
   onPlotFromData?: () => void;
@@ -66,7 +64,6 @@ export function VariantChooser({
   pinned,
   focusOnOpen,
   onChoose,
-  onSeeAll,
   onPlotFromData,
   onClose,
   onPointerEnter,
@@ -251,14 +248,6 @@ export function VariantChooser({
           </li>
         ))}
       </ul>
-
-      <button
-        type="button"
-        className="plot-type-nav__chooser-more"
-        onClick={onSeeAll}
-      >
-        {gettext("See all templates…")}
-      </button>
     </div>,
     document.body,
   );

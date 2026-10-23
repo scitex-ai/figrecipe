@@ -317,7 +317,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
             <PropertiesPane
               onToggleCollapse={rightPanel.toggleCollapse}
               collapsed={detailsCollapsed}
-              onRequestDataTab={() => selectTab("data")}
             />
           </aside>
         </div>
