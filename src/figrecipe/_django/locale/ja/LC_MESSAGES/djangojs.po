@@ -1616,3 +1616,27 @@ msgstr ""
 #: frontend/components/Properties/Properties.tsx
 msgid "No figures yet — open an example on the canvas to begin."
 msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Could not read %s"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Loaded %s from project"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Load from project"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Project data files"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Listing project files…"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "No CSV files in this project yet — upload data first."
+msgstr ""
