@@ -36,10 +36,10 @@ export function ObjectTree({ onRequestDataTab }: ObjectTreeProps) {
           <p className="object-tree__empty-text">
             {gettext("No figures yet.")}
           </p>
-          {/* The canvas holds the "Open an example figure" door (GalleryStart
-              actions row, primary) — a second same-labelled button here made
-              two identical doors on one screen (measured live 2026-10-22).
-              The tree keeps only the quiet "Go to Data" way in. */}
+          {/* No example door anymore (operator batch
+              apps-figrecipe-ui-feedback-20261023 item 2): the empty Panel
+              and the Details hint point here too, so every empty surface
+              names the same quiet "Go to Data" way in. */}
           <div className="object-tree__empty-actions">
             <button
               type="button"

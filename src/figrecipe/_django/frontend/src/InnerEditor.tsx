@@ -294,7 +294,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           <PlotTypeNav />
           {/* Rendered figure viewer — always expanded. */}
           <main className="split-pane split-pane-center">
-            <FigureViewer />
+            <FigureViewer onRequestDataTab={() => selectTab("data")} />
           </main>
         </section>
         {/* Composition canvas — always expanded. */}

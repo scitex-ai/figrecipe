@@ -16,7 +16,7 @@ import { GalleryStart } from "../Gallery/GalleryStart";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-export function FigureViewer() {
+export function FigureViewer({ onRequestDataTab }: { onRequestDataTab?: () => void }) {
   const { placedFigures, selectedFigureId, loading } = useEditorStore();
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -65,15 +65,14 @@ export function FigureViewer() {
     setTranslate({ x: 0, y: 0 });
   }, []);
 
-  // Nothing open yet. Showing the shipped examples here rather than an
-  // instruction ("Select a recipe file...") matters because a NEW project has
-  // no recipe file to select — the instruction named something the visitor did
-  // not have, so the first screen of the tool showed neither a figure nor a
-  // way to get one.
+  // Nothing open yet. The empty Panel names the two real ways in — the
+  // Data tab (table-first) and the file tree — instead of an example the
+  // visitor did not ask for (operator batch apps-figrecipe-ui-feedback-20261023
+  // item 2: the example block is gone).
   if (!previewImage && !loading) {
     return (
       <div className="figure-viewer figure-viewer--start">
-        <GalleryStart />
+        <GalleryStart onRequestDataTab={onRequestDataTab} />
       </div>
     );
   }

@@ -25,7 +25,7 @@ CHECKED_LABELS = [
     "Canvas",
     "Details",
     "No selection",
-    "Start from an example",
+    "Go to Data",
     "No tables",
     "Current",
     "Preset",
