@@ -1611,24 +1611,24 @@ msgstr "表示"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "Could not read %s"
-msgstr ""
+msgstr "%s を読み込めませんでした"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "Loaded %s from project"
-msgstr ""
+msgstr "プロジェクトから %s を読み込みました"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "Load from project"
-msgstr ""
+msgstr "プロジェクトから読み込む"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "Project data files"
-msgstr ""
+msgstr "プロジェクトのデータファイル"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "Listing project files…"
-msgstr ""
+msgstr "プロジェクトのファイルを一覧表示中…"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "No CSV files in this project yet — upload data first."
-msgstr ""
+msgstr "このプロジェクトにはまだ CSV ファイルがありません — 先にデータをアップロードしてください。"
