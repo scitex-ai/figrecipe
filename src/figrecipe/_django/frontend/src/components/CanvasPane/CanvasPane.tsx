@@ -121,13 +121,15 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
 
           <span className="toolbar-sep" />
 
-          {/* Zoom */}
+          {/* Zoom — dead until the Figure canvas mounts and registers its
+              controls (operator batch apps-figrecipe-ui-feedback-20261023
+              item 4): a click before that was a silent no-op. */}
           <button
             className="pane-header-btn"
             type="button"
             title={gettext("Zoom to fit")}
             aria-label={gettext("Zoom to fit")}
-            disabled={placedFigures.length === 0}
+            disabled={placedFigures.length === 0 || !zoomControls}
             onClick={zoomControls?.zoomToFit}
           >
             <i className="fas fa-compress-arrows-alt" aria-hidden="true" />

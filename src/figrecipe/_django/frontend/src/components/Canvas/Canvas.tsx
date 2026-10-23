@@ -26,6 +26,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
     placedFigures,
     rulerUnit,
     toggleRulerUnit,
+    showRulers,
     selectFigure,
     darkMode,
     activeSnapGuides,
@@ -223,8 +224,14 @@ export function Canvas({ active = true }: { active?: boolean }) {
       className={`canvas-outer${isPanning ? " panning" : ""}`}
       ref={outerRef}
     >
-      {/* The entire rulers-area transforms together (vis_app architecture) */}
-      <div className="vis-rulers-area" style={transformStyle}>
+      {/* The entire rulers-area transforms together (vis_app architecture).
+          Toggle Rulers collapses the ruler tracks: the toggle used to flip
+          store state nothing read, so the button lied (operator batch
+          apps-figrecipe-ui-feedback-20261023 item 4). */}
+      <div
+        className={`vis-rulers-area${showRulers ? "" : " rulers-hidden"}`}
+        style={transformStyle}
+      >
         {/* Top row: corner-tl | ruler-h | corner-tr */}
         <div
           className="ruler-corner ruler-corner--tl"

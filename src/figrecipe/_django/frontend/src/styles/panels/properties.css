@@ -267,6 +267,23 @@
   gap: 6px;
 }
 
+/* Details align navs share the SDK SelectorNav with the plot-type rail
+   (operator batch apps-figrecipe-ui-feedback-20261023 item 4), but lay out
+   as the compact wrapping row-grid the old bespoke buttons used — a full
+   vertical rail would push the second align section below the fold. */
+.prop-section .stx-app-selector-nav__items {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prop-section .stx-app-selector-nav__item {
+  flex-direction: row;
+  flex: 1 1 30%;
+  gap: 6px;
+  padding: 7px 8px;
+}
+
 .details-btn {
   display: flex;
   align-items: center;
