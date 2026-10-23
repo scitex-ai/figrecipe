@@ -1,7 +1,8 @@
 {
   "name": "figrecipe_app",
   "slug": "figrecipe",
-  "label": "Figrecipe",
+  "label": "FigRecipe",
+  "group": "work",
   "pip_package": "figrecipe",
   "icon": "fas fa-palette",
   "subtitle": "Interactive figure editor for publication-ready matplotlib plots",
