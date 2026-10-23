@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@scitex/sdk/ui/react/app/data-table/DataTable.tsx";
+import { FileTabs } from "@scitex/sdk/ui/react/app/file-tabs";
 import { api, ApiError, setRecipe } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
-import { getPanelColor } from "../../utils/panelColors";
 import { PlotFromColumns } from "./PlotFromColumns";
 import {
   badgeColumnHighlights,
@@ -1225,37 +1225,19 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         )}
         <DataTable
           data={dataset}
-          style={{ flex: 1 }}
+          style={{ flex: 1, height: "auto", minHeight: 0 }}
           readOnly={locked}
           onCellSelect={handleCellSelect}
           onDataChange={handleDataChange}
         />
         {tabs.length >= 1 && (
-          <div className="datatable-panel__tabs">
-            {tabs.map((tab, idx) => (
-              <button
-                key={tab.id}
-                className={`datatable-panel__tab${tab.id === activeTabId ? " active" : ""}`}
-                style={{
-                  borderLeft: `3px solid ${getPanelColor(idx)}`,
-                }}
-                onClick={() => useEditorStore.setState({ activeTabId: tab.id })}
-                type="button"
-              >
-                {tab.label}
-                <span
-                  className="datatable-panel__tab-close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseTab(tab.id);
-                  }}
-                  title={gettext("Close tab and remove figure")}
-                >
-                  &times;
-                </span>
-              </button>
-            ))}
-          </div>
+          <FileTabs
+            tabs={tabs.map((tab) => ({ path: tab.id, label: tab.label }))}
+            activeTab={activeTabId}
+            onTabSwitch={(id) => useEditorStore.setState({ activeTabId: id })}
+            onTabClose={handleCloseTab}
+            showNewButton={false}
+          />
         )}
         {activeTab && (
           <PlotFromColumns

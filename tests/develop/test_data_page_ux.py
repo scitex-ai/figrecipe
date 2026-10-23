@@ -252,7 +252,7 @@ def test_data_grid_leads_the_page_chrome_follows():
         body.index(marker)
         for marker in (
             "<DataTable",
-            "datatable-panel__tabs",
+            "<FileTabs",
             "<PlotFromColumns",
             "data-pane__toolbar",
         )
@@ -293,6 +293,24 @@ def test_derived_table_locks_until_explicit_adoption():
         ]
         if not present
     ]
+    # Assert
+    assert problems == []
+
+
+def test_data_tabs_use_the_shared_file_tabs():
+    # Arrange: operator follow-up — the bespoke vivid tab strip is gone,
+    # replaced by the SDK shared FileTabs (theme-owned active state).
+    source = (
+        _FRONTEND / "components" / "DataTablePane" / "DataTablePane.tsx"
+    ).read_text(encoding="utf-8")
+    # Act
+    problems = []
+    if 'from "@scitex/sdk/ui/react/app/file-tabs"' not in source:
+        problems.append("no shared FileTabs import")
+    if "<FileTabs" not in source:
+        problems.append("strip is not the shared FileTabs")
+    if "datatable-panel__tab" in source or "getPanelColor" in source:
+        problems.append("bespoke vivid tab strip remains")
     # Assert
     assert problems == []
 
