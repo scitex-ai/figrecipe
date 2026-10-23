@@ -877,6 +877,58 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     }
   }, [showToast, handleImportTextContent]);
 
+  /** Project-data picker state: CSV/TSV/JSON files the project owns. */
+  const [projectFiles, setProjectFiles] = useState<string[] | null>(null);
+  const [projectFilesOpen, setProjectFilesOpen] = useState(false);
+  const [projectFilesLoading, setProjectFilesLoading] = useState(false);
+
+  /** Load-from-project CTA: list, then import through the same path. */
+  const handleProjectFilesToggle = useCallback(async () => {
+    if (projectFilesOpen) {
+      setProjectFilesOpen(false);
+      return;
+    }
+    setProjectFilesOpen(true);
+    if (projectFiles !== null) return;
+    setProjectFilesLoading(true);
+    try {
+      const res = await api.get<{ files?: string[] }>("api/project-data");
+      setProjectFiles(Array.isArray(res?.files) ? res.files : []);
+    } catch {
+      setProjectFiles([]);
+    } finally {
+      setProjectFilesLoading(false);
+    }
+  }, [projectFilesOpen, projectFiles]);
+
+  const handleProjectFileLoad = useCallback(
+    async (path: string) => {
+      setProjectFilesOpen(false);
+      try {
+        const res = await api.get<{ content?: string; error?: string }>(
+          `api/file-content/${path}`,
+        );
+        if (typeof res?.content !== "string") {
+          showToast(
+            interpolate(gettext("Could not read %s"), [path]),
+            "error",
+          );
+          return;
+        }
+        const ext = path.split(".").pop()?.toLowerCase();
+        const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
+        await handleImportTextContent(res.content, format);
+        showToast(
+          interpolate(gettext("Loaded %s from project"), [path]),
+          "success",
+        );
+      } catch {
+        /* handleImportTextContent already toasted the failure. */
+      }
+    },
+    [showToast, handleImportTextContent],
+  );
+
   const dataset = useMemo(
     () =>
       activeTab
@@ -1081,6 +1133,45 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 <i className="fas fa-wand-magic-sparkles" aria-hidden="true" />
                 {gettext("Load sample data")}
               </button>
+              <button
+                type="button"
+                className="data-pane__btn datatable-empty-cta"
+                onClick={() => void handleProjectFilesToggle()}
+              >
+                <i className="fas fa-folder-open" aria-hidden="true" />
+                {gettext("Load from project")}
+              </button>
+              {projectFilesOpen && (
+                <div
+                  className="datatable-project-files"
+                  role="listbox"
+                  aria-label={gettext("Project data files")}
+                >
+                  {projectFilesLoading ? (
+                    <div className="datatable-project-files-empty">
+                      {gettext("Listing project files…")}
+                    </div>
+                  ) : projectFiles && projectFiles.length > 0 ? (
+                    projectFiles.map((path) => (
+                      <button
+                        key={path}
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        className="datatable-project-file"
+                        onClick={() => void handleProjectFileLoad(path)}
+                      >
+                        <i className="fas fa-file-csv" aria-hidden="true" />
+                        {path}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="datatable-project-files-empty">
+                      {gettext("No CSV files in this project yet — upload data first.")}
+                    </div>
+                  )}
+                </div>
+              )}
               </>
               )}
             </div>
