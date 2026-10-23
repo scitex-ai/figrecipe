@@ -108,6 +108,29 @@ def handle_api_files(request, editor):
     )
 
 
+def handle_api_project_data(request, editor):
+    """List tabular data files in the project working dir.
+
+    Narrow additive endpoint for the Data pane's "Load from project" picker
+    (beta golden path step 7): returns CSV/TSV/JSON files the project owns,
+    so a sample dataset uploaded to the project can flow straight into a
+    figure without download-then-reupload. Read path reuses the existing
+    ``api/file_content/<path>`` handler; this endpoint only lists.
+    """
+    working_dir, files_backend = _get_working_dir_and_backend(request, editor)
+    try:
+        names = files_backend.list(
+            "", extensions=[".csv", ".tsv", ".json"],
+        )
+    except PermissionError:
+        return JsonResponse({"files": [], "working_dir": str(working_dir)})
+    data_dirs = ("data/", "datasets/", "dataset/")
+    preferred = [n for n in names if n.startswith(data_dirs)]
+    others = sorted(set(names) - set(preferred))
+    files = sorted(preferred) + others
+    return JsonResponse({"files": files, "working_dir": str(working_dir)})
+
+
 def handle_api_switch(request, editor):
     """Switch to a different recipe file, or bootstrap editor on first load."""
     from figrecipe._editor._helpers import render_with_overrides
