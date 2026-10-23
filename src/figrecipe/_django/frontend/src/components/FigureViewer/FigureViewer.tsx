@@ -1,11 +1,11 @@
 /** FigureViewer — displays the rendered figure image with zoom/pan.
  *
- * Used in the Plot tab to show the matplotlib figure preview.
+ * Used in the Panel tab to show the matplotlib figure preview.
  * The Canvas tab uses CanvasPane instead (for composition layout).
  *
  * TODO 130 / standalone item #4 — "nothing saves an image": the backend export
  * endpoints (download/<fmt>, api/compose/export/<fmt>) and the ExportDialog
- * have existed since the ribbon work, but the Plot tab — where a first-run user
+ * have existed since the ribbon work, but the Panel tab — where a first-run user
  * opens a recipe — had NO control to reach them; export was only on the Canvas
  * tab. A figure now exposes the same ExportDialog directly here.
  */

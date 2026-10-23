@@ -1,5 +1,5 @@
 /* Gallery panel — template selector overlay, and the start gallery that
- * fills the Plot canvas before a recipe is open.
+ * fills the Panel canvas before a recipe is open.
  *
  * Colours are theme tokens only. `--accent-color`, `--accent-bg` and
  * `--bg-hover` used to appear here and are declared by NOTHING — not
@@ -181,7 +181,7 @@
   opacity: 0.5;
 }
 
-/* ── Start gallery (empty Plot canvas) ─────────────────── */
+/* ── Start gallery (empty Panel canvas) ─────────────────── */
 
 .gallery-start {
   width: 100%;

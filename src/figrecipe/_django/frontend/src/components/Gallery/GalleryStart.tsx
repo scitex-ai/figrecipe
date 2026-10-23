@@ -1,4 +1,4 @@
-/** GalleryStart — the Plot canvas before anything is open.
+/** GalleryStart — the Panel canvas before anything is open.
  *
  * This replaces a dead end. The empty canvas used to read "Select a recipe
  * file to view the figure", which names a thing the visitor does not have:

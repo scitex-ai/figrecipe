@@ -51,7 +51,7 @@ def _tab_to(page, locator, backward=False):
 
 
 def _rail(case, family):
-    return case.page.locator(".editor-plot-page .plot-type-nav").get_by_role(
+    return case.page.locator(".editor-panel-page .plot-type-nav").get_by_role(
         "button",
         name=case.label("Special" if family == "special" else "Line"),
         exact=True,
@@ -60,10 +60,10 @@ def _rail(case, family):
 
 def _to_plot(case):
     page = case.page
-    if page.locator(".editor-plot-page").is_visible():
+    if page.locator(".editor-panel-page").is_visible():
         return
     if case.phone:
-        # SDK tabs have one roving tab stop; use its native arrows to reach Plot.
+        # SDK tabs have one roving tab stop; use its native arrows to reach Panel.
         active = page.locator('.stx-panes__tab[aria-selected="true"]')
         _tab_to(page, active)
         current = active.get_attribute("data-stx-pane-tab")
@@ -76,11 +76,11 @@ def _to_plot(case):
             _settle(page)
     else:
         tab = page.locator(".inner-editor__tabs").get_by_role(
-            "tab", name="Plot", exact=True
+            "tab", name="Panel", exact=True
         )
         _tab_to(page, tab)
         page.keyboard.press("Enter")
-    page.locator(".editor-plot-page").wait_for(state="visible")
+    page.locator(".editor-panel-page").wait_for(state="visible")
     _settle(page)
 
 
@@ -213,7 +213,7 @@ def _utility_result(case, observed, before, posts, focused):
     _settle(page)
     observed.update(
         {
-            "plot_visible": page.locator(".editor-plot-page").is_visible(),
+            "plot_visible": page.locator(".editor-panel-page").is_visible(),
             "pane": _pane(page),
             "focus": focused,
             "gallery": page.locator(".gallery-panel").is_visible(),

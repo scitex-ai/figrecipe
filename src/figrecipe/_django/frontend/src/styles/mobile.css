@@ -8,11 +8,11 @@
  */
 
 @media (max-width: 768px) {
-  .editor-plot-page {
+  .editor-panel-page {
     flex-direction: column;
     overflow: visible;
   }
-  .editor-plot-page > .plot-type-nav {
+  .editor-panel-page > .plot-type-nav {
     order: 0;
   }
   /* ── Editor body: one scrolling column of natural-height sections ──
@@ -299,7 +299,7 @@
     display: none !important;
   }
 
-  .editor-body.stx-panes--single > .editor-plot-page .figure-viewer {
+  .editor-body.stx-panes--single > .editor-panel-page .figure-viewer {
     height: 100%;
     min-height: 240px;
   }

@@ -20,7 +20,7 @@ JA_MESSAGES = Path(app_locale_dir(APP)) / "ja" / "LC_MESSAGES"
 
 #: Visible editor labels that must never reach a Japanese page in English.
 CHECKED_LABELS = [
-    "Plot",
+    "Panel",
     "Data",
     "Canvas",
     "Details",

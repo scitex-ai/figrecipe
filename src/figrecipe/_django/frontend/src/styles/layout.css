@@ -77,7 +77,7 @@
   border-bottom-color: var(--accent-primary);
 }
 
-/* ── Figure Viewer (Plot tab — shows rendered figure) ─── */
+/* ── Figure Viewer (Panel tab — shows rendered figure) ─── */
 
 .figure-viewer {
   display: flex;
@@ -150,8 +150,8 @@
 }
 
 /* Stable SDK panes retain their DOM identity across desktop page switches.
-   Plot keeps its category rail and the actual rendered viewer together. */
-.editor-plot-page {
+   Panel keeps its category rail and the actual rendered viewer together. */
+.editor-panel-page {
   display: flex;
   flex: 1;
   min-width: 0;
@@ -161,7 +161,7 @@
 
 @media (min-width: 641px) {
   .inner-editor:not([data-editor-tab="data"]) .editor-body > .data-page,
-  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-plot-page,
+  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-panel-page,
   .inner-editor:not([data-editor-tab="canvas"]) .editor-body > .editor-figure-page {
     display: none;
   }
