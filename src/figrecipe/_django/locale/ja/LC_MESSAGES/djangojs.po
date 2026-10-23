@@ -1609,10 +1609,26 @@ msgstr "配置"
 msgid "Display"
 msgstr "表示"
 
-#: frontend/components/Gallery/useGalleryTemplates.ts
-msgid "This project already has recipes — pick a template below"
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Could not read %s"
 msgstr ""
 
-#: frontend/components/Properties/Properties.tsx
-msgid "No figures yet — open an example on the canvas to begin."
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Loaded %s from project"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Load from project"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Project data files"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Listing project files…"
+msgstr ""
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "No CSV files in this project yet — upload data first."
 msgstr ""

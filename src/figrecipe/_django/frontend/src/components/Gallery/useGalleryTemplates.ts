@@ -141,42 +141,5 @@ export function useGalleryTemplates() {
     [addFigure, showToast],
   );
 
-  /** Open the figure a brand-new workspace should start on.
-   *
-   * The server decides whether there is one: it seeds a small demo recipe
-   * (and its data) into an EMPTY workspace, hands back an existing seed
-   * unchanged, and returns `null` for a workspace that already holds the
-   * user's own recipes — a real project must not be littered with a demo.
-   *
-   * Resolves to `true` only when a figure is now on the canvas, so the
-   * caller can fall back to the template grid on `false`. A decline is not
-   * silent: the workspace already holds recipes, so the toast says which
-   * door is open (pick a template tile below) instead of leaving the click
-   * looking dead. A real failure still degrades to the gallery silently —
-   * the visitor did not ask for an error.
-   */
-  const openDemoFigure = useCallback(async () => {
-    try {
-      const result = await api.post<{ recipe_path: string | null }>(
-        "api/gallery/demo",
-        {},
-      );
-      if (!result.recipe_path) {
-        showToast(
-          gettext("This project already has recipes — pick a template below"),
-          "info",
-        );
-        return false;
-      }
-      await addFigure(result.recipe_path);
-      return true;
-    } catch (e) {
-      // Never a toast: the visitor did not ask for this, so a failure must
-      // degrade to the gallery silently rather than open with an error.
-      console.error("[Gallery] Could not open the demo figure:", e);
-      return false;
-    }
-  }, [addFigure, showToast]);
-
-  return { data, loading, failed, thumbnails, addTemplate, openDemoFigure };
+  return { data, loading, failed, thumbnails, addTemplate };
 }
