@@ -14,7 +14,7 @@
    come from scitex-ui all.css (app-header.css). No leaf override — per
    [infra/fig-header] the leaf must not redefine any of it. ─────────────── */
 
-/* ── App Tab Switcher (Plot | Canvas) ─────────────────── */
+/* ── App Tab Switcher (Data | Panel | Figure) ─────────────────── */
 
 .inner-editor__tabs {
   display: flex;
