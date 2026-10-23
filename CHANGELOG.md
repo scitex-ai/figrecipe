@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.37.0] - 2026-10-19
+### Added (operator UI batch 2026-10-23, branch feature/sac-figrecipe-23c386cd)
+
+- Plot tab renamed Panel (mental model Figure→Panels→Plots→Data); pane id
+  and storage keys kept.
+- Empty Panel is guidance-only ("No figures yet" + Go to Data); example
+  block and template grid removed, all empty surfaces point at Data.
+- Data tab is table-first with direct cell input; figure-recorded
+  (incl. clew-provenance) tables are read-only until explicit Edit-table
+  adoption; tab strip is the SDK shared FileTabs.
+- Figure tab: Figure/Axes Align are SDK SelectorNavs; Rulers toggle
+  collapses tracks; Fit/zoom stand down until canvas registers controls.
+- Active app-tab state in the SDK CTA token (`--color-cta`).
+
+## [0.38.0] - 2026-10-23
+
+Operator UI batch (branch feature/sac-figrecipe-23c386cd):
 
 Datatable revision safety + error-state retry, SSoT header adoption
 (PR #466-#475):
