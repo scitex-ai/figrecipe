@@ -118,12 +118,30 @@ def handle_api_project_data(request, editor):
     ``api/file_content/<path>`` handler; this endpoint only lists.
     """
     working_dir, files_backend = _get_working_dir_and_backend(request, editor)
+    exts = (".csv", ".tsv", ".json")
     try:
-        names = files_backend.list(
-            "", extensions=[".csv", ".tsv", ".json"],
-        )
+        top = files_backend.list("", extensions=list(exts))
+        list_entries = getattr(files_backend, "list_entries", None)
+        entries = list_entries("") if callable(list_entries) else []
     except PermissionError:
         return JsonResponse({"files": [], "working_dir": str(working_dir)})
+    # list() is top-level only and keeps directories regardless of
+    # extensions: expand one level so data/sample.csv surfaces, keeping
+    # only real files with tabular suffixes.
+    names = [n for n in top if not n.endswith("/")]
+    dirs = {
+        e["path"]
+        for e in (entries if isinstance(entries, list) else [])
+        if isinstance(e, dict)
+        and e.get("type") == "directory"
+        and not str(e.get("path", "")).startswith(".")
+    }
+    for d in sorted(dirs):
+        try:
+            names.extend(files_backend.list(d, extensions=list(exts)))
+        except PermissionError:
+            continue
+    names = [n for n in names if n.lower().endswith(exts)]
     data_dirs = ("data/", "datasets/", "dataset/")
     preferred = [n for n in names if n.startswith(data_dirs)]
     others = sorted(set(names) - set(preferred))
