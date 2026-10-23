@@ -1630,5 +1630,21 @@ msgid "Listing project files…"
 msgstr "プロジェクトのファイルを一覧表示中…"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Start with a CSV file, paste spreadsheet cells, or try the sample — then edit cells directly in the grid."
+msgstr "CSVファイルから始めるか、スプレッドシートのセルを貼り付けるか、サンプルを試してください — その後グリッドで直接編集できます。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Direct edits are for plotting on the UI — clew provenance is recorded when figures save."
+msgstr "直接編集はUI上でのプロット用です — clewの来歴は図の保存時に記録されます。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Figure-recorded table — read-only until you take ownership."
+msgstr "図に記録されたテーブル — 所有権を取得するまで読み取り専用です。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Read-only table — take ownership to edit."
+msgstr "読み取り専用テーブル — 編集するには所有権を取得してください。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "No CSV files in this project yet — upload data first."
 msgstr "このプロジェクトにはまだ CSV ファイルがありません — 先にデータをアップロードしてください。"
