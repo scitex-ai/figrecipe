@@ -43,6 +43,11 @@ export interface TabData {
   label: string;
   columns: ColumnDef[];
   rows: (string | number)[][];
+  /** Where the shown table came from (backend datatable/data `source`):
+   *  "project" (stored, revision-guarded), "import" (session import),
+   *  "record" (derived from the figure's recorded data — read-only until
+   *  adopted), or null when unknown. Drives the edit-lock. */
+  source: "project" | "import" | "record" | null;
 }
 
 export interface ColumnDef {

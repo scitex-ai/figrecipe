@@ -316,6 +316,27 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     [loadDatatable, refreshAfterMutation, saveQueue, showToast],
   );
 
+  /** Edit-lock (operator batch apps-figrecipe-ui-feedback-20261023 item 3).
+   *
+   *  A table derived from the figure's recorded data (`source === "record"` —
+   *  which is also where clew-chained derivations surface, since composition
+   *  records panel recipes/data through the same record) is read-only until
+   *  the user explicitly takes ownership of it. Hand-editing a derived table
+   *  would silently fork it from the figure it came from and break the
+   *  provenance chain. Project-stored and session-imported tables are the
+   *  user's own and stay editable.
+   *
+   *  Adoption reuses the normal write path: persisting forks the shown table
+   *  into the project store, the reload then reports source "project", and
+   *  the lock releases. No new copy: the button reuses "Edit table", the
+   *  toast reuses "Saved". */
+  const locked = activeTab?.source === "record";
+  const handleAdopt = useCallback(() => {
+    const table = currentTable();
+    if (!table) return;
+    void persistTable(table, gettext("Saved"));
+  }, [currentTable, persistTable]);
+
   /** The single write path for every edit: snapshot for undo, update the model,
    *  then persist. The snapshot carries the plot assignment too, so undoing a
    *  delete that cleared an X/Y binding brings the binding back with the table. */
@@ -326,6 +347,14 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         showToast(gettext("No data table to edit"), "error");
         return;
       }
+      // Locked derived table: the UI disables every write affordance, and
+      // this choke point refuses programmatic writes too (paste, cell edits).
+      // Ownership is taken explicitly through handleAdopt, never by editing.
+      const live = useEditorStore.getState();
+      const liveTab = live.activeTabId
+        ? live.datatableTabs[live.activeTabId]
+        : null;
+      if (liveTab?.source === "record") return;
       const label = opLabel(op);
       setUndoStack((stack) =>
         pushUndo(stack, {
@@ -1178,6 +1207,29 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           </div>
         ) : (
           <>
+        {/* Table-first: the grid itself leads the page; the tab strip, the
+            plot form and the CRUD toolbar follow it. */}
+        {locked && (
+          <div className="data-pane__prompt" role="note">
+            <i className="fas fa-lock" aria-hidden="true" />
+            <button
+              type="button"
+              className="data-pane__btn"
+              onClick={handleAdopt}
+              title={gettext("Edit table")}
+            >
+              <i className="fas fa-pen" aria-hidden="true" />
+              {gettext("Edit table")}
+            </button>
+          </div>
+        )}
+        <DataTable
+          data={dataset}
+          style={{ flex: 1 }}
+          readOnly={locked}
+          onCellSelect={handleCellSelect}
+          onDataChange={handleDataChange}
+        />
         {tabs.length >= 1 && (
           <div className="datatable-panel__tabs">
             {tabs.map((tab, idx) => (
@@ -1226,7 +1278,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleAddRow}
-            disabled={!activeTab}
+            disabled={locked || !activeTab}
             title={gettext("Add a row below the selected one")}
           >
             <i className="fas fa-plus" aria-hidden="true" />
@@ -1236,7 +1288,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleDeleteRow}
-            disabled={!activeTab}
+            disabled={locked || !activeTab}
             title={gettext("Delete the selected row")}
           >
             <i className="fas fa-minus" aria-hidden="true" />
@@ -1247,7 +1299,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleAddColumn}
-            disabled={!activeTab}
+            disabled={locked || !activeTab}
             title={gettext("Add a column at the end of the table")}
           >
             <i className="fas fa-plus" aria-hidden="true" />
@@ -1257,7 +1309,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={() => setRenameDraft(activeColumnName ?? "")}
-            disabled={!activeTab || !activeColumnName}
+            disabled={locked || !activeTab || !activeColumnName}
             title={gettext("Rename the selected column")}
           >
             <i className="fas fa-pen" aria-hidden="true" />
@@ -1267,7 +1319,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleDuplicateColumn}
-            disabled={!activeTab || !activeColumnName}
+            disabled={locked || !activeTab || !activeColumnName}
             title={gettext("Duplicate the selected column beside itself")}
           >
             <i className="fas fa-clone" aria-hidden="true" />
@@ -1277,7 +1329,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleDeleteColumn}
-            disabled={!activeTab || !activeColumnName}
+            disabled={locked || !activeTab || !activeColumnName}
             title={gettext("Delete the selected column")}
           >
             <i className="fas fa-trash-alt" aria-hidden="true" />
@@ -1349,12 +1401,6 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           </div>
         )}
 
-        <DataTable
-          data={dataset}
-          style={{ flex: 1 }}
-          onCellSelect={handleCellSelect}
-          onDataChange={handleDataChange}
-        />
           </>
         )}
       </div>

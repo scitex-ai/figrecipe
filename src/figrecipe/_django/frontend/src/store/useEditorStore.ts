@@ -443,6 +443,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const data = await api.get<{
         columns: ColumnDef[];
         rows: (string | number)[][];
+        source?: string | null;
         revision?: string | null;
         element_data_map?: Record<
           string,
@@ -459,6 +460,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         label: gettext("Data"),
         columns: data.columns ?? [],
         rows: data.rows ?? [],
+        source:
+          data.source === "project" ||
+          data.source === "import" ||
+          data.source === "record"
+            ? data.source
+            : null,
       };
       // Build element-data mapping if provided by backend
       const elementDataMap: Record<
