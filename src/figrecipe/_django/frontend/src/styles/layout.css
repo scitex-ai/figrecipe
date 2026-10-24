@@ -136,14 +136,14 @@
 
 .inner-editor__tabitem--active {
   color: var(--vis-text-primary);
-  border-bottom-color: var(--grp, var(--stx-accent));
+  border-bottom-color: var(--stx-accent);
 }
 
 /* Hovered group: an item whose relatives in other rows are hovered (or
-   which is hovered itself as a relative) reads in the group color. */
+   which is hovered itself as a relative) reads in the group color,
+   applied inline so no leaf token is minted for it. */
 .inner-editor__tabitem--related {
   color: var(--vis-text-primary);
-  border-bottom-color: var(--grp, var(--stx-accent));
 }
 
 /* Group color dot: the entity's group (figure's color; the active data
@@ -153,7 +153,6 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--grp, var(--stx-accent));
 }
 
 /* Fold chevron (Chrome tab-group style): collapses the row's items,

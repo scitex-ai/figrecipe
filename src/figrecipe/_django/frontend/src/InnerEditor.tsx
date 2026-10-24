@@ -369,12 +369,14 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                   const label = f.path.split("/").pop() ?? f.path;
                   const selected = f.id === selectedFigureId;
                   const related = !selected && hoveredGroup === i;
+                  const lit = selected || related;
+                  const color = groupColor(i);
                   return (
                     <button
                       key={f.id}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
-                      style={{ "--grp": groupColor(i) } as CSSProperties}
+                      style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
                       title={f.path}
                       onMouseEnter={() => setHoveredGroup(i)}
@@ -384,7 +386,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                         selectTab("canvas");
                       }}
                     >
-                      <span className="inner-editor__tabdot" aria-hidden="true" />
+                      <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} />
                       {label}
                     </button>
                   );
@@ -434,12 +436,14 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     : (f.path.split("/").pop() ?? f.path);
                   const selected = f.id === selectedFigureId;
                   const related = !selected && hoveredGroup === i;
+                  const lit = selected || related;
+                  const color = groupColor(i);
                   return (
                     <button
                       key={f.id}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
-                      style={{ "--grp": groupColor(i) } as CSSProperties}
+                      style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
                       title={f.path}
                       onMouseEnter={() => setHoveredGroup(i)}
@@ -449,7 +453,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                         selectTab("plot");
                       }}
                     >
-                      <span className="inner-editor__tabdot" aria-hidden="true" />
+                      <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} />
                       {label}
                     </button>
                   );
@@ -501,7 +505,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                       key={t.id}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
-                      style={grouped ? ({ "--grp": selectedGroupColor } as CSSProperties) : undefined}
+                      style={grouped ? ({ borderBottomColor: selectedGroupColor } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
                       onMouseEnter={() => {
                         if (grouped && selectedGroupIndex !== null) setHoveredGroup(selectedGroupIndex);
@@ -512,7 +516,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                         selectTab("data");
                       }}
                     >
-                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" /> : null}
+                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: selectedGroupColor }} /> : null}
                       {t.label}
                     </button>
                   );
