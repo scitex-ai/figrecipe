@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-10-24
+
+- The canvas remembers size and position per figure: switching figures
+  restores each one's zoom + pan exactly; a never-visited canvas still
+  auto-fits on arrival.
+
 ## [0.43.0] - 2026-10-24
 
 - Provenance chip on locked tables: the lock prompt names the recording
