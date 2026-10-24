@@ -33,6 +33,7 @@ import { AlertBanner } from "@scitex/sdk/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
 import { useEditorStore } from "./store/useEditorStore";
+import { canvasOf } from "./types/editor";
 import { mountEditorPanes, releaseEditorPanes, showEditorPane, usePhoneLayout } from "./components/mobilePanes";
 import { PANES_CHANGE } from "@scitex/sdk/ui/ts/app/panes";
 import type { PanesChangeDetail } from "@scitex/sdk/ui/ts/app/panes";
@@ -69,7 +70,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     selectFigure,
     datatableTabs,
     activeTabId,
-    switchFile,
+    addFigure,
     showToast,
   } = useEditorStore();
 
@@ -205,10 +206,26 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
-  // Model-row context: the selected panel (figure + letter) gates the
-  // Data + button and names the panel its data belongs to.
+  // Model rows: Figures (canvases) / Panels (this canvas) / Data (tables).
+  // 1 Figure = 1 Canvas: a canvas is identified by its panels' shared
+  // canvas key, listed here in first-appearance order ("Figure N",
+  // paper-style; the recipe file shows as tooltip).
   const selectedFig =
     placedFigures.find((f) => f.id === selectedFigureId) ?? null;
+  const activeCanvasKey = selectedFig ? canvasOf(selectedFig) : null;
+  const canvasKeys: string[] = [];
+  for (const f of placedFigures) {
+    const key = canvasOf(f);
+    if (!canvasKeys.includes(key)) canvasKeys.push(key);
+  }
+  const activeCanvasIndex = activeCanvasKey
+    ? canvasKeys.indexOf(activeCanvasKey)
+    : -1;
+  // This canvas's panels (empty when nothing is selected: the rows then
+  // show the global empty states instead of a half-bound view).
+  const canvasPanels = activeCanvasKey
+    ? placedFigures.filter((f) => canvasOf(f) === activeCanvasKey)
+    : placedFigures;
   const selectedPanelLabel = selectedFig
     ? (selectedFig.panelLetter
       ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])
@@ -216,9 +233,9 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     : null;
   const tableList = Object.values(datatableTabs);
   const detailsCollapsed = rightPanel.collapsed && !phone;
-  // Row groups, Chrome-style: each placed figure owns a group color; its
-  // panel items carry it, and the active data item carries the selected
-  // panel's color. Related rows read as one group without naming text.
+  // Row groups, Chrome-style: each canvas owns a group color; its panel
+  // items carry it, and the active data item carries the selected panel's
+  // color. Related rows read as one group without naming text.
   const GROUP_COLORS = [
     "#e8a04c",
     "#6aa8ff",
@@ -228,9 +245,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     "#4cc9c0",
   ];
   const groupColor = (index: number) => GROUP_COLORS[index % GROUP_COLORS.length];
-  const selectedGroupIndex = selectedFig
-    ? Math.max(0, placedFigures.indexOf(selectedFig))
-    : null;
+  const selectedGroupIndex = activeCanvasIndex >= 0 ? activeCanvasIndex : null;
   const selectedGroupColor =
     selectedGroupIndex === null ? undefined : groupColor(selectedGroupIndex);
   // Folded rows (Chrome tab-group style): the scope tab stays, the items
@@ -240,6 +255,11 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   // touch users get the same via tap-to-select.
   const [folded, setFolded] = useState<ReadonlySet<AppTab>>(new Set());
   const [hoveredGroup, setHoveredGroup] = useState<number | null>(null);
+  // Folding cascades downward (upper rows include the ones beneath):
+  // folding Figures hides panels + data; folding Panels hides data.
+  const panelsVisible = !folded.has("plot") && !folded.has("canvas");
+  const dataVisible =
+    !folded.has("data") && !folded.has("plot") && !folded.has("canvas");
   const toggleFolded = (tab: AppTab) => {
     setFolded((prev) => {
       const next = new Set(prev);
@@ -251,7 +271,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   // Adding is async (api/new + place); one in-flight add at a time so a
   // double click cannot create two figures.
   const [adding, setAdding] = useState(false);
-  const addBlankFigure = async () => {
+  const addBlankFigure = async (canvasKey?: string) => {
     if (adding) return null;
     setAdding(true);
     try {
@@ -260,7 +280,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
         showToast(gettext("Could not create a figure"), "error");
         return null;
       }
-      await switchFile(res.file);
+      await addFigure(res.file, canvasKey);
       return res.file;
     } catch {
       showToast(gettext("Could not create a figure"), "error");
@@ -274,7 +294,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const handleAddPanel = async () => {
     if (!selectedFig) return;
-    if (await addBlankFigure()) selectTab("plot");
+    if (await addBlankFigure(canvasOf(selectedFig))) selectTab("canvas");
   };
   const paneAttrs = (
     id: string,
@@ -362,32 +382,33 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           </button>
           {!folded.has("canvas") ? (
             <span className="inner-editor__tabitems">
-              {placedFigures.length === 0 ? (
+              {canvasKeys.length === 0 ? (
                 <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
               ) : (
-                placedFigures.map((f, i) => {
-                  const label = f.path.split("/").pop() ?? f.path;
-                  const selected = f.id === selectedFigureId;
+                canvasKeys.map((key, i) => {
+                  const first = placedFigures.find((f) => canvasOf(f) === key);
+                  const selected = !!selectedFig && canvasOf(selectedFig) === key;
                   const related = !selected && hoveredGroup === i;
                   const lit = selected || related;
                   const color = groupColor(i);
+                  const base = key.split("/").pop() ?? key;
                   return (
                     <button
-                      key={f.id}
+                      key={key}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
-                      title={f.path}
+                      title={base}
                       onMouseEnter={() => setHoveredGroup(i)}
                       onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
-                        selectFigure(f.id);
+                        if (first) selectFigure(first.id);
                         selectTab("canvas");
                       }}
                     >
                       <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} />
-                      {label}
+                      {interpolate(gettext("Figure %s"), [String(i + 1)])}
                     </button>
                   );
                 })
@@ -425,19 +446,20 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           >
             <i className={folded.has("plot") ? "fas fa-chevron-right" : "fas fa-chevron-down"} aria-hidden="true" />
           </button>
-          {!folded.has("plot") ? (
+          {panelsVisible ? (
             <span className="inner-editor__tabitems">
-              {placedFigures.length === 0 ? (
+              {canvasPanels.length === 0 ? (
                 <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
               ) : (
-                placedFigures.map((f, i) => {
+                canvasPanels.map((f) => {
                   const label = f.panelLetter
                     ? interpolate(gettext("Panel %s"), [f.panelLetter])
                     : (f.path.split("/").pop() ?? f.path);
                   const selected = f.id === selectedFigureId;
-                  const related = !selected && hoveredGroup === i;
+                  const gi = Math.max(0, canvasKeys.indexOf(canvasOf(f)));
+                  const related = !selected && hoveredGroup === gi;
                   const lit = selected || related;
-                  const color = groupColor(i);
+                  const color = groupColor(gi);
                   return (
                     <button
                       key={f.id}
@@ -446,7 +468,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                       style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
                       title={f.path}
-                      onMouseEnter={() => setHoveredGroup(i)}
+                      onMouseEnter={() => setHoveredGroup(gi)}
                       onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
                         selectFigure(f.id);
@@ -492,7 +514,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           >
             <i className={folded.has("data") ? "fas fa-chevron-right" : "fas fa-chevron-down"} aria-hidden="true" />
           </button>
-          {!folded.has("data") ? (
+          {dataVisible ? (
             <span className="inner-editor__tabitems">
               {tableList.length === 0 ? (
                 <span className="inner-editor__tabhint">{gettext("No tables")}</span>

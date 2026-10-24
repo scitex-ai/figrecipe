@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
+import { canvasOf } from "../../types/editor";
 import { mapWithConcurrency } from "../../utils/mapWithConcurrency";
 import { useEditorStore } from "../../store/useEditorStore";
 import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
@@ -68,6 +69,12 @@ export function useGalleryTemplates() {
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const addFigure = useEditorStore((s) => s.addFigure);
   const showToast = useEditorStore((s) => s.showToast);
+  // Gallery add lands on the CURRENT canvas (1 Figure = 1 Canvas: the
+  // figure being worked on collects the new panel).
+  const activeCanvasKey = useEditorStore((s) => {
+    const sel = s.placedFigures.find((f) => f.id === s.selectedFigureId);
+    return sel ? canvasOf(sel) : undefined;
+  });
 
   // Names already requested. Keying the fetch effect off `thumbnails` alone
   // re-fires it on every arrival, and an in-flight request has no entry yet —
@@ -131,14 +138,14 @@ export function useGalleryTemplates() {
           "api/gallery/add",
           { template: tmpl.name },
         );
-        await addFigure(result.recipe_path);
+        await addFigure(result.recipe_path, activeCanvasKey);
         return true;
       } catch (e) {
         showToast(interpolate(gettext("Failed to add template: %s"), [e]), "error");
         return false;
       }
     },
-    [addFigure, showToast],
+    [addFigure, activeCanvasKey, showToast],
   );
 
   return { data, loading, failed, thumbnails, addTemplate };

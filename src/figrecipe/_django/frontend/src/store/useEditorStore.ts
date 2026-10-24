@@ -153,7 +153,7 @@ interface EditorState {
   loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
-  addFigure: (path: string) => Promise<void>;
+  addFigure: (path: string, canvasKey?: string) => Promise<void>;
   removeFigure: (id: string) => void;
   selectFigure: (id: string | null) => void;
   moveFigure: (id: string, x: number, y: number) => void;
@@ -361,6 +361,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const fig: PlacedFigure = {
           id: newId(),
           path: recipePath,
+          canvasKey: recipePath,
           x: 0,
           y: 0,
           previewImage: data.image,

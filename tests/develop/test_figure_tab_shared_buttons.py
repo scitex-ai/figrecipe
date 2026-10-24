@@ -79,13 +79,15 @@ def test_zoom_buttons_stand_down_until_the_canvas_registers():
         _FRONTEND / "components" / "CanvasPane" / "CanvasPane.tsx"
     ).read_text(encoding="utf-8")
     details = _PROPS.read_text(encoding="utf-8")
-    # Act
+    # Act: Fit stands down when THIS canvas has no figures (1 Figure =
+    # 1 Canvas: the guard reads the canvas-filtered list, not the global
+    # placed list, so an empty canvas never offers a fit into nothing).
     problems = [
         check
         for check, present in [
             (
                 "Figure-tab Fit clickable with no controls",
-                "placedFigures.length === 0 || !zoomControls" in canvas_pane,
+                "canvasFigures.length === 0 || !zoomControls" in canvas_pane,
             ),
             (
                 "Details Zoom clickable with no controls",

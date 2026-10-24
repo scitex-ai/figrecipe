@@ -1622,10 +1622,6 @@ msgid "Listing project files…"
 msgstr "プロジェクトのファイルを一覧表示中…"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
-<<<<<<< HEAD
-msgid "No CSV files in this project yet — upload data first."
-msgstr "このプロジェクトにはまだ CSV ファイルがありません — 先にデータをアップロードしてください。"
-=======
 msgid "Start with a CSV file, paste spreadsheet cells, or try the sample — then edit cells directly in the grid."
 msgstr "CSVファイルから始めるか、スプレッドシートのセルを貼り付けるか、サンプルを試してください — その後グリッドで直接編集できます。"
 
@@ -1648,6 +1644,11 @@ msgstr "このプロジェクトにはまだ CSV ファイルがありません 
 #: frontend/src/InnerEditor.tsx
 msgid "Figures"
 msgstr "図"
+
+#: frontend/src/InnerEditor.tsx
+#, javascript-format, python-format
+msgid "Figure %s"
+msgstr "図%s"
 
 #: frontend/src/InnerEditor.tsx
 msgid "Figures — a figure depends on its panels"
@@ -1728,4 +1729,3 @@ msgstr "%sをプロットしました — Panelsタブで確認できます"
 #: frontend/src/components/Gallery/GalleryStart.tsx
 msgid "A panel shows one plot drawn from data."
 msgstr "パネルはデータから1つのプロットを表示します"
->>>>>>> feature/sac-figrecipe-23c386cd

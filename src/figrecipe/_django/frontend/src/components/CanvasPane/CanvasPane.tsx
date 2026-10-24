@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { redo, undo } from "../../hooks/useUndoRedo";
 import { useUndoRedoState } from "../../hooks/useUndoRedoState";
 import { useEditorStore } from "../../store/useEditorStore";
+import { canvasOf } from "../../types/editor";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
@@ -50,13 +51,20 @@ export function CanvasPane({
   // figures the label used to be the bare token "No figures" with no
   // explanation — say what it means and how to get out of it.
   const selectedFig = placedFigures.find((f) => f.id === selectedFigureId);
+  // 1 Figure = 1 Canvas: this pane shows the selected figure's canvas
+  // only. With no selection the fallback shows everything, so a stale
+  // selection can never strand existing figures on a blank canvas.
+  const activeCanvasKey = selectedFig ? canvasOf(selectedFig) : null;
+  const canvasFigures = activeCanvasKey
+    ? placedFigures.filter((f) => canvasOf(f) === activeCanvasKey)
+    : placedFigures;
   const figLabel = selectedFig
     ? (selectedFig.path.split("/").pop() ?? gettext("figure"))
-    : placedFigures.length > 0
-      ? interpolate(ngettext("%s figure", "%s figures", placedFigures.length), [placedFigures.length])
+    : canvasFigures.length > 0
+      ? interpolate(ngettext("%s figure", "%s figures", canvasFigures.length), [canvasFigures.length])
       : gettext("No figures yet");
   const figLabelTitle =
-    placedFigures.length === 0
+    canvasFigures.length === 0
       ? gettext("No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree.")
       : undefined;
 
@@ -139,7 +147,7 @@ export function CanvasPane({
             type="button"
             title={gettext("Zoom to fit")}
             aria-label={gettext("Zoom to fit")}
-            disabled={placedFigures.length === 0 || !zoomControls}
+            disabled={canvasFigures.length === 0 || !zoomControls}
             onClick={zoomControls?.zoomToFit}
           >
             <i className="fas fa-compress-arrows-alt" aria-hidden="true" />
@@ -152,7 +160,7 @@ export function CanvasPane({
             type="button"
             title={gettext("Toggle hit regions — click a plot element to select it")}
             aria-label={gettext("Toggle hit regions — click a plot element to select it")}
-            disabled={placedFigures.length === 0}
+            disabled={canvasFigures.length === 0}
             onClick={toggleHitmap}
           >
             <i className="fas fa-bullseye" aria-hidden="true" />
@@ -167,7 +175,7 @@ export function CanvasPane({
             type="button"
             title={gettext("Save (Ctrl+S)")}
             aria-label={gettext("Save (Ctrl+S)")}
-            disabled={placedFigures.length === 0}
+            disabled={canvasFigures.length === 0}
             onClick={save}
           >
             <i className="fas fa-save" aria-hidden="true" />
@@ -178,7 +186,7 @@ export function CanvasPane({
             type="button"
             title={gettext("Restore original")}
             aria-label={gettext("Restore original")}
-            disabled={placedFigures.length === 0}
+            disabled={canvasFigures.length === 0}
             onClick={restore}
           >
             <i className="fas fa-undo-alt" aria-hidden="true" />
@@ -189,7 +197,7 @@ export function CanvasPane({
             type="button"
             title={gettext("Export (PNG/SVG/PDF)")}
             aria-label={gettext("Export (PNG/SVG/PDF)")}
-            disabled={placedFigures.length === 0}
+            disabled={canvasFigures.length === 0}
             onClick={() => setExportOpen(true)}
           >
             <i className="fas fa-download" aria-hidden="true" />
@@ -214,7 +222,7 @@ export function CanvasPane({
 
       {/* Canvas content */}
       <div className="pane-content canvas-content">
-        {placedFigures.length === 0 ? (
+        {canvasFigures.length === 0 ? (
           <div className="canvas-empty" role="note">
             <p className="canvas-empty__title">{gettext("No figures yet")}</p>
             <p className="canvas-empty__model">
