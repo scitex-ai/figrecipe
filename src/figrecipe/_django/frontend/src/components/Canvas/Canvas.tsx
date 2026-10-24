@@ -71,7 +71,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
     isPanning,
     handleRulerMouseDown,
     handleRulerDoubleClick,
-  } = useZoomPan(outerRef);
+  } = useZoomPan(outerRef, selectedCanvasKey);
 
   // Expose zoom controls to store for toolbar access
   const fitCanvas = useCallback(() => {
@@ -105,6 +105,14 @@ export function Canvas({ active = true }: { active?: boolean }) {
     // The phone pane is stable even while hidden. Do not fit a zero-sized
     // viewport or mark a new figure set fitted before the Figure pane opens.
     if (!active) return;
+    // A canvas with a remembered view restores it instead of fitting: the
+    // hook initializer already applied it, so fitting here would throw the
+    // user's size and position away on every return visit.
+    if (selectedCanvasKey && useEditorStore.getState().canvasViews[selectedCanvasKey]) {
+      const store = useEditorStore.getState();
+      if (store.canvasFitKey !== figuresKey) store.setCanvasFitKey(figuresKey);
+      return;
+    }
     // Empty canvas: fit the PAGE max-size (not the 0.22 default). Skip when
     // the pane is still zero-size — retry on the next effect run instead of
     // poisoning the key with an unfitted mark.

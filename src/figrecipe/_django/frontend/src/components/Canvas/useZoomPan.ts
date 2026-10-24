@@ -68,14 +68,33 @@ function gestureOriginOf(target: EventTarget | null): GestureOrigin {
   return "board";
 }
 
-export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
+/** Read one canvas's remembered view (fresh canvases open at the default). */
+function readCanvasView(canvasKey: string | null): ZoomPanState {
+  if (!canvasKey) return INITIAL_VIEW;
+  return useEditorStore.getState().canvasViews[canvasKey] ?? INITIAL_VIEW;
+}
+
+export function useZoomPan(
+  containerRef: React.RefObject<HTMLElement | null>,
+  canvasKey: string | null,
+) {
   // Resume the viewport the session was in. The canvas UNMOUNTS when the editor
   // switches tabs (Canvas / Plot / Details), so component state alone would throw
   // the user's zoom and pan away on every tab change — operator acceptance 7694
-  // requires the viewport to survive them.
-  const [state, setState] = useState<ZoomPanState>(
-    () => useEditorStore.getState().canvasView ?? INITIAL_VIEW,
-  );
+  // requires the viewport to survive them. Keyed per canvas (1 Figure = 1
+  // Canvas): switching figures restores each one's own size and position, and
+  // a canvas with no entry yet keeps the default until the arrival fit lands.
+  const [state, setState] = useState<ZoomPanState>(() => readCanvasView(canvasKey));
+
+  // The Canvas stays mounted across figure switches (only tab switches
+  // unmount), so a new canvas key must pull its own remembered view here —
+  // the useState initializer above runs only on mount.
+  const keyRef = useRef(canvasKey);
+  useEffect(() => {
+    if (keyRef.current === canvasKey) return;
+    keyRef.current = canvasKey;
+    setState(readCanvasView(canvasKey));
+  }, [canvasKey]);
 
   const [isPanning, setIsPanning] = useState(false);
 
@@ -83,10 +102,12 @@ export function useZoomPan(containerRef: React.RefObject<HTMLElement | null>) {
   stateRef.current = state;
 
   // Mirror every view change into the session store, so the next mount resumes
-  // from here (and a fit/reset is persisted just like a manual pan).
+  // from here (and a fit/reset is persisted just like a manual pan). Skipped
+  // with no canvas (mixed-figures board): transient views are not remembered.
   useEffect(() => {
-    useEditorStore.getState().setCanvasView(state);
-  }, [state]);
+    if (!canvasKey) return;
+    useEditorStore.getState().setCanvasView(canvasKey, state);
+  }, [canvasKey, state]);
 
   // Pan tracking refs
   const isPanningRef = useRef(false);

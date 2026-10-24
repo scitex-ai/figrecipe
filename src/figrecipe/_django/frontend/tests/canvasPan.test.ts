@@ -295,13 +295,14 @@ ok("canvasPan has no React / @scitex-ui import", () => {
 ok("the viewport is kept in the session store, not in the canvas component", () => {
   // Arrange / Act / Assert -- the canvas UNMOUNTS on a tab change, so a view
   // that lives only in component state is thrown away on every switch; the
-  // acceptance requires it to survive the session.
+  // acceptance requires it to survive the session. Keyed per canvas (1 Figure
+  // = 1 Canvas) so figure switches restore each one's own size and position.
   const hook = readFileSync(
     join(here, "..", "src", "components", "Canvas", "useZoomPan.ts"),
     "utf8",
   );
-  assert.match(hook, /useEditorStore\.getState\(\)\.canvasView \?\? INITIAL_VIEW/);
-  assert.match(hook, /setCanvasView\(state\)/);
+  assert.match(hook, /canvasViews\[canvasKey\] \?\? INITIAL_VIEW/);
+  assert.match(hook, /setCanvasView\(canvasKey, state\)/);
 });
 
 ok("the auto-fit is remembered in the SESSION store, not in a component ref", () => {
@@ -371,12 +372,14 @@ ok("fitContentView rejects degenerate input instead of NaN", () => {
 ok("the arrival fit targets FIGURE content, falling back to the page", () => {
   // Operator mandate (max-size default): the auto-fit effect and the Fit
   // control fit the union box when figures exist; the page fit is only the
-  // empty-canvas fallback.
+  // empty-canvas fallback. Scoped per canvas (1 Figure = 1 Canvas): the
+  // effect fits this canvas's figures, the control the selected one's.
   const canvas = readFileSync(
     join(here, "..", "src", "components", "Canvas", "Canvas.tsx"),
     "utf8",
   );
-  assert.match(canvas, /unionFigureBox\(placedFigures\)/);
+  assert.match(canvas, /unionFigureBox\(canvasFigures\)/);
+  assert.match(canvas, /unionFigureBox\(figs\)/);
   assert.match(canvas, /if \(box\) zoomToContent\(box\);\s*\n?\s*else zoomToFit\(CANVAS_W, CANVAS_H\)/);
   const hook = readFileSync(
     join(here, "..", "src", "components", "Canvas", "useZoomPan.ts"),

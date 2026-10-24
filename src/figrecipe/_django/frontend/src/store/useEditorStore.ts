@@ -131,10 +131,12 @@ interface EditorState {
 
   // ── Zoom / Debug / Rulers / Toast ──────────────────────
   zoomControls: ZoomControls | null;
-  /** Last canvas viewport (zoom/pan) — kept here so a tab change, which
-   *  unmounts the canvas, restores the view the user was working in. */
-  canvasView: CanvasView | null;
-  setCanvasView: (view: CanvasView) => void;
+  /** Last canvas viewport (zoom/pan) per figure canvas — kept here so tab
+   *  changes (which unmount the canvas) and figure switches restore the view
+   *  the user was working in. Keyed by canvas (1 Figure = 1 Canvas); a canvas
+   *  with no entry yet is auto-fitted on arrival instead. */
+  canvasViews: Record<string, CanvasView>;
+  setCanvasView: (canvasKey: string, view: CanvasView) => void;
   /** Which figure set the view was last AUTO-FITTED for. Session-scoped on
    *  purpose: the canvas unmounts on every tab switch, so a component ref cannot
    *  remember "already fitted" — it reset and the remount refit threw the
@@ -263,7 +265,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   snapEnabled: true,
   activeSnapGuides: [],
   zoomControls: null,
-  canvasView: null,
+  canvasViews: {},
   canvasFitKey: null,
   showHitmap: false,
   showRulers: true,
@@ -592,7 +594,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   toggleHitmap: () => set((s) => ({ showHitmap: !s.showHitmap })),
-  setCanvasView: (view) => set({ canvasView: view }),
+  setCanvasView: (canvasKey, view) =>
+    set((s) => ({ canvasViews: { ...s.canvasViews, [canvasKey]: view } })),
   setCanvasFitKey: (key) => set({ canvasFitKey: key }),
   toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
   toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),
