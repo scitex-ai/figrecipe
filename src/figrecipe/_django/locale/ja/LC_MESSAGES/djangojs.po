@@ -1640,3 +1640,65 @@ msgstr "読み取り専用テーブル — 編集するには所有権を取得�
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "No CSV files in this project yet — upload data first."
 msgstr "このプロジェクトにはまだ CSV ファイルがありません — 先にデータをアップロードしてください。"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Figures"
+msgstr "図"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Figures — a figure depends on its panels"
+msgstr "図 — 図はそのパネルに依存します"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Panels — a panel depends on its data"
+msgstr "パネル — パネルはそのデータに依存します"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Data — yaml, csv, npy files, or typed by hand"
+msgstr "データ — yaml・csv・npyファイルまたは手入力から作ります"
+
+#: frontend/src/InnerEditor.tsx
+#, javascript-format, python-format
+msgid "Panels for %s"
+msgstr "%sのパネル"
+
+#: frontend/src/InnerEditor.tsx
+#, javascript-format, python-format
+msgid "Data for %s"
+msgstr "%sのデータ"
+
+#: frontend/src/InnerEditor.tsx
+#, javascript-format, python-format
+msgid "Panel %s"
+msgstr "パネル%s"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "A figure depends on its panels — open Panels to draw one, or pick CSVs in Data."
+msgstr "図はそのパネルに依存します — Panelsで描くか、DataでCSVを選んでください。"
+
+#: frontend/src/components/CanvasPane/CanvasPane.tsx
+msgid "Open Panels"
+msgstr "Panelsを開く"
+
+#: frontend/src/components/FigureViewer/FigureViewer.tsx
+#, javascript-format, python-format
+msgid "Panels draw from the active data: %s"
+msgstr "パネルは作業中のデータから描画します:%s"
+
+#: frontend/src/components/FigureViewer/FigureViewer.tsx
+msgid "No data yet — add CSVs in Data"
+msgstr "データはまだありません — DataでCSVを追加してください"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+#, javascript-format, python-format
+msgid "Draws the Panels plot from %s"
+msgstr "Panelsのプロットを%sから描きます"
+
+#: frontend/src/components/DataTablePane/PlotFromColumns.tsx
+#, javascript-format, python-format
+msgid "Plotted %s — see it on the Panels tab"
+msgstr "%sをプロットしました — Panelsタブで確認できます"
+
+#: frontend/src/components/Gallery/GalleryStart.tsx
+msgid "A panel shows one plot drawn from data."
+msgstr "パネルはデータから1つのプロットを表示します"

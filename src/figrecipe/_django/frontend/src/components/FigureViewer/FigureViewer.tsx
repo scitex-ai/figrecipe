@@ -14,10 +14,10 @@ import { useRef, useState, useCallback } from "react";
 import { useEditorStore } from "../../store/useEditorStore";
 import { GalleryStart } from "../Gallery/GalleryStart";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
-import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 export function FigureViewer({ onRequestDataTab }: { onRequestDataTab?: () => void }) {
-  const { placedFigures, selectedFigureId, loading } = useEditorStore();
+  const { placedFigures, selectedFigureId, loading, datatableTabs, activeTabId } = useEditorStore();
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [exportOpen, setExportOpen] = useState(false);
@@ -101,6 +101,16 @@ export function FigureViewer({ onRequestDataTab }: { onRequestDataTab?: () => vo
       onDoubleClick={handleDoubleClick}
       style={{ cursor: dragging.current ? "grabbing" : "grab" }}
     >
+      {/* Panel linkage: a panel draws from tables — name the working table
+          so the binding reads in place, not as a hidden recipe detail. */}
+      <div className="panel-linkage" role="note">
+        {(() => {
+          const active = activeTabId ? datatableTabs[activeTabId] : null;
+          return active
+            ? interpolate(gettext("Panels draw from the active data: %s"), [active.label])
+            : gettext("No data yet — add CSVs in Data");
+        })()}
+      </div>
       {previewImage && (
         <img
           src={`data:image/png;base64,${previewImage}`}

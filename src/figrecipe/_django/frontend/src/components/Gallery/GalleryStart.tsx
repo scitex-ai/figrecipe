@@ -26,9 +26,12 @@ export function GalleryStart({ onRequestDataTab }: GalleryStartProps) {
         <p className="gallery-start-subtitle">
           {gettext("Select a recipe file from the tree to view its figure.")}
         </p>
+        <p className="gallery-start-subtitle">
+          {gettext("A panel shows one plot drawn from data.")}
+        </p>
       </div>
 
-      {/* One way in, not two: the Data tab owns table-first entry
+      {/* One way in, not two: the Tables row owns table-first entry
           (load-from-project, import, paste, sample); the tree owns recipes.
           No example door here anymore, so no second same-labelled button can
           drift back onto this screen. */}

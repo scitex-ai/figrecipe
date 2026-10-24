@@ -76,7 +76,7 @@ def _to_plot(case):
             _settle(page)
     else:
         tab = page.locator(".inner-editor__tabs").get_by_role(
-            "tab", name="Panel", exact=True
+            "tab", name="Panels", exact=True
         )
         _tab_to(page, tab)
         page.keyboard.press("Enter")

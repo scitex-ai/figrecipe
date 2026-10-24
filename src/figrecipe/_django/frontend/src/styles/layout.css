@@ -18,15 +18,20 @@
 
 .inner-editor__tabs {
   display: flex;
-  align-items: center;
-  height: 40px;
+  align-items: stretch;
+  flex-direction: column;
+  height: auto;
   min-height: 40px;
-  padding: 0 8px;
+  padding: 4px 8px;
   gap: 2px;
   background: var(--vis-bg-secondary);
   border-bottom: 1px solid var(--vis-border);
   flex-shrink: 0;
 }
+
+/* Model rows: each row is scope-tab + parent context + entity items.
+   Stacked top to bottom (Figures / Panels / Tables) so the navigator
+   reads as the dependency chain, not four flat siblings. */
 
 /* figrecipe's app-local project selector (TODO 145/147). Now inside the
    canonical .stx-app-header__slot--project-selector wrapper (scitex-ui CSS
@@ -72,6 +77,74 @@
   color: var(--vis-text-primary);
 }
 
+.inner-editor__tabrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.inner-editor__tabs .inner-editor__tab {
+  height: 34px;
+}
+
+.inner-editor__tab--scope {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  min-width: 108px;
+}
+
+.inner-editor__tabscope {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--vis-text-muted);
+  white-space: nowrap;
+}
+
+.inner-editor__tabitems {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.inner-editor__tabitem {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vis-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.inner-editor__tabitem:hover {
+  color: var(--vis-text-primary);
+  border-color: var(--vis-border);
+}
+
+.inner-editor__tabitem--active {
+  color: var(--vis-text-primary);
+  border-color: var(--stx-accent);
+}
+
+.inner-editor__tabhint {
+  font-size: 12px;
+  color: var(--vis-text-muted);
+  white-space: nowrap;
+}
+
 .inner-editor__tab--active {
   color: var(--vis-text-primary);
   /* Active tab state in the SDK brand accent (operator 2026-10-23: navy in
@@ -106,6 +179,25 @@
 
 .figure-viewer img {
   transition: none;
+}
+
+/* Panel linkage: a panel draws from tables — the working-table caption
+   sits above the preview so the binding reads in place. */
+.panel-linkage {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  max-width: calc(100% - 130px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border: 1px solid var(--vis-border, #30363d);
+  border-radius: 6px;
+  background: var(--vis-bg-secondary, #21262d);
+  color: var(--vis-text-muted, #8b949e);
+  font-size: 12px;
 }
 
 /* Save/export control on the Plot-tab figure surface (standalone item #4).

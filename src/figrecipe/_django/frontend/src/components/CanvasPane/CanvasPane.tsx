@@ -10,7 +10,17 @@ import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-export function CanvasPane({ active = true }: { active?: boolean }) {
+export function CanvasPane({
+  active = true,
+  onRequestPanelTab,
+  onRequestTablesTab,
+}: {
+  active?: boolean;
+  /** Jump to the Panels row (empty canvas needs a way in). */
+  onRequestPanelTab?: () => void;
+  /** Jump to the Tables row (empty canvas needs its data source). */
+  onRequestTablesTab?: () => void;
+}) {
   const {
     placedFigures,
     selectedFigureId,
@@ -204,7 +214,34 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
 
       {/* Canvas content */}
       <div className="pane-content canvas-content">
-        {canvasMounted && <Canvas active={active} />}
+        {placedFigures.length === 0 ? (
+          <div className="canvas-empty" role="note">
+            <p className="canvas-empty__title">{gettext("No figures yet")}</p>
+            <p className="canvas-empty__model">
+              {gettext("A figure depends on its panels — open Panels to draw one, or pick CSVs in Data.")}
+            </p>
+            <div className="gallery-start-actions">
+              <button
+                type="button"
+                className="gallery-start-primary"
+                onClick={onRequestPanelTab}
+              >
+                <i className="fas fa-chart-line" aria-hidden="true" />
+                {gettext("Open Panels")}
+              </button>
+              <button
+                type="button"
+                className="gallery-start-primary"
+                onClick={onRequestTablesTab}
+              >
+                <i className="fas fa-table" aria-hidden="true" />
+                {gettext("Go to Data")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          canvasMounted && <Canvas active={active} />
+        )}
       </div>
 
       {/* Export dialog */}
