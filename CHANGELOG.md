@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-10-24
+
+- Backend coherence for the Figure -> Panels -> Data model: UI plots now
+  persist to the recipe (YAML gains the call, arrays externalize to per-call
+  CSVs, the adjacent PNG refreshes), so replay reproduces what the canvas
+  shows; param tweaks refresh the PNG too.
+- GET datatable/data serves element_data_map (element -> table columns +
+  row indices, single-row only when provable, unmapped elements omitted).
+- Highlight both directions, highlight-only: badged columns emphasize their
+  canvas elements (no selection steal); selecting an element highlights its
+  table rows (value-matched, sort-proof).
+
 ## [0.41.0] - 2026-10-24
 
 - Working tables dropdown in the Data pane (the toggle used to open nothing): open tables with per-table Delete (closes tab + linked figure), Escape/outside-click to close.
