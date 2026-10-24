@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-10-24
+
+- Working tables dropdown in the Data pane (the toggle used to open nothing): open tables with per-table Delete (closes tab + linked figure), Escape/outside-click to close.
+- Entry options explain themselves: one-line sublabels under Import CSV / Paste data / Load sample / Load from project (JA translated).
+- Row + buttons hug the last item instead of the far right edge.
+- Details-pane Go-to-Data door removed per operator checklist; the gate test now pins the rows Tables tab as the one canonical way in.
+- Token gate fix: group colors moved from a --grp custom property to inline styles (no silent fallbacks).
+
 ## [0.40.0] - 2026-10-24
 
 Model rows v2 (operator GUI checklist, all verified live + gated):
