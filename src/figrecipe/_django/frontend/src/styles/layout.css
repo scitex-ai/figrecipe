@@ -120,9 +120,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 3px 10px;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--vis-text-muted);
   font-size: 12px;
@@ -131,12 +132,11 @@
 
 .inner-editor__tabitem:hover {
   color: var(--vis-text-primary);
-  border-color: var(--vis-border);
 }
 
 .inner-editor__tabitem--active {
   color: var(--vis-text-primary);
-  border-color: var(--stx-accent);
+  border-bottom-color: var(--stx-accent);
 }
 
 .inner-editor__tabhint {
