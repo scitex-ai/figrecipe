@@ -80,7 +80,10 @@ def test_plot_tab_has_no_squeezed_data_pane():
 
 
 def test_objects_tree_is_wired_above_details():
-    # Arrange
+    # Arrange: the tree stays a pure navigator — the way in lives in the
+    # model rows (operator checklist 2026-10-24 dropped the Details-pane
+    # "Go to Data" door; the rows' Tables tab is the one canonical door,
+    # and the empty Panel still points at Data).
     editor = (_FRONTEND / "InnerEditor.tsx").read_text(encoding="utf-8")
     pane = (
         _FRONTEND / "components" / "PropertiesPane" / "PropertiesPane.tsx"
@@ -94,8 +97,15 @@ def test_objects_tree_is_wired_above_details():
         for check, present in [
             ("Details does not render the tree", "<ObjectTree" in pane),
             ("tree never selects a figure", "selectFigure" in tree),
-            ("tree empty state has no way in", "onRequestDataTab" in tree),
+            (
+                "tree empty state keeps a Data door (rows own the way in)",
+                "onRequestDataTab" not in tree,
+            ),
             ("Plot tab cannot jump to Data", "onRequestDataTab" in editor),
+            (
+                "model rows have no Tables tab to jump with",
+                'selectTab("data")' in editor,
+            ),
         ]
         if not present
     ]

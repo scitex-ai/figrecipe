@@ -1729,3 +1729,28 @@ msgstr "%sをプロットしました — Panelsタブで確認できます"
 #: frontend/src/components/Gallery/GalleryStart.tsx
 msgid "A panel shows one plot drawn from data."
 msgstr "パネルはデータから1つのプロットを表示します"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Tables"
+msgstr "テーブル"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+#, javascript-format, python-format
+msgid "Delete %s table"
+msgstr "%sのテーブルを削除"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "a file from your computer"
+msgstr "お手元のCSVファイル"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "cells copied from a spreadsheet"
+msgstr "表計算ソフトからコピーしたセル"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "a built-in example table"
+msgstr "内蔵のサンプル表"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "CSVs already in this project"
+msgstr "このプロジェクト内のCSV"

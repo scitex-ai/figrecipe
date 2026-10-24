@@ -62,6 +62,23 @@
   justify-content: flex-start;
   min-height: 40px;
   font-size: 13px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  text-align: left;
+  gap: 0 10px;
+}
+
+.datatable-empty-cta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.datatable-empty-cta-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--vis-text-muted);
 }
 
 /* ── Tabs bar — vis_app .data-tabs-bar ───────────────── */

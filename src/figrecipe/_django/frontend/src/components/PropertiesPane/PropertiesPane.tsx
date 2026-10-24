@@ -8,14 +8,11 @@ import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 interface PropertiesPaneProps {
   onToggleCollapse?: () => void;
   collapsed?: boolean;
-  /** Jump to the full-width Data page (empty tree way in). */
-  onRequestDataTab: () => void;
 }
 
 export function PropertiesPane({
   onToggleCollapse,
   collapsed,
-  onRequestDataTab,
 }: PropertiesPaneProps) {
   const { selectedElement, selectedBbox } = useEditorStore();
 
@@ -59,9 +56,11 @@ export function PropertiesPane({
       </div>
 
       {/* Pane content — the tree stays visible so Details never opens on a
-          dead "select from the tree" with no tree on screen. */}
+          dead "select from the tree" with no tree on screen. The tree
+          itself carries no Data door (operator checklist 2026-10-24):
+          the model rows above own the one canonical way in. */}
       <div className="pane-content">
-        <ObjectTree onRequestDataTab={onRequestDataTab} />
+        <ObjectTree />
         <Properties />
       </div>
     </>

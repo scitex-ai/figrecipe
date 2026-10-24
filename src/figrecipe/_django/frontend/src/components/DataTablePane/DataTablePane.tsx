@@ -911,6 +911,29 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
   const [projectFilesOpen, setProjectFilesOpen] = useState(false);
   const [projectFilesLoading, setProjectFilesLoading] = useState(false);
 
+  /** Tables dropdown menu: open list with per-table Delete (the toggle
+   *  alone used to open nothing). Closes on selection, deletion, Escape,
+   *  or outside click. */
+  const [tableMenuOpen, setTableMenuOpen] = useState(false);
+  const tableMenuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!tableMenuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (tableMenuRef.current && !tableMenuRef.current.contains(e.target as Node)) {
+        setTableMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTableMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [tableMenuOpen]);
+
   /** Load-from-project CTA: list, then import through the same path. */
   const handleProjectFilesToggle = useCallback(async () => {
     if (projectFilesOpen) {
@@ -989,9 +1012,18 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             />
           </button>
         )}
-        {/* Data dropdown */}
-        <div className="data-dropdown-container">
-          <button className="data-dropdown-toggle" type="button">
+        {/* Data dropdown: open tables with per-table Delete. The toggle
+            used to open nothing — a chevron that goes nowhere teaches
+            users the control is broken. Selecting jumps to the table;
+            Delete closes it (and its linked figure, like the tab ×). */}
+        <div className="data-dropdown-container" ref={tableMenuRef}>
+          <button
+            className="data-dropdown-toggle"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={tableMenuOpen}
+            onClick={() => setTableMenuOpen((open) => !open)}
+          >
             <i className="fas fa-table" />
             <span className="data-dropdown-label">
               {tabs.length > 0
@@ -1000,6 +1032,48 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             </span>
             <i className="fas fa-chevron-down" />
           </button>
+          {tableMenuOpen && (
+            <ul className="data-dropdown-menu" role="menu" aria-label={gettext("Tables")}>
+              {tabs.length === 0 ? (
+                <li className="data-dropdown-empty" role="none">
+                  {gettext("No tables")}
+                </li>
+              ) : (
+                tabs.map((t) => {
+                  const deleteLabel = interpolate(gettext("Delete %s table"), [t.label]);
+                  return (
+                    <li key={t.id} className="data-dropdown-item" role="none">
+                      <button
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={t.id === activeTabId}
+                        className="data-dropdown-name"
+                        title={t.label}
+                        onClick={() => {
+                          useEditorStore.setState({ activeTabId: t.id });
+                          setTableMenuOpen(false);
+                        }}
+                      >
+                        {t.label}
+                      </button>
+                      <button
+                        type="button"
+                        className="data-dropdown-delete"
+                        title={deleteLabel}
+                        aria-label={deleteLabel}
+                        onClick={() => {
+                          handleCloseTab(t.id);
+                          setTableMenuOpen(false);
+                        }}
+                      >
+                        <i className="fas fa-trash" aria-hidden="true" />
+                      </button>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          )}
           <button
             className="pane-header-btn data-new-btn"
             type="button"
@@ -1152,7 +1226,10 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => fileInputRef.current?.click()}
               >
                 <i className="fas fa-file-import" aria-hidden="true" />
-                {gettext("Import CSV")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Import CSV")}
+                  <span className="datatable-empty-cta-sub">{gettext("a file from your computer")}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -1160,7 +1237,10 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => void handlePasteData()}
               >
                 <i className="fas fa-paste" aria-hidden="true" />
-                {gettext("Paste data")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Paste data")}
+                  <span className="datatable-empty-cta-sub">{gettext("cells copied from a spreadsheet")}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -1168,7 +1248,10 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => void handleSampleData()}
               >
                 <i className="fas fa-wand-magic-sparkles" aria-hidden="true" />
-                {gettext("Load sample data")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Load sample data")}
+                  <span className="datatable-empty-cta-sub">{gettext("a built-in example table")}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -1176,7 +1259,10 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => void handleProjectFilesToggle()}
               >
                 <i className="fas fa-folder-open" aria-hidden="true" />
-                {gettext("Load from project")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Load from project")}
+                  <span className="datatable-empty-cta-sub">{gettext("CSVs already in this project")}</span>
+                </span>
               </button>
               {projectFilesOpen && (
                 <div
