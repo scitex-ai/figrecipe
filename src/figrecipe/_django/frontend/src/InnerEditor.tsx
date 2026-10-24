@@ -228,12 +228,18 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     "#4cc9c0",
   ];
   const groupColor = (index: number) => GROUP_COLORS[index % GROUP_COLORS.length];
-  const selectedGroupColor = selectedFig
-    ? groupColor(Math.max(0, placedFigures.indexOf(selectedFig)))
-    : undefined;
+  const selectedGroupIndex = selectedFig
+    ? Math.max(0, placedFigures.indexOf(selectedFig))
+    : null;
+  const selectedGroupColor =
+    selectedGroupIndex === null ? undefined : groupColor(selectedGroupIndex);
   // Folded rows (Chrome tab-group style): the scope tab stays, the items
   // hide. Page content is untouched — only the navigator row collapses.
+  // Hovering an item highlights its relatives in the other rows (same
+  // group color) so the chain reads on hover, not only on selection —
+  // touch users get the same via tap-to-select.
   const [folded, setFolded] = useState<ReadonlySet<AppTab>>(new Set());
+  const [hoveredGroup, setHoveredGroup] = useState<number | null>(null);
   const toggleFolded = (tab: AppTab) => {
     setFolded((prev) => {
       const next = new Set(prev);
@@ -362,14 +368,17 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                 placedFigures.map((f, i) => {
                   const label = f.path.split("/").pop() ?? f.path;
                   const selected = f.id === selectedFigureId;
+                  const related = !selected && hoveredGroup === i;
                   return (
                     <button
                       key={f.id}
                       type="button"
-                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={{ "--grp": groupColor(i) } as CSSProperties}
                       aria-current={selected || undefined}
                       title={f.path}
+                      onMouseEnter={() => setHoveredGroup(i)}
+                      onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
                         selectFigure(f.id);
                         selectTab("canvas");
@@ -424,14 +433,17 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     ? interpolate(gettext("Panel %s"), [f.panelLetter])
                     : (f.path.split("/").pop() ?? f.path);
                   const selected = f.id === selectedFigureId;
+                  const related = !selected && hoveredGroup === i;
                   return (
                     <button
                       key={f.id}
                       type="button"
-                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={{ "--grp": groupColor(i) } as CSSProperties}
                       aria-current={selected || undefined}
                       title={f.path}
+                      onMouseEnter={() => setHoveredGroup(i)}
+                      onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
                         selectFigure(f.id);
                         selectTab("plot");
@@ -491,6 +503,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
                       style={grouped ? ({ "--grp": selectedGroupColor } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
+                      onMouseEnter={() => {
+                        if (grouped && selectedGroupIndex !== null) setHoveredGroup(selectedGroupIndex);
+                      }}
+                      onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
                         useEditorStore.setState({ activeTabId: t.id });
                         selectTab("data");
