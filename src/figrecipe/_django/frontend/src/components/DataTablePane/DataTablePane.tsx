@@ -19,6 +19,7 @@ import {
   selectionAfterColumnClick,
   type HoverBadge,
 } from "./dataColumnHighlight";
+import { recordingCalls, recordingRecipe } from "./provenanceChip";
 import type { ColumnSelection } from "./columnPlotSelection";
 import {
   addColumn,
@@ -198,6 +199,15 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
 
   const tabs = Object.values(datatableTabs);
   const activeTab = activeTabId ? datatableTabs[activeTabId] : null;
+  /** Provenance chip for a locked (figure-recorded) table: the session
+   *  recipe plus the recording call ids parsed from the columns. Bare
+   *  tokens, no translatable copy (see provenanceChip). */
+  const provenanceRecipe = recordingRecipe();
+  const provenanceCalls = useMemo(
+    () => recordingCalls((activeTab?.columns ?? []).map((c) => c.name)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeTab?.columns],
+  );
 
   console.log(
     "[DataTablePane] tabs:",
@@ -1353,6 +1363,18 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
               <i className="fas fa-pen" aria-hidden="true" />
               {gettext("Edit table")}
             </button>
+            {(provenanceRecipe || provenanceCalls.length > 0) && (
+              <span
+                className="data-pane__provenance"
+                data-provenance-recipe={provenanceRecipe ?? ""}
+                data-provenance-calls={provenanceCalls.join(",")}
+              >
+                <i className="fas fa-link" aria-hidden="true" />
+                {[provenanceRecipe, ...provenanceCalls]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
           </div>
         )}
         <DataTable

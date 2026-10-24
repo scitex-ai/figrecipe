@@ -537,6 +537,19 @@
   color: var(--vis-text-secondary);
 }
 
+/* Provenance chip on a locked table: the recording recipe and call ids as
+ * bare tokens (language-neutral, no translatable copy). Full-width second
+ * line of the wrapping lock prompt. */
+.data-pane__provenance {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--vis-text-secondary);
+}
+
+.data-pane__provenance .fas {
+  margin-right: 4px;
+}
+
 .data-pane__prompt-input {
   min-height: 26px;
   padding: 2px 6px;
