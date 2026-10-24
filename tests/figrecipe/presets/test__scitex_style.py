@@ -6,6 +6,15 @@ import os
 
 import pytest
 
+# Imported at module top (not inside test bodies) on purpose:
+# presets.SCITEX_STYLE snapshots the environment at FIRST import
+# (overlay: active -> env -> yaml -> default). A function-local import
+# inside the env-override test below would bake the override into the
+# global for every later test in the process (order-dependent failure of
+# test_save_style_round_trip). Collection time never runs fixtures, so
+# the snapshot here always sees a clean environment.
+from figrecipe import presets  # noqa: E402
+
 
 def test_scitex_style_top_level_is_a_dict():
     # Arrange
