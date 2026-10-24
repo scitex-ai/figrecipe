@@ -368,7 +368,8 @@
 }
 
 .bbox-rect:hover,
-.bbox-group:hover .bbox-rect {
+.bbox-group:hover .bbox-rect,
+.bbox-group--emphasized .bbox-rect {
   fill: var(--element-color);
   fill-opacity: 0.18;
   stroke: var(--element-color);
@@ -395,7 +396,8 @@
 }
 
 .bbox-polyline:hover,
-.bbox-group:hover .bbox-polyline {
+.bbox-group:hover .bbox-polyline,
+.bbox-group--emphasized .bbox-polyline {
   stroke: var(--element-color);
   stroke-opacity: 0.5;
   stroke-width: 10;
@@ -411,7 +413,8 @@
   transition: opacity 0.15s;
 }
 
-.bbox-group:hover .bbox-label {
+.bbox-group:hover .bbox-label,
+.bbox-group--emphasized .bbox-label {
   opacity: 1;
 }
 
@@ -449,7 +452,8 @@
 }
 
 .bbox-circle:hover,
-.bbox-group:hover .bbox-circle {
+.bbox-group:hover .bbox-circle,
+.bbox-group--emphasized .bbox-circle {
   fill: var(--element-color);
   fill-opacity: 0.2;
   stroke: var(--element-color);
@@ -468,7 +472,8 @@
 }
 
 .bbox-overlay--visible .bbox-rect:hover,
-.bbox-overlay--visible .bbox-group:hover .bbox-rect {
+.bbox-overlay--visible .bbox-group:hover .bbox-rect,
+.bbox-overlay--visible .bbox-group--emphasized .bbox-rect {
   fill: var(--element-color);
   fill-opacity: 0.2;
   stroke: var(--element-color);

@@ -4,7 +4,7 @@
  * Integrates snap engine for axes/edge/center alignment.
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useDrag } from "../../hooks/useDrag";
 import {
   CANVAS_H,
@@ -14,6 +14,7 @@ import {
 } from "../../hooks/useSnap";
 import type { SnapGuide } from "../../hooks/useSnap";
 import { useEditorStore } from "../../store/useEditorStore";
+import { elementsForColumns } from "../DataTablePane/elementEmphasis";
 import type { PlacedFigure as PlacedFigureType } from "../../types/editor";
 import { getPanelColorByLetter } from "../../utils/panelColors";
 import { BboxOverlay } from "./BboxOverlay";
@@ -47,8 +48,16 @@ export function PlacedFigure({
     moveFigure,
     moveLegend,
     snapEnabled,
+    elementDataMap,
+    badgedColumns,
   } = useEditorStore();
   const isSelected = selectedFigureId === figure.id;
+  /** Elements drawn from the badged table columns: emphasized with the
+   *  hover visual, never selected. */
+  const emphasizedElements = useMemo(
+    () => elementsForColumns(elementDataMap, badgedColumns),
+    [elementDataMap, badgedColumns],
+  );
   const isMultiSelected =
     selectedFigureIds.length > 1 && selectedFigureIds.includes(figure.id);
 
@@ -240,6 +249,7 @@ export function PlacedFigure({
           imgHeight={figure.imgSize.height}
           alwaysVisible={showHitmap}
           selectedElement={isSelected ? selectedElement : null}
+          emphasizedElements={emphasizedElements}
         />
         {showHitmap && isSelected && (
           <HitmapOverlay

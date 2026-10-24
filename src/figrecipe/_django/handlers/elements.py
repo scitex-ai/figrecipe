@@ -113,7 +113,7 @@ def handle_update_call(request, editor):
     """POST /update_call -- change a call parameter and re-render."""
     from figrecipe._editor._helpers import render_with_overrides, to_json_serializable
 
-    from .core import _regen_hitmap
+    from .core import _persist_recipe_snapshot, _regen_hitmap
 
     data = json.loads(request.body) if request.body else {}
     call_id = data.get("call_id")
@@ -148,12 +148,6 @@ def handle_update_call(request, editor):
     if not updated:
         return JsonResponse({"error": f"Call {call_id} not found"}, status=404)
 
-    if editor.recipe_path and hasattr(editor.fig, "save_recipe"):
-        try:
-            editor.fig.save_recipe(editor.recipe_path)
-        except Exception as save_err:
-            logger.warning("[FigRecipe] Auto-save failed: %s", save_err)
-
     try:
         img, bboxes, size = render_with_overrides(
             editor.fig, editor.get_effective_style(), editor.dark_mode
@@ -162,6 +156,7 @@ def handle_update_call(request, editor):
     except Exception as e:
         logger.exception("[FigRecipe] update_call re-render failed")
         return JsonResponse({"error": f"Re-render failed: {str(e)}"}, status=500)
+    _persist_recipe_snapshot(editor, img)
 
     updated_call = None
     if hasattr(editor.fig, "record"):

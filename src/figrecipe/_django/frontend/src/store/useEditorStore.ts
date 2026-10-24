@@ -110,6 +110,10 @@ interface EditorState {
   // ── Sync: Element ↔ Data ────────────────────────────────
   elementDataMap: Record<string, ElementDataLink>;
   highlightedDataRows: number[];
+  /** Table columns currently carrying X/Y plot badges (mirrored from the
+   *  Data pane) -- the canvas emphasizes elements drawn from them. */
+  badgedColumns: string[];
+  setBadgedColumns: (columns: string[]) => void;
 
   // ── Sync: Calls & Labels (moved from Properties local state) ──
   calls: Record<string, CallRecord[]>;
@@ -244,6 +248,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   datatableRevision: null,
   elementDataMap: {},
   highlightedDataRows: [],
+  badgedColumns: [],
+  setBadgedColumns: (columns) => set({ badgedColumns: columns }),
   calls: {},
   labels: {},
   statBrackets: {},

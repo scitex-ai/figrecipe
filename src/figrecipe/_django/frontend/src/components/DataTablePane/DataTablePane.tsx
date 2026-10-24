@@ -49,9 +49,11 @@ import {
 } from "./dataTableEdit";
 import {
   applyColumnHighlight,
+  applyRowHighlight,
   readRowValues,
   readSelectedCells,
   renderedColumnNodes,
+  renderedRowNodes,
   type ColumnRoleWords,
 } from "./dataTableDom";
 import {
@@ -131,7 +133,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     datatableTabs,
     activeTabId,
     datatableLoadError,
-    highlightedDataRows: _highlightedDataRows,
+    highlightedDataRows,
     placedFigures,
     removeFigure,
     showToast,
@@ -149,6 +151,16 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     x: null,
     ys: [],
   });
+  const setBadgedColumns = useEditorStore((s) => s.setBadgedColumns);
+  /** Mirror the badges to the store so the canvas can emphasize the elements
+   *  drawn from the badged columns (highlight only -- never a selection). */
+  useEffect(() => {
+    setBadgedColumns(
+      [badgeSelection.x, ...badgeSelection.ys].filter(
+        (c): c is string => c !== null,
+      ),
+    );
+  }, [badgeSelection, setBadgedColumns]);
   /** A click on a table column, handed down to the badges. */
   const [columnCommand, setColumnCommand] = useState<{
     name: string;
@@ -476,6 +488,25 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     observer.observe(root, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [highlights, roleWords]);
+
+  // Rows linked to the selected canvas element (see applyRowHighlight: matched
+  // by value, so sorting the view cannot misplace them). Same re-apply
+  // discipline as the column highlight above.
+  const linkedDatasetRows = useMemo(() => activeTab?.rows ?? [], [activeTab]);
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    const sync = () =>
+      applyRowHighlight(
+        renderedRowNodes(root),
+        linkedDatasetRows,
+        highlightedDataRows,
+      );
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [linkedDatasetRows, highlightedDataRows]);
 
   // A different tab is a different table: the old selection and the undo
   // history no longer describe what is on screen.

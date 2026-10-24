@@ -444,6 +444,14 @@
   border-bottom: 1px dotted rgba(139, 148, 158, 0.9);
 }
 
+/* Rows linked to the selected canvas element: tint plus a left bar (rows
+ * read horizontally, so the marker sits on the row's leading edge, unlike
+ * the column underline). Keyed off the attribute, not the class. */
+.data-pane__content td[data-row-highlight="element"] {
+  background: rgba(77, 150, 255, 0.14);
+  box-shadow: inset 3px 0 0 0 rgba(77, 150, 255, 0.8);
+}
+
 .data-pane__content th[data-col-highlight] > span::after {
   margin-left: 4px;
   font-size: 10px;
