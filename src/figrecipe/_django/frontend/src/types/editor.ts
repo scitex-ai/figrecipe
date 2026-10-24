@@ -32,6 +32,9 @@ export interface PlacedFigure {
   groupId?: string;
   panelLetter?: string;
   panelLetterPos?: { x: number; y: number };
+  /** Clew-tracked save: the recipe was written under an active scitex-clew
+   *  session. Shown as a marker on the figure tab, never blocking. */
+  clewTracked?: boolean;
 }
 
 /** Owning canvas of a placed figure. Figures without a key (placed before
@@ -83,6 +86,8 @@ export interface PreviewResponse {
   bboxes: Record<string, BBox>;
   img_size: ImgSize;
   dark_mode?: boolean;
+  /** True when the recipe was saved under an active scitex-clew session. */
+  clew_tracked?: boolean;
 }
 
 export interface HitmapResponse {

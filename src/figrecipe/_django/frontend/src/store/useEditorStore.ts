@@ -374,6 +374,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           bboxes: data.bboxes,
           imgSize: data.img_size,
           panelLetter: "A",
+          clewTracked: data.clew_tracked ?? false,
         };
         set({ placedFigures: [fig], selectedFigureId: fig.id });
       } else if (selectedFigureId) {
@@ -385,6 +386,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                   previewImage: data.image,
                   bboxes: data.bboxes,
                   imgSize: data.img_size,
+                  clewTracked: data.clew_tracked ?? f.clewTracked ?? false,
                 }
               : f,
           ),

@@ -392,6 +392,9 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                   const lit = selected || related;
                   const color = groupColor(i);
                   const base = key.split("/").pop() ?? key;
+                  const tracked = placedFigures.some(
+                    (f) => canvasOf(f) === key && f.clewTracked,
+                  );
                   return (
                     <button
                       key={key}
@@ -409,6 +412,15 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     >
                       <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} />
                       {interpolate(gettext("Figure %s"), [String(i + 1)])}
+                      {tracked ? (
+                        <span
+                          className="inner-editor__tracked"
+                          title={gettext("Tracked by clew")}
+                          aria-label={gettext("Tracked by clew")}
+                        >
+                          <i className="fas fa-link" aria-hidden="true" />
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })

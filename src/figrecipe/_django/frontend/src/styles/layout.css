@@ -155,6 +155,16 @@
   border-radius: 50%;
 }
 
+/* Clew-tracked marker on a figure tab: a quiet link glyph after the label.
+ * Presence is the signal (tracked save vs ordinary save); the tooltip names
+ * it for pointer users and the aria-label for screen readers. */
+.inner-editor__tracked {
+  flex: 0 0 auto;
+  font-size: 9px;
+  color: var(--vis-text-secondary);
+  margin-left: 2px;
+}
+
 /* Fold chevron (Chrome tab-group style): collapses the row's items,
    page untouched. */
 .inner-editor__tabfold {

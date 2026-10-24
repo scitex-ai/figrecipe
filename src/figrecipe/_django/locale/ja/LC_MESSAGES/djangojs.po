@@ -659,6 +659,10 @@ msgstr "ツリーから項目を選ぶとプロパティが表示されます"
 msgid "Style, arrange, and display live under the tabs below."
 msgstr "スタイル・配置・表示は下のタブで操作します。"
 
+#: frontend/src/InnerEditor.tsx
+msgid "Tracked by clew"
+msgstr "clewで追跡中"
+
 #: frontend/components/Properties/Properties.tsx
 msgid "Edit"
 msgstr "編集"

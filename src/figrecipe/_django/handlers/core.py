@@ -99,6 +99,11 @@ def handle_preview(request, editor):
             "bboxes": bboxes,
             "img_size": {"width": size[0], "height": size[1]},
             "dark_mode": editor.dark_mode,
+            # The Figures row tracked indicator reads the live record, so a
+            # clew-saved figure shows tracked on every load, no extra endpoint.
+            "clew_tracked": bool(
+                getattr(getattr(editor.fig, "record", None), "clew_tracked", False)
+            ),
         }
     )
 
