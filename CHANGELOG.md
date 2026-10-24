@@ -7,25 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.40.0] - 2026-10-24
+
+Model rows v2 (operator GUI checklist, all verified live + gated):
+
+- 1 Figure = 1 Canvas: the Figure page renders only the selected
+  figure's panels; selecting a figure switches to its canvas.
+  Panel letters restart per canvas; remove keeps selection on the
+  same canvas. Undo, viewport, export and the OBJECTS tree stay
+  global by design.
+- Rows list canvases as "Figure 1, 2, ..." (paper-style, tooltip names
+  the recipe file); Panels lists the active canvas's panels; fold
+  cascades downward (upper rows include the ones beneath).
+- Group colors replace the "Panels/Data for X" text: each figure owns
+  a color, its panel items carry it, the active data item carries the
+  selected panel's color; hovering an item highlights its relatives.
+- Per-row + button: new figure, new panel on the selected canvas
+  (needs a selected figure), add data (needs a selected panel).
+- Underscore tab styling throughout, no pill badges.
+
+## [0.39.1] - 2026-10-24
 
 - Release pipeline SDK pin re-resolved to the genuine 0.3.11 release
-  merge (was a 0.3.9-era commit hash carried forward without
+  merge e403479 (was a 0.3.9-era commit hash carried forward without
   re-resolving, which the pipeline's source/version assertion
   refused). No dependency change: the tree already built and tested
   against SDK 0.3.11.
 
-### Added (operator GUI checklist 2026-10-24, branch feature/sac-figrecipe-23c386cd)
+## [0.39.0] - 2026-10-24
 
-- Model rows replace the flat tab row: Figures / Panels / Data stacked
-  top to bottom, each row a page tab plus entity jump buttons with
-  parent context (Panels for Figure X, Data for Panel Y), so the
-  navigator reads as the dependency chain (figure depends on panels,
-  panel on data; data is in-YAML or linked yaml/csv/npy files, or
-  manual input that creates the recipe by plotting).
-- Dependency copy at every linkage point: row tooltips, Figure empty
-  state with way-in buttons, Panel caption naming the active data
-  table, plot-form draws-from caption, plot toast destination.
+- Model rows v1: Figures / Panels / Data stacked navigator with
+  entity jump buttons (superseded by v2 above).
+- Test isolation fix: presets module imported at top so a JA
+  override fixture cannot bake env into the import-time snapshot.
+- i18n catalog backfill + dead-entry cleanup; tree empty-state
+  Data door restored (pre-push gate).
 
 ### Added (operator UI batch 2026-10-23, branch feature/sac-figrecipe-23c386cd)
 
