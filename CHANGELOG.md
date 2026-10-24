@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Release pipeline SDK pin re-resolved to the genuine 0.3.11 release
+  merge (was a 0.3.9-era commit hash carried forward without
+  re-resolving, which the pipeline's source/version assertion
+  refused). No dependency change: the tree already built and tested
+  against SDK 0.3.11.
+
 ### Added (operator GUI checklist 2026-10-24, branch feature/sac-figrecipe-23c386cd)
 
 - Model rows replace the flat tab row: Figures / Panels / Data stacked
