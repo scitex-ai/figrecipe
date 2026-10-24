@@ -656,6 +656,10 @@ msgid "Select an item from the tree to view properties"
 msgstr "ツリーから項目を選ぶとプロパティが表示されます"
 
 #: frontend/components/Properties/Properties.tsx
+msgid "Style, arrange, and display live under the tabs below."
+msgstr "スタイル・配置・表示は下のタブで操作します。"
+
+#: frontend/components/Properties/Properties.tsx
 msgid "Edit"
 msgstr "編集"
 

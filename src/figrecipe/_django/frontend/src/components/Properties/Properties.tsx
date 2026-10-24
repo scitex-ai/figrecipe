@@ -112,6 +112,8 @@ export function Properties() {
           ) : (
             <div className="properties-empty-hint">
               {gettext("Select an item from the tree to view properties")}
+              <br />
+              {gettext("Style, arrange, and display live under the tabs below.")}
             </div>
           )}
         </div>
