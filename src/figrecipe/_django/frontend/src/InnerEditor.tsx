@@ -1,11 +1,17 @@
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
- * Stable panes: Data -> Panel -> Figure -> Details. Desktop tabs keep the
- * SigmaPlot-style full-width worksheet and the resizable Details column.
- *   - Panel: PlotTypeNav | FigureViewer + Objects + Details
- *   - Data: full-width DataTablePane (import, paste, sample, edit)
- *   - Canvas: Canvas | Objects + Details
+ * Stable pages: Figure <- Panels <- Tables, Details beside the chain.
+ * The desktop navigator is three rows, top to bottom — Figures, Panels,
+ * Tables — so the page order reads as the dependency chain (a figure
+ * depends on its panels, a panel on its tables; tables come from a CSV
+ * file or typed by hand). The left cell of each row is the page tab; the
+ * right cells jump straight to an entity (select + show its page).
+ * Details is not in the chain — it stays beside the pages.
+ * Phone tabs (SDK panes) keep their own Data | Panel | Figure | Details.
+ *   - Figure: composition Canvas (CanvasPane).
+ *   - Panels: one Panel at a time (PlotTypeNav | FigureViewer + Objects).
+ *   - Tables: full-width DataTablePane (import, paste, sample, edit).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -30,7 +36,7 @@ import { mountEditorPanes, releaseEditorPanes, showEditorPane, usePhoneLayout } 
 import { PANES_CHANGE } from "@scitex/sdk/ui/ts/app/panes";
 import type { PanesChangeDetail } from "@scitex/sdk/ui/ts/app/panes";
 import type { EditorPane } from "./components/mobilePanes";
-import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
 type AppTab = "plot" | "data" | "canvas";
 
@@ -56,6 +62,11 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     loadDatatable,
     toast,
     clearToast,
+    placedFigures,
+    selectedFigureId,
+    selectFigure,
+    datatableTabs,
+    activeTabId,
   } = useEditorStore();
 
   // figrecipe's own version for the header badge (distinct from the Hub global
@@ -190,6 +201,20 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
+  // Model-row context: the selected figure names the Panels row, and its
+  // panel letter names the Tables row. Labels here are file basenames and
+  // panel letters — the per-panel identity the canvas actually tracks.
+  const selectedFig =
+    placedFigures.find((f) => f.id === selectedFigureId) ?? null;
+  const selectedFigLabel = selectedFig
+    ? (selectedFig.path.split("/").pop() ?? selectedFig.path)
+    : null;
+  const selectedPanelLabel = selectedFig
+    ? (selectedFig.panelLetter
+      ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])
+      : selectedFigLabel)
+    : null;
+  const tableList = Object.values(datatableTabs);
   const detailsCollapsed = rightPanel.collapsed && !phone;
   const paneAttrs = (
     id: string,
@@ -245,33 +270,132 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
         );
       })()}
 
-      {/* ── Tab Switcher ────────────────────────────── */}
+      {/* ── Model rows: Figures / Panels / Tables ────────────
+          Three stacked rows, top to bottom — not one flat tab row. Each
+          row's left cell is the page tab; the right cells jump straight
+          to an entity (select it and show its page). The middle and bottom
+          rows name their parent ("Panels for Figure X", "Tables for
+          Panel Y") so the dependency chain reads in place: a figure
+          depends on its panels, a panel on its tables. */}
       <div className="inner-editor__tabs" role="tablist">
-        <button
-          className={`inner-editor__tab${activeTab === "data" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => selectTab("data")}
-          role="tab"
-          aria-selected={activeTab === "data"}
-          title={gettext("Data table — its own full-width page")}
-        >
-          <i className="fas fa-table" /> {gettext("Data")}
-        </button>
-        <button
-          className={`inner-editor__tab${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => selectTab("plot")}
-          role="tab"
-          aria-selected={activeTab === "plot"}
-        >
-          <i className="fas fa-chart-line" /> {gettext("Panel")}
-        </button>
-        <button
-          className={`inner-editor__tab${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
-          onClick={() => selectTab("canvas")}
-          role="tab"
-          aria-selected={activeTab === "canvas"}
-        >
-          <i className="fas fa-object-group" /> {gettext("Figure")}
-        </button>
+        <div className="inner-editor__tabrow">
+          <button
+            className={`inner-editor__tab inner-editor__tab--scope${activeTab === "canvas" ? " inner-editor__tab--active" : ""}`}
+            onClick={() => selectTab("canvas")}
+            role="tab"
+            aria-selected={activeTab === "canvas"}
+            title={gettext("Figures — a figure depends on its panels")}
+          >
+            <i className="fas fa-object-group" /> {gettext("Figures")}
+          </button>
+          <span className="inner-editor__tabitems">
+            {placedFigures.length === 0 ? (
+              <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
+            ) : (
+              placedFigures.map((f) => {
+                const label = f.path.split("/").pop() ?? f.path;
+                const selected = f.id === selectedFigureId;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                    aria-current={selected || undefined}
+                    title={f.path}
+                    onClick={() => {
+                      selectFigure(f.id);
+                      selectTab("canvas");
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })
+            )}
+          </span>
+        </div>
+        <div className="inner-editor__tabrow">
+          <button
+            className={`inner-editor__tab inner-editor__tab--scope${activeTab === "plot" ? " inner-editor__tab--active" : ""}`}
+            onClick={() => selectTab("plot")}
+            role="tab"
+            aria-selected={activeTab === "plot"}
+            title={gettext("Panels — a panel depends on its data")}
+          >
+            <i className="fas fa-chart-line" /> {gettext("Panels")}
+          </button>
+          {selectedFigLabel ? (
+            <span className="inner-editor__tabscope">
+              {interpolate(gettext("Panels for %s"), [selectedFigLabel])}
+            </span>
+          ) : null}
+          <span className="inner-editor__tabitems">
+            {placedFigures.length === 0 ? (
+              <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
+            ) : (
+              placedFigures.map((f) => {
+                const label = f.panelLetter
+                  ? interpolate(gettext("Panel %s"), [f.panelLetter])
+                  : (f.path.split("/").pop() ?? f.path);
+                const selected = f.id === selectedFigureId;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                    aria-current={selected || undefined}
+                    title={f.path}
+                    onClick={() => {
+                      selectFigure(f.id);
+                      selectTab("plot");
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })
+            )}
+          </span>
+        </div>
+        <div className="inner-editor__tabrow">
+          <button
+            className={`inner-editor__tab inner-editor__tab--scope${activeTab === "data" ? " inner-editor__tab--active" : ""}`}
+            onClick={() => selectTab("data")}
+            role="tab"
+            aria-selected={activeTab === "data"}
+            title={gettext("Data — yaml, csv, npy files, or typed by hand")}
+          >
+            <i className="fas fa-table" /> {gettext("Data")}
+          </button>
+          {selectedPanelLabel ? (
+            <span className="inner-editor__tabscope">
+              {interpolate(gettext("Data for %s"), [selectedPanelLabel])}
+            </span>
+          ) : null}
+          <span className="inner-editor__tabitems">
+            {tableList.length === 0 ? (
+              <span className="inner-editor__tabhint">{gettext("No tables")}</span>
+            ) : (
+              tableList.map((t) => {
+                const selected = t.id === activeTabId;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                    aria-current={selected || undefined}
+                    onClick={() => {
+                      useEditorStore.setState({ activeTabId: t.id });
+                      selectTab("data");
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })
+            )}
+          </span>
+        </div>
       </div>
 
       {/* ── Tab Content ─────────────────────────────── */}
@@ -299,7 +423,11 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
         </section>
         {/* Composition canvas — always expanded. */}
         <main className="split-pane split-pane-center editor-figure-page" {...paneAttrs("figure", gettext("Figure"), 3)}>
-          <CanvasPane active={canvasActive} />
+          <CanvasPane
+            active={canvasActive}
+            onRequestPanelTab={() => selectTab("plot")}
+            onRequestTablesTab={() => selectTab("data")}
+          />
         </main>
 
         {/* Resizer + Details grouped together and pushed to far right */}
@@ -317,7 +445,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
             <PropertiesPane
               onToggleCollapse={rightPanel.toggleCollapse}
               collapsed={detailsCollapsed}
-              onRequestDataTab={() => selectTab("data")}
             />
           </aside>
         </div>

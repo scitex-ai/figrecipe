@@ -266,6 +266,14 @@
   color: var(--vis-text-primary);
 }
 
+/* Draws-from caption: names the working table so the Tables -> Panels
+   binding reads at the exact place it is made. */
+.plot-from-columns__source {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--vis-text-muted);
+}
+
 .plot-from-columns__group {
   display: flex;
   flex-direction: column;

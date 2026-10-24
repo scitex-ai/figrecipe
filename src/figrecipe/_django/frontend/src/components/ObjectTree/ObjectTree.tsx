@@ -3,22 +3,16 @@
  * Details used to open on "No selection — select an item from the tree" with
  * no tree anywhere on screen. This tree lists every placed figure, so the
  * pane always has something to point at; a click selects the figure the
- * viewer shows. With nothing open, the tree says so and offers the Data page
- * instead of going blank. The example door lives once, on the canvas
- * (GalleryStart actions row) — a second same-labelled button here made two
- * identical doors on one screen.
+ * viewer shows. With nothing open, the tree says so. Operator UI batch: no
+ * "Go to Data" door here — the Data tab is its own full-width destination
+ * and Details must not route there (the empty Panel hint remains).
  */
 
 import { useEditorStore } from "../../store/useEditorStore";
 import { figureTreeItems } from "./objectTree";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-interface ObjectTreeProps {
-  /** Jump to the full-width Data page (SigmaPlot-style worksheet). */
-  onRequestDataTab: () => void;
-}
-
-export function ObjectTree({ onRequestDataTab }: ObjectTreeProps) {
+export function ObjectTree() {
   const { placedFigures, selectedFigureId, selectFigure } = useEditorStore();
   const items = figureTreeItems(placedFigures, selectedFigureId);
 
@@ -36,21 +30,8 @@ export function ObjectTree({ onRequestDataTab }: ObjectTreeProps) {
           <p className="object-tree__empty-text">
             {gettext("No figures yet.")}
           </p>
-          {/* No example door anymore (operator batch
-              apps-figrecipe-ui-feedback-20261023 item 2): the empty Panel
-              and the Details hint point here too, so every empty surface
-              names the same quiet "Go to Data" way in. */}
-          <div className="object-tree__empty-actions">
-            <button
-              type="button"
-              className="data-pane__btn"
-              onClick={onRequestDataTab}
-              title={gettext("Enter data on its own full-width page")}
-            >
-              <i className="fas fa-table" aria-hidden="true" />
-              {gettext("Go to Data")}
-            </button>
-          </div>
+          {/* Operator UI batch: no "Go to Data" door in the Details pane.
+              The Data tab is its own full-width destination. */}
         </div>
       ) : (
         <ul className="object-tree__list">

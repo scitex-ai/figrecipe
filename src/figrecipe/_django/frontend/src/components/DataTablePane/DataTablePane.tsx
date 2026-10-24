@@ -1124,8 +1124,16 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             <div className="datatable-empty-hint">
               {datatableLoadError
                 ? gettext("Check the connection, then try again — your tables are still stored.")
-                : gettext("Import a CSV file, paste cells from a spreadsheet, or load a sample table to begin.")}
+                : gettext("Start with a CSV file, paste spreadsheet cells, or try the sample — then edit cells directly in the grid.")}
             </div>
+            {/* Clew note (operator Data-tab checklist): direct input here is
+                the fast plotting path — it does not write clew provenance.
+                Figure-recorded tables lock instead; take ownership to edit. */}
+            {!datatableLoadError && (
+              <div className="datatable-empty-note">
+                {gettext("Direct edits are for plotting on the UI — clew provenance is recorded when figures save.")}
+              </div>
+            )}
             <div className="datatable-empty-actions">
               {datatableLoadError ? (
                 <button
@@ -1207,11 +1215,18 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           </div>
         ) : (
           <>
-        {/* Table-first: the grid itself leads the page; the tab strip, the
-            plot form and the CRUD toolbar follow it. */}
+        {/* Table-first: the grid itself leads the page; the Files strip, the
+            plot form and the CRUD toolbar follow it. Files first: the strip
+            names every CSV the page holds and each tab closes (×) — the
+            table Delete for the checklist. */}
         {locked && (
           <div className="data-pane__prompt" role="note">
             <i className="fas fa-lock" aria-hidden="true" />
+            <span className="data-pane__prompt-label">
+              {activeTab?.source === "record"
+                ? gettext("Figure-recorded table — read-only until you take ownership.")
+                : gettext("Read-only table — take ownership to edit.")}
+            </span>
             <button
               type="button"
               className="data-pane__btn"

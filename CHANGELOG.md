@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (operator GUI checklist 2026-10-24, branch feature/sac-figrecipe-23c386cd)
+
+- Model rows replace the flat tab row: Figures / Panels / Data stacked
+  top to bottom, each row a page tab plus entity jump buttons with
+  parent context (Panels for Figure X, Data for Panel Y), so the
+  navigator reads as the dependency chain (figure depends on panels,
+  panel on data; data is in-YAML or linked yaml/csv/npy files, or
+  manual input that creates the recipe by plotting).
+- Dependency copy at every linkage point: row tooltips, Figure empty
+  state with way-in buttons, Panel caption naming the active data
+  table, plot-form draws-from caption, plot toast destination.
+
 ### Added (operator UI batch 2026-10-23, branch feature/sac-figrecipe-23c386cd)
 
 - Plot tab renamed Panel (mental model Figure→Panels→Plots→Data); pane id
