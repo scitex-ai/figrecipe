@@ -153,7 +153,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--grp);
+  background: var(--grp, var(--stx-accent));
 }
 
 /* Fold chevron (Chrome tab-group style): collapses the row's items,
