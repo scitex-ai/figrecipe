@@ -1662,14 +1662,36 @@ msgid "Data — yaml, csv, npy files, or typed by hand"
 msgstr "データ — yaml・csv・npyファイルまたは手入力から作ります"
 
 #: frontend/src/InnerEditor.tsx
-#, javascript-format, python-format
-msgid "Panels for %s"
-msgstr "%sのパネル"
+msgid "Expand group"
+msgstr "グループを展開"
 
 #: frontend/src/InnerEditor.tsx
-#, javascript-format, python-format
-msgid "Data for %s"
-msgstr "%sのデータ"
+msgid "Collapse group"
+msgstr "グループを折りたたむ"
+
+#: frontend/src/InnerEditor.tsx
+msgid "New figure"
+msgstr "新しい図"
+
+#: frontend/src/InnerEditor.tsx
+msgid "New panel"
+msgstr "新しいパネル"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Select a figure first — a panel belongs to a figure"
+msgstr "図を先に選択してください — パネルは図に属します"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Add data"
+msgstr "データを追加"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Select a panel first — data belongs to a panel"
+msgstr "パネルを先に選択してください — データはパネルに属します"
+
+#: frontend/src/InnerEditor.tsx
+msgid "Could not create a figure"
+msgstr "図を作成できませんでした"
 
 #: frontend/src/InnerEditor.tsx
 #, javascript-format, python-format

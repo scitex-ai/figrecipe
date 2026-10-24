@@ -136,7 +136,64 @@
 
 .inner-editor__tabitem--active {
   color: var(--vis-text-primary);
-  border-bottom-color: var(--stx-accent);
+  border-bottom-color: var(--grp, var(--stx-accent));
+}
+
+/* Group color dot: the entity's group (figure's color; the active data
+   item carries the selected panel's color). Ungrouped items show none. */
+.inner-editor__tabdot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--grp);
+}
+
+/* Fold chevron (Chrome tab-group style): collapses the row's items,
+   page untouched. */
+.inner-editor__tabfold {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--vis-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.inner-editor__tabfold:hover {
+  color: var(--vis-text-primary);
+}
+
+/* Row + button: adds at that level (figure: new blank figure; panel:
+   new panel, needs a figure; data: opens the Tables add surface,
+   needs a panel). Disabled + names the missing parent. */
+.inner-editor__tabadd {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--vis-text-muted);
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.inner-editor__tabadd:hover:not(:disabled) {
+  color: var(--vis-text-primary);
+}
+
+.inner-editor__tabadd:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .inner-editor__tabhint {

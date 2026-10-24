@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { CanvasPane } from "./components/CanvasPane/CanvasPane";
 import { DataTablePane } from "./components/DataTablePane/DataTablePane";
@@ -37,6 +38,7 @@ import { PANES_CHANGE } from "@scitex/sdk/ui/ts/app/panes";
 import type { PanesChangeDetail } from "@scitex/sdk/ui/ts/app/panes";
 import type { EditorPane } from "./components/mobilePanes";
 import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import { api } from "./api/client";
 
 type AppTab = "plot" | "data" | "canvas";
 
@@ -67,6 +69,8 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     selectFigure,
     datatableTabs,
     activeTabId,
+    switchFile,
+    showToast,
   } = useEditorStore();
 
   // figrecipe's own version for the header badge (distinct from the Hub global
@@ -201,21 +205,71 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
-  // Model-row context: the selected figure names the Panels row, and its
-  // panel letter names the Tables row. Labels here are file basenames and
-  // panel letters — the per-panel identity the canvas actually tracks.
+  // Model-row context: the selected panel (figure + letter) gates the
+  // Data + button and names the panel its data belongs to.
   const selectedFig =
     placedFigures.find((f) => f.id === selectedFigureId) ?? null;
-  const selectedFigLabel = selectedFig
-    ? (selectedFig.path.split("/").pop() ?? selectedFig.path)
-    : null;
   const selectedPanelLabel = selectedFig
     ? (selectedFig.panelLetter
       ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])
-      : selectedFigLabel)
+      : (selectedFig.path.split("/").pop() ?? selectedFig.path))
     : null;
   const tableList = Object.values(datatableTabs);
   const detailsCollapsed = rightPanel.collapsed && !phone;
+  // Row groups, Chrome-style: each placed figure owns a group color; its
+  // panel items carry it, and the active data item carries the selected
+  // panel's color. Related rows read as one group without naming text.
+  const GROUP_COLORS = [
+    "#e8a04c",
+    "#6aa8ff",
+    "#6fbf73",
+    "#b388ff",
+    "#ff7a90",
+    "#4cc9c0",
+  ];
+  const groupColor = (index: number) => GROUP_COLORS[index % GROUP_COLORS.length];
+  const selectedGroupColor = selectedFig
+    ? groupColor(Math.max(0, placedFigures.indexOf(selectedFig)))
+    : undefined;
+  // Folded rows (Chrome tab-group style): the scope tab stays, the items
+  // hide. Page content is untouched — only the navigator row collapses.
+  const [folded, setFolded] = useState<ReadonlySet<AppTab>>(new Set());
+  const toggleFolded = (tab: AppTab) => {
+    setFolded((prev) => {
+      const next = new Set(prev);
+      if (next.has(tab)) next.delete(tab);
+      else next.add(tab);
+      return next;
+    });
+  };
+  // Adding is async (api/new + place); one in-flight add at a time so a
+  // double click cannot create two figures.
+  const [adding, setAdding] = useState(false);
+  const addBlankFigure = async () => {
+    if (adding) return null;
+    setAdding(true);
+    try {
+      const res = await api.post<{ file?: string }>("api/new", {});
+      if (!res?.file) {
+        showToast(gettext("Could not create a figure"), "error");
+        return null;
+      }
+      await switchFile(res.file);
+      return res.file;
+    } catch {
+      showToast(gettext("Could not create a figure"), "error");
+      return null;
+    } finally {
+      setAdding(false);
+    }
+  };
+  const handleAddFigure = async () => {
+    if (await addBlankFigure()) selectTab("canvas");
+  };
+  const handleAddPanel = async () => {
+    if (!selectedFig) return;
+    if (await addBlankFigure()) selectTab("plot");
+  };
   const paneAttrs = (
     id: string,
     label: string,
@@ -270,13 +324,15 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
         );
       })()}
 
-      {/* ── Model rows: Figures / Panels / Tables ────────────
+      {/* ── Model rows: Figures / Panels / Data ────────────
           Three stacked rows, top to bottom — not one flat tab row. Each
-          row's left cell is the page tab; the right cells jump straight
-          to an entity (select it and show its page). The middle and bottom
-          rows name their parent ("Panels for Figure X", "Tables for
-          Panel Y") so the dependency chain reads in place: a figure
-          depends on its panels, a panel on its tables. */}
+          row's left cell is the page tab; a chevron folds Chrome-style
+          (items hide, page untouched); the right cells jump straight to
+          an entity (select it and show its page); a trailing + adds at
+          that level (panel needs a figure, data needs a panel). Items
+          carry their group color instead of naming text: a figure's
+          panels share its color, and the active data item carries the
+          selected panel's color. */}
       <div className="inner-editor__tabs" role="tablist">
         <div className="inner-editor__tabrow">
           <button
@@ -288,31 +344,55 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           >
             <i className="fas fa-object-group" /> {gettext("Figures")}
           </button>
-          <span className="inner-editor__tabitems">
-            {placedFigures.length === 0 ? (
-              <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
-            ) : (
-              placedFigures.map((f) => {
-                const label = f.path.split("/").pop() ?? f.path;
-                const selected = f.id === selectedFigureId;
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
-                    aria-current={selected || undefined}
-                    title={f.path}
-                    onClick={() => {
-                      selectFigure(f.id);
-                      selectTab("canvas");
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })
-            )}
-          </span>
+          <button
+            type="button"
+            className="inner-editor__tabfold"
+            aria-expanded={!folded.has("canvas")}
+            aria-label={folded.has("canvas") ? gettext("Expand group") : gettext("Collapse group")}
+            title={folded.has("canvas") ? gettext("Expand group") : gettext("Collapse group")}
+            onClick={() => toggleFolded("canvas")}
+          >
+            <i className={folded.has("canvas") ? "fas fa-chevron-right" : "fas fa-chevron-down"} aria-hidden="true" />
+          </button>
+          {!folded.has("canvas") ? (
+            <span className="inner-editor__tabitems">
+              {placedFigures.length === 0 ? (
+                <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
+              ) : (
+                placedFigures.map((f, i) => {
+                  const label = f.path.split("/").pop() ?? f.path;
+                  const selected = f.id === selectedFigureId;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                      style={{ "--grp": groupColor(i) } as CSSProperties}
+                      aria-current={selected || undefined}
+                      title={f.path}
+                      onClick={() => {
+                        selectFigure(f.id);
+                        selectTab("canvas");
+                      }}
+                    >
+                      <span className="inner-editor__tabdot" aria-hidden="true" />
+                      {label}
+                    </button>
+                  );
+                })
+              )}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="inner-editor__tabadd"
+            title={gettext("New figure")}
+            aria-label={gettext("New figure")}
+            disabled={adding}
+            onClick={() => void handleAddFigure()}
+          >
+            +
+          </button>
         </div>
         <div className="inner-editor__tabrow">
           <button
@@ -324,38 +404,57 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           >
             <i className="fas fa-chart-line" /> {gettext("Panels")}
           </button>
-          {selectedFigLabel ? (
-            <span className="inner-editor__tabscope">
-              {interpolate(gettext("Panels for %s"), [selectedFigLabel])}
+          <button
+            type="button"
+            className="inner-editor__tabfold"
+            aria-expanded={!folded.has("plot")}
+            aria-label={folded.has("plot") ? gettext("Expand group") : gettext("Collapse group")}
+            title={folded.has("plot") ? gettext("Expand group") : gettext("Collapse group")}
+            onClick={() => toggleFolded("plot")}
+          >
+            <i className={folded.has("plot") ? "fas fa-chevron-right" : "fas fa-chevron-down"} aria-hidden="true" />
+          </button>
+          {!folded.has("plot") ? (
+            <span className="inner-editor__tabitems">
+              {placedFigures.length === 0 ? (
+                <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
+              ) : (
+                placedFigures.map((f, i) => {
+                  const label = f.panelLetter
+                    ? interpolate(gettext("Panel %s"), [f.panelLetter])
+                    : (f.path.split("/").pop() ?? f.path);
+                  const selected = f.id === selectedFigureId;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                      style={{ "--grp": groupColor(i) } as CSSProperties}
+                      aria-current={selected || undefined}
+                      title={f.path}
+                      onClick={() => {
+                        selectFigure(f.id);
+                        selectTab("plot");
+                      }}
+                    >
+                      <span className="inner-editor__tabdot" aria-hidden="true" />
+                      {label}
+                    </button>
+                  );
+                })
+              )}
             </span>
           ) : null}
-          <span className="inner-editor__tabitems">
-            {placedFigures.length === 0 ? (
-              <span className="inner-editor__tabhint">{gettext("No figures yet")}</span>
-            ) : (
-              placedFigures.map((f) => {
-                const label = f.panelLetter
-                  ? interpolate(gettext("Panel %s"), [f.panelLetter])
-                  : (f.path.split("/").pop() ?? f.path);
-                const selected = f.id === selectedFigureId;
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
-                    aria-current={selected || undefined}
-                    title={f.path}
-                    onClick={() => {
-                      selectFigure(f.id);
-                      selectTab("plot");
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })
-            )}
-          </span>
+          <button
+            type="button"
+            className="inner-editor__tabadd"
+            title={selectedFig ? gettext("New panel") : gettext("Select a figure first — a panel belongs to a figure")}
+            aria-label={selectedFig ? gettext("New panel") : gettext("Select a figure first — a panel belongs to a figure")}
+            disabled={adding || !selectedFig}
+            onClick={() => void handleAddPanel()}
+          >
+            +
+          </button>
         </div>
         <div className="inner-editor__tabrow">
           <button
@@ -367,34 +466,54 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           >
             <i className="fas fa-table" /> {gettext("Data")}
           </button>
-          {selectedPanelLabel ? (
-            <span className="inner-editor__tabscope">
-              {interpolate(gettext("Data for %s"), [selectedPanelLabel])}
+          <button
+            type="button"
+            className="inner-editor__tabfold"
+            aria-expanded={!folded.has("data")}
+            aria-label={folded.has("data") ? gettext("Expand group") : gettext("Collapse group")}
+            title={folded.has("data") ? gettext("Expand group") : gettext("Collapse group")}
+            onClick={() => toggleFolded("data")}
+          >
+            <i className={folded.has("data") ? "fas fa-chevron-right" : "fas fa-chevron-down"} aria-hidden="true" />
+          </button>
+          {!folded.has("data") ? (
+            <span className="inner-editor__tabitems">
+              {tableList.length === 0 ? (
+                <span className="inner-editor__tabhint">{gettext("No tables")}</span>
+              ) : (
+                tableList.map((t) => {
+                  const selected = t.id === activeTabId;
+                  const grouped = selected && selectedGroupColor !== undefined;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
+                      style={grouped ? ({ "--grp": selectedGroupColor } as CSSProperties) : undefined}
+                      aria-current={selected || undefined}
+                      onClick={() => {
+                        useEditorStore.setState({ activeTabId: t.id });
+                        selectTab("data");
+                      }}
+                    >
+                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" /> : null}
+                      {t.label}
+                    </button>
+                  );
+                })
+              )}
             </span>
           ) : null}
-          <span className="inner-editor__tabitems">
-            {tableList.length === 0 ? (
-              <span className="inner-editor__tabhint">{gettext("No tables")}</span>
-            ) : (
-              tableList.map((t) => {
-                const selected = t.id === activeTabId;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
-                    aria-current={selected || undefined}
-                    onClick={() => {
-                      useEditorStore.setState({ activeTabId: t.id });
-                      selectTab("data");
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })
-            )}
-          </span>
+          <button
+            type="button"
+            className="inner-editor__tabadd"
+            title={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
+            aria-label={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
+            disabled={adding || !selectedPanelLabel}
+            onClick={() => selectTab("data")}
+          >
+            +
+          </button>
         </div>
       </div>
 
