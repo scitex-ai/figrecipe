@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-10-24
+
+- Provenance chip on locked tables: the lock prompt names the recording
+  recipe and call ids (language-neutral tokens, zero new backend/copy).
+- Details empty state names the style door ("style, arrange, and display
+  live under the tabs below"; JA translated).
+- Clew-tracked indicator: recipes saved under an active clew session carry
+  figure.clew_tracked (one-way stamp), the preview serves it, and the
+  Figures row marks tracked figures (best-effort; clew absent in this env).
+
 ## [0.42.0] - 2026-10-24
 
 - Backend coherence for the Figure -> Panels -> Data model: UI plots now
