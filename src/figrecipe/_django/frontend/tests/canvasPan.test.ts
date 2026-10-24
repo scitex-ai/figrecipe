@@ -386,4 +386,21 @@ ok("the arrival fit targets FIGURE content, falling back to the page", () => {
   assert.match(hook, /fitContentView\(\s*\n?\s*container\.clientWidth/);
 });
 
+ok("a deep link lands on the Figure canvas so the arrival fit can run", () => {
+  // ?recipe= names a figure to WORK on: the arrival effect must select the
+  // canvas tab alongside the loads. Without it the arrival renders the
+  // raster in the Plot viewer while the canvas stays empty ("No figures
+  // yet", measured live 2026-10-22) — the auto-fit effect never runs because
+  // the canvas is inactive, and the figure exists nowhere draggable.
+  const editor = readFileSync(
+    join(here, "..", "src", "InnerEditor.tsx"),
+    "utf8",
+  );
+  const start = editor.indexOf("const hasRecipe");
+  assert.ok(start !== -1, "arrival effect must read the recipe param");
+  const block = editor.slice(start, start + 900);
+  assert.match(block, /loadPreview\(\)/);
+  assert.match(block, /setActiveTab\("canvas"\)/);
+});
+
 console.log("\nAll canvasPan checks passed (" + passed + " assertion-groups).");

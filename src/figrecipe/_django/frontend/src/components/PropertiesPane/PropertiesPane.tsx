@@ -8,8 +8,8 @@ import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 interface PropertiesPaneProps {
   onToggleCollapse?: () => void;
   collapsed?: boolean;
-  /** Jump to the full-width Data page (SigmaPlot-style worksheet). */
-  onRequestDataTab?: () => void;
+  /** Jump to the full-width Data page (empty tree way in). */
+  onRequestDataTab: () => void;
 }
 
 export function PropertiesPane({
@@ -61,7 +61,7 @@ export function PropertiesPane({
       {/* Pane content — the tree stays visible so Details never opens on a
           dead "select from the tree" with no tree on screen. */}
       <div className="pane-content">
-        <ObjectTree onRequestDataTab={onRequestDataTab ?? (() => {})} />
+        <ObjectTree onRequestDataTab={onRequestDataTab} />
         <Properties />
       </div>
     </>

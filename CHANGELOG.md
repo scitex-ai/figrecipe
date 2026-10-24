@@ -7,7 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.37.0] - 2026-10-19
+### Fixed
+
+- Release pipeline SDK pin re-resolved to the genuine 0.3.11 release
+  merge (was a 0.3.9-era commit hash carried forward without
+  re-resolving, which the pipeline's source/version assertion
+  refused). No dependency change: the tree already built and tested
+  against SDK 0.3.11.
+
+### Added (operator GUI checklist 2026-10-24, branch feature/sac-figrecipe-23c386cd)
+
+- Model rows replace the flat tab row: Figures / Panels / Data stacked
+  top to bottom, each row a page tab plus entity jump buttons with
+  parent context (Panels for Figure X, Data for Panel Y), so the
+  navigator reads as the dependency chain (figure depends on panels,
+  panel on data; data is in-YAML or linked yaml/csv/npy files, or
+  manual input that creates the recipe by plotting).
+- Dependency copy at every linkage point: row tooltips, Figure empty
+  state with way-in buttons, Panel caption naming the active data
+  table, plot-form draws-from caption, plot toast destination.
+
+### Added (operator UI batch 2026-10-23, branch feature/sac-figrecipe-23c386cd)
+
+- Plot tab renamed Panel (mental model Figure→Panels→Plots→Data); pane id
+  and storage keys kept.
+- Empty Panel is guidance-only ("No figures yet" + Go to Data); example
+  block and template grid removed, all empty surfaces point at Data.
+- Data tab is table-first with direct cell input; figure-recorded
+  (incl. clew-provenance) tables are read-only until explicit Edit-table
+  adoption; tab strip is the SDK shared FileTabs.
+- Figure tab: Figure/Axes Align are SDK SelectorNavs; Rulers toggle
+  collapses tracks; Fit/zoom stand down until canvas registers controls.
+- Active app-tab state in the SDK CTA token (`--color-cta`).
+
+## [0.38.0] - 2026-10-23
+
+Operator UI batch (branch feature/sac-figrecipe-23c386cd):
 
 Datatable revision safety + error-state retry, SSoT header adoption
 (PR #466-#475):

@@ -108,6 +108,47 @@ def handle_api_files(request, editor):
     )
 
 
+def handle_api_project_data(request, editor):
+    """List tabular data files in the project working dir.
+
+    Narrow additive endpoint for the Data pane's "Load from project" picker
+    (beta golden path step 7): returns CSV/TSV/JSON files the project owns,
+    so a sample dataset uploaded to the project can flow straight into a
+    figure without download-then-reupload. Read path reuses the existing
+    ``api/file_content/<path>`` handler; this endpoint only lists.
+    """
+    working_dir, files_backend = _get_working_dir_and_backend(request, editor)
+    exts = (".csv", ".tsv", ".json")
+    try:
+        top = files_backend.list("", extensions=list(exts))
+        list_entries = getattr(files_backend, "list_entries", None)
+        entries = list_entries("") if callable(list_entries) else []
+    except PermissionError:
+        return JsonResponse({"files": [], "working_dir": str(working_dir)})
+    # list() is top-level only and keeps directories regardless of
+    # extensions: expand one level so data/sample.csv surfaces, keeping
+    # only real files with tabular suffixes.
+    names = [n for n in top if not n.endswith("/")]
+    dirs = {
+        e["path"]
+        for e in (entries if isinstance(entries, list) else [])
+        if isinstance(e, dict)
+        and e.get("type") == "directory"
+        and not str(e.get("path", "")).startswith(".")
+    }
+    for d in sorted(dirs):
+        try:
+            names.extend(files_backend.list(d, extensions=list(exts)))
+        except PermissionError:
+            continue
+    names = [n for n in names if n.lower().endswith(exts)]
+    data_dirs = ("data/", "datasets/", "dataset/")
+    preferred = [n for n in names if n.startswith(data_dirs)]
+    others = sorted(set(names) - set(preferred))
+    files = sorted(preferred) + others
+    return JsonResponse({"files": files, "working_dir": str(working_dir)})
+
+
 def handle_api_switch(request, editor):
     """Switch to a different recipe file, or bootstrap editor on first load."""
     from figrecipe._editor._helpers import render_with_overrides

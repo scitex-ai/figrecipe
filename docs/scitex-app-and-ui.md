@@ -1,9 +1,9 @@
 # Shared App and UI ownership
 
-The coordinated migration uses one Python distribution, `scitex-sdk>=0.3.0`.
+The coordinated migration uses one Python distribution, `scitex-sdk>=0.3.11`.
 Its canonical component namespaces are `scitex_sdk.app` and `scitex_sdk.ui`.
 The former `scitex-app` and `scitex-ui` distributions are not direct FigRecipe
-requirements in this candidate. This is an unpublished migration, not a claim
+requirements in this candidate. This migration tracks the published SDK, not a claim
 that older deployed consumers have already moved.
 
 ```python

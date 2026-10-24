@@ -111,13 +111,13 @@ check(
   /data-version="{\{\s*app_version\|default:''\s*\}}"/.test(template),
 );
 
-// 6. Base header CSS exists (figrecipe owns the row; scitex-ui owns the slot).
+// 6. Base header CSS comes from the SDK SSoT (no leaf override per [infra/fig-header]).
 const layout = read(SRC, "styles/layout.css");
 check(
-  "layout.css defines .stx-app-header, __title, and __version",
-  /\.stx-app-header\s*{/.test(layout) &&
-    /\.stx-app-header__title\s*{/.test(layout) &&
-    /\.stx-app-header__version\s*{/.test(layout),
+  "layout.css carries no .stx-app-header override (SDK SSoT owns it)",
+  !/\.stx-app-header\s*{/.test(layout) &&
+    !/\.stx-app-header__title\s*{/.test(layout) &&
+    !/\.stx-app-header__version\s*{/.test(layout),
 );
 
 if (failures > 0) {

@@ -1,5 +1,21 @@
 /* FigRecipe Editor — Data Table Panel (vis_app data-table.css pattern) */
 
+/* ── Data pane content: table-first column ────────────────────
+   The grid leads the page with the tab strip, plot form and CRUD toolbar
+   following it. A flex column keeps every sibling reachable: the SDK table
+   root sets height:100%, which as a flex item claims the whole pane and
+   pushes the chrome below the fold (measured live: shared tab strip at
+   viewport bottom edge) — so the table's inline style overrides it with
+   height:auto + min-height:0 and flex:1 distributes the remainder. Desktop
+   only: phones keep natural-height scrolling sections. */
+@media (min-width: 769px) {
+  .data-pane__content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
 /* ── DataTable empty state (vis_app pattern) ─────────── */
 
 .datatable-empty-state {
@@ -250,6 +266,14 @@
   color: var(--vis-text-primary);
 }
 
+/* Draws-from caption: names the working table so the Tables -> Panels
+   binding reads at the exact place it is made. */
+.plot-from-columns__source {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--vis-text-muted);
+}
+
 .plot-from-columns__group {
   display: flex;
   flex-direction: column;
@@ -281,7 +305,10 @@
   min-height: 30px;
   padding: 4px 10px;
   border: 1px solid var(--color-btn-border);
-  border-radius: 15px;
+  /* Straight edges only — no pill (operator). Selected state is the
+     shared 2px accent underline: selected chips read as tabs, not toys. */
+  border-bottom-width: 2px;
+  border-radius: 0;
   background: var(--color-btn-bg);
   color: var(--vis-text-secondary);
   font-size: 12px;
@@ -293,10 +320,11 @@
 }
 
 .plot-from-columns__chip.active {
-  border-color: var(--accent-primary);
+  border-color: var(--color-btn-border);
+  border-bottom-color: var(--stx-accent);
   background: var(--vis-accent-bg);
   color: var(--vis-text-primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .plot-from-columns__select {
@@ -320,7 +348,7 @@
   border: none;
   border-radius: var(--radius);
   background: var(--color-cta);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -356,7 +384,8 @@
 
   .plot-from-columns__chip {
     min-width: 44px;
-    border-radius: 22px;
+    /* Straight even at touch size — no pill (operator). */
+    border-radius: 0;
   }
 
   .plot-from-columns__select {

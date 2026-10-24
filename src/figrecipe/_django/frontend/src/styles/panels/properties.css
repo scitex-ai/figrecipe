@@ -33,6 +33,30 @@
   text-overflow: ellipsis;
 }
 
+/* Zone 1 identity rows — ID / Type / Call ID / Panel. Definition-list
+   rows: label left, value right, straight 1px separators, no pills. */
+.selected-item-identity {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  border-top: 1px solid var(--vis-border);
+}
+
+.selected-item-identity-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--vis-border);
+}
+
+.selected-item-identity-label {
+  flex: 0 0 64px;
+  color: var(--vis-text-muted);
+  font-weight: 500;
+}
+
 /* ── Tabs — vis_app style ───────────────────────────────── */
 
 .properties-tabs {
@@ -54,21 +78,24 @@
   font-weight: 500;
   color: var(--vis-text-muted);
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
+  /* Straight edges only — no curly fills or pills (operator). Selected
+     state is the shared underline, same as .inner-editor__tab--active:
+     2px accent bar, square corners, transparent fill. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 150ms;
 }
 
 .properties-tab:hover {
-  background: var(--vis-bg-hover);
   color: var(--vis-text-primary);
 }
 
 .properties-tab.active {
-  background: var(--accent-primary);
-  color: var(--text-inverse);
-  border-color: var(--accent-primary);
+  background: transparent;
+  color: var(--vis-text-primary);
+  border-bottom-color: var(--stx-accent);
 }
 
 /* ── Content ────────────────────────────────────────────── */
@@ -240,6 +267,23 @@
   gap: 6px;
 }
 
+/* Details align navs share the SDK SelectorNav with the plot-type rail
+   (operator batch apps-figrecipe-ui-feedback-20261023 item 4), but lay out
+   as the compact wrapping row-grid the old bespoke buttons used — a full
+   vertical rail would push the second align section below the fold. */
+.prop-section .stx-app-selector-nav__items {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prop-section .stx-app-selector-nav__item {
+  flex-direction: row;
+  flex: 1 1 30%;
+  gap: 6px;
+  padding: 7px 8px;
+}
+
 .details-btn {
   display: flex;
   align-items: center;
@@ -249,17 +293,20 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--vis-text-primary);
-  background: var(--vis-bg-primary);
-  border: 1px solid var(--vis-border);
-  border-radius: var(--radius);
+  background: transparent;
+  /* Straight edges only (operator) — the shared underline is the only
+     indicator, on a transparent 2px bar with square corners. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .details-btn:hover {
-  background: var(--vis-bg-hover);
-  border-color: var(--vis-text-muted);
+  background: transparent;
+  color: var(--vis-text-primary);
 }
 
 .details-btn:disabled {
@@ -268,9 +315,13 @@
 }
 
 .details-btn--active {
-  background: var(--accent-primary);
-  color: var(--text-inverse);
-  border-color: var(--accent-primary);
+  /* Shared underline active state (operator): 2px accent bar, square corners,
+     transparent fill — identical to tabs and pane-header toggles. */
+  background: transparent;
+  color: var(--vis-text-primary);
+  border: none;
+  border-bottom: 2px solid var(--accent-primary);
+  border-radius: 0;
 }
 
 .details-btn i {

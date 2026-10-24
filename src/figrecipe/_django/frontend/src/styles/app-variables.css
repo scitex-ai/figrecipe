@@ -47,9 +47,11 @@
   --status-warning-border: rgba(212, 168, 122, 0.3);
   --status-info-bg: rgba(143, 169, 204, 0.15);
 
-  /* ── CTA (buttons) ──────────────────────────────────── */
-  --color-cta: #3b82f6;
-  --color-cta-hover: #2563eb;
+  /* ── CTA (buttons): SDK brand primary — navy fill in light, gold fill
+     in dark (--color-primary). The old hard-coded #3b82f6 blue is gone:
+     no default blue anywhere (operator 2026-10-23). */
+  --color-cta: var(--color-primary);
+  --color-cta-hover: var(--color-primary-hover);
 
   /* ── Buttons — workspace neutral ────────────────────── */
   --color-btn-primary-bg: var(--workspace-bg-elevated);

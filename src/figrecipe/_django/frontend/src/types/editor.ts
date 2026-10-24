@@ -19,6 +19,11 @@ export interface ImgSize {
 export interface PlacedFigure {
   id: string;
   path: string;
+  /** Owning canvas (figure) — the recipe path whose canvas this panel lives
+   *  on. 1 Figure = 1 Canvas: the canvas page shows one figure's panels.
+   *  Optional: figures placed before canvas keys existed (or restored from
+   *  an old session) keep their own canvas — see canvasOf(). */
+  canvasKey?: string;
   x: number;
   y: number;
   previewImage: string;
@@ -27,6 +32,13 @@ export interface PlacedFigure {
   groupId?: string;
   panelLetter?: string;
   panelLetterPos?: { x: number; y: number };
+}
+
+/** Owning canvas of a placed figure. Figures without a key (placed before
+ *  canvases existed, or restored from an old session) keep their own
+ *  canvas, keyed by their recipe path. */
+export function canvasOf(f: Pick<PlacedFigure, "canvasKey" | "path">): string {
+  return f.canvasKey || f.path;
 }
 
 export interface FileTreeItem {
@@ -43,6 +55,11 @@ export interface TabData {
   label: string;
   columns: ColumnDef[];
   rows: (string | number)[][];
+  /** Where the shown table came from (backend datatable/data `source`):
+   *  "project" (stored, revision-guarded), "import" (session import),
+   *  "record" (derived from the figure's recorded data — read-only until
+   *  adopted), or null when unknown. Drives the edit-lock. */
+  source: "project" | "import" | "record" | null;
 }
 
 export interface ColumnDef {

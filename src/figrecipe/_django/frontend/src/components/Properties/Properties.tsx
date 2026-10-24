@@ -1,5 +1,14 @@
 /** Properties panel — orchestrator for element property editing.
- * Tabs: Current | Preset | Layout | View
+ *
+ * Three labeled zones, top to bottom:
+ *   1. Selection card — WHAT is selected (element id/type/panel/call).
+ *      Always visible; the Preset tab's Element Info rows live here now
+ *      instead of behind a second tab, so identity never hides.
+ *   2. Objects tree (in PropertiesPane, above) — WHERE things live.
+ *   3. Tabbed editor — WHAT KIND of edit: Edit (was Current: labels,
+ *      style, legend), Arrange (was Layout: align/distribute/panels),
+ *      Display (was View: theme/zoom/guides).
+ * Tabs always name the verb. No separate Preset tab.
  */
 
 import { useCallback, useState } from "react";
@@ -12,9 +21,10 @@ import { LabelsSection } from "./LabelsSection";
 import { LegendSection } from "./LegendSection";
 import { PropRow } from "./PropRow";
 import { PropSection } from "./PropSection";
-import { gettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
+import { SelectorNav } from "@scitex/sdk/ui/react/app/selector-nav";
+import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-type TabId = "current" | "preset" | "layout" | "view";
+type TabId = "edit" | "arrange" | "display";
 
 export function Properties() {
   const {
@@ -23,8 +33,9 @@ export function Properties() {
     calls: callsMap,
     showToast,
     refreshAfterMutation,
+    placedFigures,
   } = useEditorStore();
-  const [activeTab, setActiveTab] = useState<TabId>("current");
+  const [activeTab, setActiveTab] = useState<TabId>("edit");
 
   // Read calls from centralized store (loaded by selectElement action)
   const axKey =
@@ -54,9 +65,30 @@ export function Properties() {
       {/* Selected element info — or an empty state that says what to do
           next. The Objects tree above is always visible, so "from the tree"
           now names something on screen. */}
+      {/* Zone 1 — Selection card: WHAT is selected. Identity rows
+          (ex-Preset Element Info) live here, always visible, never behind
+          a tab. Zone 2 (Objects tree) is above in PropertiesPane. */}
       {selectedElement ? (
         <div className="selected-item-info">
           <div className="selected-item-header">{selectedElement}</div>
+          <div className="selected-item-identity">
+            <span className="selected-item-identity-row">
+              <span className="selected-item-identity-label">{gettext("Type")}</span>
+              <span>{selectedBbox?.type ?? gettext("unknown")}</span>
+            </span>
+            {selectedBbox?.call_id && (
+              <span className="selected-item-identity-row">
+                <span className="selected-item-identity-label">{gettext("Call ID")}</span>
+                <span>{selectedBbox.call_id}</span>
+              </span>
+            )}
+            {axIndex !== undefined && (
+              <span className="selected-item-identity-row">
+                <span className="selected-item-identity-label">{gettext("Panel")}</span>
+                <span>{interpolate(gettext("Axes %s"), [axIndex])}</span>
+              </span>
+            )}
+          </div>
           {selectedBbox?.label && selectedBbox.label !== selectedElement && (
             <div className="selected-item-label">{selectedBbox.label}</div>
           )}
@@ -70,49 +102,48 @@ export function Properties() {
           <div className="properties-empty-title">
             {gettext("No selection")}
           </div>
-          <div className="properties-empty-hint">
-            {gettext("Select an item from the tree to view properties")}
-          </div>
-          <div className="properties-empty-hint">
-            {gettext("Nothing open yet? Pick a figure in Objects above, or enter data on the Data page.")}
-          </div>
+          {placedFigures.length === 0 ? (
+            <div className="properties-empty-hint">
+              {gettext("No figures yet.")}
+              {/* Operator UI batch: no "Go to Data" door in the Details pane.
+                  The Data tab is its own full-width destination — Details
+                  must not route there. The empty Panel + tree hint remain. */}
+            </div>
+          ) : (
+            <div className="properties-empty-hint">
+              {gettext("Select an item from the tree to view properties")}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Tabs — always visible (vis_app pattern) */}
+      {/* Zone 3 — Tabbed editor. Tab labels name the verb. */}
       <div className="properties-tabs">
         <button
-          className={`properties-tab${activeTab === "current" ? " active" : ""}`}
-          onClick={() => setActiveTab("current")}
+          className={`properties-tab${activeTab === "edit" ? " active" : ""}`}
+          onClick={() => setActiveTab("edit")}
           type="button"
         >
-          <i className="fas fa-edit" /> {gettext("Current")}
+          <i className="fas fa-edit" /> {gettext("Edit")}
         </button>
         <button
-          className={`properties-tab${activeTab === "preset" ? " active" : ""}`}
-          onClick={() => setActiveTab("preset")}
+          className={`properties-tab${activeTab === "arrange" ? " active" : ""}`}
+          onClick={() => setActiveTab("arrange")}
           type="button"
         >
-          <i className="fas fa-palette" /> {gettext("Preset")}
+          <i className="fas fa-th-large" /> {gettext("Arrange")}
         </button>
         <button
-          className={`properties-tab${activeTab === "layout" ? " active" : ""}`}
-          onClick={() => setActiveTab("layout")}
+          className={`properties-tab${activeTab === "display" ? " active" : ""}`}
+          onClick={() => setActiveTab("display")}
           type="button"
         >
-          <i className="fas fa-th-large" /> {gettext("Layout")}
-        </button>
-        <button
-          className={`properties-tab${activeTab === "view" ? " active" : ""}`}
-          onClick={() => setActiveTab("view")}
-          type="button"
-        >
-          <i className="fas fa-eye" /> {gettext("View")}
+          <i className="fas fa-eye" /> {gettext("Display")}
         </button>
       </div>
 
       <div className="properties-content">
-        {activeTab === "current" && (
+        {activeTab === "edit" && (
           <>
             {!selectedElement ? null : (
               <>
@@ -175,27 +206,40 @@ export function Properties() {
           </>
         )}
 
-        {activeTab === "preset" && selectedElement && (
-          <PropSection title={gettext("Element Info")}>
-            <PropRow label={gettext("ID")} value={selectedElement} />
-            <PropRow label={gettext("Type")} value={selectedBbox?.type ?? gettext("unknown")} />
-            {selectedBbox?.call_id && (
-              <PropRow label={gettext("Call ID")} value={selectedBbox.call_id} />
-            )}
-            {axIndex !== undefined && (
-              <PropRow label={gettext("Panel")} value={interpolate(gettext("Axes %s"), [axIndex])} />
-            )}
-          </PropSection>
-        )}
-
-        {activeTab === "layout" && <LayoutTab />}
-        {activeTab === "view" && <ViewTab />}
+        {activeTab === "arrange" && <LayoutTab />}
+        {activeTab === "display" && <ViewTab />}
       </div>
     </div>
   );
 }
 
 /* ── Layout Tab — align, distribute, panels ──────────────── */
+
+/* Align actions as SDK shared controls (operator batch
+ * apps-figrecipe-ui-feedback-20261023 item 4): the bespoke Figure/Axes Align
+ * button grids are gone, replaced by the same SelectorNav the plot-type
+ * rail uses — one shared control, real <button>s (keyboard-operable),
+ * icon + translated label. Labels follow the PLOT_TYPES gettext_noop
+ * pattern (marked here, translated at render). */
+const FIGURE_ALIGN_ITEMS = [
+  { id: "left", icon: "fas fa-align-left", label: gettext_noop("Left") },
+  { id: "right", icon: "fas fa-align-right", label: gettext_noop("Right") },
+  { id: "top", icon: "fas fa-arrow-up", label: gettext_noop("Top") },
+  { id: "bottom", icon: "fas fa-arrow-down", label: gettext_noop("Bottom") },
+  { id: "center-h", icon: "fas fa-arrows-alt-h", label: gettext_noop("Ctr H") },
+  { id: "center-v", icon: "fas fa-arrows-alt-v", label: gettext_noop("Ctr V") },
+] as const;
+
+const AXES_ALIGN_ITEMS = [
+  { id: "axes-left", icon: "fas fa-align-left", label: gettext_noop("Ax Left") },
+  { id: "axes-right", icon: "fas fa-align-right", label: gettext_noop("Ax Right") },
+  { id: "axes-top", icon: "fas fa-arrow-up", label: gettext_noop("Ax Top") },
+  { id: "axes-bottom", icon: "fas fa-arrow-down", label: gettext_noop("Ax Bot") },
+] as const;
+
+type AlignItemId =
+  | (typeof FIGURE_ALIGN_ITEMS)[number]["id"]
+  | (typeof AXES_ALIGN_ITEMS)[number]["id"];
 
 function LayoutTab() {
   const {
@@ -213,89 +257,27 @@ function LayoutTab() {
   return (
     <>
       <PropSection title={gettext("Figure Align")}>
-        <div className="details-btn-grid">
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align left")}
-            onClick={() => alignFigures("left")}
-          >
-            <i className="fas fa-align-left" /> {gettext("Left")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align right")}
-            onClick={() => alignFigures("right")}
-          >
-            <i className="fas fa-align-right" /> {gettext("Right")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align top")}
-            onClick={() => alignFigures("top")}
-          >
-            <i className="fas fa-arrow-up" /> {gettext("Top")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Align bottom")}
-            onClick={() => alignFigures("bottom")}
-          >
-            <i className="fas fa-arrow-down" /> {gettext("Bottom")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Center horizontal")}
-            onClick={() => alignFigures("center-h")}
-          >
-            <i className="fas fa-arrows-alt-h" /> {gettext("Ctr H")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            title={gettext("Center vertical")}
-            onClick={() => alignFigures("center-v")}
-          >
-            <i className="fas fa-arrows-alt-v" /> {gettext("Ctr V")}
-          </button>
-        </div>
+        <SelectorNav
+          items={FIGURE_ALIGN_ITEMS.map((item) => ({
+            ...item,
+            label: gettext(item.label),
+          }))}
+          activeId={null}
+          onSelect={(id) => alignFigures(id as AlignItemId)}
+          style={{ width: "100%" }}
+        />
       </PropSection>
 
       <PropSection title={gettext("Axes Align")}>
-        <div className="details-btn-grid">
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-left")}
-          >
-            <i className="fas fa-align-left" /> {gettext("Ax Left")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-right")}
-          >
-            <i className="fas fa-align-right" /> {gettext("Ax Right")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-top")}
-          >
-            <i className="fas fa-arrow-up" /> {gettext("Ax Top")}
-          </button>
-          <button
-            className="details-btn"
-            type="button"
-            onClick={() => alignFigures("axes-bottom")}
-          >
-            <i className="fas fa-arrow-down" /> {gettext("Ax Bot")}
-          </button>
-        </div>
+        <SelectorNav
+          items={AXES_ALIGN_ITEMS.map((item) => ({
+            ...item,
+            label: gettext(item.label),
+          }))}
+          activeId={null}
+          onSelect={(id) => alignFigures(id as AlignItemId)}
+          style={{ width: "100%" }}
+        />
       </PropSection>
 
       <PropSection title={gettext("Distribute")}>
@@ -406,11 +388,15 @@ function ViewTab() {
       </PropSection>
 
       <PropSection title={gettext("Zoom")}>
+        {/* Dead until the Figure canvas mounts and registers its controls
+            (operator batch apps-figrecipe-ui-feedback-20261023 item 4): a
+            click before that was a silent no-op, so the buttons stand down. */}
         <div className="details-btn-grid">
           <button
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomOut}
+            disabled={!zoomControls}
           >
             <i className="fas fa-search-minus" /> {gettext("Out")}
           </button>
@@ -418,6 +404,7 @@ function ViewTab() {
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomToFit}
+            disabled={!zoomControls}
           >
             <i className="fas fa-compress-arrows-alt" /> {gettext("Fit")}
           </button>
@@ -425,6 +412,7 @@ function ViewTab() {
             className="details-btn"
             type="button"
             onClick={zoomControls?.zoomIn}
+            disabled={!zoomControls}
           >
             <i className="fas fa-search-plus" /> {gettext("In")}
           </button>
@@ -432,6 +420,7 @@ function ViewTab() {
             className="details-btn"
             type="button"
             onClick={zoomControls?.resetView}
+            disabled={!zoomControls}
           >
             <i className="fas fa-undo-alt" /> {gettext("Reset")}
           </button>

@@ -1,5 +1,5 @@
 /* Gallery panel — template selector overlay, and the start gallery that
- * fills the Plot canvas before a recipe is open.
+ * fills the Panel canvas before a recipe is open.
  *
  * Colours are theme tokens only. `--accent-color`, `--accent-bg` and
  * `--bg-hover` used to appear here and are declared by NOTHING — not
@@ -181,7 +181,7 @@
   opacity: 0.5;
 }
 
-/* ── Start gallery (empty Plot canvas) ─────────────────── */
+/* ── Start gallery (empty Panel canvas) ─────────────────── */
 
 .gallery-start {
   width: 100%;
@@ -209,11 +209,10 @@
   color: var(--text-secondary);
 }
 
-/* The explicit "open an example figure" action. It carries the accent because
-   it is the primary way into a blank project's first figure — and because it is
-   a deliberate click: the seeding behind it writes example artifacts into the
-   project, so it must never look like ambient chrome. */
-.gallery-start-demo {
+/* The one way in: jump to the Data tab (table-first entry). It carries the
+   accent because it is the primary action on an empty canvas — and it stays
+   a deliberate click, never ambient chrome. */
+.gallery-start-primary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -231,104 +230,26 @@
     background var(--transition-fast),
     border-color var(--transition-fast);
 }
-.gallery-start-demo:hover {
+.gallery-start-primary:hover {
   background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
 }
-.gallery-start-demo i {
+.gallery-start-primary i {
   font-size: 15px;
 }
 
-/* TODO 131 — the fallback's "show examples" disclosure. Collapsed, the
-   empty canvas shows this single button (and the plot-type rail), not all 18
-   tiles; clicking it reveals the grid below. */
-.gallery-start-expand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 8px 14px;
-  border: 1px dashed var(--border-color);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-.gallery-start-expand:hover {
-  border-color: var(--accent-primary);
-  color: var(--text-primary);
-  background: var(--bg-hover, rgba(255, 255, 255, 0.04));
-}
-.gallery-start-expand i {
-  font-size: 15px;
-}
-
-.gallery-start-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.gallery-start-item {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--bg-secondary);
-  cursor: pointer;
-  font: inherit;
-  text-align: center;
-  transition:
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    transform var(--transition-fast);
-}
-
-.gallery-start-item:hover,
-.gallery-start-item:focus-visible {
-  border-color: var(--accent-primary);
-  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.25);
-  transform: translateY(-2px);
-  outline: none;
-}
-
-.gallery-start-thumb {
+/* One actions row: the single CTA, centered under the head (the earlier
+   left alignment left a lopsided gutter the screenshots kept flagging). */
+.gallery-start-actions {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  background: var(--figure-plate);
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
 }
 
-.gallery-start-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.gallery-start-thumb .gallery-icon-placeholder {
-  font-size: 36px;
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
-.gallery-start-label {
-  padding: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
-  border-top: 1px solid var(--border-color);
+.gallery-start-actions .gallery-start-primary {
+  margin-top: 0;
 }
 
 /* Loading / failed / nothing-shipped — never a blank pane. */

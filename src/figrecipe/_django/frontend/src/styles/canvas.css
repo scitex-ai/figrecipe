@@ -28,15 +28,37 @@
     "corner-tl ruler-h corner-tr"
     "ruler-v canvas ruler-r"
     "corner-bl ruler-b corner-br";
-  grid-template-rows: 60px 1fr 60px;
-  grid-template-columns: 60px 1fr 60px;
+  grid-template-rows: 60px auto 60px;
+  grid-template-columns: 60px auto 60px;
   gap: 0;
-  flex: 1;
+  /* Shrink-wrap the fixed page, never stretch to the pane: flex:1 made the
+   * grid fill the 1486px outer and the `auto` middle cell pooled the surplus
+   * as ~686px of dead canvas between page edge and right ruler (measured
+   * live 2026-10-22, 1920px, Figure tab). width/max-width max-content sizes
+   * the grid to its tracks; justify-content:start pins it top-left so the
+   * translate/scale pan math is unaffected. */
+  width: max-content;
+  max-width: max-content;
+  justify-content: start;
   overflow: visible;
   position: relative;
   min-width: fit-content;
   min-height: fit-content;
   transform-origin: 0 0;
+}
+
+/* ── Rulers hidden (Toggle Rulers): collapse the ruler tracks to a single
+   canvas cell. display:none alone would keep the fixed 60px tracks as dead
+   gutters around the page, so the template itself collapses too. */
+.vis-rulers-area.rulers-hidden {
+  grid-template-areas: "canvas";
+  grid-template-rows: auto;
+  grid-template-columns: auto;
+}
+
+.vis-rulers-area.rulers-hidden .ruler-corner,
+.vis-rulers-area.rulers-hidden .ruler {
+  display: none;
 }
 
 /* ── Ruler corners (vis_app .ruler-corner) ───────────── */
@@ -77,6 +99,16 @@
 }
 
 /* ── Ruler base styles (vis_app .ruler) ──────────────── */
+
+/* The rulers grid parks the rulers OUTSIDE the page: top/bottom/left/right
+ * tracks are fixed 60px and the canvas cell shrink-wraps the fixed page
+ * (auto, not 1fr — evidence 2026-10-19/10-22: a 1fr cell pools spare pane
+ * pixels between page edge and ruler). A ruler that reads ~700px off the
+ * page edge at 1920px is this grid being defeated from the outside, so the
+ * rulerGuidesToggle gate pins the contract: both axes exactly
+ * `60px auto 60px`, plus the 60px ruler sizes and `justify-self/start`
+ * (row track) so the cell hugs the fixed page. MINOR-AXIS NOTE: row 60px
+ * alone cannot seat ruler-h — see rule 4b. */
 
 .ruler {
   background-color: var(--vis-ruler-bg);
@@ -626,4 +658,33 @@
   font-size: 10px;
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* Empty canvas: teach the dependency chain (figure <- panels <- tables)
+   with the two ways in, reusing the gallery-start actions styling. */
+.canvas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  padding: 24px;
+  text-align: center;
+}
+
+.canvas-empty__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vis-text-primary);
+}
+
+.canvas-empty__model {
+  margin: 0;
+  max-width: 420px;
+  font-size: 13px;
+  color: var(--vis-text-muted);
 }
