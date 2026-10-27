@@ -112,6 +112,45 @@ def test_english_editor_page_embeds_an_empty_catalog(django_ready):
     assert catalog == {}
 
 
+def test_compiled_catalogs_match_po_sources():
+    # Arrange — mtime cannot be trusted (git does not preserve it), so compare
+    # content: the running app serves the .mo (via {% scitex_js_catalog %}),
+    # while every other gate grades the .po. A stale .mo silently ships
+    # English for every string added since the last hand recompile
+    # (card figrecipe-i18n-runtime-freshness-20261026).
+    from babel.messages.mofile import read_mo
+    from babel.messages.pofile import read_po
+
+    def key(msg):
+        return tuple(msg.id) if isinstance(msg.id, (list, tuple)) else msg.id
+
+    def sval(msg):
+        return (
+            tuple(msg.string)
+            if isinstance(msg.string, (list, tuple))
+            else msg.string
+        )
+
+    stale = []
+    for po_path in sorted(JA_MESSAGES.glob("*.po")):
+        mo_path = po_path.with_suffix(".mo")
+        with po_path.open("rb") as handle:
+            po = {key(m): sval(m) for m in read_po(handle) if m.id}
+        if not mo_path.exists():
+            stale.append(f"{mo_path.name} (missing)")
+            continue
+        with mo_path.open("rb") as handle:
+            mo = {key(m): sval(m) for m in read_mo(handle) if m.id}
+        if po != mo:
+            missing = [k for k in po if k not in mo]
+            changed = [k for k in po if k in mo and po[k] != mo[k]]
+            stale.append(
+                f"{mo_path.name} (missing={len(missing)} changed={len(changed)})"
+            )
+    # Act + Assert
+    assert stale == []
+
+
 def test_gallery_labels_follow_the_active_language(django_ready):
     # Arrange
     from django.test import RequestFactory

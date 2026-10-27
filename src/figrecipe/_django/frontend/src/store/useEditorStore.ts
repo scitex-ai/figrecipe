@@ -29,6 +29,53 @@ import { rememberLastProject } from "./lastProjectMemory";
 import { newId } from "../utils/newId";
 import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
+/** Standalone owns the app shell; hub-embedded the host shell owns it, so the
+ *  editor toggle must not restyle the host document (card
+ *  figrecipe-i18n-runtime-freshness-20261026: the toggle flipped store state
+ *  while data-theme stayed dark, making light mode unreachable). */
+function editorOwnsShell(): boolean {
+  try {
+    if (typeof document === "undefined") return false;
+    return !document.querySelector(
+      '[data-app-slug="figrecipe"][data-embedded="true"]',
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Resolve the effective shell theme: stored preference, then the
+ *  pre-paint-resolved data-theme attribute, then the legacy dark default
+ *  (main.tsx boot stamp). Mirrors the shell boot precedence. */
+function resolveShellDarkMode(): boolean {
+  try {
+    if (typeof document === "undefined") return true;
+    const stored =
+      localStorage.getItem("stx-theme") ||
+      localStorage.getItem("scitex-theme-preference");
+    if (stored) return stored !== "light";
+    const attr = document.documentElement.getAttribute("data-theme");
+    return attr ? attr !== "light" : true;
+  } catch {
+    return true;
+  }
+}
+
+/** Push the toggle through to the shell (attribute + persisted preference).
+ *  Blocked storage must not break the toggle. */
+function applyShellTheme(dark: boolean): void {
+  try {
+    if (!editorOwnsShell()) return;
+    document.documentElement.setAttribute(
+      "data-theme",
+      dark ? "dark" : "light",
+    );
+    localStorage.setItem("stx-theme", dark ? "dark" : "light");
+  } catch {
+    /* ignore: preview state already updated above */
+  }
+}
+
 interface ZoomControls {
   zoomIn: () => void;
   zoomOut: () => void;
@@ -257,7 +304,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   statBrackets: {},
   panelPositions: {},
   figSizeMm: null,
-  darkMode: false,
+  darkMode: resolveShellDarkMode(),
   currentTheme: "SCITEX",
   themes: [],
   overrides: {},
@@ -565,6 +612,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // ── UI toggles ──────────────────────────────────────────
   setDarkMode: async (dark) => {
     set({ darkMode: dark });
+    // The toggle owns the shell in standalone (card
+    // figrecipe-i18n-runtime-freshness-20261026): flipping store state alone
+    // left data-theme on dark, so light mode was unreachable from the UI.
+    // In hub-embedded mode the host owns the shell and this is a no-op.
+    applyShellTheme(dark);
     // Only update backend if figures are loaded (avoids "No recipe loaded" error)
     const { placedFigures } = get();
     if (placedFigures.length === 0) return;
