@@ -26,9 +26,38 @@ def _free_port():
     return port
 
 
-def _send_handshake(port, connection_header, *, ws_upgrade=True):
+def _wait_for_port(port, *, deadline=15.0):
+    """Block until something accepts on port (slow-runner readiness probe).
+
+    The terminal server starts in a daemon thread; a fixed sleep flakes when
+    the runner is loaded (card figrecipe-terminal-test-readiness-harden-20261029).
+    Fail loud with the elapsed wait instead of a bare ConnectionRefused.
+    """
+    start = time.monotonic()
+    while True:
+        try:
+            socket.create_connection(("127.0.0.1", port), timeout=2).close()
+            return
+        except OSError:
+            if time.monotonic() - start >= deadline:
+                raise AssertionError(
+                    f"terminal server never listened on 127.0.0.1:{port} "
+                    f"within {deadline}s"
+                )
+            time.sleep(0.2)
+
+
+def _send_handshake(port, connection_header, *, ws_upgrade=True, retries=1):
     """Send a raw handshake and return the HTTP status line."""
-    s = socket.create_connection(("127.0.0.1", port), timeout=5)
+    s = None
+    for attempt in range(retries + 1):
+        try:
+            s = socket.create_connection(("127.0.0.1", port), timeout=5)
+            break
+        except ConnectionRefusedError:
+            if attempt >= retries:
+                raise
+    assert s is not None  # range() is never empty; narrows the type
     try:
         lines = ["GET / HTTP/1.1", f"Host: 127.0.0.1:{port}"]
         if ws_upgrade:
@@ -63,7 +92,7 @@ def terminal_port():
     port = _free_port()
     thread = terminal.start_terminal_server(port=port)
     assert thread is not None
-    time.sleep(1.0)
+    _wait_for_port(port)
     yield port
 
 
