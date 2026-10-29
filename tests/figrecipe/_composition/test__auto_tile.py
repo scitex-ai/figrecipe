@@ -185,7 +185,12 @@ class TestAutoTileMatchesBuildTiledSources:
         real_sizes = [sources_mm[panels[label]]["size_mm"] for label in sizes_mm]
         proposed_sizes = [sizes_mm[label] for label in sizes_mm]
         # Assert: same per-panel size_mm (same formula, no drift).
-        assert real_sizes == pytest.approx(proposed_sizes)
+        # Note: one approx per panel, not one nested approx — pytest>=9.2
+        # raises TypeError for nested structures in approx() (card
+        # figrecipe-pytest92-nested-approx-20261029).
+        assert len(real_sizes) == len(proposed_sizes)
+        for real, proposed in zip(real_sizes, proposed_sizes):
+            assert real == pytest.approx(proposed)
 
 
 class TestAutoTileValidation:
