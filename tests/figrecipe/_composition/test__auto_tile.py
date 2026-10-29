@@ -178,19 +178,21 @@ class TestAutoTileMatchesBuildTiledSources:
         # Assert: same canvas size (same shared row-height formula).
         assert real_canvas_mm == pytest.approx(canvas_mm)
 
-    def test_per_panel_sizes_match_real_build_tiled_sources(self, _dry_check_fixtures):
+    @pytest.mark.parametrize("label", ["A", "B", "C", "D"])
+    def test_per_panel_sizes_match_real_build_tiled_sources(
+        self, _dry_check_fixtures, label
+    ):
         # Arrange
         panels, sizes_mm, _canvas_mm, sources_mm, _real_canvas_mm = _dry_check_fixtures
         # Act
-        real_sizes = [sources_mm[panels[label]]["size_mm"] for label in sizes_mm]
-        proposed_sizes = [sizes_mm[label] for label in sizes_mm]
+        real = sources_mm[panels[label]]["size_mm"]
+        proposed = sizes_mm[label]
         # Assert: same per-panel size_mm (same formula, no drift).
         # Note: one approx per panel, not one nested approx — pytest>=9.2
         # raises TypeError for nested structures in approx() (card
-        # figrecipe-pytest92-nested-approx-20261029).
-        assert len(real_sizes) == len(proposed_sizes)
-        for real, proposed in zip(real_sizes, proposed_sizes):
-            assert real == pytest.approx(proposed)
+        # figrecipe-pytest92-nested-approx-20261029). One assertion per test
+        # (STX-TQ007).
+        assert real == pytest.approx(proposed)
 
 
 class TestAutoTileValidation:
