@@ -1,9 +1,9 @@
 # FigRecipe App integration
 
 FigRecipe owns its Django views, URLconf, workspace content and React editor.
-The coordinated candidate consumes `scitex-sdk>=0.3.0`, which physically owns
-`scitex_sdk.app` and `scitex_sdk.ui`. The SDK release and this leaf migration are
-unpublished; matching version strings alone do not identify reviewed artifacts.
+The coordinated candidate consumes `scitex-sdk>=0.3.11`, which physically owns
+`scitex_sdk.app` and `scitex_sdk.ui`. The SDK release is published as 0.3.11;
+matching version strings alone do not identify reviewed artifacts.
 
 ## Install and mount
 

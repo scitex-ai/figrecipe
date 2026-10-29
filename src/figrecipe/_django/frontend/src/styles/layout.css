@@ -9,72 +9,29 @@
   overflow: hidden;
 }
 
-/* ── App header (figrecipe-owned) — canonical .stx-app-header ────────────
-   Flex row: title, then the shared project-selector slot, then app actions.
-   Geometry follows the SDK header mandate (min-height, not fixed height;
-   12px inline padding) at Writer title-row scale: 15px app name (writer
-   toolbar logo), 13px version (writer file label), SDK 36px selector
-   trigger (identical everywhere — no leaf override). The 44px min-height
-   fits the 36px trigger plus padding-block. The slot CSS itself
-   (.stx-app-header__slot--project-selector) comes from scitex-ui all.css
-   (pins the selector left-after-title on desktop, and full-width on phones
-   via its own media query). We only own the base row, the title, and the
-   actions order. ───────────────────────────────────────────────────────── */
+/* ── App header: OWNED BY THE SDK SSoT ─────────────────────────────────
+   .stx-app-header (+__title, __version, __actions, project-selector slot) all
+   come from scitex-ui all.css (app-header.css). No leaf override — per
+   [infra/fig-header] the leaf must not redefine any of it. ─────────────── */
 
-.stx-app-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 4px 12px;
-  background: var(--vis-bg-secondary);
-  border-bottom: 1px solid var(--vis-border);
-  flex-shrink: 0;
-}
-
-.stx-app-header__title {
-  font-weight: 600;
-  font-size: 15px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* figrecipe's own version badge (from #root[data-version] = figrecipe.__version__).
-   Quiet, secondary, right after the title; distinct from the Hub global header's
-   Hub-version. Hidden by JSX when the host stamps no data-version. */
-.stx-app-header__version {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--vis-text-secondary, var(--text-secondary, #aaa));
-  white-space: nowrap;
-  flex-shrink: 0;
-  letter-spacing: 0.01em;
-}
-
-.stx-app-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  /* SDK mandate pair: the slot's margin-right:auto pushes actions right;
-     a left auto-margin here would split the slack and drift the selector. */
-  order: 2;
-}
-
-/* ── App Tab Switcher (Plot | Canvas) ─────────────────── */
+/* ── App Tab Switcher (Data | Panel | Figure) ─────────────────── */
 
 .inner-editor__tabs {
   display: flex;
-  align-items: center;
-  height: 40px;
+  align-items: stretch;
+  flex-direction: column;
+  height: auto;
   min-height: 40px;
-  padding: 0 8px;
+  padding: 4px 8px;
   gap: 2px;
   background: var(--vis-bg-secondary);
   border-bottom: 1px solid var(--vis-border);
   flex-shrink: 0;
 }
+
+/* Model rows: each row is scope-tab + parent context + entity items.
+   Stacked top to bottom (Figures / Panels / Tables) so the navigator
+   reads as the dependency chain, not four flat siblings. */
 
 /* figrecipe's app-local project selector (TODO 145/147). Now inside the
    canonical .stx-app-header__slot--project-selector wrapper (scitex-ui CSS
@@ -120,12 +77,156 @@
   color: var(--vis-text-primary);
 }
 
-.inner-editor__tab--active {
-  color: var(--vis-text-primary);
-  border-bottom-color: var(--accent-primary);
+.inner-editor__tabrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
-/* ── Figure Viewer (Plot tab — shows rendered figure) ─── */
+.inner-editor__tabs .inner-editor__tab {
+  height: 34px;
+}
+
+.inner-editor__tab--scope {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  min-width: 108px;
+}
+
+.inner-editor__tabscope {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--vis-text-muted);
+  white-space: nowrap;
+}
+
+.inner-editor__tabitems {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.inner-editor__tabitem {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--vis-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.inner-editor__tabitem:hover {
+  color: var(--vis-text-primary);
+}
+
+.inner-editor__tabitem--active {
+  color: var(--vis-text-primary);
+  border-bottom-color: var(--stx-accent);
+}
+
+/* Hovered group: an item whose relatives in other rows are hovered (or
+   which is hovered itself as a relative) reads in the group color,
+   applied inline so no leaf token is minted for it. */
+.inner-editor__tabitem--related {
+  color: var(--vis-text-primary);
+}
+
+/* Group color dot: the entity's group (figure's color; the active data
+   item carries the selected panel's color). Ungrouped items show none. */
+.inner-editor__tabdot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Clew-tracked marker on a figure tab: a quiet link glyph after the label.
+ * Presence is the signal (tracked save vs ordinary save); the tooltip names
+ * it for pointer users and the aria-label for screen readers. */
+.inner-editor__tracked {
+  flex: 0 0 auto;
+  font-size: 9px;
+  color: var(--vis-text-secondary);
+  margin-left: 2px;
+}
+
+/* Fold chevron (Chrome tab-group style): collapses the row's items,
+   page untouched. */
+.inner-editor__tabfold {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--vis-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.inner-editor__tabfold:hover {
+  color: var(--vis-text-primary);
+}
+
+/* Row + button: adds at that level (figure: new blank figure; panel:
+   new panel, needs a figure; data: opens the Tables add surface,
+   needs a panel). Disabled + names the missing parent. */
+.inner-editor__tabadd {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--vis-text-muted);
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.inner-editor__tabadd:hover:not(:disabled) {
+  color: var(--vis-text-primary);
+}
+
+.inner-editor__tabadd:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.inner-editor__tabhint {
+  font-size: 12px;
+  color: var(--vis-text-muted);
+  white-space: nowrap;
+}
+
+.inner-editor__tab--active {
+  color: var(--vis-text-primary);
+  /* Active tab state in the SDK brand accent (operator 2026-10-23: navy in
+     light, gold in dark — --stx-accent is the one chrome accent on every
+     app). The previous --color-cta was the vivid blue that read off-token. */
+  border-bottom-color: var(--stx-accent);
+}
+
+/* ── Figure Viewer (Panel tab — shows rendered figure) ─── */
 
 .figure-viewer {
   display: flex;
@@ -151,6 +252,25 @@
 
 .figure-viewer img {
   transition: none;
+}
+
+/* Panel linkage: a panel draws from tables — the working-table caption
+   sits above the preview so the binding reads in place. */
+.panel-linkage {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  max-width: calc(100% - 130px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border: 1px solid var(--vis-border, #30363d);
+  border-radius: 6px;
+  background: var(--vis-bg-secondary, #21262d);
+  color: var(--vis-text-muted, #8b949e);
+  font-size: 12px;
 }
 
 /* Save/export control on the Plot-tab figure surface (standalone item #4).
@@ -198,8 +318,8 @@
 }
 
 /* Stable SDK panes retain their DOM identity across desktop page switches.
-   Plot keeps its category rail and the actual rendered viewer together. */
-.editor-plot-page {
+   Panel keeps its category rail and the actual rendered viewer together. */
+.editor-panel-page {
   display: flex;
   flex: 1;
   min-width: 0;
@@ -209,7 +329,7 @@
 
 @media (min-width: 641px) {
   .inner-editor:not([data-editor-tab="data"]) .editor-body > .data-page,
-  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-plot-page,
+  .inner-editor:not([data-editor-tab="plot"]) .editor-body > .editor-panel-page,
   .inner-editor:not([data-editor-tab="canvas"]) .editor-body > .editor-figure-page {
     display: none;
   }
@@ -403,17 +523,19 @@
   font-weight: 500;
   background: transparent;
   color: var(--vis-text-muted);
-  border: 1px solid transparent;
-  border-radius: var(--radius);
+  /* Straight edges only (operator) — the shared underline is the only
+     indicator, on a transparent 2px bar with square corners. */
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   cursor: pointer;
   transition: all var(--transition-fast) ease;
   flex-shrink: 0;
 }
 
 .pane-header-btn:hover {
-  background: var(--vis-bg-hover);
+  background: transparent;
   color: var(--vis-text-primary);
-  border-color: var(--vis-border);
 }
 
 .pane-header-btn:disabled {
@@ -422,12 +544,12 @@
 }
 
 .pane-header-btn--active {
-  background: rgba(139, 148, 158, 0.2);
+  background: transparent;
   color: var(--vis-text-primary);
-  /* Full-outline active state (Snap-style): the outline is the indicator,
-     identical on every control — no partial glows. */
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 1px;
+  /* Shared underline active state (operator): 2px brand-accent bar,
+     identical on every control — tabs, snaps, rulers, hitmaps. Navy in
+     light, gold in dark (--stx-accent). No fills, no outlines. */
+  border-bottom-color: var(--stx-accent);
 }
 
 .pane-header-buttons {

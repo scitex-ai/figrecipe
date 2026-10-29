@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useContextMenu } from "../../hooks/useContextMenu";
 import { CANVAS_H, CANVAS_W, DPI } from "../../hooks/useSnap";
 import { useEditorStore } from "../../store/useEditorStore";
+import { canvasOf } from "../../types/editor";
 import { ContextMenu } from "../ContextMenu/ContextMenu";
 import { CanvasGrid } from "./CanvasGrid";
 import { ColumnGuides } from "./ColumnGuides";
@@ -24,12 +25,24 @@ import { gettext } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 export function Canvas({ active = true }: { active?: boolean }) {
   const {
     placedFigures,
+    selectedFigureId,
     rulerUnit,
     toggleRulerUnit,
+    showRulers,
     selectFigure,
     darkMode,
     activeSnapGuides,
   } = useEditorStore();
+  // 1 Figure = 1 Canvas: render only the selected figure's panels. With no
+  // selection the fallback shows everything, so a stale selection can never
+  // strand existing figures on a blank canvas.
+  const selectedCanvasKey = (() => {
+    const sel = placedFigures.find((f) => f.id === selectedFigureId);
+    return sel ? canvasOf(sel) : null;
+  })();
+  const canvasFigures = selectedCanvasKey
+    ? placedFigures.filter((f) => canvasOf(f) === selectedCanvasKey)
+    : placedFigures;
 
   const {
     menu,
@@ -58,13 +71,19 @@ export function Canvas({ active = true }: { active?: boolean }) {
     isPanning,
     handleRulerMouseDown,
     handleRulerDoubleClick,
-  } = useZoomPan(outerRef);
+  } = useZoomPan(outerRef, selectedCanvasKey);
 
   // Expose zoom controls to store for toolbar access
   const fitCanvas = useCallback(() => {
     // Fit the FIGURE content when figures exist (max-size, centered);
-    // an empty canvas falls back to the page.
-    const box = unionFigureBox(useEditorStore.getState().placedFigures);
+    // an empty canvas falls back to the page. Scoped to this canvas:
+    // hidden figures on other canvases must not widen the fit.
+    const st = useEditorStore.getState();
+    const sel = st.placedFigures.find((f) => f.id === st.selectedFigureId);
+    const figs = sel
+      ? st.placedFigures.filter((f) => canvasOf(f) === canvasOf(sel))
+      : st.placedFigures;
+    const box = unionFigureBox(figs);
     if (box) zoomToContent(box);
     else zoomToFit(CANVAS_W, CANVAS_H);
   }, [zoomToContent, zoomToFit]);
@@ -81,22 +100,48 @@ export function Canvas({ active = true }: { active?: boolean }) {
   // viewport the user had panned to — measured live at 1440px: a 180/90 pan
   // returned as 0/0 after Canvas -> Plot -> Canvas. Keyed by the figures present,
   // so a genuinely different figure is still fitted on arrival.
-  const figuresKey = placedFigures.map((figure) => figure.id).join("|");
+  const figuresKey = canvasFigures.map((figure) => figure.id).join("|");
   useEffect(() => {
     // The phone pane is stable even while hidden. Do not fit a zero-sized
     // viewport or mark a new figure set fitted before the Figure pane opens.
     if (!active) return;
+    // A canvas with a remembered view restores it instead of fitting: the
+    // hook initializer already applied it, so fitting here would throw the
+    // user's size and position away on every return visit.
+    if (selectedCanvasKey && useEditorStore.getState().canvasViews[selectedCanvasKey]) {
+      const store = useEditorStore.getState();
+      if (store.canvasFitKey !== figuresKey) store.setCanvasFitKey(figuresKey);
+      return;
+    }
+    // Empty canvas: fit the PAGE max-size (not the 0.22 default). Skip when
+    // the pane is still zero-size — retry on the next effect run instead of
+    // poisoning the key with an unfitted mark.
+    if (canvasFigures.length === 0) {
+      const el = outerRef.current;
+      if (!el || el.clientWidth <= 0 || el.clientHeight <= 0) return;
+      const store = useEditorStore.getState();
+      if (store.canvasFitKey === figuresKey) return;
+      zoomToFit(CANVAS_W, CANVAS_H);
+      store.setCanvasFitKey(figuresKey);
+      return;
+    }
     const store = useEditorStore.getState();
     if (store.canvasFitKey === figuresKey) return;
-    store.setCanvasFitKey(figuresKey);
-    // Max-size default (operator mandate): fit the FIGURE content centered;
-    // an empty canvas falls back to the page.
-    if (placedFigures.length > 0) {
-      const box = unionFigureBox(placedFigures);
-      if (box) zoomToContent(box);
-      else zoomToFit(CANVAS_W, CANVAS_H);
+    // Max-size default (operator mandate): fit the FIGURE content centered.
+    // Mark fitted ONLY when a fit actually applied — a zero-size container
+    // returns null from zoomToContent, and marking it would lock the tiny
+    // default view in (hard-reload shrink bug 2026-10-20).
+    const box = unionFigureBox(canvasFigures);
+    if (!box) {
+      zoomToFit(CANVAS_W, CANVAS_H);
+      store.setCanvasFitKey(figuresKey);
+      return;
     }
-  }, [active, figuresKey, placedFigures.length, zoomToContent, zoomToFit]);
+    const el = outerRef.current;
+    if (!el || el.clientWidth <= 0 || el.clientHeight <= 0) return;
+    zoomToContent(box);
+    store.setCanvasFitKey(figuresKey);
+  }, [active, figuresKey, canvasFigures.length, zoomToContent, zoomToFit]);
 
   // Mousedown on empty canvas → the view pans (useZoomPan reads the same
   // mousedown). Shift+left-drag keeps the marquee for rubber-band selection, and
@@ -142,9 +187,17 @@ export function Canvas({ active = true }: { active?: boolean }) {
         const selH = Math.abs(endY - startY);
 
         if (selW > 5 || selH > 5) {
-          // Marquee drag — select intersecting figures
+          // Marquee drag — select intersecting figures on THIS canvas only.
+          // Hidden figures on other canvases share coordinates but are not
+          // visible, so they must never be selected by a drag here.
           const state = useEditorStore.getState();
-          const ids = state.placedFigures
+          const sel = state.placedFigures.find(
+            (f) => f.id === state.selectedFigureId,
+          );
+          const visible = sel
+            ? state.placedFigures.filter((f) => canvasOf(f) === canvasOf(sel))
+            : state.placedFigures;
+          const ids = visible
             .filter((fig) => {
               const fx = fig.x;
               const fy = fig.y;
@@ -205,8 +258,14 @@ export function Canvas({ active = true }: { active?: boolean }) {
       className={`canvas-outer${isPanning ? " panning" : ""}`}
       ref={outerRef}
     >
-      {/* The entire rulers-area transforms together (vis_app architecture) */}
-      <div className="vis-rulers-area" style={transformStyle}>
+      {/* The entire rulers-area transforms together (vis_app architecture).
+          Toggle Rulers collapses the ruler tracks: the toggle used to flip
+          store state nothing read, so the button lied (operator batch
+          apps-figrecipe-ui-feedback-20261023 item 4). */}
+      <div
+        className={`vis-rulers-area${showRulers ? "" : " rulers-hidden"}`}
+        style={transformStyle}
+      >
         {/* Top row: corner-tl | ruler-h | corner-tr */}
         <div
           className="ruler-corner ruler-corner--tl"
@@ -251,7 +310,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
           {/* Dotted journal-column guides (0.5 / 1.5 col): layout aids that
               pan/zoom with the page and never intercept pointer input. */}
           <ColumnGuides />
-          {placedFigures.length === 0 ? (
+          {canvasFigures.length === 0 ? (
             <div className="canvas-empty">
               <p>{gettext("No figure loaded")}</p>
               <p className="canvas-empty__hint">
@@ -260,7 +319,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
             </div>
           ) : (
             <>
-              {placedFigures.map((fig, idx) => (
+              {canvasFigures.map((fig, idx) => (
                 <PlacedFigure
                   key={fig.id}
                   figure={fig}
@@ -292,6 +351,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
           canvasHeight={CANVAS_H}
           dpi={DPI}
           gridArea="ruler-r"
+          mirror
           onMouseDown={handleRulerMouseDown}
           onDoubleClick={handleRulerDoubleClick}
         />

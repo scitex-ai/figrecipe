@@ -201,3 +201,67 @@ export function readRowValues(nodes: readonly TableNode[], row: number): string[
   }
   return values;
 }
+
+/** Marks cells of rows linked to the selected canvas element. The value is
+ *  machine-readable only (the Details pane already announces the selection,
+ *  so no label is stamped); colour is never the only signal. */
+export const ROW_HIGHLIGHT_ATTRIBUTE = "data-row-highlight";
+
+/** The one class this module stamps for element rows. Removed en bloc before
+ *  each re-apply, so a row that stops being linked keeps no stale token. */
+export const ROW_HIGHLIGHT_CLASS = "data-pane__row--from-element";
+
+/** Every data cell the table rendered. Headers carry no data-row, so unlike
+ *  renderedColumnNodes this never sees them. */
+export function renderedRowNodes(root: ParentNode): TableNode[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>("[data-row][data-col]"),
+  );
+}
+
+/** Join cell values the way the table shows them, so a dataset row and its
+ *  displayed cells compare equal across the string/number boundary. */
+function rowKey(values: readonly unknown[]): string {
+  return values.map((v) => (v === undefined || v === null ? "" : String(v))).join("");
+}
+
+/** Highlight the displayed cells of the given dataset rows, clear the rest.
+ *
+ * Rows are matched by VALUE, not by display position: the shared table sorts
+ * its view, so a data-row number is not necessarily the model index (see
+ * readRowValues). A wanted index outside the dataset matches nothing -- never
+ * the wrong row. Idempotent like applyColumnHighlight.
+ */
+export function applyRowHighlight(
+  nodes: readonly TableNode[],
+  datasetRows: readonly (readonly unknown[])[],
+  rowIndices: readonly number[],
+): void {
+  const wanted = new Set<string>();
+  for (const index of rowIndices) {
+    const row = datasetRows[index];
+    if (row === undefined) continue;
+    wanted.add(rowKey(row));
+  }
+  for (const node of nodes) {
+    node.classList.remove(ROW_HIGHLIGHT_CLASS);
+    const rawRow = node.getAttribute("data-row");
+    const rawCol = node.getAttribute("data-col");
+    if (rawRow === null || rawCol === null || wanted.size === 0) {
+      node.removeAttribute(ROW_HIGHLIGHT_ATTRIBUTE);
+      continue;
+    }
+    const row = Number(rawRow);
+    if (!Number.isInteger(row)) {
+      node.removeAttribute(ROW_HIGHLIGHT_ATTRIBUTE);
+      continue;
+    }
+    const shown = readRowValues(nodes, row);
+    if (wanted.has(rowKey(shown))) {
+      node.classList.add(ROW_HIGHLIGHT_CLASS);
+      node.setAttribute(ROW_HIGHLIGHT_ATTRIBUTE, "element");
+    } else {
+      node.removeAttribute(ROW_HIGHLIGHT_ATTRIBUTE);
+    }
+  }
+}

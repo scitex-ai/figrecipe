@@ -110,6 +110,10 @@ interface EditorState {
   // ── Sync: Element ↔ Data ────────────────────────────────
   elementDataMap: Record<string, ElementDataLink>;
   highlightedDataRows: number[];
+  /** Table columns currently carrying X/Y plot badges (mirrored from the
+   *  Data pane) -- the canvas emphasizes elements drawn from them. */
+  badgedColumns: string[];
+  setBadgedColumns: (columns: string[]) => void;
 
   // ── Sync: Calls & Labels (moved from Properties local state) ──
   calls: Record<string, CallRecord[]>;
@@ -127,10 +131,12 @@ interface EditorState {
 
   // ── Zoom / Debug / Rulers / Toast ──────────────────────
   zoomControls: ZoomControls | null;
-  /** Last canvas viewport (zoom/pan) — kept here so a tab change, which
-   *  unmounts the canvas, restores the view the user was working in. */
-  canvasView: CanvasView | null;
-  setCanvasView: (view: CanvasView) => void;
+  /** Last canvas viewport (zoom/pan) per figure canvas — kept here so tab
+   *  changes (which unmount the canvas) and figure switches restore the view
+   *  the user was working in. Keyed by canvas (1 Figure = 1 Canvas); a canvas
+   *  with no entry yet is auto-fitted on arrival instead. */
+  canvasViews: Record<string, CanvasView>;
+  setCanvasView: (canvasKey: string, view: CanvasView) => void;
   /** Which figure set the view was last AUTO-FITTED for. Session-scoped on
    *  purpose: the canvas unmounts on every tab switch, so a component ref cannot
    *  remember "already fitted" — it reset and the remount refit threw the
@@ -153,7 +159,7 @@ interface EditorState {
   loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
-  addFigure: (path: string) => Promise<void>;
+  addFigure: (path: string, canvasKey?: string) => Promise<void>;
   removeFigure: (id: string) => void;
   selectFigure: (id: string | null) => void;
   moveFigure: (id: string, x: number, y: number) => void;
@@ -244,6 +250,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   datatableRevision: null,
   elementDataMap: {},
   highlightedDataRows: [],
+  badgedColumns: [],
+  setBadgedColumns: (columns) => set({ badgedColumns: columns }),
   calls: {},
   labels: {},
   statBrackets: {},
@@ -257,7 +265,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   snapEnabled: true,
   activeSnapGuides: [],
   zoomControls: null,
-  canvasView: null,
+  canvasViews: {},
   canvasFitKey: null,
   showHitmap: false,
   showRulers: true,
@@ -361,12 +369,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const fig: PlacedFigure = {
           id: newId(),
           path: recipePath,
+          canvasKey: recipePath,
           x: 0,
           y: 0,
           previewImage: data.image,
           bboxes: data.bboxes,
           imgSize: data.img_size,
           panelLetter: "A",
+          clewTracked: data.clew_tracked ?? false,
         };
         set({ placedFigures: [fig], selectedFigureId: fig.id });
       } else if (selectedFigureId) {
@@ -378,6 +388,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                   previewImage: data.image,
                   bboxes: data.bboxes,
                   imgSize: data.img_size,
+                  clewTracked: data.clew_tracked ?? f.clewTracked ?? false,
                 }
               : f,
           ),
@@ -443,6 +454,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const data = await api.get<{
         columns: ColumnDef[];
         rows: (string | number)[][];
+        source?: string | null;
         revision?: string | null;
         element_data_map?: Record<
           string,
@@ -459,6 +471,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         label: gettext("Data"),
         columns: data.columns ?? [],
         rows: data.rows ?? [],
+        source:
+          data.source === "project" ||
+          data.source === "import" ||
+          data.source === "record"
+            ? data.source
+            : null,
       };
       // Build element-data mapping if provided by backend
       const elementDataMap: Record<
@@ -576,7 +594,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   toggleHitmap: () => set((s) => ({ showHitmap: !s.showHitmap })),
-  setCanvasView: (view) => set({ canvasView: view }),
+  setCanvasView: (canvasKey, view) =>
+    set((s) => ({ canvasViews: { ...s.canvasViews, [canvasKey]: view } })),
   setCanvasFitKey: (key) => set({ canvasFitKey: key }),
   toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
   toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),

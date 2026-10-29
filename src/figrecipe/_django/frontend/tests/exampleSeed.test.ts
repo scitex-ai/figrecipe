@@ -92,8 +92,13 @@ ok("the offer is spent once the seed has run", () => {
 });
 
 // ---- the wiring relies on that rule -------------------------------------
+//
+// Operator batch apps-figrecipe-ui-feedback-20261023 item 2: the example
+// block is gone, so NO UI surface may start a seed at all. The state
+// machine above still guards the module (the rule holds for any future
+// caller); this block pins that GalleryStart carries zero seed call sites.
 
-ok("GalleryStart seeds only from its button, never from an effect", () => {
+ok("GalleryStart starts no seed from anywhere (example block removed)", () => {
   const src = readFileSync(
     join(
       dirname(fileURLToPath(import.meta.url)),
@@ -105,20 +110,10 @@ ok("GalleryStart seeds only from its button, never from an effect", () => {
     ),
     "utf8",
   );
-  // Exactly one call site for the seeding function...
+  // No seeding function, no seed state, no effect that could run one.
   const calls = src.match(/openDemoFigure\(/g) ?? [];
-  assert.equal(calls.length, 1, `expected 1 seed call site, found ${calls.length}`);
-  // ...and it sits INSIDE the click handler, not at module or effect level.
-  const handlerStart = src.indexOf("const openExampleFigure = () => {");
-  const callSite = src.indexOf("openDemoFigure(");
-  const handlerEnd = src.indexOf("\n  };", handlerStart);
-  assert.ok(
-    handlerStart !== -1 && handlerStart < callSite && callSite < handlerEnd,
-    "the seed call must live inside the click handler",
-  );
-  // The offer is gated by the tested table, and no effect may run it.
-  assert.match(src, /offersExampleSeed\(seed\) && \(/);
-  assert.match(src, /onClick=\{openExampleFigure\}/);
+  assert.equal(calls.length, 0, `expected 0 seed call sites, found ${calls.length}`);
+  assert.doesNotMatch(src, /nextSeedState|offersExampleSeed|isSeedingState/);
   assert.doesNotMatch(src, /useEffect/);
 });
 

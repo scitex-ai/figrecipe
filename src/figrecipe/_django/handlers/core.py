@@ -7,9 +7,17 @@ import json
 from ..._utils._optional import missing_extra
 
 try:
+    import scitex_logging as slogging
+except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
+    raise missing_extra(exc) from exc
+
+
+try:
     from django.http import JsonResponse
 except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
     raise missing_extra(exc) from exc
+
+logger = slogging.getLogger(__name__)
 
 
 def _dpi_from_request(request):
@@ -26,6 +34,36 @@ def _dpi_from_request(request):
         return max(36, min(600, int(float(raw))))
     except (TypeError, ValueError):
         return None
+
+
+def _persist_recipe_snapshot(editor, img_b64=None):
+    """Write the live record back to the recipe file (YAML + PNG).
+
+    A mutation that adds or changes calls (UI plot, param tweak) must land
+    in the recipe, or the YAML keeps stale calls[] and replay diverges from
+    the canvas. The PNG beside the YAML is the same render the editor
+    previews, so it stops going stale too. Guarded: persistence must never
+    fail the mutation itself. Returns True when the YAML write succeeded.
+    """
+    import base64
+    from pathlib import Path
+
+    if not getattr(editor, "recipe_path", None):
+        return False
+    if not hasattr(getattr(editor, "fig", None), "save_recipe"):
+        return False
+    try:
+        editor.fig.save_recipe(editor.recipe_path)
+    except Exception as save_err:
+        logger.warning("[FigRecipe] recipe auto-save failed: %s", save_err)
+        return False
+    if img_b64:
+        try:
+            png_path = Path(str(editor.recipe_path)).with_suffix(".png")
+            png_path.write_bytes(base64.b64decode(img_b64))
+        except Exception as png_err:
+            logger.warning("[FigRecipe] recipe PNG refresh failed: %s", png_err)
+    return True
 
 
 def _regen_hitmap(editor, img_size):
@@ -61,6 +99,11 @@ def handle_preview(request, editor):
             "bboxes": bboxes,
             "img_size": {"width": size[0], "height": size[1]},
             "dark_mode": editor.dark_mode,
+            # The Figures row tracked indicator reads the live record, so a
+            # clew-saved figure shows tracked on every load, no extra endpoint.
+            "clew_tracked": bool(
+                getattr(getattr(editor.fig, "record", None), "clew_tracked", False)
+            ),
         }
     )
 

@@ -52,6 +52,7 @@ from .files import (
     handle_api_rename,
     handle_api_switch,
     handle_api_tree,
+    handle_api_project_data,
 )
 from .gallery import (
     handle_gallery_add,
@@ -137,6 +138,7 @@ HANDLERS = {
     # Files
     "api/tree":                     handle_api_tree,
     "api/files":                    handle_api_files,
+    "api/project-data":             handle_api_project_data,
     "api/switch":                   handle_api_switch,
     "api/new":                      handle_api_new,
     "api/delete":                   handle_api_delete,

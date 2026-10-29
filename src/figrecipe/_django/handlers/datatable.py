@@ -28,7 +28,84 @@ def _dtype(values):
     return "numeric" if numeric else "string"
 
 
-def _table_response(names, rows, source, revision):
+def _call_table_columns(call_id):
+    """Table column names carrying one recorded call's data.
+
+    Single source for the ``{call_id}_x`` / ``{call_id}_y`` convention used
+    both when the record branch builds the table and when the element-data
+    map resolves an element back to its columns.
+    """
+    return [f"{call_id}_x", f"{call_id}_y"]
+
+
+def _element_data_map(editor, names, rows, source):
+    """Element key -> ``{columns, row_indices}`` into the CURRENT table.
+
+    Joins three runtime facts: the hitmap ``_color_map`` (element key ->
+    ``call_id``, plus ``layer_index`` for container sub-elements), the live
+    figure record (call id -> data), and the table the Data pane is showing.
+    An element is OMITTED when its call contributes no column to the current
+    table (e.g. a record-call element while an imported table is showing and
+    no provenance links them) -- no false highlights.
+
+    Row granularity: series artists (line/scatter/...) cover every row of
+    their columns. Container sub-elements (bars) resolve to a single row
+    only when that row is provable -- exactly one call of that function in
+    the record and a valid ``layer_index`` -- else all rows of the call's
+    columns. A wrong single row is worse than a coarse one.
+    """
+    color_map = getattr(editor, "_color_map", None) or {}
+    if not color_map or not names:
+        return {}
+    record = getattr(getattr(editor, "fig", None), "record", None)
+    calls_by_id = {}
+    if record is not None:
+        for ax_record in getattr(record, "axes", {}).values():
+            for call in getattr(ax_record, "calls", []):
+                cid = getattr(call, "id", None) or getattr(call, "call_id", None)
+                if cid and cid not in calls_by_id:
+                    calls_by_id[cid] = call
+    if not calls_by_id:
+        return {}
+    func_count = {}
+    for call in calls_by_id.values():
+        func = getattr(call, "function", "")
+        func_count[func] = func_count.get(func, 0) + 1
+    sidecar = getattr(editor, "_plot_source_columns", None) or {}
+    name_set = set(names)
+    n_rows = len(rows)
+    element_map = {}
+    for key, entry in color_map.items():
+        if not isinstance(entry, dict):
+            continue
+        call = calls_by_id.get(entry.get("call_id"))
+        if call is None:
+            continue
+        if source in ("import", "project"):
+            prov = sidecar.get(entry.get("call_id")) or {}
+            wanted = []
+            if prov.get("x"):
+                wanted.append(prov["x"])
+            wanted.extend(prov.get("y") or [])
+            columns = [c for c in wanted if c in name_set]
+        else:
+            columns = [c for c in _call_table_columns(entry["call_id"]) if c in name_set]
+        if not columns:
+            continue
+        row_indices = list(range(n_rows))
+        layer = entry.get("layer_index")
+        if (
+            isinstance(layer, int)
+            and 0 <= layer < n_rows
+            and func_count.get(getattr(call, "function", ""), 0) == 1
+            and entry.get("type") in ("bar", "hist")
+        ):
+            row_indices = [layer]
+        element_map[key] = {"columns": columns, "row_indices": row_indices}
+    return element_map
+
+
+def _table_response(names, rows, source, revision, element_data_map=None):
     """The editor store reads ``columns[].name`` and positional ``rows``.
 
     ``revision`` is the stored table's current revision (opaque string) when
@@ -40,14 +117,19 @@ def _table_response(names, rows, source, revision):
         {"name": name, "dtype": _dtype([row[i] for row in rows if i < len(row)])}
         for i, name in enumerate(names)
     ]
-    return JsonResponse(
-        {"columns": columns, "rows": rows, "source": source, "revision": revision}
-    )
+    body = {"columns": columns, "rows": rows, "source": source, "revision": revision}
+    # The map is genuinely optional: omit it when empty so responses without
+    # any element->data links stay byte-identical to the old contract.
+    if element_data_map:
+        body["element_data_map"] = element_data_map
+    return JsonResponse(body)
 
 
 def handle_datatable_data(request, editor):
     names, rows, source, revision = _current_table(editor)
-    return _table_response(names, rows, source, revision)
+    return _table_response(
+        names, rows, source, revision, _element_data_map(editor, names, rows, source)
+    )
 
 
 def _project_working_dir(editor, is_selected):
@@ -148,8 +230,7 @@ def _current_table(editor):
                 call_id = (
                     getattr(call, "call_id", None) or getattr(call, "id", None) or func
                 )
-                x_col = f"{call_id}_x"
-                y_col = f"{call_id}_y"
+                x_col, y_col = _call_table_columns(call_id)
                 if x_col not in columns:
                     columns.extend([x_col, y_col])
                 x_list = _values(x_data)
@@ -192,7 +273,7 @@ def handle_datatable_plot(request, editor):
     """
     from figrecipe._editor._helpers import render_with_overrides
 
-    from .core import _regen_hitmap
+    from .core import _persist_recipe_snapshot, _regen_hitmap
 
     data = json.loads(request.body) if request.body else {}
     x_column = data.get("x")
@@ -251,10 +332,36 @@ def handle_datatable_plot(request, editor):
 
         from figrecipe._editor._datatable_plot_handlers import dispatch_plot
 
+        def _recorded_call_ids(figure):
+            seen = set()
+            record = getattr(figure, "record", None)
+            if record is not None:
+                for ax_record in getattr(record, "axes", {}).values():
+                    for call in getattr(ax_record, "calls", []):
+                        cid = getattr(call, "id", None) or getattr(
+                            call, "call_id", None
+                        )
+                        if cid:
+                            seen.add(cid)
+            return seen
+
+        known_ids = _recorded_call_ids(fig)
         try:
             dispatch_plot(ax, plot_type, plot_data, columns, x_mode=x_mode)
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
+
+        # Provenance the record itself cannot keep: which NAMED table columns
+        # this UI plot drew from (the record stores arrays, not names), so a
+        # later datatable/data can link the new element back to its columns.
+        # Session-scoped, like the imported table itself.
+        sidecar = getattr(editor, "_plot_source_columns", None)
+        if sidecar is None:
+            sidecar = {}
+            editor._plot_source_columns = sidecar
+        provenance = {"x": x_column, "y": [c for c in columns if c != x_column]}
+        for new_id in _recorded_call_ids(fig) - known_ids:
+            sidecar[new_id] = provenance
 
         if hasattr(editor, "_capture_axes_positions"):
             editor._initial_axes_positions = editor._capture_axes_positions()
@@ -264,12 +371,18 @@ def handle_datatable_plot(request, editor):
         )
         _regen_hitmap(editor, size)
 
+        # A UI plot is recipe content, not a preview tweak: persist the live
+        # record (which already holds the new call) so the YAML and its data
+        # refs stay replayable.
+        saved = _persist_recipe_snapshot(editor, img)
+
         return JsonResponse(
             {
                 "success": True,
                 "image": img,
                 "bboxes": bboxes,
                 "img_size": {"width": size[0], "height": size[1]},
+                "saved": saved,
             }
         )
     except Exception as e:

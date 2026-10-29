@@ -7,7 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.37.0] - 2026-10-19
+## [0.44.0] - 2026-10-24
+
+- The canvas remembers size and position per figure: switching figures
+  restores each one's zoom + pan exactly; a never-visited canvas still
+  auto-fits on arrival.
+
+## [0.43.0] - 2026-10-24
+
+- Provenance chip on locked tables: the lock prompt names the recording
+  recipe and call ids (language-neutral tokens, zero new backend/copy).
+- Details empty state names the style door ("style, arrange, and display
+  live under the tabs below"; JA translated).
+- Clew-tracked indicator: recipes saved under an active clew session carry
+  figure.clew_tracked (one-way stamp), the preview serves it, and the
+  Figures row marks tracked figures (best-effort; clew absent in this env).
+
+## [0.42.0] - 2026-10-24
+
+- Backend coherence for the Figure -> Panels -> Data model: UI plots now
+  persist to the recipe (YAML gains the call, arrays externalize to per-call
+  CSVs, the adjacent PNG refreshes), so replay reproduces what the canvas
+  shows; param tweaks refresh the PNG too.
+- GET datatable/data serves element_data_map (element -> table columns +
+  row indices, single-row only when provable, unmapped elements omitted).
+- Highlight both directions, highlight-only: badged columns emphasize their
+  canvas elements (no selection steal); selecting an element highlights its
+  table rows (value-matched, sort-proof).
+
+## [0.41.0] - 2026-10-24
+
+- Working tables dropdown in the Data pane (the toggle used to open nothing): open tables with per-table Delete (closes tab + linked figure), Escape/outside-click to close.
+- Entry options explain themselves: one-line sublabels under Import CSV / Paste data / Load sample / Load from project (JA translated).
+- Row + buttons hug the last item instead of the far right edge.
+- Details-pane Go-to-Data door removed per operator checklist; the gate test now pins the rows Tables tab as the one canonical way in.
+- Token gate fix: group colors moved from a --grp custom property to inline styles (no silent fallbacks).
+
+## [0.40.0] - 2026-10-24
+
+Model rows v2 (operator GUI checklist, all verified live + gated):
+
+- 1 Figure = 1 Canvas: the Figure page renders only the selected
+  figure's panels; selecting a figure switches to its canvas.
+  Panel letters restart per canvas; remove keeps selection on the
+  same canvas. Undo, viewport, export and the OBJECTS tree stay
+  global by design.
+- Rows list canvases as "Figure 1, 2, ..." (paper-style, tooltip names
+  the recipe file); Panels lists the active canvas's panels; fold
+  cascades downward (upper rows include the ones beneath).
+- Group colors replace the "Panels/Data for X" text: each figure owns
+  a color, its panel items carry it, the active data item carries the
+  selected panel's color; hovering an item highlights its relatives.
+- Per-row + button: new figure, new panel on the selected canvas
+  (needs a selected figure), add data (needs a selected panel).
+- Underscore tab styling throughout, no pill badges.
+
+## [0.39.1] - 2026-10-24
+
+- Release pipeline SDK pin re-resolved to the genuine 0.3.11 release
+  merge e403479 (was a 0.3.9-era commit hash carried forward without
+  re-resolving, which the pipeline's source/version assertion
+  refused). No dependency change: the tree already built and tested
+  against SDK 0.3.11.
+
+## [0.39.0] - 2026-10-24
+
+- Model rows v1: Figures / Panels / Data stacked navigator with
+  entity jump buttons (superseded by v2 above).
+- Test isolation fix: presets module imported at top so a JA
+  override fixture cannot bake env into the import-time snapshot.
+- i18n catalog backfill + dead-entry cleanup; tree empty-state
+  Data door restored (pre-push gate).
+
+### Added (operator UI batch 2026-10-23, branch feature/sac-figrecipe-23c386cd)
+
+- Plot tab renamed Panel (mental model Figure→Panels→Plots→Data); pane id
+  and storage keys kept.
+- Empty Panel is guidance-only ("No figures yet" + Go to Data); example
+  block and template grid removed, all empty surfaces point at Data.
+- Data tab is table-first with direct cell input; figure-recorded
+  (incl. clew-provenance) tables are read-only until explicit Edit-table
+  adoption; tab strip is the SDK shared FileTabs.
+- Figure tab: Figure/Axes Align are SDK SelectorNavs; Rulers toggle
+  collapses tracks; Fit/zoom stand down until canvas registers controls.
+- Active app-tab state in the SDK CTA token (`--color-cta`).
+
+## [0.38.0] - 2026-10-23
+
+Operator UI batch (branch feature/sac-figrecipe-23c386cd):
 
 Datatable revision safety + error-state retry, SSoT header adoption
 (PR #466-#475):
