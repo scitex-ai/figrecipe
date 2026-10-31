@@ -206,7 +206,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
-  // Model rows: Figures (canvases) / Panels (this canvas) / Data (tables).
+  // Model rows: Figures (canvases) / Panels (all figures, flat) / Data (tables).
   // 1 Figure = 1 Canvas: a canvas is identified by its panels' shared
   // canvas key, listed here in first-appearance order ("Figure N",
   // paper-style; the recipe file shows as tooltip).
@@ -221,11 +221,11 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   const activeCanvasIndex = activeCanvasKey
     ? canvasKeys.indexOf(activeCanvasKey)
     : -1;
-  // This canvas's panels (empty when nothing is selected: the rows then
-  // show the global empty states instead of a half-bound view).
-  const canvasPanels = activeCanvasKey
-    ? placedFigures.filter((f) => canvasOf(f) === activeCanvasKey)
-    : placedFigures;
+  // All panels across all canvases, flat (operator 2026-10-31: show all
+  // tabs instead of only the active group). Each panel's group color marks
+  // which figure it belongs to; clicking one selects its figure, which
+  // switches the canvas — cross-figure navigation needs no hunting.
+  const canvasPanels = placedFigures;
   const selectedPanelLabel = selectedFig
     ? (selectedFig.panelLetter
       ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])
@@ -351,14 +351,13 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
       })()}
 
       {/* ── Model rows: Figures / Panels / Data ────────────
-          Three stacked rows, top to bottom — not one flat tab row. Each
-          row's left cell is the page tab; a chevron folds Chrome-style
-          (items hide, page untouched); the right cells jump straight to
-          an entity (select it and show its page); a trailing + adds at
-          that level (panel needs a figure, data needs a panel). Items
-          carry their group color instead of naming text: a figure's
-          panels share its color, and the active data item carries the
-          selected panel's color. */}
+          Three stacked rows, top to bottom — one per chain level. Items
+          within a row are flat across groups: the Panels row shows every
+          figure's panels (not only the selected figure's), each carrying
+          its figure's group color. A chevron folds Chrome-style (items
+          hide, page untouched); the right cells jump straight to an
+          entity (select it and show its page); a trailing + adds at
+          that level (panel needs a figure, data needs a panel). */}
       <div className="inner-editor__tabs" role="tablist">
         <div className="inner-editor__tabrow">
           <button
