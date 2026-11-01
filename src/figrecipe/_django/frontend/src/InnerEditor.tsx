@@ -94,11 +94,12 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     try {
       const stored = localStorage.getItem("figrecipe-app-tab") as AppTab;
+      if (stored === "plot") return "plot";
       if (stored === "data") return "data";
       if (stored === "canvas") return "canvas";
-      return "plot";
+      return "data";
     } catch {
-      return "plot";
+      return "data";
     }
   });
 
@@ -206,7 +207,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
-  // Model rows: Figures (canvases) / Panels (this canvas) / Data (tables).
+  // All Figures, Panels and Data remain visible across canvas selection.
   // 1 Figure = 1 Canvas: a canvas is identified by its panels' shared
   // canvas key, listed here in first-appearance order ("Figure N",
   // paper-style; the recipe file shows as tooltip).
@@ -221,11 +222,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   const activeCanvasIndex = activeCanvasKey
     ? canvasKeys.indexOf(activeCanvasKey)
     : -1;
-  // This canvas's panels (empty when nothing is selected: the rows then
-  // show the global empty states instead of a half-bound view).
-  const canvasPanels = activeCanvasKey
-    ? placedFigures.filter((f) => canvasOf(f) === activeCanvasKey)
-    : placedFigures;
+  const canvasPanels = placedFigures;
   const selectedPanelLabel = selectedFig
     ? (selectedFig.panelLetter
       ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])

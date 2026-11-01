@@ -67,6 +67,8 @@ def _compose_pil(figures, dark_mode):
         raise missing_extra(exc) from exc
 
     # Compute canvas bounds from figure positions + sizes
+    min_x = min(0, *(int(fig["x"]) for fig in figures))
+    min_y = min(0, *(int(fig["y"]) for fig in figures))
     max_x = 0
     max_y = 0
     for fig in figures:
@@ -75,8 +77,8 @@ def _compose_pil(figures, dark_mode):
         max_x = max(max_x, right)
         max_y = max(max_y, bottom)
 
-    canvas_w = max_x + 4  # small margin
-    canvas_h = max_y + 4
+    canvas_w = max_x - min_x + 4  # small margin
+    canvas_h = max_y - min_y + 4
 
     logger.info("[Compose] Canvas: %d x %d px", canvas_w, canvas_h)
 
@@ -102,8 +104,8 @@ def _compose_pil(figures, dark_mode):
         if img.size != (target_w, target_h):
             img = img.resize((target_w, target_h), Image.LANCZOS)
 
-        x = int(fig["x"])
-        y = int(fig["y"])
+        x = int(fig["x"]) - min_x
+        y = int(fig["y"]) - min_y
         canvas.paste(img, (x, y), img)  # use alpha mask
 
         # Draw panel letter (A, B, C...) — Arial 10pt bold
@@ -216,5 +218,9 @@ def handle_compose_export(request, editor, fmt):
     buf.seek(0)
 
     response = HttpResponse(buf.read(), content_type=mimetype)
-    response["Content-Disposition"] = f'attachment; filename="{filename}.{fmt}"'
+    from django.utils.http import content_disposition_header
+
+    response["Content-Disposition"] = content_disposition_header(
+        True, f"{filename}.{fmt}"
+    )
     return response
