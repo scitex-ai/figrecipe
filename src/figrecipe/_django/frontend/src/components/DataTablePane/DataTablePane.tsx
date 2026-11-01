@@ -62,6 +62,7 @@ import {
   type TableSaveQueue,
 } from "./tableSaveQueue";
 import { SAMPLE_TABLE_CSV, SAMPLE_TABLE_FORMAT } from "./sampleData";
+import { DraftDataGrid } from "./DraftDataGrid";
 import { parsePastedTable } from "./pasteData";
 import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
@@ -198,6 +199,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
   } | null>(null);
 
   const tabs = Object.values(datatableTabs);
+  const hasTable = tabs.some((tab) => tab.columns.length > 0);
   const activeTab = activeTabId ? datatableTabs[activeTabId] : null;
   /** Provenance chip for a locked (figure-recorded) table: the session
    *  recipe plus the recording call ids parsed from the columns. Bare
@@ -1223,32 +1225,23 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         onMouseOver={handlePointerOver}
         onMouseOut={handlePointerOut}
       >
-        {tabs.length === 0 ? (
-          /* No tables: the starter grid used to sit here with nothing to do
-             in it. Name the three ways in instead — unless the last load
-             FAILED, in which case the table is not empty, it is unreachable:
-             say so with a retry (error-fallback-ui), never a silent blank. */
-          <div className="datatable-empty-state" role={datatableLoadError ? "alert" : undefined}>
+        {!hasTable ? (
+          /* A local draft never writes on mount. Failed loads retain their
+             retry state instead of offering a misleading empty worksheet. */
+          <div className={`datatable-empty-state ${datatableLoadError ? "" : "datatable-empty-state--worksheet"}`} role={datatableLoadError ? "alert" : undefined}>
+            {!datatableLoadError && <DraftDataGrid onImport={handleImportTextContent} />}
+            {datatableLoadError && <>
             <i
               className={`fas ${datatableLoadError ? "fa-triangle-exclamation" : "fa-table"} datatable-empty-icon`}
               aria-hidden="true"
             />
             <div className="datatable-empty-title">
-              {datatableLoadError ?? gettext("No tables")}
+              {datatableLoadError}
             </div>
             <div className="datatable-empty-hint">
-              {datatableLoadError
-                ? gettext("Check the connection, then try again — your tables are still stored.")
-                : gettext("Start with a CSV file, paste spreadsheet cells, or try the sample — then edit cells directly in the grid.")}
+              {gettext("Check the connection, then try again — your tables are still stored.")}
             </div>
-            {/* Clew note (operator Data-tab checklist): direct input here is
-                the fast plotting path — it does not write clew provenance.
-                Figure-recorded tables lock instead; take ownership to edit. */}
-            {!datatableLoadError && (
-              <div className="datatable-empty-note">
-                {gettext("Direct edits are for plotting on the UI — clew provenance is recorded when figures save.")}
-              </div>
-            )}
+            </>}
             <div className="datatable-empty-actions">
               {datatableLoadError ? (
                 <button
