@@ -1,3 +1,4 @@
+import { closeDataTab } from "../../store/editorNavigation";
 /** Left pane — Data table with vis_app pane-header.
  * Uses scitex-ui's shared DataTable component (no figrecipe-original table).
  *
@@ -136,8 +137,6 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     activeTabId,
     datatableLoadError,
     highlightedDataRows,
-    placedFigures,
-    removeFigure,
     showToast,
     loadDatatable,
     refreshAfterMutation,
@@ -807,32 +806,8 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [active, handleRedo, handleUndo]);
 
-  /** Close a tab and remove the corresponding figure from canvas. */
-  const handleCloseTab = useCallback(
-    (tabId: string) => {
-      // Find figure that matches this tab by path, id, or fall back to selected/first
-      const figure =
-        placedFigures.find((f) => f.path === tabId || f.id === tabId) ??
-        placedFigures.find(
-          (f) => f.id === useEditorStore.getState().selectedFigureId,
-        ) ??
-        (placedFigures.length === 1 ? placedFigures[0] : null);
-      if (figure) {
-        removeFigure(figure.id);
-      }
-      // Always remove the tab
-      useEditorStore.setState((s) => {
-        const updated = { ...s.datatableTabs };
-        delete updated[tabId];
-        const remaining = Object.keys(updated);
-        return {
-          datatableTabs: updated,
-          activeTabId: remaining.length > 0 ? remaining[0] : null,
-        };
-      });
-    },
-    [placedFigures, removeFigure],
-  );
+  // Closing data never removes a panel or mutates its source file.
+  const handleCloseTab = closeDataTab;
 
   const handleExportCsv = useCallback(async () => {
     try {
@@ -1070,7 +1045,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             <i className="fas fa-table" />
             <span className="data-dropdown-label">
               {tabs.length > 0
-                ? interpolate(ngettext("%s table", "%s tables", tabs.length), [tabs.length])
+                ? activeTab?.label ?? gettext("Data")
                 : gettext("No tables")}
             </span>
             <i className="fas fa-chevron-down" />
@@ -1104,6 +1079,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                         className="data-dropdown-delete"
                         title={deleteLabel}
                         aria-label={deleteLabel}
+                        disabled={t.source === "record"}
                         onClick={() => {
                           handleCloseTab(t.id);
                           setTableMenuOpen(false);

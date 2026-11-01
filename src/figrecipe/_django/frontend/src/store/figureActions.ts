@@ -118,22 +118,15 @@ export function createFigureActions(set: Set, get: Get) {
       }
     },
 
-    removeFigure: (id: string) => {
+    removeFigure: (id: string | string[]) => {
+      const ids = new Set(Array.isArray(id) ? id : [id]);
       set((s) => {
-        const figure = s.placedFigures.find((f) => f.id === id);
-        const remaining = s.placedFigures.filter((f) => f.id !== id);
+        const figure = s.placedFigures.find((f) => f.id === s.selectedFigureId && ids.has(f.id));
+        const remaining = s.placedFigures.filter((f) => !ids.has(f.id));
 
-        // Clean up data table tab for the removed figure
-        const updatedTabs = { ...s.datatableTabs };
-        if (figure?.path) {
-          delete updatedTabs[figure.path];
-        }
-        // If active tab was for this figure, switch to first remaining tab
-        let activeTabId = s.activeTabId;
-        if (figure?.path && activeTabId === figure.path) {
-          const tabKeys = Object.keys(updatedTabs);
-          activeTabId = tabKeys.length > 0 ? tabKeys[0] : null;
-        }
+        // Removing placements never deletes their source data or recipes.
+        const updatedTabs = s.datatableTabs;
+        const activeTabId = s.activeTabId;
 
         // Renumber panel letters within each canvas separately: letters
         // restart on every canvas (1 Figure = 1 Canvas).
@@ -147,10 +140,10 @@ export function createFigureActions(set: Set, get: Get) {
         // Selection follows the removed figure's canvas: first remaining
         // panel on the same canvas, else the first remaining figure.
         let selectedFigureId = s.selectedFigureId;
-        let selectedFigureIds = s.selectedFigureIds.filter((fid) => fid !== id);
+        let selectedFigureIds = s.selectedFigureIds.filter((fid) => !ids.has(fid));
         let selectedElement = s.selectedElement;
         let selectedBbox = s.selectedBbox;
-        if (s.selectedFigureId === id) {
+        if (s.selectedFigureId && ids.has(s.selectedFigureId)) {
           const removedCanvas = figure ? canvasOf(figure) : null;
           const sameCanvas = removedCanvas
             ? relabeled.filter((f) => canvasOf(f) === removedCanvas)

@@ -722,3 +722,18 @@
   gap: 12px;
   align-items: center;
 }
+
+/* Navigation is a relationship graph; removal detaches composition items. */
+.editor-nav-item { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.editor-nav-item__remove {
+  border: 0; background: transparent; color: var(--color-danger, var(--status-error));
+  cursor: pointer; padding: 2px 5px; font-size: 16px; line-height: 1;
+}
+.editor-nav-item__remove:disabled { opacity: .35; cursor: not-allowed; }
+.editor-nav-menu {
+  position: fixed; z-index: 10000; padding: 6px;
+  border: 1px solid var(--vis-border); border-radius: 4px;
+  background: var(--vis-bg-secondary); color: var(--vis-text-primary);
+}
+.editor-nav-menu button { padding: 6px 10px; background: transparent; border: 0; color: var(--color-danger, var(--status-error)); cursor: pointer; }
+.editor-nav-menu button:disabled { opacity: .4; cursor: not-allowed; }

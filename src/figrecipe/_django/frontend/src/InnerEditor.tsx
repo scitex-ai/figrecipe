@@ -1,3 +1,5 @@
+import { NavigationTab } from "./components/NavigationTab";
+import { closeDataTab } from "./store/editorNavigation";
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
@@ -67,6 +69,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     clearToast,
     placedFigures,
     selectedFigureId,
+    removeFigure,
     selectFigure,
     datatableTabs,
     activeTabId,
@@ -351,8 +354,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     (f) => canvasOf(f) === key && f.clewTracked,
                   );
                   return (
-                    <button
+                    <NavigationTab
                       key={key}
+                      onRemove={() => removeFigure(placedFigures.filter(f => canvasOf(f) === key).map(f => f.id))}
+                      removeLabel={interpolate(gettext("Remove Figure %s from composition"), [String(i + 1)])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
@@ -376,7 +381,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                           <i className="fas fa-link" aria-hidden="true" />
                         </span>
                       ) : null}
-                    </button>
+                    </NavigationTab>
                   );
                 })
               )}
@@ -428,8 +433,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                   const lit = selected || related;
                   const color = groupColor(gi);
                   return (
-                    <button
+                    <NavigationTab
                       key={f.id}
+                      onRemove={() => removeFigure(f.id)}
+                      removeLabel={interpolate(gettext("Remove %s from composition"), [label])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
@@ -444,7 +451,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     >
                       <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} />
                       {label}
-                    </button>
+                    </NavigationTab>
                   );
                 })
               )}
@@ -490,8 +497,11 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                   const selected = t.id === activeTabId;
                   const grouped = selected && selectedGroupColor !== undefined;
                   return (
-                    <button
+                    <NavigationTab
                       key={t.id}
+                      onRemove={() => { closeDataTab(t.id); }}
+                      removalDisabled={t.source === "record"}
+                      removeLabel={interpolate(gettext("Remove %s data tab"), [t.label])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
                       style={grouped ? ({ borderBottomColor: selectedGroupColor } as CSSProperties) : undefined}
@@ -507,7 +517,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     >
                       {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: selectedGroupColor }} /> : null}
                       {t.label}
-                    </button>
+                    </NavigationTab>
                   );
                 })
               )}

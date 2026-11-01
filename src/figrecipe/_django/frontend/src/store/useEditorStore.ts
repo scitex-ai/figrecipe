@@ -160,7 +160,7 @@ interface EditorState {
   loadPanelPositions: () => Promise<void>;
 
   addFigure: (path: string, canvasKey?: string) => Promise<void>;
-  removeFigure: (id: string) => void;
+  removeFigure: (id: string | string[]) => void;
   selectFigure: (id: string | null) => void;
   moveFigure: (id: string, x: number, y: number) => void;
   alignFigures: (
