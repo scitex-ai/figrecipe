@@ -33,7 +33,9 @@ The Figures, Panels, and Data rows keep all placed items available when another
 Figure is selected. Data tabs name their recorded source: inline arrays name the
 YAML recipe, linked arrays name the CSV/NPY source, and edited tables name the
 project CSV. Related tabs share their Figure's color. Selecting a Data chunk
-also selects its panel and restores that table's API recipe/revision.
+also selects its panel and restores that table's API recipe/revision. Creating
+or switching Figures keeps their cached editor records separate; an empty
+Figure shows the draft worksheet instead of inheriting another panel's grid.
 
 The row's × and right-click menu remove items from this composition; they do
 not delete recipe or source files. Shift+F10 opens the same menu. Figure removal
@@ -49,7 +51,7 @@ the canvas's top-left inset, including panels with negative coordinates.
 Source/relationship, navigation, and export checks:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m pytest tests/figrecipe/_django/handlers/test_data_chunks.py tests/figrecipe/_django/handlers/test_compose_export.py
+PYTHONPATH=src .venv/bin/python -m pytest tests/figrecipe/_django/handlers/test_data_chunks.py tests/figrecipe/_django/handlers/test_compose_export.py tests/figrecipe/_django/handlers/test_recipe_cache_identity.py
 cd src/figrecipe/_django/frontend
 node --experimental-strip-types tests/exportTarget.test.ts
 npx vitest run --config vitest.workflow.config.mts

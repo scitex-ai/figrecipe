@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keep all Figure, Panel and source Data tabs available, with reversible composition removal and keyboard context menus. Recorded Data stays locked until adopted.
 - Preserve YAML inline versus linked CSV/NPY data identities and panel relationships; queued edits remain scoped to their original recipe/tab/session.
+- Keep cached editor records owned by their recipe when creating or switching Figures; repair legacy cache entries that point at another recipe.
 - Fit content at the top-left. Export only the selected Figure with a project/Figure/UTC filename, preserving panels placed at negative coordinates.
 
 - Use the SDK React AppHeader binding in the editor and the same SDK mount for server-declared rows. Header appearance now comes from the SDK, with one project picker retained in either mode.
