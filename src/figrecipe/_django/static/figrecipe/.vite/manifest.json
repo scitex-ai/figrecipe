@@ -1,6 +1,6 @@
 {
-  "_mobile-BzEDWfu5.js": {
-    "file": "assets/mobile-BzEDWfu5.js",
+  "_mobile-SbUX0FO7.js": {
+    "file": "assets/mobile-SbUX0FO7.js",
     "name": "mobile"
   },
   "index.html": {
@@ -9,7 +9,7 @@
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_mobile-BzEDWfu5.js"
+      "_mobile-SbUX0FO7.js"
     ],
     "dynamicImports": [
       "src/workspace.ts"
@@ -22,7 +22,7 @@
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_mobile-BzEDWfu5.js"
+      "_mobile-SbUX0FO7.js"
     ]
   },
   "style.css": {
