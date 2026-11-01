@@ -198,6 +198,13 @@ export function createFigureActions(set: Set, get: Get) {
     },
 
     selectFigure: (id: string | null) => {
+      const panel = get().placedFigures.find(figure => figure.id === id);
+      if (panel && panel.path !== get().currentFile) {
+        setRecipe(panel.path);
+        set({currentFile: panel.path});
+        void get().loadDatatable();
+        void get().loadHitmap();
+      }
       set({
         selectedFigureId: id,
         selectedFigureIds: id ? [id] : [],

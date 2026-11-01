@@ -1,4 +1,4 @@
-import { closeDataTab } from "../../store/editorNavigation";
+import { closeDataTab, selectDataTab } from "../../store/editorNavigation";
 /** Left pane — Data table with vis_app pane-header.
  * Uses scitex-ui's shared DataTable component (no figrecipe-original table).
  *
@@ -1068,7 +1068,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                         className="data-dropdown-name"
                         title={t.label}
                         onClick={() => {
-                          useEditorStore.setState({ activeTabId: t.id });
+                          selectDataTab(t.id);
                           setTableMenuOpen(false);
                         }}
                       >
@@ -1357,7 +1357,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           <FileTabs
             tabs={tabs.map((tab) => ({ path: tab.id, label: tab.label }))}
             activeTab={activeTabId}
-            onTabSwitch={(id) => useEditorStore.setState({ activeTabId: id })}
+            onTabSwitch={selectDataTab}
             onTabClose={handleCloseTab}
             showNewButton={false}
           />

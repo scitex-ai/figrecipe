@@ -1,5 +1,5 @@
 import { NavigationTab } from "./components/NavigationTab";
-import { closeDataTab } from "./store/editorNavigation";
+import { closeDataTab, selectDataTab } from "./store/editorNavigation";
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
@@ -232,6 +232,22 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
       : (selectedFig.path.split("/").pop() ?? selectedFig.path))
     : null;
   const tableList = Object.values(datatableTabs);
+  // Restore navigation for every placed panel without switching the active
+  // recipe or issuing writes. Reads retain the API session/ACL checks.
+  const panelPaths = [...new Set(placedFigures.map(panel => panel.path))].join("\n");
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      for (const recipe of panelPaths.split("\n").filter(Boolean)) {
+        if (cancelled) return;
+        const known = Object.values(useEditorStore.getState().datatableTabs)
+          .some(table => table.panelPath === recipe);
+        if (!known) await loadDatatable({recipe, activate: false, isCurrent: () => !cancelled});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [panelPaths, loadDatatable]);
+
   const detailsCollapsed = rightPanel.collapsed && !phone;
   // Row groups, Chrome-style: each canvas owns a group color; its panel
   // items carry it, and the active data item carries the selected panel's
@@ -246,8 +262,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   ];
   const groupColor = (index: number) => GROUP_COLORS[index % GROUP_COLORS.length];
   const selectedGroupIndex = activeCanvasIndex >= 0 ? activeCanvasIndex : null;
-  const selectedGroupColor =
-    selectedGroupIndex === null ? undefined : groupColor(selectedGroupIndex);
   // Folded rows (Chrome tab-group style): the scope tab stays, the items
   // hide. Page content is untouched — only the navigator row collapses.
   // Hovering an item highlights its relatives in the other rows (same
@@ -495,7 +509,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
               ) : (
                 tableList.map((t) => {
                   const selected = t.id === activeTabId;
-                  const grouped = selected && selectedGroupColor !== undefined;
+                  const dataPanel = placedFigures.find(panel => panel.path === t.panelPath);
+                  const dataGroup = dataPanel ? canvasKeys.indexOf(canvasOf(dataPanel)) : selectedGroupIndex;
+                  const color = dataGroup !== null && dataGroup >= 0 ? groupColor(dataGroup) : undefined;
+                  const grouped = color !== undefined && (t.panelPath === selectedFig?.path || hoveredGroup === dataGroup);
                   return (
                     <NavigationTab
                       key={t.id}
@@ -504,18 +521,18 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                       removeLabel={interpolate(gettext("Remove %s data tab"), [t.label])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
-                      style={grouped ? ({ borderBottomColor: selectedGroupColor } as CSSProperties) : undefined}
+                      style={grouped ? ({ borderBottomColor: color } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
                       onMouseEnter={() => {
-                        if (grouped && selectedGroupIndex !== null) setHoveredGroup(selectedGroupIndex);
+                        if (dataGroup !== null && dataGroup >= 0) setHoveredGroup(dataGroup);
                       }}
                       onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
-                        useEditorStore.setState({ activeTabId: t.id });
+                        selectDataTab(t.id);
                         selectTab("data");
                       }}
                     >
-                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: selectedGroupColor }} /> : null}
+                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} /> : null}
                       {t.label}
                     </NavigationTab>
                   );

@@ -71,3 +71,24 @@ it("canvas undo preserves newly locked data rather than reviving an editable cop
  undo();
  expect(useEditorStore.getState().datatableTabs.main.source).toBe("record");
 });
+
+it("background data reads retain all panel sources without changing active selection", async () => {
+ const {api} = await import("../src/api/client");
+ const original = api.getForRecipe;
+ try {
+  api.getForRecipe = async <T>(_endpoint: string, recipe: string) => ({
+    columns:[{name:"x",dtype:"numeric"}],rows:[[1]],source:"record",
+    chunks:[{id:recipe+"::inline",label:recipe+" · inline",kind:"inline",panel_path:recipe,source_ref:recipe,columns:[{name:"x",dtype:"numeric"}],rows:[[1]],source:"record",revision:null}],
+  } as T);
+  await useEditorStore.getState().loadDatatable({recipe:"a.yaml",activate:false});
+  await useEditorStore.getState().loadDatatable({recipe:"b.yaml",activate:false});
+  expect(Object.values(useEditorStore.getState().datatableTabs).map(t=>t.panelPath)).toContain("a.yaml");
+  expect(Object.values(useEditorStore.getState().datatableTabs).map(t=>t.panelPath)).toContain("b.yaml");
+  expect(useEditorStore.getState().activeTabId).toBe("main");
+  expect(useEditorStore.getState().selectedFigureId).toBe("a");
+  const {selectDataTab}=await import("../src/store/editorNavigation");
+  selectDataTab("b.yaml::inline");
+  expect(useEditorStore.getState().selectedFigureId).toBe("b");
+  expect(useEditorStore.getState().currentFile).toBe("b.yaml");
+ } finally {api.getForRecipe=original;}
+});

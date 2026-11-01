@@ -156,7 +156,7 @@ interface EditorState {
   /** @param options.isCurrent — apply the server's table only when this still
    *  returns true after the read (the Data pane uses it to ignore a response a
    *  newer edit has overtaken). */
-  loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
+  loadDatatable: (options?: { isCurrent?: () => boolean; recipe?: string; activate?: boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
   addFigure: (path: string, canvasKey?: string) => Promise<void>;
@@ -451,7 +451,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   loadDatatable: async (options?) => {
     set({ datatableLoadError: null });
     try {
-      const data = await api.get<{
+      const read = options?.recipe
+        ? <T>(endpoint: string) => api.getForRecipe<T>(endpoint, options.recipe!)
+        : api.get;
+      const data = await read<{
+        chunks?: {id: string; label: string; kind: TabData["dataKind"]; panel_path: string; source_ref: string; columns: ColumnDef[]; rows: (string | number)[][]; source: TabData["source"]; revision?: string | null}[];
         columns: ColumnDef[];
         rows: (string | number)[][];
         source?: string | null;
@@ -478,6 +482,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ? data.source
             : null,
       };
+      const chunks: TabData[] = data.chunks?.map(chunk => ({
+        id: chunk.id, label: chunk.label, columns: chunk.columns, rows: chunk.rows,
+        source: chunk.source, panelPath: chunk.panel_path, sourceRef: chunk.source_ref,
+        dataKind: chunk.kind, revision: chunk.revision,
+      })) ?? [];
+      const incoming = chunks.length ? chunks : [tab];
+      const panelPath = chunks[0]?.panelPath ?? get().currentFile ?? undefined;
+      const retained = Object.fromEntries(Object.entries(get().datatableTabs)
+        .filter(([, existing]) => existing.panelPath
+          ? existing.panelPath !== panelPath : options?.activate === false));
+      const tables = { ...retained, ...Object.fromEntries(incoming.map(table => [table.id, table])) };
+      const active = incoming.find(table => table.id === get().activeTabId) ?? incoming[0];
       // Build element-data mapping if provided by backend
       const elementDataMap: Record<
         string,
@@ -491,14 +507,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           };
         }
       }
+      for (const table of incoming) table.elementDataMap = elementDataMap;
+      if (options?.activate === false) {
+        set({datatableTabs: tables});
+        return;
+      }
       set({
-        datatableTabs: { main: tab },
-        activeTabId: "main",
+        datatableTabs: tables,
+        activeTabId: active.id,
         elementDataMap,
         datatableRevision:
           typeof data.revision === "string" ? data.revision : null,
       });
     } catch (e) {
+      if (e instanceof ApiSessionExpired || options?.activate === false) return;
       console.warn("[Editor] No datatable data available:", e);
       // Fail loud, not blank: the Data pane renders this with a retry
       // affordance. The technical detail stays in the console above; the
