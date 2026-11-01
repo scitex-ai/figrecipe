@@ -106,9 +106,14 @@ def test_plotted_recipe_replays_the_drawn_line(_django_ready, tmp_path):
     # Act
     _plotted_editor(tmp_path)
     # Assert
-    assert fr.reproduce(str(tmp_path / "plotted.yaml"))[0].flat[0].lines[
-        0
-    ].get_xydata().tolist() == _LINE_XY
+    assert (
+        fr.reproduce(str(tmp_path / "plotted.yaml"))[0]
+        .flat[0]
+        .lines[0]
+        .get_xydata()
+        .tolist()
+        == _LINE_XY
+    )
 
 
 def test_plot_refreshes_the_recipe_png(_django_ready, tmp_path):
@@ -158,3 +163,48 @@ def test_datatable_data_links_ui_plotted_line_to_its_table_columns(
         "columns": ["time", "signal"],
         "row_indices": [0, 1, 2],
     }
+
+
+@pytest.fixture
+def _multiple_ui_plots(_django_ready, tmp_path):
+    from figrecipe._django.handlers.datatable import handle_datatable_plot
+
+    fig, _ = fr.subplots()
+    recipe = tmp_path / "multiple-panels.yaml"
+    editor = EditorState(fig=fig, recipe_path=recipe)
+    _imported(editor)
+    responses = [
+        handle_datatable_plot(_PostRequest(_LINE_REQUEST), editor) for _ in range(3)
+    ]
+    size = tuple(float(v) for v in fig.get_size_inches())
+    positions = [tuple(ax.get_position().bounds) for ax in fig.get_axes()]
+    replayed, _ = fr.reproduce(recipe)
+    return responses, size, positions, replayed
+
+
+def test_multiple_ui_plots_succeed(_multiple_ui_plots):
+    # Arrange
+    responses, _, _, _ = _multiple_ui_plots
+    # Act
+    statuses = [response.status_code for response in responses]
+    # Assert
+    assert statuses == [200, 200, 200]
+
+
+def test_multiple_ui_plots_replay_figure_dimensions(_multiple_ui_plots):
+    # Arrange
+    _, size, _, replayed = _multiple_ui_plots
+    # Act
+    actual = tuple(replayed.get_size_inches())
+    # Assert
+    assert actual == pytest.approx(size)
+
+
+def test_multiple_ui_plots_replay_panel_positions(_multiple_ui_plots):
+    # Arrange
+    _, _, positions, replayed = _multiple_ui_plots
+    expected = [v for bounds in positions for v in bounds]
+    # Act
+    actual = [v for ax in replayed.get_axes() for v in ax.get_position().bounds]
+    # Assert
+    assert actual == pytest.approx(expected)

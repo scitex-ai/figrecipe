@@ -14,6 +14,8 @@ creating the table discards this unsaved draft.
 Creation uses the same import path as CSV uploads. If no recipe is open, that
 path creates a new blank figure before importing the table. Once created, the
 normal table editing, column assignment, and Plot controls are available.
+Plotting also saves the live figure size and panel geometry into the recipe,
+so reopening a figure retains the layout after adding more panels.
 
 Manual entries do not record clew provenance. Existing figure-recorded tables
 retain their read-only state until the user takes ownership. If loading stored
@@ -28,3 +30,7 @@ The trimming and CSV persistence contract is checked by
 ```sh
 node --experimental-strip-types src/figrecipe/_django/frontend/tests/draftTable.test.ts
 ```
+
+The save/reproduce geometry contract is checked by
+`tests/figrecipe/_django/handlers/test_datatable_plot_from_columns.py`, which
+adds multiple plots and compares the reopened figure size and panel bounds.
