@@ -28,3 +28,29 @@ The trimming and CSV persistence contract is checked by
 ```sh
 node --experimental-strip-types src/figrecipe/_django/frontend/tests/draftTable.test.ts
 ```
+
+The Figures, Panels, and Data rows keep all placed items available when another
+Figure is selected. Data tabs name their recorded source: inline arrays name the
+YAML recipe, linked arrays name the CSV/NPY source, and edited tables name the
+project CSV. Related tabs share their Figure's color. Selecting a Data chunk
+also selects its panel and restores that table's API recipe/revision.
+
+The row's × and right-click menu remove items from this composition; they do
+not delete recipe or source files. Shift+F10 opens the same menu. Figure removal
+removes its panel placements in one Undo step. Data removal never removes a
+panel, and recorded data stays locked until explicitly adopted. Canvas Undo
+preserves newer table revisions and newly locked data.
+
+Export downloads only the selected Figure's panels. Its suggested filename is
+`<project>-FigureN-<UTC timestamp>.<format>`. PNG/PDF exports contain raster
+previews; SVG currently wraps that raster image. Fit maximizes the Figure at
+the canvas's top-left inset, including panels with negative coordinates.
+
+Source/relationship, navigation, and export checks:
+
+```sh
+PYTHONPATH=src .venv/bin/python -m pytest tests/figrecipe/_django/handlers/test_data_chunks.py tests/figrecipe/_django/handlers/test_compose_export.py
+cd src/figrecipe/_django/frontend
+node --experimental-strip-types tests/exportTarget.test.ts
+npx vitest run --config vitest.workflow.config.mts
+```

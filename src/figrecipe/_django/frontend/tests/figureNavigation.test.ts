@@ -92,3 +92,12 @@ it("background data reads retain all panel sources without changing active selec
   expect(useEditorStore.getState().currentFile).toBe("b.yaml");
  } finally {api.getForRecipe=original;}
 });
+
+it("queued table writes refuse changed sessions, recipes, and tabs", async () => {
+ const {tableWriteMatches}=await import("../src/components/DataTablePane/tableWriteContext");
+ const owner={session:3,recipe:"a.yaml",tabId:"a::inline"};
+ expect(tableWriteMatches(owner,{...owner})).toBe(true);
+ expect(tableWriteMatches(owner,{...owner,recipe:"b.yaml"})).toBe(false);
+ expect(tableWriteMatches(owner,{...owner,tabId:"a::linked"})).toBe(false);
+ expect(tableWriteMatches(owner,{...owner,session:4})).toBe(false);
+});

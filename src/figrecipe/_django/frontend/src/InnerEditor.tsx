@@ -546,7 +546,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
             title={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
             aria-label={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
             disabled={adding || !selectedPanelLabel}
-            onClick={() => selectTab("data")}
+            onClick={() => {
+              selectTab("data");
+              bodyRef.current?.querySelector<HTMLInputElement>("[data-figrecipe-import-input]")?.click();
+            }}
           >
             +
           </button>

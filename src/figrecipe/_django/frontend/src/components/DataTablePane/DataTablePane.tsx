@@ -1,3 +1,4 @@
+import { tableWriteMatches } from "./tableWriteContext";
 import { closeDataTab, selectDataTab } from "../../store/editorNavigation";
 /** Left pane — Data table with vis_app pane-header.
  * Uses scitex-ui's shared DataTable component (no figrecipe-original table).
@@ -10,7 +11,7 @@ import { closeDataTab, selectDataTab } from "../../store/editorNavigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@scitex/sdk/ui/react/app/data-table/DataTable.tsx";
 import { FileTabs } from "@scitex/sdk/ui/react/app/file-tabs";
-import { api, ApiError, setRecipe } from "../../api/client";
+import { api, ApiError, ApiSessionExpired, apiSessionId, setRecipe } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
 import { PlotFromColumns } from "./PlotFromColumns";
 import {
@@ -242,8 +243,15 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
    *  starts the next write — because persistTable's reload lands later and a
    *  newer edit's write must already be based on what the server just kept. */
   const saveQueue = useRef<TableSaveQueue>(
-    createTableSaveQueue(async (csv: string) => {
-      const base = useEditorStore.getState().datatableRevision;
+    createTableSaveQueue(async (job: string) => {
+      const {csv, session, recipe, tabId} = JSON.parse(job) as {csv: string; session: number; recipe: string | null; tabId: string | null};
+      // A queued edit belongs to the recipe that accepted the gesture. A
+      // navigation must never retarget it to another panel/project.
+      const current = useEditorStore.getState();
+      if (!tableWriteMatches({session, recipe, tabId}, {session: apiSessionId(), recipe: current.currentFile, tabId: current.activeTabId})) {
+        throw new ApiSessionExpired();
+      }
+      const base = current.datatableRevision;
       const res = await api.post<{ revision?: string | null }>(
         "datatable/import",
         { content: csv, format: "csv", base_revision: base },
@@ -282,7 +290,11 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
    *  table. */
   const persistTable = useCallback(
     async (table: TableModel, message: string) => {
-      const outcome = await saveQueue.enqueue(serializeTableToCsv(table));
+      const owner = useEditorStore.getState();
+      const operationSession = apiSessionId();
+      const outcome = await saveQueue.enqueue(JSON.stringify({csv: serializeTableToCsv(table),
+        session: operationSession, recipe: owner.currentFile, tabId: owner.activeTabId}));
+      if (apiSessionId() !== operationSession || useEditorStore.getState().activeTabId !== owner.activeTabId) return;
       if (outcome.status === "failed") {
         // 409: another client stored a newer table meanwhile. Adopt it instead
         // of re-sending this edit on top, which would discard their edits —
@@ -1180,6 +1192,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
       {/* Hidden file input for CSV import */}
       <input
         ref={fileInputRef}
+        data-figrecipe-import-input=""
         type="file"
         accept=".csv,.tsv,.json,.xlsx"
         style={{ display: "none" }}
@@ -1347,6 +1360,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           </div>
         )}
         <DataTable
+          key={activeTab?.id ?? "empty"}
           data={dataset}
           style={{ flex: 1, height: "auto", minHeight: 0 }}
           readOnly={locked}

@@ -262,11 +262,11 @@ ok("every table write goes through the queue", () => {
     // Revision-gated since #469: the write carries base_revision so a stale
     // save is refused instead of clobbering newer edits. Shape-agnostic
     // across the multiline api.post call.
-    /createTableSaveQueue\(async \(csv: string\) => \{[\s\S]{0,800}?base_revision: base/,
+    /createTableSaveQueue\(async \(job: string\) => \{[\s\S]{0,1800}?base_revision: base/,
   );
   assert.match(
     pane,
-    /const persistTable = useCallback\(\s*async \(table: TableModel, message: string\) => \{[\s\S]*?await saveQueue\.enqueue\(serializeTableToCsv\(table\)\);/,
+    /const persistTable = useCallback\(\s*async \(table: TableModel, message: string\) => \{[\s\S]*?await saveQueue\.enqueue\(JSON\.stringify\(\{csv: serializeTableToCsv\(table\),/,
   );
 });
 

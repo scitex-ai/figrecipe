@@ -48,7 +48,7 @@
   },
   "scitexSdk": {
     "version": "0.3.16",
-    "commit": "36476559d3bace496de4d23c6209fe0588a87e5a",
-    "reason": "Source preview of canonical React AppHeader and capability-aware project selection; requires this SDK source until these APIs are published."
+    "commit": "d08b63d41a4e82c102a3a69bcf20f3e16f5b1305",
+    "reason": "Source preview of canonical React AppHeader, capability-aware project selection, and complete row/column cell highlighting; requires this SDK source until these APIs are published."
   }
 }
