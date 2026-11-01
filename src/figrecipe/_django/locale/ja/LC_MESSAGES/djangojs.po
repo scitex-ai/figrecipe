@@ -1762,3 +1762,23 @@ msgstr "内蔵のサンプル表"
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "CSVs already in this project"
 msgstr "このプロジェクト内のCSV"
+
+#: frontend/src/components/DataTablePane/DraftDataGrid.tsx
+msgid "New data worksheet"
+msgstr "新しいデータシート"
+
+#: frontend/src/components/DataTablePane/DraftDataGrid.tsx
+msgid "Double-click a cell to enter data, or paste spreadsheet cells. Create the table when ready."
+msgstr "セルをダブルクリックしてデータを入力するか、スプレッドシートのセルを貼り付けてください。入力が終わったらテーブルを作成します。"
+
+#: frontend/src/components/DataTablePane/DraftDataGrid.tsx
+msgid "Creating table…"
+msgstr "テーブルを作成中…"
+
+#: frontend/src/components/DataTablePane/DraftDataGrid.tsx
+msgid "Create table"
+msgstr "テーブルを作成"
+
+#: frontend/src/components/DataTablePane/DraftDataGrid.tsx
+msgid "Manual input is for plotting in the UI; clew provenance is not recorded for these entries."
+msgstr "手動入力は画面上でのプロット用です。これらの入力の clew 来歴は記録されません。"

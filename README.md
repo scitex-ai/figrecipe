@@ -188,7 +188,9 @@ fr.load_style("MATPLOTLIB")   # Pure Matplotlib
 
 ## GUI Editor
 
-For precise adjustments, GUI editor is available.
+For precise adjustments, GUI editor is available. The Data page supports
+[direct entry in an editable worksheet](docs/data-worksheet.md), CSV import,
+and plotting from selected columns.
 
 <p align="center">
   <img src="docs/figrecipe-gui-demo.png" alt="FigRecipe GUI Editor" width="100%"/>
