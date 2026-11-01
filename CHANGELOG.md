@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Use the SDK React AppHeader binding in the editor and the same SDK mount for server-declared rows. Header appearance now comes from the SDK, with one project picker retained in either mode.
-- The source preview pins SDK 0.3.16 at 7e55418 for its new React header API; consume that source until the API is published.
+- The source preview pins SDK 0.3.16 at 3647655 for its new React header API; consume that source until the API is published.
 
 ## [0.44.0] - 2026-10-24
 
