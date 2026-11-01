@@ -20,4 +20,11 @@ Usage (integrated into Django project):
 
 default_app_config = "figrecipe._django.apps.FigRecipeEditorConfig"
 
-__all__ = ["default_app_config"]
+# Hosts using scitex-sdk plugin discovery consume both the editor and its
+# shared chat-model registration from this leaf-owned declaration.
+INSTALLED_APPS_ENTRIES = (
+    "figrecipe._django.apps.FigRecipeEditorConfig",
+    "figrecipe._django.apps.ScitexAppChatConfig",
+)
+
+__all__ = ["default_app_config", "INSTALLED_APPS_ENTRIES"]

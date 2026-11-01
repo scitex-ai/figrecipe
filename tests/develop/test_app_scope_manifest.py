@@ -43,3 +43,29 @@ def test_manifest_is_valid_json_with_scope_key():
     manifest = json.loads(raw)
     # Assert
     assert "scope" in manifest and isinstance(manifest["scope"], str)
+
+
+def test_plugin_companion_entries_register_editor_and_chat_models():
+    # Arrange: use the real AppConfig classes and SDK plugin partitioning.
+    from django.utils.module_loading import import_string
+    from scitex_sdk.app.plugins import PluginApp, partition_companions
+
+    from figrecipe._django import INSTALLED_APPS_ENTRIES
+
+    plugin = PluginApp(
+        "figrecipe", "figrecipe._django.apps.FigRecipeEditorConfig", "figrecipe"
+    )
+    # Act
+    companions = partition_companions(INSTALLED_APPS_ENTRIES, [plugin])
+    configs = [import_string(path) for path in INSTALLED_APPS_ENTRIES]
+    # Assert: discovery retains the primary once and adds the actual chat app.
+    assert (
+        [(config.name, config.label) for config in configs],
+        companions,
+    ) == (
+        [
+            ("figrecipe._django", "figrecipe_editor"),
+            ("scitex_sdk.app._chat", "scitex_app"),
+        ],
+        ["figrecipe._django.apps.ScitexAppChatConfig"],
+    )
