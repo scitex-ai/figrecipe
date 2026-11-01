@@ -53,7 +53,24 @@ def _persist_recipe_snapshot(editor, img_b64=None):
     if not hasattr(getattr(editor, "fig", None), "save_recipe"):
         return False
     try:
-        editor.fig.save_recipe(editor.recipe_path)
+        from figrecipe._api._save_helpers import (
+            _capture_axes_bboxes,
+            _capture_content_layout,
+        )
+
+        fig = editor.fig
+        # UI plots may widen the live figure and add axes after creation.
+        # save_recipe serializes the record directly; refresh the same live
+        # geometry that the full save path captures before writing it.
+        fig.record.figsize = tuple(float(v) for v in fig.get_size_inches())
+        fig.record.dpi = int(fig.get_dpi())
+        positions = [ax._position for ax in fig.flat]
+        if positions:
+            fig.record.nrows = max(p[0] for p in positions) + 1
+            fig.record.ncols = max(p[1] for p in positions) + 1
+        _capture_axes_bboxes(fig)
+        _capture_content_layout(fig)
+        fig.save_recipe(editor.recipe_path)
     except Exception as save_err:
         logger.warning("[FigRecipe] recipe auto-save failed: %s", save_err)
         return False
