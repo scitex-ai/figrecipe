@@ -449,12 +449,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   loadDatatable: async (options?) => {
+    const requestRecipe = options?.recipe ?? get().currentFile ?? undefined;
     set({ datatableLoadError: null });
     try {
       const read = options?.recipe
         ? <T>(endpoint: string) => api.getForRecipe<T>(endpoint, options.recipe!)
         : api.get;
       const data = await read<{
+        recipe_path?: string;
         chunks?: {id: string; label: string; kind: TabData["dataKind"]; panel_path: string; source_ref: string; columns: ColumnDef[]; rows: (string | number)[][]; source: TabData["source"]; revision?: string | null}[];
         columns: ColumnDef[];
         rows: (string | number)[][];
@@ -488,7 +490,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         dataKind: chunk.kind, revision: chunk.revision,
       })) ?? [];
       const incoming = chunks.length ? chunks : tab.columns.length ? [tab] : [];
-      const panelPath = chunks[0]?.panelPath ?? get().currentFile ?? undefined;
+      const panelPath = data.recipe_path || chunks[0]?.panelPath || requestRecipe;
       const retained = Object.fromEntries(Object.entries(get().datatableTabs)
         .filter(([, existing]) => existing.panelPath
           ? existing.panelPath !== panelPath : options?.activate === false));

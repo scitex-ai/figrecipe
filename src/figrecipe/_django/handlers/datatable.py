@@ -105,7 +105,7 @@ def _element_data_map(editor, names, rows, source):
     return element_map
 
 
-def _table_response(names, rows, source, revision, element_data_map=None, chunks=None):
+def _table_response(names, rows, source, revision, element_data_map=None, chunks=None, recipe_path=None):
     """The editor store reads ``columns[].name`` and positional ``rows``.
 
     ``revision`` is the stored table's current revision (opaque string) when
@@ -124,6 +124,7 @@ def _table_response(names, rows, source, revision, element_data_map=None, chunks
         body["element_data_map"] = element_data_map
     if chunks is not None:
         body["chunks"] = chunks
+        body["recipe_path"] = recipe_path
     return JsonResponse(body)
 
 
@@ -136,7 +137,8 @@ def handle_datatable_data(request, editor):
             index = names.index(column["name"])
             column["dtype"] = _dtype([row[index] for row in rows if index < len(row)])
     return _table_response(
-        names, rows, source, revision, _element_data_map(editor, names, rows, source), chunks
+        names, rows, source, revision, _element_data_map(editor, names, rows, source), chunks,
+        str(getattr(editor, "recipe_path", None) or "")
     )
 
 

@@ -128,3 +128,14 @@ it("selecting a Figure without loaded data clears the previous panel's active gr
  expect(useEditorStore.getState().selectedFigureId).toBe("c");
  expect(useEditorStore.getState().activeTabId).toBeNull();
 });
+
+it("an empty background source cannot remove another selected panel's cached chunks", async () => {
+ const {api}=await import("../src/api/client");const original=api.getForRecipe;
+ useEditorStore.setState({currentFile:"a.yaml",datatableTabs:{main:{...data,panelPath:"a.yaml"}},activeTabId:"main"});
+ try {
+  api.getForRecipe=async <T>()=>({columns:[],rows:[],source:"empty",chunks:[]} as T);
+  await useEditorStore.getState().loadDatatable({recipe:"empty.yaml",activate:false});
+  expect(useEditorStore.getState().datatableTabs.main.panelPath).toBe("a.yaml");
+  expect(useEditorStore.getState().activeTabId).toBe("main");
+ } finally {api.getForRecipe=original;}
+});
