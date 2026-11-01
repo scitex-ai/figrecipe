@@ -99,6 +99,7 @@ def handle_api_files(request, editor):
             "tree": tree,
             "files": flat_files,
             "working_dir": str(working_dir),
+            "recipe_path": str(editor.recipe_path) if editor and getattr(editor, "recipe_path", None) else None,
             "current_file": (
                 str(editor.recipe_path.name)
                 if editor and getattr(editor, "recipe_path", None)
@@ -215,6 +216,7 @@ def handle_api_switch(request, editor):
                 "color_map": {},
                 "img_size": {"width": size[0], "height": size[1]},
                 "file": file_path,
+                "recipe_path": str(full_path),
                 "working_dir": str(getattr(editor, "working_dir", full_path.parent)),
             }
         )

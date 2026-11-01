@@ -226,11 +226,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     ? canvasKeys.indexOf(activeCanvasKey)
     : -1;
   const canvasPanels = placedFigures;
-  const selectedPanelLabel = selectedFig
-    ? (selectedFig.panelLetter
-      ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])
-      : (selectedFig.path.split("/").pop() ?? selectedFig.path))
-    : null;
   const tableList = Object.values(datatableTabs);
   // Restore navigation for every placed panel without switching the active
   // recipe or issuing writes. Reads retain the API session/ACL checks.
@@ -516,6 +511,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                   return (
                     <NavigationTab
                       key={t.id}
+                      title={t.sourceRef ?? t.label}
                       onRemove={() => { closeDataTab(t.id); }}
                       removalDisabled={t.source === "record"}
                       removeLabel={interpolate(gettext("Remove %s data tab"), [t.label])}
@@ -543,9 +539,9 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           <button
             type="button"
             className="inner-editor__tabadd"
-            title={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
-            aria-label={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
-            disabled={adding || !selectedPanelLabel}
+            title={gettext("Import data")}
+            aria-label={gettext("Import data")}
+            disabled={adding}
             onClick={() => {
               selectTab("data");
               bodyRef.current?.querySelector<HTMLInputElement>("[data-figrecipe-import-input]")?.click();

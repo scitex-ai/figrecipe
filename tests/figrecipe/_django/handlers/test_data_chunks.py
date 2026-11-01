@@ -49,3 +49,19 @@ def test_project_owned_table_names_its_actual_csv_and_revision(tmp_path):
     assert len(chunks) == 1
     assert chunks[0]["label"] == "panel_data.csv"
     assert chunks[0]["revision"] == "r42"
+
+
+def test_nested_recipe_file_list_preserves_canonical_identity(tmp_path):
+    import shutil
+    import figrecipe as fr
+    from django.test import RequestFactory
+    from figrecipe._django.services import EditorState
+    from figrecipe._django.handlers.files import handle_api_files
+    nested = tmp_path / "nested" / "panel.yaml"
+    nested.parent.mkdir()
+    shutil.copyfile(Path(fr.__file__).parent / "_django/gallery_templates/plot_plot.yaml", nested)
+    editor = EditorState(recipe_path=nested, working_dir=tmp_path)
+    request = RequestFactory().get("/api/files", {"working_dir":str(tmp_path)})
+    payload = json.loads(handle_api_files(request, editor).content)
+    assert payload["recipe_path"] == str(nested)
+    assert payload["current_file"] == "panel.yaml"

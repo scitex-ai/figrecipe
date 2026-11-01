@@ -365,7 +365,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const recipeParam =
           new URLSearchParams(window.location.search).get("recipe") || "";
         const recipePath =
-          currentFile ?? recipeParam.split("/").pop() ?? "preview";
+          recipeParam || currentFile || "preview";
         const fig: PlacedFigure = {
           id: newId(),
           path: recipePath,
@@ -431,7 +431,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       rememberLastProject(workingDir);
       set({
         files: data.tree,
-        currentFile: data.current_file,
+        currentFile: data.recipe_path ?? data.current_file,
         workingDir,
       });
     } catch (e) {
@@ -520,7 +520,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           typeof data.revision === "string" ? data.revision : null,
       });
     } catch (e) {
-      if (e instanceof ApiSessionExpired || options?.activate === false) return;
+      if (e instanceof ApiSessionExpired) return;
+      if (options?.activate === false) {
+        get().showToast(gettext("Could not load data for one of the placed panels"), "error");
+        return;
+      }
       console.warn("[Editor] No datatable data available:", e);
       // Fail loud, not blank: the Data pane renders this with a retry
       // affordance. The technical detail stays in the console above; the

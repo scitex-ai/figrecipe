@@ -102,6 +102,7 @@ export interface HitmapResponse {
 }
 
 export interface FilesResponse {
+  recipe_path?: string | null;
   tree: FileTreeItem[];
   files: string[];
   current_file: string | null;
