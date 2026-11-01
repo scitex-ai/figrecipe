@@ -56,7 +56,9 @@ export default defineConfig({
       external: ["mermaid", "@hpcc-js/wasm-graphviz"],
       output: {
         entryFileNames: "assets/[name].js",
-        chunkFileNames: "assets/[name].js",
+        // Stable entry URLs use app_static; imported chunks need their own
+        // content URL so an unchanged parent never reuses stale chunk bytes.
+        chunkFileNames: "assets/[name]-[hash].js",
         assetFileNames: (asset) => asset.name === "style.css" ? "assets/index.css" : "assets/[name][extname]",
       },
     },
