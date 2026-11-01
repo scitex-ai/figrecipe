@@ -447,10 +447,13 @@ export function useZoomPan(
     (box: ContentBox) => {
       const container = containerRef.current;
       if (!container) return;
+      const page = container.querySelector<HTMLElement>(".vis-canvas-container");
       const fitted = fitContentView(
         container.clientWidth,
         container.clientHeight,
         box,
+        40,
+        { x: page?.offsetLeft ?? 0, y: page?.offsetTop ?? 0 },
       );
       if (fitted) setState(fitted);
     },

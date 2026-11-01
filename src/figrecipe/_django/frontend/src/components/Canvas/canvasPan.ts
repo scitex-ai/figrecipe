@@ -225,12 +225,15 @@ export function fitContentView(
   containerH: number,
   box: ContentBox,
   buffer = 40,
+  contentOrigin: Point = { x: 0, y: 0 },
 ): ViewState | null {
   if (
     !Number.isFinite(containerW) ||
     !Number.isFinite(containerH) ||
     !Number.isFinite(box.x) ||
     !Number.isFinite(box.y) ||
+    !Number.isFinite(contentOrigin.x) ||
+    !Number.isFinite(contentOrigin.y) ||
     !(box.w > 0) ||
     !(box.h > 0)
   ) {
@@ -240,9 +243,9 @@ export function fitContentView(
   const availH = containerH - buffer;
   if (!(availW > 0) || !(availH > 0)) return null;
   const zoom = clampZoom(Math.min(availW / box.w, availH / box.h));
-  // Screen position of box point p is pan + zoom*p: center the box by
-  // putting its scaled extent in the middle of the container.
-  const panX = (containerW - zoom * box.w) / 2 - zoom * box.x;
-  const panY = (containerH - zoom * box.h) / 2 - zoom * box.y;
+  // Figure coordinates start inside the ruler tracks; the transform starts
+  // at the rulers grid. Include that measured origin before centering.
+  const panX = (containerW - zoom * box.w) / 2 - zoom * (box.x + contentOrigin.x);
+  const panY = (containerH - zoom * box.h) / 2 - zoom * (box.y + contentOrigin.y);
   return sanitizeView({ zoom, panX, panY });
 }
