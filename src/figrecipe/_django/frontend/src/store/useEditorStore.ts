@@ -487,7 +487,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         source: chunk.source, panelPath: chunk.panel_path, sourceRef: chunk.source_ref,
         dataKind: chunk.kind, revision: chunk.revision,
       })) ?? [];
-      const incoming = chunks.length ? chunks : [tab];
+      const incoming = chunks.length ? chunks : tab.columns.length ? [tab] : [];
       const panelPath = chunks[0]?.panelPath ?? get().currentFile ?? undefined;
       const retained = Object.fromEntries(Object.entries(get().datatableTabs)
         .filter(([, existing]) => existing.panelPath
@@ -514,7 +514,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
       set({
         datatableTabs: tables,
-        activeTabId: active.id,
+        activeTabId: active?.id ?? null,
         elementDataMap,
         datatableRevision:
           typeof data.revision === "string" ? data.revision : null,

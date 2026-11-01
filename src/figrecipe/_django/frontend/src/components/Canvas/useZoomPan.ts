@@ -441,7 +441,7 @@ export function useZoomPan(
   }, []);
 
   // Operator mandate (max-size default): fit the FIGURE content — union of
-  // placed footprints — centered, not the page. Null/degenerate input keeps
+  // placed footprints — at the top-left, not the whole page. Null/degenerate input keeps
   // the current view; the caller falls back to page fit.
   const zoomToContent = useCallback(
     (box: ContentBox) => {

@@ -199,12 +199,12 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
   } | null>(null);
 
   const tabs = Object.values(datatableTabs);
-  const hasTable = tabs.some((tab) => tab.columns.length > 0);
   const activeTab = activeTabId ? datatableTabs[activeTabId] : null;
+  const hasTable = !!activeTab?.columns.length;
   /** Provenance chip for a locked (figure-recorded) table: the session
    *  recipe plus the recording call ids parsed from the columns. Bare
    *  tokens, no translatable copy (see provenanceChip). */
-  const provenanceRecipe = recordingRecipe();
+  const provenanceRecipe = activeTab?.panelPath?.split("/").pop() ?? recordingRecipe();
   const provenanceCalls = useMemo(
     () => recordingCalls((activeTab?.columns ?? []).map((c) => c.name)),
     // eslint-disable-next-line react-hooks/exhaustive-deps

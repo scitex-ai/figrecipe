@@ -2,7 +2,7 @@
 
 import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent, setRecipe } from "../api/client";
 import { DPI, getPanelBboxes } from "../hooks/useSnap";
-import { pushUndoState } from "../hooks/useUndoRedo";
+import { prepareUndoState, pushUndoState } from "../hooks/useUndoRedo";
 import { newId } from "../utils/newId";
 import type {
   BBox,
@@ -93,6 +93,7 @@ export function createFigureActions(set: Set, get: Get) {
           placedFigures: [...s.placedFigures, newFig],
           selectedFigureId: newFig.id,
           currentFile: fullPath,
+          activeTabId: null,
         }));
 
         const params = new URLSearchParams(window.location.search);
@@ -120,6 +121,7 @@ export function createFigureActions(set: Set, get: Get) {
     },
 
     removeFigure: (id: string | string[]) => {
+      prepareUndoState();
       const ids = new Set(Array.isArray(id) ? id : [id]);
       set((s) => {
         const figure = s.placedFigures.find((f) => f.id === s.selectedFigureId && ids.has(f.id));
@@ -165,6 +167,12 @@ export function createFigureActions(set: Set, get: Get) {
           activeTabId,
         };
       });
+      const selected = get().placedFigures.find(panel => panel.id === get().selectedFigureId);
+      if (selected) {
+        setRecipe(selected.path);
+        const table = Object.values(get().datatableTabs).find(tab => tab.panelPath === selected.path);
+        set({currentFile: selected.path, activeTabId: table?.id ?? null});
+      }
       pushUndoState();
     },
 
@@ -206,9 +214,11 @@ export function createFigureActions(set: Set, get: Get) {
         void get().loadDatatable();
         void get().loadHitmap();
       }
+      const table = panel ? Object.values(get().datatableTabs).find(tab => tab.panelPath === panel.path) : null;
       set({
         selectedFigureId: id,
         selectedFigureIds: id ? [id] : [],
+        ...(panel ? {activeTabId: table?.id ?? null} : {}),
         selectedElement: null,
         selectedBbox: null,
       } as never);

@@ -28,7 +28,7 @@ export function ExportDialog({ onClose }: Props) {
   const workingDir = useEditorStore((s) => s.workingDir);
   const darkMode = useEditorStore((s) => s.darkMode);
   const selectedId = useEditorStore((s) => s.selectedFigureId);
-  const projectName = useEditorStore((s) => s.projectName ?? s.projectId);
+  const projectName = useEditorStore((s) => s.projectName ?? s.projectId ?? s.workingDir);
   const target = exportTarget(placedFigures, selectedId);
   const [format, setFormat] = useState("png");
   const [filename, setFilename] = useState(() => exportFilename(projectName, target.figureNumber));

@@ -101,3 +101,30 @@ it("queued table writes refuse changed sessions, recipes, and tabs", async () =>
  expect(tableWriteMatches(owner,{...owner,tabId:"a::linked"})).toBe(false);
  expect(tableWriteMatches(owner,{...owner,session:4})).toBe(false);
 });
+
+it("canvas history retains source tabs loaded asynchronously after its last snapshot", () => {
+ useEditorStore.getState().removeFigure("a");
+ const extra={...data,id:"late",panelPath:"c.yaml",label:"late.csv"};
+ useEditorStore.setState({datatableTabs:{...useEditorStore.getState().datatableTabs,late:extra}});
+ undo();
+ expect(useEditorStore.getState().datatableTabs.late.label).toBe("late.csv");
+ redo();
+ expect(useEditorStore.getState().datatableTabs.late.label).toBe("late.csv");
+});
+
+it("an empty Figure does not invent a generic Data tab or inherit another panel's grid", async () => {
+ const {api}=await import("../src/api/client");const original=api.get;
+ try {
+  api.get=async <T>()=>({columns:[],rows:[],source:"empty",chunks:[]} as T);
+  await useEditorStore.getState().loadDatatable();
+  expect(useEditorStore.getState().activeTabId).toBeNull();
+  expect(useEditorStore.getState().datatableTabs.main).toBeUndefined();
+ } finally {api.get=original;}
+});
+
+it("selecting a Figure without loaded data clears the previous panel's active grid", () => {
+ useEditorStore.setState({currentFile:"c.yaml",datatableTabs:{main:{...data,panelPath:"a.yaml"}},activeTabId:"main"});
+ useEditorStore.getState().selectFigure("c");
+ expect(useEditorStore.getState().selectedFigureId).toBe("c");
+ expect(useEditorStore.getState().activeTabId).toBeNull();
+});

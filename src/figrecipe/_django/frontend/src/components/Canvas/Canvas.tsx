@@ -127,7 +127,7 @@ export function Canvas({ active = true }: { active?: boolean }) {
     }
     const store = useEditorStore.getState();
     if (store.canvasFitKey === figuresKey) return;
-    // Max-size default (operator mandate): fit the FIGURE content centered.
+    // Max-size default: fit the FIGURE content at its top-left inset.
     // Mark fitted ONLY when a fit actually applied — a zero-size container
     // returns null from zoomToContent, and marking it would lock the tiny
     // default view in (hard-reload shrink bug 2026-10-20).

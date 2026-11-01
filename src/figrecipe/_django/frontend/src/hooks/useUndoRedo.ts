@@ -4,10 +4,12 @@
  * Max 50 history states. Push on every user action that modifies canvas.
  */
 
+import { setRecipe } from "../api/client";
 import { useEditorStore } from "../store/useEditorStore";
 import type { PlacedFigure, StyleOverrides, TabData } from "../types/editor";
 
 interface Snapshot {
+  kind?: "canvas" | "data-navigation";
   placedFigures: PlacedFigure[];
   overrides: StyleOverrides;
   selectedFigureId: string | null;
@@ -37,13 +39,21 @@ function takeSnapshot(): Snapshot {
     placedFigures: placedFigures.map((f) => ({ ...f })),
     overrides: { ...overrides },
     selectedFigureId, selectedFigureIds: [...selectedFigureIds],
-    datatableTabs: structuredClone(datatableTabs), activeTabId, datatableRevision,
+    // Table edits replace values immutably; do not clone every data row for
+    // every canvas drag. History stores membership and those immutable values.
+    datatableTabs: {...datatableTabs}, activeTabId, datatableRevision,
   };
 }
 
 /** Push current state onto history stack. Call after every user action. */
-export function pushUndoState(): void {
-  const snap = takeSnapshot();
+export function prepareUndoState(): void {
+  if (pointer < 0) { initUndoHistory(); return; }
+  const kind = history[pointer].kind;
+  history[pointer] = {...takeSnapshot(), kind};
+}
+
+export function pushUndoState(kind: Snapshot["kind"] = "canvas"): void {
+  const snap = {...takeSnapshot(), kind};
 
   // Discard any redo states ahead of pointer
   history = history.slice(0, pointer + 1);
@@ -60,8 +70,9 @@ export function pushUndoState(): void {
 /** Undo — restore previous state. */
 export function undo(): boolean {
   if (pointer <= 0) return false;
+  const restoreData = history[pointer].kind === "data-navigation";
   pointer--;
-  applySnapshot(history[pointer]);
+  applySnapshot(history[pointer], restoreData);
   publish();
   return true;
 }
@@ -70,7 +81,7 @@ export function undo(): boolean {
 export function redo(): boolean {
   if (pointer >= history.length - 1) return false;
   pointer++;
-  applySnapshot(history[pointer]);
+  applySnapshot(history[pointer], history[pointer].kind === "data-navigation");
   publish();
   return true;
 }
@@ -91,20 +102,28 @@ export function initUndoHistory(): void {
   publish();
 }
 
-function applySnapshot(snap: Snapshot): void {
+function applySnapshot(snap: Snapshot, restoreData: boolean): void {
   const current = useEditorStore.getState();
-  // Never replace a newer server table with a stale local history snapshot.
   const sameDataRevision = current.datatableRevision === snap.datatableRevision;
+  // Canvas history does not remove data that a later asynchronous read loaded.
+  // Data navigation restores tab membership, preserving live values/locks.
+  const tabs = restoreData && sameDataRevision
+    ? Object.fromEntries(Object.entries(snap.datatableTabs).map(([id, tab]) =>
+        [id, current.datatableTabs[id] ?? tab]))
+    : current.datatableTabs;
+  const panel = snap.placedFigures.find(figure => figure.id === snap.selectedFigureId);
+  const related = Object.values(tabs).filter(tab => tab.panelPath === panel?.path);
+  const activeId = restoreData ? snap.activeTabId
+    : related.find(tab => tab.id === current.activeTabId)?.id ?? related[0]?.id ?? (panel ? null : current.activeTabId);
+  const active = activeId ? tabs[activeId] : null;
+  if (panel) setRecipe(panel.path);
   useEditorStore.setState({
-    selectedFigureId: snap.selectedFigureId,
-    selectedFigureIds: [...snap.selectedFigureIds],
+    selectedFigureId: snap.selectedFigureId, selectedFigureIds: [...snap.selectedFigureIds],
     selectedElement: null, selectedBbox: null,
-    ...(sameDataRevision ? {
-      datatableTabs: Object.fromEntries(Object.entries(snap.datatableTabs).map(([id, tab]) =>
-        [id, current.datatableTabs[id] ?? structuredClone(tab)])),
-      activeTabId: snap.activeTabId,
-    } : {}),
-    placedFigures: snap.placedFigures.map((f) => ({ ...f })),
-    overrides: { ...snap.overrides },
+    ...(panel ? {currentFile: panel.path} : {}),
+    datatableTabs: tabs, activeTabId: activeId,
+    ...(active ? {datatableRevision: active.revision ?? current.datatableRevision, elementDataMap: active.elementDataMap ?? {}} : {}),
+    placedFigures: snap.placedFigures.map(figure => ({...figure})),
+    overrides: {...snap.overrides},
   });
 }
