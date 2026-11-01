@@ -358,28 +358,3 @@
 .inner-editor__tabs:not(:has(.inner-editor__tab)) {
   display: none;
 }
-
-/* Phones: the project selector (now in the app header) spans full width and
-   its panel drops over the editor instead of being clipped. The SDK SSoT owns
-   the phone header geometry (wrap, 52px min-height, 44px trigger at ≤600px /
-   coarse per [infra/fig-header]) — the leaf adds ONLY what the SDK lacks:
-   visible overflow + stacking for the dropdown panel, and full-width leaf
-   wrapper so the trigger fills its row. */
-@media (max-width: 768px) {
-  .stx-app-header {
-    overflow: visible;
-    position: relative;
-    z-index: 20;
-  }
-
-  .stx-app-header .project-scope-selector {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: none;
-    margin-left: 0;
-  }
-
-  .stx-app-header .stx-app-project-selector {
-    width: 100%;
-  }
-}

@@ -54,7 +54,15 @@
     "jail": {
       "scope": "user",
       "working_dir_param": "working_dir",
-      "path_params": ["path", "recipe", "recipe_path"]
+      "path_params": [
+        "path",
+        "recipe",
+        "recipe_path"
+      ]
     }
+  },
+  "scope_capabilities": {
+    "user": false,
+    "project": true
   }
 }

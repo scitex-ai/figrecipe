@@ -16,7 +16,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { createPortal } from "react-dom";
 import { CanvasPane } from "./components/CanvasPane/CanvasPane";
 import { DataTablePane } from "./components/DataTablePane/DataTablePane";
 import { FigureViewer } from "./components/FigureViewer/FigureViewer";
@@ -29,6 +28,7 @@ import { Toast } from "./components/common/Toast";
 import { useEmbeddedMessages } from "./hooks/useEmbeddedMessages";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { usePanelResize } from "@scitex/sdk/ui/react/app/usePanelResize.ts";
+import { EditorAppHeader } from "./components/EditorAppHeader";
 import { AlertBanner } from "@scitex/sdk/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
@@ -305,50 +305,8 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
 
   return (
     <div className="inner-editor" data-editor-tab={activeTab}>
-      {/* ── App header (figrecipe-owned) — canonical .stx-app-header ─────
-          Structure: title, then the shared project-selector slot, then
-          (optional) app actions. The selector lives HERE (not the tab row)
-          per the 0.22.0 placement contract; the scitex-ui slot CSS
-          (.stx-app-header__slot--project-selector) pins it left-after-title
-          on desktop and full-width on phones. The vestigial React Toolbar's
-          "FigRecipe Editor" title is not in this render tree, so this is the
-          only visible title (no duplication).
-
-          SSoT yield (figrecipe-ssot-header-row-20261017): when the Django
-          template rendered the shared SDK header row above the mount
-          (header.stx-app-header[data-ssot]), that row owns the title/version
-          chrome — rendering this one too would stack two identical titles.
-          Yield it and portal the live picker into the server slot instead, so
-          project switching keeps working with exactly one header. Re-queried
-          every render, so a late-injected partial self-heals on the next
-          state change. Without a server row (raw SPA fallback) the owned
-          header renders exactly as before. */}
-      {(() => {
-        let ssotSlot: Element | null = null;
-        try {
-          ssotSlot = document.querySelector(
-            "header.stx-app-header[data-ssot] .stx-app-header__slot--project-selector",
-          );
-        } catch {
-          ssotSlot = null;
-        }
-        // Single picker element, rendered in exactly one place: portaled into
-        // the server SSoT slot when present, else inside the owned fallback
-        // header. One picker on the page, never two (hub ruling 9/16).
-        const picker = <ProjectScopeSelector />;
-        if (ssotSlot) return createPortal(picker, ssotSlot);
-        return (
-          <header className="stx-app-header">
-            <span className="stx-app-header__title">{gettext("FigRecipe")}</span>
-            {resolvedVersion && (
-              <span className="stx-app-header__version">v{resolvedVersion}</span>
-            )}
-            <div className="stx-app-header__slot--project-selector">
-              {picker}
-            </div>
-          </header>
-        );
-      })()}
+      <EditorAppHeader title={gettext("FigRecipe")} version={resolvedVersion}
+        projectSelector={<ProjectScopeSelector />} />
 
       {/* ── Model rows: Figures / Panels / Data ────────────
           Three stacked rows, top to bottom — not one flat tab row. Each

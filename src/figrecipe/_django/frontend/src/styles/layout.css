@@ -33,26 +33,6 @@
    Stacked top to bottom (Figures / Panels / Tables) so the navigator
    reads as the dependency chain, not four flat siblings. */
 
-/* figrecipe's app-local project selector (TODO 145/147). Now inside the
-   canonical .stx-app-header__slot--project-selector wrapper (scitex-ui CSS
-   pins it left-after-title on desktop, full-width on phones). The wrapper
-   owns margin/align — we only cap the selector's own width on desktop so
-   the trigger doesn't balloon past the title. */
-.project-scope-selector {
-  max-width: 260px;
-}
-.project-scope-selector .stx-app-project-selector__trigger {
-  max-width: 100%;
-  /* Trigger geometry/text come from the SDK (36px / 0.85rem, identical
-     everywhere per mandate) — no leaf override (was 28px/12px). */
-}
-.project-scope-selector .stx-app-project-selector__current,
-.project-scope-selector .stx-app-project-selector__placeholder {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .inner-editor__tab {
   display: flex;
   align-items: center;

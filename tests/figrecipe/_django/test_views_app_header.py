@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests for the shared SSoT header row in FigRecipe's Django templates.
-
-Operator CCT4254 (card figrecipe-ssot-header-row-20261017): FigRecipe
-templates carried only asset refs — no shared ``.stx-app-header`` row.
-``figrecipe/_app_header.html`` adopts the SDK SSoT header (Storage PR #128 /
-Writer editor.html shape): the leaf owns the VALUES (title + leaf version),
-the SDK owns the chrome (``scitex_sdk/ui/css/app/app-header.css``).
-
-These tests pin the template half of the contract through real renders
-(``render_to_string`` with the contexts the views actually pass). One
-assertion per test (STX-TQ007): exactly ONE header row, the SDK stylesheet
-linked, the LEAF version on the badge (never the host's), no badge when no
-version was passed, and the ``app_header_rendered`` host guard suppressing
-the leaf row. The React half (InnerEditor yields its owned row + portals the
-picker while a ``header[data-ssot]`` is present) is gated by
-``frontend/tests/appHeaderSsot.test.ts``.
-"""
+"""Real template renders retain SDK mount identity and host row ownership."""
 
 import os
 
@@ -75,7 +59,7 @@ def test_standalone_renders_no_server_header_row(_django_ready):
     # Act
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
     # Assert
-    assert 'data-ssot="sdk"' not in html
+    assert "data-figrecipe-header" not in html
 
 
 def test_standalone_renders_no_header_element_server_side(_django_ready):
@@ -111,7 +95,7 @@ def test_partial_renders_the_ssot_header(_django_ready):
     # Act
     html = _render(_django_ready, "figrecipe/workspace_partial.html", **_partial_context())
     # Assert
-    assert 'data-ssot="sdk"' in html
+    assert "data-figrecipe-header" in html
 
 
 def test_partial_header_carries_the_leaf_title(_django_ready):
@@ -127,7 +111,7 @@ def test_partial_header_carries_the_leaf_version(_django_ready):
     # Act
     html = _render(_django_ready, "figrecipe/workspace_partial.html", **_partial_context())
     # Assert
-    assert ">v0.36.2<" in html
+    assert 'data-app-version="0.36.2"' in html
 
 
 def test_partial_host_header_suppresses_the_leaf_row(_django_ready):
@@ -139,7 +123,7 @@ def test_partial_host_header_suppresses_the_leaf_row(_django_ready):
         **_partial_context(app_header_rendered=True),
     )
     # Assert
-    assert 'data-ssot="sdk"' not in html
+    assert "data-figrecipe-header" not in html
 
 
 def test_partial_still_mounts_the_editor_below_the_header(_django_ready):
