@@ -18,7 +18,7 @@
  * - the leaf carries NO header geometry/type override: no height,
  *   min-height, padding, font-size, or order on .stx-app-header or its
  *   __title/__version/__actions elements (selector-trigger pin already
- *   covered: SDK 36px / 0.85rem, identical everywhere).
+ *   covered: SDK-owned trigger dimensions, identical everywhere).
  *
  * A hollow header (SDK drops the rule) or a reintroduced leaf fork both
  * fail loudly here. Writer-scale (44px/15px/13px) can only return via an
@@ -89,11 +89,11 @@ check(
 const sdkActions = rule(sdkHeader, ".stx-app-header__actions");
 check("sdk actions order is 2", /order:\s*2/.test(sdkActions));
 const sdkTitle = rule(sdkHeader, ".stx-app-header__title");
-check("sdk title scale is 0.85rem", /font-size:\s*0\.85rem/.test(sdkTitle));
+check("sdk title scale is 14px", /font-size:\s*14px/.test(sdkTitle));
 const sdkVersion = rule(sdkHeader, ".stx-app-header__version");
 check(
-  "sdk version scale is 0.78rem",
-  /font-size:\s*0\.78rem/.test(sdkVersion),
+  "sdk version scale is 12px",
+  /font-size:\s*12px/.test(sdkVersion),
 );
 
 /* ── No leaf fork: the leaf redefines none of the header. ── */

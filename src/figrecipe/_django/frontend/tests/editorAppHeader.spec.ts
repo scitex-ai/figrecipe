@@ -30,8 +30,16 @@ for (const server of [false, true]) {
     expect(document.querySelectorAll("header.stx-app-header")).toHaveLength(1);
     expect(document.querySelectorAll("#picker")).toHaveLength(1);
     const picker = document.querySelector("#picker");
+    const header = document.querySelector("header.stx-app-header");
+    const slot = header?.querySelector(".stx-app-header__slot--project-selector");
+    expect(slot).not.toBeNull();
+    expect(picker?.parentElement).toBe(slot);
+    expect(header?.querySelector(".stx-app-header__title")?.textContent)
+      .toBe(server ? "Server FigRecipe" : "FigRecipe");
     render("2.0");
     expect(document.querySelector("#picker")).toBe(picker);
+    expect(document.querySelector("header.stx-app-header")).toBe(header);
+    expect(picker?.parentElement).toBe(slot);
     expect(document.querySelectorAll("header.stx-app-header")).toHaveLength(1);
     expect(document.querySelector(".stx-app-header__version")?.textContent)
       .toBe(server ? "v1.2" : "v2.0");
