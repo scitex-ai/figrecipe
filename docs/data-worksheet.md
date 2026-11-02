@@ -56,3 +56,23 @@ cd src/figrecipe/_django/frontend
 node --experimental-strip-types tests/exportTarget.test.ts
 npx vitest run --config vitest.workflow.config.mts
 ```
+
+Assigned columns show separate localized **X axis**/**Y axis** badges beside
+their unchanged names. Column and cell colors still mark the same assignments;
+header accessible labels include both the name and role. Clearing an assignment
+removes its badge and restores the prior accessible label. Sorting, resizing,
+selection and editing remain owned by the shared SDK table.
+
+Regression checks include `dataTableDom.test.ts`, `dataTableAxisBadges.spec.ts`
+and the local-only `axisBadges.fixture.tsx` with `tests/browser/axis_badges.py`.
+From `src/figrecipe/_django/frontend/` after normal npm installation (and Python
+dev dependencies for Playwright), build the fixture into an owned output directory:
+
+```sh
+./node_modules/.bin/esbuild tests/axisBadges.fixture.tsx --bundle --format=iife --outfile=/tmp/figrecipe-axis-proof/axis-fixture.js
+python ../../../../tests/browser/axis_badges.py --bundle-root /tmp/figrecipe-axis-proof --chromium /path/to/installed/chromium
+```
+
+The harness mounts the actual SDK React table with synthetic fixture rows,
+blocks every network request, and checks badges, localization, sorting, resizing,
+selection, editing and cleanup. It does not open or modify an application project.

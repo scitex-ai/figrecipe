@@ -361,6 +361,28 @@ ok("dataset indices outside the table stamp nothing, not the wrong row", () => {
   }
 });
 
+ok("axis badges are localized, header-only, and cleared without renaming columns", () => {
+  // Arrange
+  const table = fakeTable(2, 1);
+  table.header(0).textContent = "x";
+  table.header(1).textContent = "y";
+  const highlights: ColumnHighlight[] = [
+    {index: 0, name: "x", role: "x", preview: false},
+    {index: 1, name: "y", role: "y", preview: false},
+  ];
+  // Act / Assert
+  applyColumnHighlight(table.nodes, highlights);
+  assert.equal(table.header(0).getAttribute("data-col-axis-label"), "X axis");
+  applyColumnHighlight(table.nodes, highlights, {x: "横軸", y: "縦軸"});
+  assert.deepEqual([table.header(0).textContent, table.header(1).textContent], ["x", "y"]);
+  assert.equal(table.header(0).getAttribute("data-col-axis-label"), "横軸");
+  assert.equal(table.header(1).getAttribute("aria-label"), "y, 縦軸");
+  assert.equal(table.cell(0, 0).getAttribute("data-col-axis-label"), null);
+  applyColumnHighlight(table.nodes, []);
+  assert.equal(table.header(0).getAttribute("data-col-axis-label"), null);
+  assert.equal(table.header(1).getAttribute("aria-label"), null);
+});
+
 // ------------------------------------------------------- module hygiene
 
 const here = dirname(fileURLToPath(import.meta.url));

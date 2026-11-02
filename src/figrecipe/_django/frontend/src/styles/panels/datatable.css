@@ -414,7 +414,7 @@
 /* ── Data pane: table column highlight ───────────────────────────────────
  * The X/Y badges and the table column they name share one highlight. The role
  * rides on data-col-highlight (machine + screen-reader readable) and the header
- * prints the role letter, so the highlight is never signalled by colour alone.
+ * prints a separate localized axis badge, so the highlight is never signalled by colour alone.
  * The classes are stamped by DataTablePane/dataTableDom.ts, not by JSX. */
 
 .data-pane__content [data-col-highlight] {
@@ -452,20 +452,26 @@
   box-shadow: inset 3px 0 0 0 rgba(77, 150, 255, 0.8);
 }
 
-.data-pane__content th[data-col-highlight] > span::after {
-  margin-left: 4px;
+.data-pane__content th[data-col-axis-label]::after {
+  content: attr(data-col-axis-label);
+  display: inline-block;
+  margin-inline-start: 0.5rem;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  line-height: 1.4;
+  vertical-align: middle;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.data-pane__content th[data-col-highlight="x"] > span::after {
-  content: "X";
+.data-pane__content th[data-col-highlight="x"]::after {
   color: var(--accent-primary);
 }
 
-.data-pane__content th[data-col-highlight="y"] > span::after {
-  content: "Y";
+.data-pane__content th[data-col-highlight="y"]::after {
   color: var(--status-success);
 }
 

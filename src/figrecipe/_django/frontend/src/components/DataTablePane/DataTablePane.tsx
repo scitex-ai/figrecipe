@@ -492,7 +492,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
    *  and the module stays free of the i18n layer (accessibility was previously
    *  the CSS `::after` letter alone, which no screen reader reads out). */
   const roleWords = useMemo<ColumnRoleWords>(
-    () => ({ x: gettext("X column"), y: gettext("Y column") }),
+    () => ({ x: gettext("X axis"), y: gettext("Y axis") }),
     [],
   );
 

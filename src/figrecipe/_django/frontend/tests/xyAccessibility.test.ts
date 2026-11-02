@@ -217,8 +217,8 @@ ok("the Data pane passes translated role words into the highlighter", () => {
   // Arrange
   const pane = read("components/DataTablePane/DataTablePane.tsx");
   // Act / Assert: the module stays free of gettext; the pane owns the copy.
-  assert.match(pane, /gettext\("X column"\)/);
-  assert.match(pane, /gettext\("Y column"\)/);
+  assert.match(pane, /gettext\("X axis"\)/);
+  assert.match(pane, /gettext\("Y axis"\)/);
   assert.match(pane, /applyColumnHighlight\(renderedColumnNodes\(root\), highlights, \w+\)/);
 });
 
@@ -242,17 +242,18 @@ ok("the X chooser stays labelled by its own visible legend", () => {
   assert.doesNotMatch(form, /<select[\s\S]{0,200}?aria-label=/);
 });
 
-// ── the visual letter must survive the semantic one ───────────────────────
+// ── the localized badge complements the semantic label ────────────────────
 
-ok("the visible X/Y letter stays a style concern, not an accessibility one", () => {
+ok("the visible role uses localized header metadata and keeps axis colors", () => {
   // Arrange
   const css = readFileSync(
     join(here, "..", "src", "styles", "panels", "datatable.css"),
     "utf8",
   );
-  // Act / Assert: both signals exist — the announced name above, the glyph here.
-  assert.match(css, /th\[data-col-highlight="x"\] > span::after\s*\{\s*content: "X";/);
-  assert.match(css, /th\[data-col-highlight="y"\] > span::after\s*\{\s*content: "Y";/);
+  // Act / Assert: actual browser rendering/interactions have a separate harness.
+  assert.match(css, /th\[data-col-axis-label\]::after\s*\{\s*content: attr\(data-col-axis-label\);/);
+  assert.match(css, /th\[data-col-highlight="x"\]::after\s*\{\s*color: var\(--accent-primary\);/);
+  assert.match(css, /th\[data-col-highlight="y"\]::after\s*\{\s*color: var\(--status-success\);/);
 });
 
 console.log(
