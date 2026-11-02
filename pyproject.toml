@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.44.0"
+version = "0.44.1"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -44,7 +44,7 @@ dependencies = [
     "scipy>=1.7.0",
     "click>=8.0.0",
     "rich>=13.0.0",
-    "scitex-sdk>=0.3.11",
+    "scitex-sdk>=0.3.17",
     "scitex-config>=0.3.0",
     # >=0.60.1: src/figrecipe/_cli/_skills.py imports scitex-dev's shared
     # skills_click_group federation primitive (PS-217). The floor moves in
@@ -56,11 +56,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "scitex-sdk>=0.3.11",
+    "scitex-sdk>=0.3.17",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     # The owning wheel exclusion control imports the actual build backend.
     "hatchling",
+    "packaging>=23.0",
+    "tomli>=2.0; python_version < '3.11'",
     "pytest-xdist>=3.0.0",
     # The actual SDK i18n authoring controls read both shipped catalogs.
     "babel>=2.12",
@@ -96,24 +98,24 @@ seaborn = [
     # `pip install figrecipe` always provides it.
 ]
 scitex = [
-    "scitex-sdk>=0.3.11",
+    "scitex-sdk>=0.3.17",
     "scitex-logging>=0.2.3",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
 ]
 editor = [
-    "scitex-sdk>=0.3.11",
+    "scitex-sdk>=0.3.17",
     "django>=4.2.0",
     "Pillow>=9.0.0",
 ]
 app = [
-    "scitex-sdk>=0.3.11",
+    "scitex-sdk>=0.3.17",
     "django>=4.2.0",
     "Pillow>=9.0.0",
 ]
 desktop = [
-    "scitex-sdk>=0.3.11",
+    "scitex-sdk>=0.3.17",
     "django>=4.2.0",
     "Pillow>=9.0.0",
     "pywebview>=4.0.0",

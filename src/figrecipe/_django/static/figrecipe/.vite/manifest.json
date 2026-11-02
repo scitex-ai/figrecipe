@@ -1,6 +1,6 @@
 {
-  "_mobile.js": {
-    "file": "assets/mobile.js",
+  "_mobile-BhQILOPj.js": {
+    "file": "assets/mobile-BhQILOPj.js",
     "name": "mobile"
   },
   "index.html": {
@@ -9,7 +9,7 @@
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_mobile.js"
+      "_mobile-BhQILOPj.js"
     ],
     "dynamicImports": [
       "src/workspace.ts"
@@ -22,7 +22,7 @@
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_mobile.js"
+      "_mobile-BhQILOPj.js"
     ]
   },
   "style.css": {

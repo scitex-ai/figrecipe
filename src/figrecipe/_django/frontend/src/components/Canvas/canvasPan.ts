@@ -216,9 +216,9 @@ export function unionFigureBox(figures: FigureFootprint[]): ContentBox | null {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-/** Fit a content box max-size and centered: zoom fills the viewport
+/** Fit a content box max-size at the top-left: zoom fills the viewport
  * (NO 1.0 cap — a small figure renders large, clamped only to
- * [MIN_ZOOM, MAX_ZOOM]) and the pan centers the box. Null for degenerate
+ * [MIN_ZOOM, MAX_ZOOM]) with a small, stable inset. Null for degenerate
  * input (the caller keeps its previous view / falls back to page fit). */
 export function fitContentView(
   containerW: number,
@@ -240,9 +240,9 @@ export function fitContentView(
   const availH = containerH - buffer;
   if (!(availW > 0) || !(availH > 0)) return null;
   const zoom = clampZoom(Math.min(availW / box.w, availH / box.h));
-  // Screen position of box point p is pan + zoom*p: center the box by
-  // putting its scaled extent in the middle of the container.
-  const panX = (containerW - zoom * box.w) / 2 - zoom * box.x;
-  const panY = (containerH - zoom * box.h) / 2 - zoom * box.y;
+  // Translate the actual content bounds (including negative coordinates)
+  // to the inset; unused room belongs at the right/bottom, never above it.
+  const panX = buffer / 2 - zoom * box.x;
+  const panY = buffer / 2 - zoom * box.y;
   return sanitizeView({ zoom, panX, panY });
 }

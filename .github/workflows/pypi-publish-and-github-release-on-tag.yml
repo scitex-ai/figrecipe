@@ -104,8 +104,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: scitex-ai/scitex-sdk
-          # Immutable library source genuinely published as scitex-sdk 0.3.9.
-          ref: e403479b1aea1dda10a15a32dec135956c11f4ad  # scitex-sdk 0.3.11 release merge (was 0.3.9-era 7318c5f7; re-resolved 2026-10-24)
+          # Immutable library source genuinely published as scitex-sdk 0.3.17.
+          ref: 08ff4236dc449e26c56d71cdcc4917c1aee6381e  # scitex-sdk 0.3.17 release merge
           path: scitex-sdk
       - uses: actions/setup-node@v4
         with:

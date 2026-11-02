@@ -333,20 +333,16 @@ ok("unionFigureBox spans the placed footprints and skips the unusable", () => {
   );
 });
 
-ok("fitContentView fills max-size and centers the box", () => {
-  // 800x600 figure in a 1440x900 viewport (40px buffer): height binds,
-  // zoom = 860/600 ≈ 1.4333, and the box lands exactly centered.
-  const view = fitContentView(1440, 900, { x: 0, y: 0, w: 800, h: 600 });
-  if (view === null) throw new Error("expected a fitted view");
-  const eps = 1e-9;
-  assert.ok(Math.abs(view.zoom - 860 / 600) < eps);
-  // Centered: left margin equals right margin, top equals bottom.
-  const left = view.panX + view.zoom * 0;
-  const right = 1440 - (view.panX + view.zoom * 800);
-  const top = view.panY + view.zoom * 0;
-  const bottom = 900 - (view.panY + view.zoom * 600);
-  assert.ok(Math.abs(left - right) < eps && left > 0);
-  assert.ok(Math.abs(top - bottom) < eps && top > 0);
+ok("fitContentView maximizes content and anchors its bounds at top-left", () => {
+  for (const [width, height] of [[1440, 900], [390, 600]]) {
+    const box = { x: -120, y: 75, w: 800, h: 600 };
+    const view = fitContentView(width, height, box);
+    assert.ok(view);
+    assert.ok(Math.abs(view.panX + view.zoom * box.x - 20) < 1e-9);
+    assert.ok(Math.abs(view.panY + view.zoom * box.y - 20) < 1e-9);
+    assert.ok(view.panX + view.zoom * (box.x + box.w) <= width - 20 + 1e-9);
+    assert.ok(view.panY + view.zoom * (box.y + box.h) <= height - 20 + 1e-9);
+  }
 });
 
 ok("fitContentView has no 1.0 cap but respects the zoom clamp", () => {

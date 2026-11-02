@@ -1,3 +1,5 @@
+import { NavigationTab } from "./components/NavigationTab";
+import { closeDataTab, selectDataTab } from "./store/editorNavigation";
 /** InnerEditor — React editor content (without shell chrome).
  *
  * This is what gets mounted inside Workspace's appContent slot.
@@ -16,7 +18,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { createPortal } from "react-dom";
 import { CanvasPane } from "./components/CanvasPane/CanvasPane";
 import { DataTablePane } from "./components/DataTablePane/DataTablePane";
 import { FigureViewer } from "./components/FigureViewer/FigureViewer";
@@ -29,6 +30,7 @@ import { Toast } from "./components/common/Toast";
 import { useEmbeddedMessages } from "./hooks/useEmbeddedMessages";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { usePanelResize } from "@scitex/sdk/ui/react/app/usePanelResize.ts";
+import { EditorAppHeader } from "./components/EditorAppHeader";
 import { AlertBanner } from "@scitex/sdk/ui/react/app/alert-banner";
 import { useSessionPersistence } from "./hooks/useSessionPersistence";
 import { initUndoHistory } from "./hooks/useUndoRedo";
@@ -67,6 +69,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
     clearToast,
     placedFigures,
     selectedFigureId,
+    removeFigure,
     selectFigure,
     datatableTabs,
     activeTabId,
@@ -94,11 +97,12 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   const [activeTab, setActiveTab] = useState<AppTab>(() => {
     try {
       const stored = localStorage.getItem("figrecipe-app-tab") as AppTab;
+      if (stored === "plot") return "plot";
       if (stored === "data") return "data";
       if (stored === "canvas") return "canvas";
-      return "plot";
+      return "data";
     } catch {
-      return "plot";
+      return "data";
     }
   });
 
@@ -206,7 +210,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   };
   const dataActive = phone ? phonePane === "data" : activeTab === "data";
   const canvasActive = phone ? phonePane === "figure" : activeTab === "canvas";
-  // Model rows: Figures (canvases) / Panels (this canvas) / Data (tables).
+  // All Figures, Panels and Data remain visible across canvas selection.
   // 1 Figure = 1 Canvas: a canvas is identified by its panels' shared
   // canvas key, listed here in first-appearance order ("Figure N",
   // paper-style; the recipe file shows as tooltip).
@@ -221,17 +225,24 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   const activeCanvasIndex = activeCanvasKey
     ? canvasKeys.indexOf(activeCanvasKey)
     : -1;
-  // This canvas's panels (empty when nothing is selected: the rows then
-  // show the global empty states instead of a half-bound view).
-  const canvasPanels = activeCanvasKey
-    ? placedFigures.filter((f) => canvasOf(f) === activeCanvasKey)
-    : placedFigures;
-  const selectedPanelLabel = selectedFig
-    ? (selectedFig.panelLetter
-      ? interpolate(gettext("Panel %s"), [selectedFig.panelLetter])
-      : (selectedFig.path.split("/").pop() ?? selectedFig.path))
-    : null;
+  const canvasPanels = placedFigures;
   const tableList = Object.values(datatableTabs);
+  // Restore navigation for every placed panel without switching the active
+  // recipe or issuing writes. Reads retain the API session/ACL checks.
+  const panelPaths = [...new Set(placedFigures.map(panel => panel.path))].join("\n");
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      for (const recipe of panelPaths.split("\n").filter(Boolean)) {
+        if (cancelled) return;
+        const known = Object.values(useEditorStore.getState().datatableTabs)
+          .some(table => table.panelPath === recipe);
+        if (!known) await loadDatatable({recipe, activate: false, isCurrent: () => !cancelled});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [panelPaths, loadDatatable]);
+
   const detailsCollapsed = rightPanel.collapsed && !phone;
   // Row groups, Chrome-style: each canvas owns a group color; its panel
   // items carry it, and the active data item carries the selected panel's
@@ -246,8 +257,6 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
   ];
   const groupColor = (index: number) => GROUP_COLORS[index % GROUP_COLORS.length];
   const selectedGroupIndex = activeCanvasIndex >= 0 ? activeCanvasIndex : null;
-  const selectedGroupColor =
-    selectedGroupIndex === null ? undefined : groupColor(selectedGroupIndex);
   // Folded rows (Chrome tab-group style): the scope tab stays, the items
   // hide. Page content is untouched — only the navigator row collapses.
   // Hovering an item highlights its relatives in the other rows (same
@@ -305,50 +314,8 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
 
   return (
     <div className="inner-editor" data-editor-tab={activeTab}>
-      {/* ── App header (figrecipe-owned) — canonical .stx-app-header ─────
-          Structure: title, then the shared project-selector slot, then
-          (optional) app actions. The selector lives HERE (not the tab row)
-          per the 0.22.0 placement contract; the scitex-ui slot CSS
-          (.stx-app-header__slot--project-selector) pins it left-after-title
-          on desktop and full-width on phones. The vestigial React Toolbar's
-          "FigRecipe Editor" title is not in this render tree, so this is the
-          only visible title (no duplication).
-
-          SSoT yield (figrecipe-ssot-header-row-20261017): when the Django
-          template rendered the shared SDK header row above the mount
-          (header.stx-app-header[data-ssot]), that row owns the title/version
-          chrome — rendering this one too would stack two identical titles.
-          Yield it and portal the live picker into the server slot instead, so
-          project switching keeps working with exactly one header. Re-queried
-          every render, so a late-injected partial self-heals on the next
-          state change. Without a server row (raw SPA fallback) the owned
-          header renders exactly as before. */}
-      {(() => {
-        let ssotSlot: Element | null = null;
-        try {
-          ssotSlot = document.querySelector(
-            "header.stx-app-header[data-ssot] .stx-app-header__slot--project-selector",
-          );
-        } catch {
-          ssotSlot = null;
-        }
-        // Single picker element, rendered in exactly one place: portaled into
-        // the server SSoT slot when present, else inside the owned fallback
-        // header. One picker on the page, never two (hub ruling 9/16).
-        const picker = <ProjectScopeSelector />;
-        if (ssotSlot) return createPortal(picker, ssotSlot);
-        return (
-          <header className="stx-app-header">
-            <span className="stx-app-header__title">{gettext("FigRecipe")}</span>
-            {resolvedVersion && (
-              <span className="stx-app-header__version">v{resolvedVersion}</span>
-            )}
-            <div className="stx-app-header__slot--project-selector">
-              {picker}
-            </div>
-          </header>
-        );
-      })()}
+      <EditorAppHeader title={gettext("FigRecipe")} version={resolvedVersion}
+        projectSelector={<ProjectScopeSelector />} />
 
       {/* ── Model rows: Figures / Panels / Data ────────────
           Three stacked rows, top to bottom — not one flat tab row. Each
@@ -396,8 +363,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     (f) => canvasOf(f) === key && f.clewTracked,
                   );
                   return (
-                    <button
+                    <NavigationTab
                       key={key}
+                      onRemove={() => removeFigure(placedFigures.filter(f => canvasOf(f) === key).map(f => f.id))}
+                      removeLabel={interpolate(gettext("Remove Figure %s from composition"), [String(i + 1)])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
@@ -421,7 +390,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                           <i className="fas fa-link" aria-hidden="true" />
                         </span>
                       ) : null}
-                    </button>
+                    </NavigationTab>
                   );
                 })
               )}
@@ -473,8 +442,10 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                   const lit = selected || related;
                   const color = groupColor(gi);
                   return (
-                    <button
+                    <NavigationTab
                       key={f.id}
+                      onRemove={() => removeFigure(f.id)}
+                      removeLabel={interpolate(gettext("Remove %s from composition"), [label])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}${related ? " inner-editor__tabitem--related" : ""}`}
                       style={lit ? ({ borderBottomColor: color } as CSSProperties) : undefined}
@@ -489,7 +460,7 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
                     >
                       <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} />
                       {label}
-                    </button>
+                    </NavigationTab>
                   );
                 })
               )}
@@ -533,26 +504,33 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
               ) : (
                 tableList.map((t) => {
                   const selected = t.id === activeTabId;
-                  const grouped = selected && selectedGroupColor !== undefined;
+                  const dataPanel = placedFigures.find(panel => panel.path === t.panelPath);
+                  const dataGroup = dataPanel ? canvasKeys.indexOf(canvasOf(dataPanel)) : selectedGroupIndex;
+                  const color = dataGroup !== null && dataGroup >= 0 ? groupColor(dataGroup) : undefined;
+                  const grouped = color !== undefined && (t.panelPath === selectedFig?.path || hoveredGroup === dataGroup);
                   return (
-                    <button
+                    <NavigationTab
                       key={t.id}
+                      title={t.sourceRef ?? t.label}
+                      onRemove={() => { closeDataTab(t.id); }}
+                      removalDisabled={t.source === "record"}
+                      removeLabel={interpolate(gettext("Remove %s data tab"), [t.label])}
                       type="button"
                       className={`inner-editor__tabitem${selected ? " inner-editor__tabitem--active" : ""}`}
-                      style={grouped ? ({ borderBottomColor: selectedGroupColor } as CSSProperties) : undefined}
+                      style={grouped ? ({ borderBottomColor: color } as CSSProperties) : undefined}
                       aria-current={selected || undefined}
                       onMouseEnter={() => {
-                        if (grouped && selectedGroupIndex !== null) setHoveredGroup(selectedGroupIndex);
+                        if (dataGroup !== null && dataGroup >= 0) setHoveredGroup(dataGroup);
                       }}
                       onMouseLeave={() => setHoveredGroup(null)}
                       onClick={() => {
-                        useEditorStore.setState({ activeTabId: t.id });
+                        selectDataTab(t.id);
                         selectTab("data");
                       }}
                     >
-                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: selectedGroupColor }} /> : null}
+                      {grouped ? <span className="inner-editor__tabdot" aria-hidden="true" style={{ background: color }} /> : null}
                       {t.label}
-                    </button>
+                    </NavigationTab>
                   );
                 })
               )}
@@ -561,10 +539,13 @@ export function InnerEditor({ embedded = false, appVersion, initialRecipe }: Inn
           <button
             type="button"
             className="inner-editor__tabadd"
-            title={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
-            aria-label={selectedPanelLabel ? gettext("Add data") : gettext("Select a panel first — data belongs to a panel")}
-            disabled={adding || !selectedPanelLabel}
-            onClick={() => selectTab("data")}
+            title={gettext("Import data")}
+            aria-label={gettext("Import data")}
+            disabled={adding}
+            onClick={() => {
+              selectTab("data");
+              bodyRef.current?.querySelector<HTMLInputElement>("[data-figrecipe-import-input]")?.click();
+            }}
           >
             +
           </button>

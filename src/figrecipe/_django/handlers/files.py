@@ -99,6 +99,7 @@ def handle_api_files(request, editor):
             "tree": tree,
             "files": flat_files,
             "working_dir": str(working_dir),
+            "recipe_path": str(editor.recipe_path) if editor and getattr(editor, "recipe_path", None) else None,
             "current_file": (
                 str(editor.recipe_path.name)
                 if editor and getattr(editor, "recipe_path", None)
@@ -176,14 +177,18 @@ def handle_api_switch(request, editor):
     if not full_path.exists():
         return JsonResponse({"error": f"File not found: {file_path}"}, status=404)
 
-    # Bootstrap editor if none exists (first file click)
-    if editor is None:
-        from .._project_access import bind_editor, editor_key
-        from ..services import get_or_create_editor
+    # Each recipe owns its cache entry. Mutating the previous recipe's editor
+    # would leave the old cache key pointing at this different figure.
+    from .._project_access import bind_editor, editor_key
+    from ..services import get_or_create_editor
 
-        session_key = editor_key(request, full_path)
-        editor = get_or_create_editor(session_key, str(full_path))
-        bind_editor(request, editor)
+    previous_dark = bool(getattr(editor, "dark_mode", False))
+    editor = get_or_create_editor(editor_key(request, full_path), str(full_path))
+    if editor.working_dir != working_dir:
+        editor._files_backend = None
+    editor.working_dir = working_dir
+    editor.dark_mode = previous_dark
+    bind_editor(request, editor)
 
     # Sync dark_mode from frontend if provided
     req_dark = data.get("dark_mode")
@@ -215,6 +220,7 @@ def handle_api_switch(request, editor):
                 "color_map": {},
                 "img_size": {"width": size[0], "height": size[1]},
                 "file": file_path,
+                "recipe_path": str(full_path),
                 "working_dir": str(getattr(editor, "working_dir", full_path.parent)),
             }
         )
@@ -242,16 +248,7 @@ def handle_api_new(request, editor):
 
         working_dir, files = _get_working_dir_and_backend(request, editor)
 
-        if editor is None:
-            from .._project_access import bind_editor, editor_key
-            from ..services import EditorState, _editor_cache
-
-            session_key = editor_key(request, f"new_{working_dir}")
-            cached = _editor_cache.get(session_key)
-            editor = cached[0] if cached else EditorState(working_dir=working_dir)
-            bind_editor(request, editor)
-            if not cached:
-                _editor_cache[session_key] = (editor, time.time())
+        previous_dark = bool(getattr(editor, "dark_mode", False))
 
         counter = 1
         while True:
@@ -275,6 +272,15 @@ def handle_api_new(request, editor):
         save(fig, file_path.with_suffix(".png"), validate=False, verbose=False)
         reproduced_fig, _ = reproduce(file_path)
 
+        # A newly created recipe must not replace the previous recipe's
+        # cached record, imports, or overrides.
+        from .._project_access import bind_editor, editor_key
+        from ..services import EditorState, _editor_cache
+
+        editor = EditorState(fig=reproduced_fig, recipe_path=file_path,
+                             working_dir=working_dir, dark_mode=previous_dark)
+        bind_editor(request, editor)
+        _editor_cache[editor_key(request, file_path)] = (editor, time.time())
         editor.fig = reproduced_fig
         editor.recipe_path = file_path
         editor.working_dir = working_dir

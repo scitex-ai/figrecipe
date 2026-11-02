@@ -54,6 +54,12 @@ export interface FileTreeItem {
 }
 
 export interface TabData {
+  /** Stable recipe/source relationship supplied by datatable/data. */
+  elementDataMap?: Record<string, {columns: string[]; rowIndices: number[]}>;
+  panelPath?: string;
+  sourceRef?: string;
+  dataKind?: "linked" | "inline" | "project" | "import";
+  revision?: string | null;
   id: string;
   label: string;
   columns: ColumnDef[];
@@ -96,6 +102,7 @@ export interface HitmapResponse {
 }
 
 export interface FilesResponse {
+  recipe_path?: string | null;
   tree: FileTreeItem[];
   files: string[];
   current_file: string | null;
