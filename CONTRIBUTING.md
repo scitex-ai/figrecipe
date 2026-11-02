@@ -95,3 +95,7 @@ source recorded in the workflow and frontend metadata.
 Frontend React DOM regressions use `tests/*.spec.ts` and run through
 `npm run test:header`. The native frontend gate runs these alongside the
 Node TypeScript controls in `tests/*.test.ts`; both runners must pass.
+
+The web build retains previous hashed chunks for cached entry scripts. Keep
+those files in the served source tree as well as collected static assets;
+development static finders may not fall back to the collected directory.

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Keep one sample-data grid across selection updates and table switches by giving the grid and plot controls distinct React identities; prevent repeated headers and compressed cell coordinates.
+- Retain previous hashed frontend chunks in source builds so cached entry scripts keep working with development static-file serving as well as collected assets.
 
 ## [0.44.1] - 2026-11-02
 
