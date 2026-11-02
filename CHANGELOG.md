@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Use the SDK React AppHeader binding in the editor and the same SDK mount for server-declared rows. Header appearance now comes from the SDK, with one project picker retained in either mode.
 - Keep session-only imported data labelled as imported data, without inventing a project CSV path; preserve exact imported rows on the next read.
-- Keep optional Django export imports behind the documented editor-extra boundary.
+- Keep optional Django export imports behind the documented editor-extra boundary; defer shared chat views until request handling so handler imports do not require a populated Django registry.
 - Require the published SDK 0.3.17 for React headers, selection coverage, and explicit operational project-scope support. The immutable frontend build uses that same released owner source.
 - Declare project support explicitly so hosts retain authorized project choices while refusing unsupported user scope.
 
