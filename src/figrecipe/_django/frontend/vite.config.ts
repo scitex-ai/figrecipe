@@ -46,7 +46,9 @@ export default defineConfig({
   },
   build: {
     outDir: "../static/figrecipe",
-    emptyOutDir: true,
+    // Cached entry scripts may still import a previous hashed chunk.
+    // Retain those tracked assets when rebuilding the current entry points.
+    emptyOutDir: false,
     sourcemap: true,
     manifest: true,
     cssCodeSplit: false,

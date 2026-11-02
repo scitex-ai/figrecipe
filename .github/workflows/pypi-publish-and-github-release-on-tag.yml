@@ -104,8 +104,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: scitex-ai/scitex-sdk
-          # Immutable library source genuinely published as scitex-sdk 0.3.17.
-          ref: 08ff4236dc449e26c56d71cdcc4917c1aee6381e  # scitex-sdk 0.3.17 release merge
+          # Immutable library source genuinely published as scitex-sdk 0.3.18.
+          ref: a649af9c5669050ed26780f25fe05b12d4df94c8  # scitex-sdk 0.3.18 release merge
           path: scitex-sdk
       - uses: actions/setup-node@v4
         with:
@@ -139,6 +139,7 @@ jobs:
           for test_file in tests/*.test.*; do
             node --experimental-strip-types "$test_file"
           done
+          npm run test:header
       - name: Strict TypeScript and production build
         working-directory: figrecipe/src/figrecipe/_django/frontend
         run: npm run build

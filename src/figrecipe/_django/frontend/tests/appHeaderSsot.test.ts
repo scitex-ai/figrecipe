@@ -1,4 +1,4 @@
-/** Template ownership gate. React lifecycle/slot behavior: editorAppHeader.test.ts. */
+/** Template ownership gate. React lifecycle/slot behavior: editorAppHeader.spec.ts. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
