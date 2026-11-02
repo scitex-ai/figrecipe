@@ -417,6 +417,14 @@
  * prints a separate localized axis badge, so the highlight is never signalled by colour alone.
  * The classes are stamped by DataTablePane/dataTableDom.ts, not by JSX. */
 
+/* The host's decorative root accent may resolve to transparent before the app
+ * scope changes its palette. Bind the SDK consumer token here, at the Data
+ * pane, so its sorted header names retain readable semantic foregrounds.
+ * Plot-role badges keep their own X/Y colors below. */
+.data-pane__content {
+  --stx-app-accent: var(--text-primary);
+}
+
 .data-pane__content [data-col-highlight] {
   background: rgba(124, 92, 191, 0.16);
 }

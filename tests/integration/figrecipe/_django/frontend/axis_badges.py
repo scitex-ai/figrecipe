@@ -42,7 +42,7 @@ def main():
             "pageerror", lambda error: result["errors"].append(type(error).__name__)
         )
         page.set_content(
-            "<html><head><style>:root{--accent-primary:#7c5cbf;--status-success:#6ba89a;--text-primary:#222;--workspace-bg-elevated:#eee;--workspace-border-default:#bbb;--workspace-border-subtle:#ddd}body{font-family:sans-serif}#root{height:320px;width:500px}</style><style>"
+            "<html><head><style>:root{--stx-app-accent:transparent;--accent-primary:#7c5cbf;--status-success:#6ba89a;--text-primary:#222;--workspace-bg-elevated:#eee;--workspace-border-default:#bbb;--workspace-border-subtle:#ddd}[data-theme=dark]{--text-primary:#eee;--workspace-bg-elevated:#222}body{font-family:sans-serif}#root{height:320px;width:500px}</style><style>"
             + (root / "axis-fixture.css").read_text()
             + '</style></head><body><div class="data-pane__content"><div id="root"></div></div><script>'
             + (root / "axis-fixture.js").read_text()
@@ -65,6 +65,22 @@ def main():
         page.locator('th[data-col="0"] > span').click()
         assert page.locator('td[data-row="0"][data-col="0"]').inner_text() == "1"
         result["sorting"] = True
+        visible_foregrounds = []
+        for theme in ["light", "dark"]:
+            page.evaluate(
+                "theme => document.documentElement.dataset.theme = theme", theme
+            )
+            for width in [800, 390]:
+                page.set_viewport_size({"width": width, "height": 500})
+                color = page.locator('th[data-col="0"] > span').evaluate(
+                    "n => getComputedStyle(n).color"
+                )
+                assert color not in ["transparent", "rgba(0, 0, 0, 0)"], color
+                visible_foregrounds.append(
+                    {"theme": theme, "width": width, "color": color}
+                )
+        result["sorted_foregrounds"] = visible_foregrounds
+        page.evaluate("document.documentElement.dataset.theme = 'light'")
         handle = page.locator('th[data-col="0"] .stx-app-data-table__resize-handle')
         before = page.locator('th[data-col="0"]').bounding_box()["width"]
         box = handle.bounding_box()
@@ -93,6 +109,19 @@ def main():
             == "横軸"
         )
         result["localized"] = True
+        page.evaluate("axisFixture.longNames()")
+        page.wait_for_function(
+            "document.querySelector('th[data-col=\"0\"] span')?.textContent==='measurement_time_seconds'",
+            timeout=5000,
+        )
+        page.evaluate('axisFixture.apply({x:"横軸",y:"縦軸"})')
+        page.locator('th[data-col="0"] > span').click()
+        long_span = page.locator('th[data-col="0"] > span')
+        assert long_span.text_content() == "measurement_time_seconds"
+        assert (
+            long_span.evaluate("n => getComputedStyle(n).color") != "rgba(0, 0, 0, 0)"
+        )
+        result["long_sorted_name_preserved"] = True
         page.evaluate("axisFixture.clear()")
         assert page.locator("[data-col-axis-label]").count() == 0
         assert page.locator('th[data-col="0"]').get_attribute("aria-label") is None

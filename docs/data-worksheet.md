@@ -59,7 +59,9 @@ npx vitest run --config vitest.workflow.config.mts
 
 Assigned columns show separate localized **X axis**/**Y axis** badges beside
 their unchanged names. Column and cell colors still mark the same assignments;
-header accessible labels include both the name and role. Clearing an assignment
+header accessible labels include both the name and role. Sorted column names
+keep the normal readable foreground in light and dark themes; the plot-role
+badges retain their separate colors. Clearing an assignment
 removes its badge and restores the prior accessible label. Sorting, resizing,
 selection and editing remain owned by the shared SDK table.
 

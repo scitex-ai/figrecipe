@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Keep sorted Data column names readable in light/dark host themes by binding
+  the SDK foreground token inside the Data pane; retain role-badge colors and layout.
+
 - Separate localized X axis/Y axis badges from unchanged table column names,
   preserving role colors, accessible labels and shared SDK table interactions.
 
