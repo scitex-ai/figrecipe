@@ -26,7 +26,7 @@ See [CLA.md](CLA.md) for full details.
 ```bash
 git clone git@github.com:scitex-ai/figrecipe.git
 cd figrecipe
-pip install -e ".[dev]"
+pip install -e ".[all,dev]"
 ```
 
 ## Branch Workflow
@@ -67,3 +67,27 @@ pytest tests/ -x -q
 By contributing, you agree to the terms of the [CLA](CLA.md), which includes
 licensing under AGPL-3.0 (see [LICENSE](LICENSE)) and the dual-licensing
 provisions described therein.
+
+## Frontend owner and builds
+
+The editor requires public `scitex-sdk==0.3.17`. Its Python wheel carries the
+frontend package exposed by `scitex_sdk.get_frontend_package_dir()`. For a local
+frontend build with that installed owner:
+
+```bash
+cd src/figrecipe/_django/frontend
+python configure.py
+npm install
+npm run test:header
+npm run build
+npm run build:lib
+```
+
+`configure.py` validates the SDK package identity and public React bridge, then
+records its local absolute file dependency. Review these local package/lock
+changes before committing: the tracked files retain the portable sibling SDK
+layout used by the release workflow, rather than a contributor's install path.
+The web build reads the repository's root `pyproject.toml` for its version;
+copying only the frontend directory is insufficient. Both web and library
+builds use the same SDK owner. Release CI checks out its immutable released
+source recorded in the workflow and frontend metadata.

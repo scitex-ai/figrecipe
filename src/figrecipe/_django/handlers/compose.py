@@ -218,7 +218,10 @@ def handle_compose_export(request, editor, fmt):
     buf.seek(0)
 
     response = HttpResponse(buf.read(), content_type=mimetype)
-    from django.utils.http import content_disposition_header
+    try:
+        from django.utils.http import content_disposition_header
+    except ImportError as exc:  # pragma: no cover - supplied by the editor extra
+        raise missing_extra(exc) from exc
 
     response["Content-Disposition"] = content_disposition_header(
         True, f"{filename}.{fmt}"

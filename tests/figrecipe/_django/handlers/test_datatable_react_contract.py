@@ -58,7 +58,7 @@ def test_imported_csv_is_what_the_next_data_read_shows(_django_ready):
     from figrecipe._django.handlers.datatable import handle_datatable_import
 
     fig, _ = fr.subplots()
-    editor = EditorState(fig=fig)
+    editor = EditorState(fig=fig, working_dir=None)
     request = _PostRequest({"content": "time,signal\n0,1.5\n1,2.5", "format": "csv"})
     handle_datatable_import(request, editor)
     # Act
@@ -72,4 +72,19 @@ def test_imported_csv_is_what_the_next_data_read_shows(_django_ready):
         "rows": [[0.0, 1.5], [1.0, 2.5]],
         "source": "import",
         "revision": None,
+        "recipe_path": "",
+        "chunks": [{
+            "id": "::import::Imported data",
+            "label": "Imported data",
+            "kind": "import",
+            "panel_path": "",
+            "source_ref": "Imported data",
+            "columns": [
+                {"name": "time", "dtype": "numeric"},
+                {"name": "signal", "dtype": "numeric"},
+            ],
+            "rows": [[0.0, 1.5], [1.0, 2.5]],
+            "source": "import",
+            "revision": None,
+        }],
     }

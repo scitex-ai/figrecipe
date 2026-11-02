@@ -28,10 +28,14 @@ def preview():
 def test_negative_canvas_placement_exports_visible_pixels(preview):
     from PIL import Image
     from figrecipe._django.handlers.compose import _compose_pil
-    result = _compose_pil([preview], False)
-    assert result.size == (24, 24)
-    assert result.getpixel((0, 0)) == (255, 0, 0, 255)
-    assert result.getpixel((11, 9)) == (255, 0, 0, 255)
+    # Arrange
+    figures = [preview]
+    # Act
+    result = _compose_pil(figures, False)
+    # Assert
+    assert (result.size, result.getpixel((0, 0)), result.getpixel((11, 9))) == (
+        (24, 24), (255, 0, 0, 255), (255, 0, 0, 255)
+    )
 
 
 @pytest.mark.parametrize("fmt,signature,mime", [
@@ -44,17 +48,32 @@ def test_export_returns_real_download_with_descriptive_filename(preview, fmt, si
     django.setup()
     from django.test import RequestFactory
     from figrecipe._django.handlers.compose import handle_compose_export
+    # Arrange
     name = "fixture-Figure1-20261102T040506Z"
     request = RequestFactory().post(
         f"/api/compose/export/{fmt}",
         data=json.dumps({"figures": [preview], "filename": name}),
         content_type="application/json",
     )
+    # Act
     response = handle_compose_export(request, None, fmt)
-    assert response.status_code == 200
-    assert response.content.startswith(signature)
-    assert response["Content-Type"] == mime
-    assert response["Content-Disposition"] == f'attachment; filename="{name}.{fmt}"'
-    if fmt == "png":
-        from PIL import Image
-        assert Image.open(io.BytesIO(response.content)).getpixel((0, 0)) == (255, 0, 0)
+    # Assert
+    assert (response.status_code, response.content.startswith(signature),
+            response["Content-Type"], response["Content-Disposition"]) == (
+        200, True, mime, f'attachment; filename="{name}.{fmt}"'
+    )
+
+
+def test_png_download_preserves_visible_pixels(preview):
+    from PIL import Image
+    from django.test import RequestFactory
+    from figrecipe._django.handlers.compose import handle_compose_export
+    # Arrange
+    request = RequestFactory().post(
+        "/api/compose/export/png", data=json.dumps({"figures": [preview]}),
+        content_type="application/json",
+    )
+    # Act
+    response = handle_compose_export(request, None, "png")
+    # Assert
+    assert Image.open(io.BytesIO(response.content)).getpixel((0, 0)) == (255, 0, 0)

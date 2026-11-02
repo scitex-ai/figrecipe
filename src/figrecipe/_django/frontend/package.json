@@ -47,8 +47,8 @@
     "jsdom": "^27.3.0"
   },
   "scitexSdk": {
-    "version": "0.3.16",
-    "commit": "d08b63d41a4e82c102a3a69bcf20f3e16f5b1305",
-    "reason": "Source preview of canonical React AppHeader, capability-aware project selection, and complete row/column cell highlighting; requires this SDK source until these APIs are published."
+    "version": "0.3.17",
+    "commit": "08ff4236dc449e26c56d71cdcc4917c1aee6381e",
+    "reason": "Published canonical React headers, explicit scope capabilities, and complete row/column selection coverage."
   }
 }

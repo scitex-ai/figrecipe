@@ -28,11 +28,16 @@ def table_chunks(editor, names, rows, source, revision):
                     # Reproduced CSV/NPY arguments retain _source_file; inline
                     # arrays deliberately name the YAML, never a guessed CSV.
                     add(str(reference or recipe_name), "linked" if reference else "inline", f"{cid}_{role}")
-    elif source in ("project", "import"):
+    elif source == "project":
         from .._project_table import project_table_path
         path = project_table_path(getattr(editor, "recipe_path", None), getattr(editor, "working_dir", None))
         for name in names:
             add(str(path or "Imported data"), source, name)
+    elif source == "import":
+        # _current_table uses this source only for an in-memory import. A
+        # project CSV would have source="project"; do not invent a disk path.
+        for name in names:
+            add("Imported data", source, name)
 
     chunks = []
     for (reference, kind), columns in groups.items():
