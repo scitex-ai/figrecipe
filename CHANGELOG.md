@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Keep one sample-data grid across selection updates and table switches by giving the grid and plot controls distinct React identities; prevent repeated headers and compressed cell coordinates.
+
 ## [0.44.1] - 2026-11-02
 
 - Track the two missing quickstart diagram PNGs with generator provenance, and check every documentation image link resolves to a jailed regular Git PNG.

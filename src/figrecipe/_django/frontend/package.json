@@ -47,8 +47,8 @@
     "jsdom": "^27.3.0"
   },
   "scitexSdk": {
-    "version": "0.3.17",
-    "commit": "08ff4236dc449e26c56d71cdcc4917c1aee6381e",
-    "reason": "Published canonical React headers, explicit scope capabilities, and complete row/column selection coverage."
+    "version": "0.3.18",
+    "commit": "a649af9c5669050ed26780f25fe05b12d4df94c8",
+    "reason": "Published SDK used by the development host; canonical headers and complete shared spreadsheet selection."
   }
 }

@@ -1360,7 +1360,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           </div>
         )}
         <DataTable
-          key={activeTab?.id ?? "empty"}
+          key={`table:${activeTab?.id ?? "empty"}`}
           data={dataset}
           style={{ flex: 1, height: "auto", minHeight: 0 }}
           readOnly={locked}
@@ -1378,7 +1378,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         )}
         {activeTab && (
           <PlotFromColumns
-            key={activeTab.id}
+            key={`plot:${activeTab.id}`}
             tab={activeTab}
             columnCommand={columnCommand}
             selectionCommand={selectionCommand}

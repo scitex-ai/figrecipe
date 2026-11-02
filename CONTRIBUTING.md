@@ -70,7 +70,7 @@ provisions described therein.
 
 ## Frontend owner and builds
 
-The editor requires public `scitex-sdk==0.3.17`. Its Python wheel carries the
+The editor requires public `scitex-sdk==0.3.18`. Its Python wheel carries the
 frontend package exposed by `scitex_sdk.get_frontend_package_dir()`. For a local
 frontend build with that installed owner:
 
@@ -91,3 +91,7 @@ The web build reads the repository's root `pyproject.toml` for its version;
 copying only the frontend directory is insufficient. Both web and library
 builds use the same SDK owner. Release CI checks out its immutable released
 source recorded in the workflow and frontend metadata.
+
+Frontend React DOM regressions use `tests/*.spec.ts` and run through
+`npm run test:header`. The native frontend gate runs these alongside the
+Node TypeScript controls in `tests/*.test.ts`; both runners must pass.
