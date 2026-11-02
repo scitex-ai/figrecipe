@@ -64,13 +64,13 @@ removes its badge and restores the prior accessible label. Sorting, resizing,
 selection and editing remain owned by the shared SDK table.
 
 Regression checks include `dataTableDom.test.ts`, `dataTableAxisBadges.spec.ts`
-and the local-only `axisBadges.fixture.tsx` with `tests/browser/axis_badges.py`.
+and the local-only `axisBadges.fixture.tsx` with `tests/integration/figrecipe/_django/frontend/axis_badges.py`.
 From `src/figrecipe/_django/frontend/` after normal npm installation (and Python
 dev dependencies for Playwright), build the fixture into an owned output directory:
 
 ```sh
 ./node_modules/.bin/esbuild tests/axisBadges.fixture.tsx --bundle --format=iife --outfile=/tmp/figrecipe-axis-proof/axis-fixture.js
-python ../../../../tests/browser/axis_badges.py --bundle-root /tmp/figrecipe-axis-proof --chromium /path/to/installed/chromium
+python ../../../../tests/integration/figrecipe/_django/frontend/axis_badges.py --bundle-root /tmp/figrecipe-axis-proof --chromium /path/to/installed/chromium
 ```
 
 The harness mounts the actual SDK React table with synthetic fixture rows,
