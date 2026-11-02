@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.44.1] - 2026-11-02
 
+- Track the two missing quickstart diagram PNGs with generator provenance, and check every documentation image link resolves to a jailed regular Git PNG.
+
 - Keep all Figure, Panel and source Data tabs available, with reversible composition removal and keyboard context menus. Recorded Data stays locked until adopted.
 - Preserve YAML inline versus linked CSV/NPY data identities and panel relationships; queued edits remain scoped to their original recipe/tab/session.
 - Keep cached editor records owned by their recipe when creating or switching Figures; repair legacy cache entries that point at another recipe.
