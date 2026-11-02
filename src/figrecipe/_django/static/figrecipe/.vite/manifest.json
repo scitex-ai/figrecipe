@@ -1,6 +1,6 @@
 {
-  "_mobile-DtApO68a.js": {
-    "file": "assets/mobile-DtApO68a.js",
+  "_mobile-DtMqym84.js": {
+    "file": "assets/mobile-DtMqym84.js",
     "name": "mobile"
   },
   "index.html": {
@@ -9,7 +9,7 @@
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_mobile-DtApO68a.js"
+      "_mobile-DtMqym84.js"
     ],
     "dynamicImports": [
       "src/workspace.ts"
@@ -22,7 +22,7 @@
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_mobile-DtApO68a.js"
+      "_mobile-DtMqym84.js"
     ]
   },
   "style.css": {

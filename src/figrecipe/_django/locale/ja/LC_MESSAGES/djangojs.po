@@ -5,11 +5,11 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: figrecipe VERSION\n"
+"Project-Id-Version: figrecipe\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-14 21:24+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-11-02 14:43+0000\n"
+"Last-Translator: SciTeX contributors\n"
 "Language: ja\n"
 "Language-Team: Japanese\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -1796,3 +1796,11 @@ msgstr "図の作成時に記録されたデータは読み取り専用です。
 #: frontend/src/store/useEditorStore.ts
 msgid "Could not load data for one of the placed panels"
 msgstr "配置したパネルの一部のデータを読み込めませんでした。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "X axis"
+msgstr "X軸"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Y axis"
+msgstr "Y軸"
