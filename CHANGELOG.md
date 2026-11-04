@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.2] - 2026-11-04
+
+- Mount the standalone editor header through the existing shared SDK port,
+  keeping one project picker and the host-provided API documentation link.
+- Keep the editor below its header within the available parent height,
+  including hosts that reserve space for their own header.
+- Require SDK 0.3.20 in GUI extras for the shared API action, and SDK 0.3.21
+  for development audits that bind nested Vite output to authored sources.
+  Keep the immutable SDK 0.3.18 build owner and retain prior hashed chunks.
+- Derive both normal frontend and built-library version fallbacks from the
+  Python package version, so the 0.44.2 builds report their actual version.
+
+## [0.44.1] - 2026-11-03
+
 - Keep sorted Data column names readable in light/dark host themes by binding
   the SDK foreground token inside the Data pane; retain role-badge colors and layout.
 
@@ -15,8 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keep one sample-data grid across selection updates and table switches by giving the grid and plot controls distinct React identities; prevent repeated headers and compressed cell coordinates.
 - Retain previous hashed frontend chunks in source builds so cached entry scripts keep working with development static-file serving as well as collected assets.
-
-## [0.44.1] - 2026-11-02
 
 - Track the two missing quickstart diagram PNGs with generator provenance, and check every documentation image link resolves to a jailed regular Git PNG.
 

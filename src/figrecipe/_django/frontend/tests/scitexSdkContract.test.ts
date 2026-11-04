@@ -143,14 +143,29 @@ ok("normal npm packs the SDK owner instead of an external peer-less symlink",()=
  assert.notEqual(entry.link,true);
  assert.match(entry.resolved,/^file:/);
 });
-ok("installed package name/version and frontend/Python floors agree",()=>{
+ok("installed frontend owner and Python runtime floors honor their contracts",()=>{
  const owner=JSON.parse(readFileSync(join(OWNER,"package.json"),"utf8"));
  assert.equal(owner.name,"@scitex/sdk");
  assert.equal(owner.version,pkg.scitexSdk.version);
  const pyproject=readFileSync(join(REPO,"pyproject.toml"),"utf8");
  const floors=[...pyproject.matchAll(/"scitex-sdk(?:\[[^\]]+\])?([^"]*)"/g)].map(m=>m[1]);
  assert.ok(floors.length>=4,"required and GUI/test extras must declare the owner");
- assert.deepEqual([...new Set(floors)],[`>=${pkg.scitexSdk.version}`]);
+ // The tracked frontend remains built against its immutable owner pin. The
+ // separately served canonical header needs SDK20 at GUI runtime; these are
+ // different contracts, and a newer Python minimum does not repin the bundle.
+ const atLeast=(actual:string,minimum:string)=>{
+  assert.match(actual,/^>=\d+\.\d+\.\d+$/);
+  const a=actual.slice(2).split(".").map(Number), b=minimum.split(".").map(Number);
+  for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i];}
+  return true;
+ };
+ for(const floor of floors)assert.ok(atLeast(floor,pkg.scitexSdk.version),`Python SDK floor ${floor} is below the built owner`);
+ for(const extra of ["scitex","editor","app","desktop"]){
+  const block=pyproject.match(new RegExp(String.raw`^${extra} = \[([\s\S]*?)^\]`,"m"))?.[1];
+  assert.ok(block,`missing GUI extra ${extra}`);
+  const floor=block.match(/"scitex-sdk([^"]*)"/)?.[1];
+  assert.ok(floor&&atLeast(floor,"0.3.20"),`${extra} must provide the canonical API header from SDK20`);
+ }
  assert.doesNotMatch(pyproject,/"scitex-(?:app|ui)(?:[>=\[]|" )/);
 });
 ok("import scanning covers actual TS/React/CSS surfaces",()=>{

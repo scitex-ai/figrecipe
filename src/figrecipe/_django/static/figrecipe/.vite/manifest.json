@@ -1,6 +1,6 @@
 {
-  "_mobile-DtMqym84.js": {
-    "file": "assets/mobile-DtMqym84.js",
+  "_mobile-DMu5DK6u.js": {
+    "file": "assets/mobile-DMu5DK6u.js",
     "name": "mobile"
   },
   "index.html": {
@@ -9,7 +9,7 @@
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_mobile-DtMqym84.js"
+      "_mobile-DMu5DK6u.js"
     ],
     "dynamicImports": [
       "src/workspace.ts"
@@ -22,7 +22,7 @@
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_mobile-DtMqym84.js"
+      "_mobile-DMu5DK6u.js"
     ]
   },
   "style.css": {
