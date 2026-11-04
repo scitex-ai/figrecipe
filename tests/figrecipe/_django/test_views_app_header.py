@@ -47,23 +47,19 @@ def _partial_context(**overrides):
 
 
 # ── standalone.html ──────────────────────────────────────────────────────────
-# Operator CCT4601: the standalone shell renders NO server header row. The
-# row the templates used to include stacked as a first title above the
-# React-owned fallback header (which renders whenever no server SSoT row
-# is present) — two "FigRecipe v…" rows. The React-owned row is the single
-# header; the page title (<title>) still carries the leaf label.
+# The shared server port owns the row. The unchanged React editor portals its
+# picker into that row instead of rendering its bundled legacy SDK fallback.
 
 
-def test_standalone_renders_no_server_header_row(_django_ready):
-    # Arrange: zero server rows — the single header is React-owned.
-    # Act
+def test_standalone_renders_one_shared_header_port(_django_ready):
+    # Arrange / Act: render the actual standalone template.
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
-    # Assert
-    assert "data-figrecipe-header" not in html
+    # Assert: one SDK port, never a second React-owned header placeholder.
+    assert html.count('id="figrecipe-app-header"') == 1
 
 
 def test_standalone_renders_no_header_element_server_side(_django_ready):
-    # Arrange: the only <header> comes from the React mount, not the template.
+    # Arrange: the SDK module creates the header inside the server-owned port.
     # Act
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
     # Assert
@@ -71,12 +67,20 @@ def test_standalone_renders_no_header_element_server_side(_django_ready):
 
 
 def test_standalone_links_the_sdk_header_stylesheet(_django_ready):
-    # Arrange: the React-owned row takes its chrome from the SDK, not a leaf fork.
-    # The SDK shell always links its own stylesheets; the leaf partial is gone.
+    # Arrange: the shared row takes its chrome from the SDK, not a leaf fork.
     # Act
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
     # Assert
-    assert "scitex_sdk/ui/css/app/app-header.css" not in html
+    assert "scitex_sdk/ui/css/app/app-header.css" in html
+
+
+def test_standalone_loads_shared_header_before_unchanged_editor(_django_ready):
+    # Arrange / Act: render the executable script sequence.
+    html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
+    # Assert: the public SDK mounts the port before the editor can use its fallback.
+    assert html.index("scitex_sdk/ui/js/app/app-header.js") < html.index(
+        "figrecipe/assets/index.js"
+    )
 
 
 def test_standalone_page_title_carries_the_leaf_label(_django_ready):
@@ -93,7 +97,9 @@ def test_standalone_page_title_carries_the_leaf_label(_django_ready):
 def test_partial_renders_the_ssot_header(_django_ready):
     # Arrange: hub-embedded mount with a declared (possibly root) mount.
     # Act
-    html = _render(_django_ready, "figrecipe/workspace_partial.html", **_partial_context())
+    html = _render(
+        _django_ready, "figrecipe/workspace_partial.html", **_partial_context()
+    )
     # Assert
     assert "data-figrecipe-header" in html
 
@@ -101,7 +107,9 @@ def test_partial_renders_the_ssot_header(_django_ready):
 def test_partial_header_carries_the_leaf_title(_django_ready):
     # Arrange
     # Act
-    html = _render(_django_ready, "figrecipe/workspace_partial.html", **_partial_context())
+    html = _render(
+        _django_ready, "figrecipe/workspace_partial.html", **_partial_context()
+    )
     # Assert
     assert "FigRecipe" in html
 
@@ -109,7 +117,9 @@ def test_partial_header_carries_the_leaf_title(_django_ready):
 def test_partial_header_carries_the_leaf_version(_django_ready):
     # Arrange
     # Act
-    html = _render(_django_ready, "figrecipe/workspace_partial.html", **_partial_context())
+    html = _render(
+        _django_ready, "figrecipe/workspace_partial.html", **_partial_context()
+    )
     # Assert
     assert 'data-app-version="0.36.2"' in html
 
@@ -129,7 +139,9 @@ def test_partial_host_header_suppresses_the_leaf_row(_django_ready):
 def test_partial_still_mounts_the_editor_below_the_header(_django_ready):
     # Arrange: the header is additive — the mount container must survive it.
     # Act
-    html = _render(_django_ready, "figrecipe/workspace_partial.html", **_partial_context())
+    html = _render(
+        _django_ready, "figrecipe/workspace_partial.html", **_partial_context()
+    )
     # Assert
     assert 'id="app-mount"' in html
 
