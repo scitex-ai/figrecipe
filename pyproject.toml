@@ -98,24 +98,24 @@ seaborn = [
     # `pip install figrecipe` always provides it.
 ]
 scitex = [
-    "scitex-sdk>=0.3.18",
+    "scitex-sdk>=0.3.20",
     "scitex-logging>=0.2.3",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
 ]
 editor = [
-    "scitex-sdk>=0.3.18",
+    "scitex-sdk>=0.3.20",
     "django>=4.2.0",
     "Pillow>=9.0.0",
 ]
 app = [
-    "scitex-sdk>=0.3.18",
+    "scitex-sdk>=0.3.20",
     "django>=4.2.0",
     "Pillow>=9.0.0",
 ]
 desktop = [
-    "scitex-sdk>=0.3.18",
+    "scitex-sdk>=0.3.20",
     "django>=4.2.0",
     "Pillow>=9.0.0",
     "pywebview>=4.0.0",
