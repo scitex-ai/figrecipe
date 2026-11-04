@@ -1,33 +1,10 @@
-import { readFileSync } from "fs";
 import { dirname, resolve } from "path";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
+import { FIGRECIPE_VERSION } from "./build-version";
 
 const __here = dirname(fileURLToPath(import.meta.url));
-
-/**
- * Derive figrecipe's version from pyproject.toml (the package source of
- * truth) at BUILD time, baked into the bundle as __FIGRECIPE_VERSION__.
- * Reproducible (no timestamp), works on BOTH the standalone #root path and
- * the Hub #app-mount host path (the host doesn't stamp a version), and is
- * derived rather than hardcoded. A host that wants a different value can
- * still override via the FigrecipeEditor appVersion prop or #root
- * [data-version].
- */
-function deriveFigrecipeVersion(): string {
-  try {
-    const pyproject = resolve(__here, "../../../../pyproject.toml");
-    const text = readFileSync(pyproject, "utf8");
-    const m = text.match(/^version\s*=\s*["']([^"']+)["']/m);
-    if (m) return m[1];
-  } catch {
-    // fall through
-  }
-  return "0.0.0+local";
-}
-
-const FIGRECIPE_VERSION = deriveFigrecipeVersion();
 
 // Resolve canonical SDK exports without source aliases.
 export default defineConfig({
@@ -57,6 +34,8 @@ export default defineConfig({
       // mermaid and graphviz are optional lazy-loaded viewers — not bundled
       external: ["mermaid", "@hpcc-js/wasm-graphviz"],
       output: {
+        // Keep production mappings without duplicating the matching source trees.
+        sourcemapExcludeSources: true,
         entryFileNames: "assets/[name].js",
         // Stable entry URLs use app_static; imported chunks need their own
         // content URL so an unchanged parent never reuses stale chunk bytes.

@@ -52,7 +52,8 @@ def _partial_context(**overrides):
 
 
 def test_standalone_renders_one_shared_header_port(_django_ready):
-    # Arrange / Act: render the actual standalone template.
+    # Arrange: use the actual standalone template.
+    # Act
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
     # Assert: one SDK port, never a second React-owned header placeholder.
     assert html.count('id="figrecipe-app-header"') == 1
@@ -75,7 +76,8 @@ def test_standalone_links_the_sdk_header_stylesheet(_django_ready):
 
 
 def test_standalone_loads_shared_header_before_unchanged_editor(_django_ready):
-    # Arrange / Act: render the executable script sequence.
+    # Arrange: use the executable standalone script sequence.
+    # Act
     html = _render(_django_ready, "figrecipe/standalone.html", **_standalone_context())
     # Assert: the public SDK mounts the port before the editor can use its fallback.
     assert html.index("scitex_sdk/ui/js/app/app-header.js") < html.index(

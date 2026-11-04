@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.44.1"
+version = "0.44.2"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -56,7 +56,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "scitex-sdk>=0.3.18",
+    "scitex-sdk>=0.3.21",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     # The owning wheel exclusion control imports the actual build backend.
@@ -216,6 +216,9 @@ Documentation = "https://figrecipe.readthedocs.io"
 Repository = "https://github.com/ywatanabe1989/figrecipe.git"
 Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
 
+[tool.hatch.build.targets.sdist]
+exclude = ["src/figrecipe/_django/frontend/node_modules/**"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/figrecipe"]
 exclude = [
@@ -224,6 +227,7 @@ exclude = [
     "src/figrecipe/_django/frontend/package*.json",
     "src/figrecipe/_django/frontend/tsconfig*.json",
     "src/figrecipe/_django/frontend/vite.config.ts",
+    "src/figrecipe/_django/frontend/build-version.ts",
     "src/figrecipe/_django/frontend/eslint.config.js",
 ]
 

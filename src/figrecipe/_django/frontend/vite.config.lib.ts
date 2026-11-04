@@ -3,9 +3,11 @@
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 import { defineConfig } from "vite";
+import { FIGRECIPE_VERSION } from "./build-version";
 
 export default defineConfig({
   plugins: [react()],
+  define: { __FIGRECIPE_VERSION__: JSON.stringify(FIGRECIPE_VERSION) },
   resolve: {
     dedupe: ["react", "react-dom"],
   },

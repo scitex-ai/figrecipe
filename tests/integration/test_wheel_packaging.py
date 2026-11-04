@@ -1,8 +1,10 @@
 """Build a real wheel with ignored npm files that are explicitly re-included."""
 
+import tarfile
 import zipfile
 from pathlib import Path
 
+from hatchling.builders.sdist import SdistBuilder
 from hatchling.builders.wheel import WheelBuilder
 
 
@@ -59,3 +61,47 @@ def test_npm_dependency_config_cannot_leak_into_leaf_wheel(tmp_path):
         )
     # Assert
     assert all(contract.values()), contract
+
+
+def test_npm_install_stays_out_of_sdist_while_authored_build_inputs_ship(tmp_path):
+    # Arrange
+    project = Path(__file__).resolve().parents[2]
+    (tmp_path / "pyproject.toml").write_bytes((project / "pyproject.toml").read_bytes())
+    (tmp_path / "README.md").write_text("Owned packaging fixture\n")
+    (tmp_path / "LICENSE").write_text("Owned packaging fixture\n")
+    (tmp_path / ".gitignore").write_text("dist/\n")
+    frontend = tmp_path / "src/figrecipe/_django/frontend"
+    frontend.mkdir(parents=True)
+    (frontend / ".gitignore").write_text("node_modules/\n")
+    payloads = {
+        "src/main.tsx": b"export const authored = true;\n",
+        "build-version.ts": b"export const buildOnlyVersion = true;\n",
+        "package.json": (
+            project / "src/figrecipe/_django/frontend/package.json"
+        ).read_bytes(),
+        "package-lock.json": (
+            project / "src/figrecipe/_django/frontend/package-lock.json"
+        ).read_bytes(),
+        "node_modules/owned-dependency/native.node": b"Owned dependency fixture\n",
+    }
+    for relative, data in payloads.items():
+        path = frontend / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    # Act
+    archive_path = next(
+        SdistBuilder(str(tmp_path)).build(directory=str(tmp_path / "dist"))
+    )
+    with tarfile.open(archive_path) as archive:
+        members = archive.getnames()
+        shipped = {}
+        for relative in payloads:
+            matches = [
+                name for name in members if name.endswith("/frontend/" + relative)
+            ]
+            shipped[relative] = (
+                archive.extractfile(matches[0]).read() if matches else None
+            )
+    expected = dict(payloads, **{"node_modules/owned-dependency/native.node": None})
+    # Assert
+    assert shipped == expected
