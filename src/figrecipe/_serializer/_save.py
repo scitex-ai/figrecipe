@@ -23,7 +23,7 @@ from ._tick_faithfulness import (
     assert_tick_call_faithful,
     assert_ticklabel_calls_faithful,
 )
-from ._utils import _convert_numpy_types, _sanitize_filename
+from ._utils import _convert_numpy_types, _link_source_data, _sanitize_filename
 
 # Sub-panel array args below this size stay inline on save: the inset/embed
 # replay path (_reproducer/_replay_insets.py) doesn't resolve file-reference
@@ -81,6 +81,8 @@ def save_recipe(
     use_symlinks : bool
         If True and record has source_data_dirs (from composition),
         create symlinks to original data files instead of copying.
+        Relative links use the physical output directory even when its path
+        contains an alias. An in-place re-save preserves its own backing files.
 
     Returns
     -------
@@ -278,8 +280,6 @@ def _process_arrays_for_save(
     (``_reproducer/_replay_insets.py``) resolves sub-panel args straight
     from the recipe dict, not through the file-reference resolver.
     """
-    import os
-
     data_dir_created = False
 
     def _process_call_list(
@@ -319,13 +319,7 @@ def _process_arrays_for_save(
                             data_dir_created = True
 
                         target_path = data_dir / source_file.name
-                        # Refresh: drop any stale/broken link left by a prior
-                        # run so the symlink always points at the CURRENT
-                        # source, never a renamed/moved phantom.
-                        if target_path.is_symlink() or target_path.exists():
-                            target_path.unlink()
-                        rel_source = os.path.relpath(source_file, target_path.parent)
-                        os.symlink(rel_source, target_path)
+                        _link_source_data(source_file, target_path)
                         arg["data"] = str(target_path.relative_to(data_dir.parent))
                         record_output(target_path)
                     else:
@@ -390,8 +384,6 @@ def _process_arrays_with_symlinks(
     array turns every save into a multi-minute ``_convert_numpy_types`` +
     ``ruamel.yaml.dump`` walk over a giant nested-list literal.
     """
-    import os
-
     data_dir_created = False
 
     def _process_call_list(call_list, panel_prefix: str, id_prefix: str) -> None:
@@ -427,13 +419,7 @@ def _process_arrays_with_symlinks(
                             f"(call {call_id}). Cannot create a valid data "
                             f"symlink for the composed recipe."
                         )
-                    # Refresh: drop any stale/broken link left by a prior run
-                    # so the symlink always points at the CURRENT source, never
-                    # a renamed/moved phantom.
-                    if target_path.is_symlink() or target_path.exists():
-                        target_path.unlink()
-                    rel_source = os.path.relpath(source_file, target_path.parent)
-                    os.symlink(rel_source, target_path)
+                    _link_source_data(source_file, target_path)
 
                     arg["data"] = str(target_path.relative_to(data_dir.parent))
 

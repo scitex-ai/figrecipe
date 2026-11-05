@@ -325,6 +325,101 @@ class TestSpecificPlotDataSerialization:
         ), "graph data should be stored"
 
 
+class TestRecipeDataLinks:
+    """Saved data references preserve their source through output aliases."""
+
+    @pytest.fixture(autouse=True)
+    def close_figures(self):
+        yield
+        plt.close("all")
+
+    def _source(self, tmp_path, aliased):
+        physical = tmp_path.resolve() / "physical"
+        physical.mkdir()
+        output = physical
+        if aliased:
+            output = tmp_path.resolve() / "aliases" / "deeper" / "entry"
+            output.parent.mkdir(parents=True)
+            output.symlink_to(physical, target_is_directory=True)
+        values = np.linspace(0, 1, 300)
+        fig, ax = fr.subplots()
+        ax.plot(values, values**2, id="samples", label="owned data")
+        fr.save(fig, physical / "source.png", verbose=False)
+        return physical, output
+
+    def _record(self, source, route):
+        from figrecipe._serializer import load_recipe
+
+        if route == "loaded":
+            return load_recipe(source)
+        if route == "composed":
+            fig, _ = fr.compose(
+                {str(source): {"xy_mm": (0, 0), "size_mm": (40, 30)}},
+                canvas_size_mm=(40, 30),
+            )
+            return fig.record
+        fig, ax = fr.subplots()
+        ax.embed(str(source), bounds=[0.1, 0.1, 0.8, 0.8])
+        return fig.record
+
+    @pytest.mark.parametrize("route", ["loaded", "composed", "embedded"])
+    @pytest.mark.parametrize("aliased", [False, True])
+    def test_relative_data_links_replay_through_output_alias(
+        self, tmp_path, route, aliased
+    ):
+        # Arrange
+        from matplotlib.lines import Line2D
+
+        from figrecipe._serializer import save_recipe
+
+        physical, output = self._source(tmp_path, aliased)
+        record = self._record(physical / "source.yaml", route)
+        target = output / f"{route}.yaml"
+        # Act
+        save_recipe(record, target)
+        reproduced, _ = fr.reproduce(target)
+        links = list((output / f"{route}_data").glob("*.csv"))
+        # Assert
+        assert (
+            len(links),
+            all(
+                link.is_symlink()
+                and not link.readlink().is_absolute()
+                and link.resolve() == physical / "source_data" / link.name
+                for link in links
+            ),
+            any(
+                line.get_label() == "owned data"
+                for line in reproduced.fig.findobj(match=Line2D)
+            ),
+        ) == (2, True, True)
+
+    @pytest.mark.parametrize("aliased", [False, True])
+    def test_in_place_resave_preserves_original_data_files(self, tmp_path, aliased):
+        # Arrange
+        from figrecipe._serializer import load_recipe, save_recipe
+
+        physical, output = self._source(tmp_path, aliased)
+        source = physical / "source.yaml"
+        record = load_recipe(source)
+        original = {
+            path: path.read_bytes() for path in (physical / "source_data").glob("*.csv")
+        }
+        # Act
+        save_recipe(record, output / "source.yaml")
+        fr.reproduce(source)
+        # Assert
+        assert (
+            len(original),
+            all(
+                path.is_file()
+                and not path.is_symlink()
+                and path.read_bytes() == content
+                for path, content in original.items()
+            ),
+        ) == (2, True)
+
+
 if __name__ == "__main__":
     # Quick test run
     print("Running data serialization tests...")
