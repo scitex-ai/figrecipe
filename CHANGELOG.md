@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.44.4] - 2026-11-05
 
+- Build relative data links from the physical output directory so loaded,
+  composed and embedded recipes remain readable through symlinked folders.
+- Preserve existing CSV backing files when re-saving a loaded recipe in place.
 - Account for the page origin inside the ruler grid when fitting a figure.
   Keep the complete image at the top-left with rulers visible or hidden.
 - Size the standalone editor root to its parent content frame.
