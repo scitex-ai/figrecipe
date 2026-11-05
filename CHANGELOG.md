@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Capture the live layout engine and subplot margins when saving, so changes
+  through `tight_layout`, `set_layout_engine`, or `subplots_adjust` are replayed
+  with the same geometry and pass the existing reproduction validator.
+- Correct the quickstart's layered ZIP example to use `save_bundle` explicitly.
+
 ## [0.44.2] - 2026-11-04
 
 - Mount the standalone editor header through the existing shared SDK port,
