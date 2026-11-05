@@ -307,6 +307,15 @@ def save_figure(
 
     # Check if using constrained_layout - need different save strategy
     use_constrained = fig.fig.get_constrained_layout()
+    # Delegated Matplotlib layout calls may change the engine or subplot
+    # margins after creation. Replay must use the state that renders THIS save,
+    # rather than the creation-time flag and margins still held by the record.
+    fig.record.constrained_layout = bool(use_constrained)
+    if not use_constrained:
+        fig.record.layout = {
+            name: float(getattr(fig.fig.subplotpars, name))
+            for name in ("left", "right", "bottom", "top", "wspace", "hspace")
+        }
 
     # Output-format flags (used both to pick the save strategy and to crop).
     croppable_formats = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp"}

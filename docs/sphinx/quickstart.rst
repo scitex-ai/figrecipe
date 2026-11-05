@@ -49,7 +49,7 @@ For sharing reproducible figures, use the **ZIP bundle format**:
     ax.set_title("Quadratic Data")
 
     # Save as self-contained ZIP bundle
-    fr.save(fig, "figure.zip")
+    fr.save_bundle(fig, "figure.zip", save_hitmap=True)
 
 .. image:: _static/quickstart_bundle.png
    :width: 400px
@@ -61,12 +61,15 @@ For sharing reproducible figures, use the **ZIP bundle format**:
 ::
 
     figure.zip
-    ├── spec.json         # WHAT to plot (semantic specification)
-    ├── style.json        # HOW it looks (colors, fonts, sizes)
-    ├── data.csv          # Immutable source data
-    └── exports/
-        ├── figure.png
-        └── figure_hitmap.png
+    └── figure/
+        ├── spec.json         # WHAT to plot (semantic specification)
+        ├── style.json        # HOW it looks (colors, fonts, sizes)
+        ├── data.csv          # Source data table
+        ├── recipe.yaml       # Reproducible figure recipe
+        ├── recipe_data/      # Arrays referenced by the recipe
+        └── exports/
+            ├── figure.png
+            └── figure_hitmap.png
 
 **Load and Reproduce from Bundle:**
 
@@ -94,6 +97,10 @@ All three save methods are equivalent for RecordingFigures:
 
 Use whichever style you prefer — they all go through the same pipeline
 with style-based DPI, auto-crop, and recipe generation.
+
+The recipe records the live layout engine and subplot margins at save time.
+Changes made after figure creation with ``tight_layout()``,
+``set_layout_engine()``, or ``subplots_adjust()`` therefore reach reproduction.
 
 .. warning::
 

@@ -221,3 +221,42 @@ def test_no_resize_keeps_creation_figsize_untouched(tmp_path):
     reloaded, _ = fr.reproduce(target)
     # Assert
     assert tuple(reloaded.record.figsize) == (8.0, 6.0)
+
+
+def test_tight_layout_after_creation_preserves_validated_reproduction(tmp_path):
+    # Arrange
+    fig, ax = fr.subplots(1, 1, figsize=(6, 3), constrained_layout=True)
+    ax.plot([0, 1, 2], [0, 1, 4])
+    fig.tight_layout()
+    target = tmp_path / "tight.png"
+    # Act
+    fr.save(fig, target, verbose=False)
+    replay, _ = fr.reproduce(target)
+    # Assert
+    assert replay.record.constrained_layout is False
+
+
+def test_enabling_constrained_layout_after_creation_reaches_saved_recipe(tmp_path):
+    # Arrange
+    fig, ax = fr.subplots(1, 1, figsize=(6, 3), constrained_layout=False)
+    ax.plot([0, 1, 2], [0, 1, 4])
+    fig.set_layout_engine("constrained")
+    target = tmp_path / "constrained.png"
+    # Act
+    fr.save(fig, target, verbose=False)
+    replay, _ = fr.reproduce(target)
+    # Assert
+    assert replay.record.constrained_layout is True
+
+
+def test_subplot_adjustment_after_creation_preserves_validated_reproduction(tmp_path):
+    # Arrange
+    fig, ax = fr.subplots(1, 1, figsize=(6, 3), constrained_layout=False)
+    ax.plot([0, 1, 2], [0, 1, 4])
+    fig.subplots_adjust(left=0.25, right=0.95, bottom=0.2, top=0.85)
+    target = tmp_path / "adjusted.png"
+    # Act
+    fr.save(fig, target, verbose=False)
+    replay, _ = fr.reproduce(target)
+    # Assert
+    assert replay.record.layout["left"] == 0.25
