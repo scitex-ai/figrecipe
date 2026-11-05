@@ -295,13 +295,14 @@ ok("canvasPan has no React / @scitex-ui import", () => {
 ok("the viewport is kept in the session store, not in the canvas component", () => {
   // Arrange / Act / Assert -- the canvas UNMOUNTS on a tab change, so a view
   // that lives only in component state is thrown away on every switch; the
-  // acceptance requires it to survive the session.
+  // acceptance requires it to survive the session. Keyed per canvas (1 Figure
+  // = 1 Canvas) so figure switches restore each one's own size and position.
   const hook = readFileSync(
     join(here, "..", "src", "components", "Canvas", "useZoomPan.ts"),
     "utf8",
   );
-  assert.match(hook, /useEditorStore\.getState\(\)\.canvasView \?\? INITIAL_VIEW/);
-  assert.match(hook, /setCanvasView\(state\)/);
+  assert.match(hook, /canvasViews\[canvasKey\] \?\? INITIAL_VIEW/);
+  assert.match(hook, /setCanvasView\(canvasKey, state\)/);
 });
 
 ok("the auto-fit is remembered in the SESSION store, not in a component ref", () => {
@@ -332,20 +333,16 @@ ok("unionFigureBox spans the placed footprints and skips the unusable", () => {
   );
 });
 
-ok("fitContentView fills max-size and centers the box", () => {
-  // 800x600 figure in a 1440x900 viewport (40px buffer): height binds,
-  // zoom = 860/600 ≈ 1.4333, and the box lands exactly centered.
-  const view = fitContentView(1440, 900, { x: 0, y: 0, w: 800, h: 600 });
-  if (view === null) throw new Error("expected a fitted view");
-  const eps = 1e-9;
-  assert.ok(Math.abs(view.zoom - 860 / 600) < eps);
-  // Centered: left margin equals right margin, top equals bottom.
-  const left = view.panX + view.zoom * 0;
-  const right = 1440 - (view.panX + view.zoom * 800);
-  const top = view.panY + view.zoom * 0;
-  const bottom = 900 - (view.panY + view.zoom * 600);
-  assert.ok(Math.abs(left - right) < eps && left > 0);
-  assert.ok(Math.abs(top - bottom) < eps && top > 0);
+ok("fitContentView maximizes content and anchors its bounds at top-left", () => {
+  for (const [width, height] of [[1440, 900], [390, 600]]) {
+    const box = { x: -120, y: 75, w: 800, h: 600 };
+    const view = fitContentView(width, height, box);
+    assert.ok(view);
+    assert.ok(Math.abs(view.panX + view.zoom * box.x - 20) < 1e-9);
+    assert.ok(Math.abs(view.panY + view.zoom * box.y - 20) < 1e-9);
+    assert.ok(view.panX + view.zoom * (box.x + box.w) <= width - 20 + 1e-9);
+    assert.ok(view.panY + view.zoom * (box.y + box.h) <= height - 20 + 1e-9);
+  }
 });
 
 ok("fitContentView has no 1.0 cap but respects the zoom clamp", () => {
@@ -371,12 +368,14 @@ ok("fitContentView rejects degenerate input instead of NaN", () => {
 ok("the arrival fit targets FIGURE content, falling back to the page", () => {
   // Operator mandate (max-size default): the auto-fit effect and the Fit
   // control fit the union box when figures exist; the page fit is only the
-  // empty-canvas fallback.
+  // empty-canvas fallback. Scoped per canvas (1 Figure = 1 Canvas): the
+  // effect fits this canvas's figures, the control the selected one's.
   const canvas = readFileSync(
     join(here, "..", "src", "components", "Canvas", "Canvas.tsx"),
     "utf8",
   );
-  assert.match(canvas, /unionFigureBox\(placedFigures\)/);
+  assert.match(canvas, /unionFigureBox\(canvasFigures\)/);
+  assert.match(canvas, /unionFigureBox\(figs\)/);
   assert.match(canvas, /if \(box\) zoomToContent\(box\);\s*\n?\s*else zoomToFit\(CANVAS_W, CANVAS_H\)/);
   const hook = readFileSync(
     join(here, "..", "src", "components", "Canvas", "useZoomPan.ts"),
@@ -384,6 +383,23 @@ ok("the arrival fit targets FIGURE content, falling back to the page", () => {
   );
   assert.match(hook, /const zoomToContent = useCallback/);
   assert.match(hook, /fitContentView\(\s*\n?\s*container\.clientWidth/);
+});
+
+ok("a deep link lands on the Figure canvas so the arrival fit can run", () => {
+  // ?recipe= names a figure to WORK on: the arrival effect must select the
+  // canvas tab alongside the loads. Without it the arrival renders the
+  // raster in the Plot viewer while the canvas stays empty ("No figures
+  // yet", measured live 2026-10-22) — the auto-fit effect never runs because
+  // the canvas is inactive, and the figure exists nowhere draggable.
+  const editor = readFileSync(
+    join(here, "..", "src", "InnerEditor.tsx"),
+    "utf8",
+  );
+  const start = editor.indexOf("const hasRecipe");
+  assert.ok(start !== -1, "arrival effect must read the recipe param");
+  const block = editor.slice(start, start + 900);
+  assert.match(block, /loadPreview\(\)/);
+  assert.match(block, /setActiveTab\("canvas"\)/);
 });
 
 console.log("\nAll canvasPan checks passed (" + passed + " assertion-groups).");

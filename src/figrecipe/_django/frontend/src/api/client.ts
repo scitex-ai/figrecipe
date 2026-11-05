@@ -90,8 +90,8 @@ function getRecipeParam(): string {
 }
 
 /** Append recipe= and working_dir= to endpoint URL. */
-export function apiUrl(endpoint: string): string {
-  const recipe = getRecipeParam();
+export function apiUrl(endpoint: string, recipeOverride?: string): string {
+  const recipe = recipeOverride ?? getRecipeParam();
   const sep = endpoint.includes("?") ? "&" : "?";
   let url = `${_base}/${endpoint}`;
   const params: string[] = [];
@@ -104,9 +104,9 @@ export function apiUrl(endpoint: string): string {
   return url;
 }
 
-async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function request<T>(endpoint: string, options?: RequestInit, recipe?: string): Promise<T> {
   const session = _session;
-  const url = apiUrl(endpoint);
+  const url = apiUrl(endpoint, recipe);
   const method = (options?.method || "GET").toUpperCase();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -155,6 +155,7 @@ async function requestBlob(endpoint: string, options?: RequestInit): Promise<Blo
 
 export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint),
+  getForRecipe: <T>(endpoint: string, recipe: string) => request<T>(endpoint, undefined, recipe),
 
   post: <T>(endpoint: string, data?: unknown) =>
     request<T>(endpoint, {

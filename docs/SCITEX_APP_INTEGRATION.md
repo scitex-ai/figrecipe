@@ -1,9 +1,9 @@
 # FigRecipe App integration
 
 FigRecipe owns its Django views, URLconf, workspace content and React editor.
-The coordinated candidate consumes `scitex-sdk>=0.3.0`, which physically owns
-`scitex_sdk.app` and `scitex_sdk.ui`. The SDK release and this leaf migration are
-unpublished; matching version strings alone do not identify reviewed artifacts.
+The GUI extra declares its minimum SDK version in `pyproject.toml`. The SDK
+owns `scitex_sdk.app` and `scitex_sdk.ui`; matching version strings alone do not
+identify reviewed artifacts.
 
 ## Install and mount
 
@@ -24,6 +24,11 @@ INSTALLED_APPS += [
 from scitex_sdk.urls import mount_urlpatterns
 urlpatterns += mount_urlpatterns("apps/figrecipe/", "figrecipe._django.urls")
 ```
+
+Hosts that consume the SDK plugin companion contract read the literal
+`INSTALLED_APPS_ENTRIES` tuple from `figrecipe._django`. It declares both the
+editor and chat AppConfigs, so generic discovery does not require a Hub-specific
+FigRecipe allowlist. Manual Django hosts still install both entries above.
 
 The second leaf-owned registration discovers shared chat models from
 `scitex_sdk.app._chat` under the existing `scitex_app` label. A host that already

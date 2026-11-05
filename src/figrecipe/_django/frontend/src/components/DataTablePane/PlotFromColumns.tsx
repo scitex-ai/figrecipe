@@ -123,7 +123,7 @@ export function PlotFromColumns({
       await refreshAfterMutation();
       loadDatatable();
       showEditorPane("figure");
-      showToast(interpolate(gettext("Plotted %s"), [request.columns.join(", ")]), "success");
+      showToast(interpolate(gettext("Plotted %s — see it on the Panels tab"), [request.columns.join(", ")]), "success");
     } catch (e) {
       showToast(interpolate(gettext("Plot failed: %s"), [e]), "error");
     } finally {
@@ -141,6 +141,9 @@ export function PlotFromColumns({
         void plot();
       }}
     >
+      <p className="plot-from-columns__source">
+        {interpolate(gettext("Draws the Panels plot from %s"), [tab.label])}
+      </p>
       <p className="plot-from-columns__kind">
         {kind ? (
           <>

@@ -7,7 +7,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.37.0] - 2026-10-19
+## [0.44.3] - 2026-11-05
+
+- Build MCP autodoc with the actual FastMCP dependency supplied by the docs extra.
+- Require the Git-aware logging auditor in development environments so ignored
+  npm dependencies remain outside authored-source checks after frontend builds.
+
+- Capture the live layout engine and subplot margins when saving, so changes
+  through `tight_layout`, `set_layout_engine`, or `subplots_adjust` are replayed
+  with the same geometry and pass the existing reproduction validator.
+- Correct the quickstart's layered ZIP example to use `save_bundle` explicitly.
+
+## [0.44.2] - 2026-11-04
+
+- Mount the standalone editor header through the existing shared SDK port,
+  keeping one project picker and the host-provided API documentation link.
+- Keep the editor below its header within the available parent height,
+  including hosts that reserve space for their own header.
+- Require SDK 0.3.20 in GUI extras for the shared API action, and SDK 0.3.21
+  for development audits that bind nested Vite output to authored sources.
+  Keep the immutable SDK 0.3.18 build owner and retain prior hashed chunks.
+- Derive both normal frontend and built-library version fallbacks from the
+  Python package version, so the 0.44.2 builds report their actual version.
+
+## [0.44.1] - 2026-11-03
+
+- Keep sorted Data column names readable in light/dark host themes by binding
+  the SDK foreground token inside the Data pane; retain role-badge colors and layout.
+
+- Separate localized X axis/Y axis badges from unchanged table column names,
+  preserving role colors, accessible labels and shared SDK table interactions.
+
+- Keep one sample-data grid across selection updates and table switches by giving the grid and plot controls distinct React identities; prevent repeated headers and compressed cell coordinates.
+- Retain previous hashed frontend chunks in source builds so cached entry scripts keep working with development static-file serving as well as collected assets.
+
+- Track the two missing quickstart diagram PNGs with generator provenance, and check every documentation image link resolves to a jailed regular Git PNG.
+
+- Keep all Figure, Panel and source Data tabs available, with reversible composition removal and keyboard context menus. Recorded Data stays locked until adopted.
+- Preserve YAML inline versus linked CSV/NPY data identities and panel relationships; queued edits remain scoped to their original recipe/tab/session.
+- Keep cached editor records owned by their recipe when creating or switching Figures; repair legacy cache entries that point at another recipe.
+- Fit content at the top-left. Export only the selected Figure with a project/Figure/UTC filename, preserving panels placed at negative coordinates.
+
+- Use the SDK React AppHeader binding in the editor and the same SDK mount for server-declared rows. Header appearance now comes from the SDK, with one project picker retained in either mode.
+- Keep session-only imported data labelled as imported data, without inventing a project CSV path; preserve exact imported rows on the next read.
+- Keep optional Django export imports behind the documented editor-extra boundary; defer shared chat views until request handling so handler imports do not require a populated Django registry.
+- Require the published SDK 0.3.17 for React headers, selection coverage, and explicit operational project-scope support. The immutable frontend build uses that same released owner source.
+- Declare project support explicitly so hosts retain authorized project choices while refusing unsupported user scope.
+
+## [0.44.0] - 2026-10-24
+
+- The canvas remembers size and position per figure: switching figures
+  restores each one's zoom + pan exactly; a never-visited canvas still
+  auto-fits on arrival.
+
+## [0.43.0] - 2026-10-24
+
+- Provenance chip on locked tables: the lock prompt names the recording
+  recipe and call ids (language-neutral tokens, zero new backend/copy).
+- Details empty state names the style door ("style, arrange, and display
+  live under the tabs below"; JA translated).
+- Clew-tracked indicator: recipes saved under an active clew session carry
+  figure.clew_tracked (one-way stamp), the preview serves it, and the
+  Figures row marks tracked figures (best-effort; clew absent in this env).
+
+## [0.42.0] - 2026-10-24
+
+- Backend coherence for the Figure -> Panels -> Data model: UI plots now
+  persist to the recipe (YAML gains the call, arrays externalize to per-call
+  CSVs, the adjacent PNG refreshes), so replay reproduces what the canvas
+  shows; param tweaks refresh the PNG too.
+- GET datatable/data serves element_data_map (element -> table columns +
+  row indices, single-row only when provable, unmapped elements omitted).
+- Highlight both directions, highlight-only: badged columns emphasize their
+  canvas elements (no selection steal); selecting an element highlights its
+  table rows (value-matched, sort-proof).
+
+## [0.41.0] - 2026-10-24
+
+- Working tables dropdown in the Data pane (the toggle used to open nothing): open tables with per-table Delete (closes tab + linked figure), Escape/outside-click to close.
+- Entry options explain themselves: one-line sublabels under Import CSV / Paste data / Load sample / Load from project (JA translated).
+- Row + buttons hug the last item instead of the far right edge.
+- Details-pane Go-to-Data door removed per operator checklist; the gate test now pins the rows Tables tab as the one canonical way in.
+- Token gate fix: group colors moved from a --grp custom property to inline styles (no silent fallbacks).
+
+## [0.40.0] - 2026-10-24
+
+Model rows v2 (operator GUI checklist, all verified live + gated):
+
+- 1 Figure = 1 Canvas: the Figure page renders only the selected
+  figure's panels; selecting a figure switches to its canvas.
+  Panel letters restart per canvas; remove keeps selection on the
+  same canvas. Undo, viewport, export and the OBJECTS tree stay
+  global by design.
+- Rows list canvases as "Figure 1, 2, ..." (paper-style, tooltip names
+  the recipe file); Panels lists the active canvas's panels; fold
+  cascades downward (upper rows include the ones beneath).
+- Group colors replace the "Panels/Data for X" text: each figure owns
+  a color, its panel items carry it, the active data item carries the
+  selected panel's color; hovering an item highlights its relatives.
+- Per-row + button: new figure, new panel on the selected canvas
+  (needs a selected figure), add data (needs a selected panel).
+- Underscore tab styling throughout, no pill badges.
+
+## [0.39.1] - 2026-10-24
+
+- Release pipeline SDK pin re-resolved to the genuine 0.3.11 release
+  merge e403479 (was a 0.3.9-era commit hash carried forward without
+  re-resolving, which the pipeline's source/version assertion
+  refused). No dependency change: the tree already built and tested
+  against SDK 0.3.11.
+
+## [0.39.0] - 2026-10-24
+
+- Model rows v1: Figures / Panels / Data stacked navigator with
+  entity jump buttons (superseded by v2 above).
+- Test isolation fix: presets module imported at top so a JA
+  override fixture cannot bake env into the import-time snapshot.
+- i18n catalog backfill + dead-entry cleanup; tree empty-state
+  Data door restored (pre-push gate).
+
+### Added (operator UI batch 2026-10-23, branch feature/sac-figrecipe-23c386cd)
+
+- Plot tab renamed Panel (mental model Figure→Panels→Plots→Data); pane id
+  and storage keys kept.
+- Empty Panel is guidance-only ("No figures yet" + Go to Data); example
+  block and template grid removed, all empty surfaces point at Data.
+- Data tab is table-first with direct cell input; figure-recorded
+  (incl. clew-provenance) tables are read-only until explicit Edit-table
+  adoption; tab strip is the SDK shared FileTabs.
+- Figure tab: Figure/Axes Align are SDK SelectorNavs; Rulers toggle
+  collapses tracks; Fit/zoom stand down until canvas registers controls.
+- Active app-tab state in the SDK CTA token (`--color-cta`).
+
+## [0.38.0] - 2026-10-23
+
+Operator UI batch (branch feature/sac-figrecipe-23c386cd):
 
 Datatable revision safety + error-state retry, SSoT header adoption
 (PR #466-#475):

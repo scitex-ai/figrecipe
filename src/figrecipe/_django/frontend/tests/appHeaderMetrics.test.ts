@@ -1,30 +1,59 @@
-/** App-header metrics gate (operator mandate xch_20261016T232922Z).
+/** App-header metrics gate (SSoT edition).
  *
- * Header row too small: raise to Writer title-row scale with larger
- * app-name/version/selector text, unified per the SDK header mandate.
- * Values (all measured from Writer/SDK sources, cited per check):
- * - row min-height 44px (fits the 36px SDK trigger + padding-block),
- *   padding 4px 12px, min-height (never fixed height) per SDK mandate;
- * - app name 15px (writer toolbar logo), version 13px (writer file label);
- * - selector trigger: NO leaf override (SDK 36px / 0.85rem, verified in
- *   scitex-sdk ui/css/app/project-selector.css, identical everywhere);
- * - actions: order 2, no margin-left:auto (SDK mandate pair — the slot's
- *   margin-right:auto does the pushing).
+ * Supersedes the Writer-scale leaf gate from #460 (operator mandate
+ * xch_20261016T232922Z): the header is OWNED BY THE SDK SSoT since the
+ * [infra/fig-header] migration — scitex-ui all.css (app-header.css) renders
+ * .stx-app-header, and the leaf must not redefine any of it (see the banner
+ * at the top of src/styles/layout.css). Asserting leaf-side 44px/15px/13px
+ * rules therefore collided with the shipped architecture and failed the
+ * v0.44.0 release (run 40140835338, "Run the native frontend controls",
+ * 5 checks FAILED) on code that was otherwise green.
  *
- * Source-conformance gate (Node, no framework), same pattern as
- * appHeaderPlacement.test.ts.
+ * Current operator direction (apps-lead 2026-11-01, cross-app header
+ * consistency 2026-10-23) keeps the SSoT: this gate now pins the SSoT
+ * contract instead of a leaf fork —
+ * - the SDK (pinned owner, resolved the same way the contract test
+ *   resolves it) provides the row: min-height 40px, padding-block 4px
+ *   with 12px inline base, actions slot order 2;
+ * - the leaf carries NO header geometry/type override: no height,
+ *   min-height, padding, font-size, or order on .stx-app-header or its
+ *   __title/__version/__actions elements (selector-trigger pin already
+ *   covered: SDK-owned trigger dimensions, identical everywhere).
+ *
+ * A hollow header (SDK drops the rule) or a reintroduced leaf fork both
+ * fail loudly here. Writer-scale (44px/15px/13px) can only return via an
+ * SDK change + pin bump — never a leaf override.
  *
  *   node --experimental-strip-types \
  *     src/figrecipe/_django/frontend/tests/appHeaderMetrics.test.ts
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SRC = join(here, "..", "src");
 const layout = readFileSync(join(SRC, "styles/layout.css"), "utf8");
+
+/** Resolve the installed SDK owner the same way npm lays it out. */
+function sdkDir(): string {
+  const direct = join(here, "..", "node_modules", "@scitex", "sdk");
+  if (existsSync(join(direct, "package.json"))) return direct;
+  throw new Error("SDK owner not installed under node_modules/@scitex/sdk");
+}
+
+const sdkCssPath = join(
+  sdkDir(),
+  "ui",
+  "static",
+  "scitex_sdk",
+  "ui",
+  "css",
+  "app",
+  "app-header.css",
+);
+const sdkHeader = readFileSync(sdkCssPath, "utf8");
 
 let failures = 0;
 function check(name: string, cond: boolean) {
@@ -36,39 +65,59 @@ function check(name: string, cond: boolean) {
 }
 
 /** First top-level rule body for a selector (desktop base, not media). */
-function rule(selector: string): string {
-  const m = layout.match(
+function rule(css: string, selector: string): string {
+  const m = css.match(
     new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*{([^}]*)}`),
   );
   return m ? m[1] : "";
 }
 
-const header = rule(".stx-app-header");
-const title = rule(".stx-app-header__title");
-const version = rule(".stx-app-header__version");
-const actions = rule(".stx-app-header__actions");
+console.log("appHeaderMetrics (SSoT):");
+
+/* ── SSoT delivery: the SDK provides the header row contract. ── */
+const sdkRow = rule(sdkHeader, ".stx-app-header");
+check("sdk row min-height is 40px", /min-height:\s*40px/.test(sdkRow));
+check("sdk row padding-block is 4px", /padding-block:\s*4px/.test(sdkRow));
+check(
+  "sdk row inline padding is 12px based",
+  /padding-inline:\s*calc\(12px/.test(sdkRow),
+);
+check(
+  "sdk row has no fixed height (min-height discipline)",
+  !/(?<![a-z-])height:\s*\d+px/.test(sdkRow),
+);
+const sdkActions = rule(sdkHeader, ".stx-app-header__actions");
+check("sdk actions order is 2", /order:\s*2/.test(sdkActions));
+const sdkTitle = rule(sdkHeader, ".stx-app-header__title");
+check("sdk title scale is 14px", /font-size:\s*14px/.test(sdkTitle));
+const sdkVersion = rule(sdkHeader, ".stx-app-header__version");
+check(
+  "sdk version scale is 12px",
+  /font-size:\s*12px/.test(sdkVersion),
+);
+
+/* ── No leaf fork: the leaf redefines none of the header. ── */
+for (const selector of [
+  ".stx-app-header",
+  ".stx-app-header__title",
+  ".stx-app-header__version",
+  ".stx-app-header__actions",
+]) {
+  const body = rule(layout, selector);
+  check(
+    `leaf has no ${selector} geometry override`,
+    !/(?<![a-z-])(min-height|height|padding|margin|order)\s*:/.test(body),
+  );
+  check(
+    `leaf has no ${selector} type override`,
+    !/font-size\s*:/.test(body),
+  );
+}
+/* Selector trigger: identical everywhere — no leaf override remains. */
 const trigger = rule(
+  layout,
   ".project-scope-selector .stx-app-project-selector__trigger",
 );
-
-console.log("appHeaderMetrics:");
-
-// Row geometry: Writer-scale breathing room, SDK min-height discipline.
-check("row min-height is 44px", /min-height:\s*44px/.test(header));
-check(
-  "row has no fixed height (SDK mandate: min-height, not height)",
-  !/(?<![a-z-])height:\s*\d+px/.test(header),
-);
-check("row padding is 4px 12px", /padding:\s*4px 12px/.test(header));
-
-// Type scale: Writer toolbar metrics, not the old cramped ones.
-check("app name is 15px (writer logo scale)", /font-size:\s*15px/.test(title));
-check(
-  "version is 13px (writer file-label scale)",
-  /font-size:\s*13px/.test(version),
-);
-
-// Selector trigger: identical everywhere — no leaf override remains.
 check(
   "trigger carries no leaf height override",
   !/height:\s*\d+px/.test(trigger),
@@ -76,13 +125,6 @@ check(
 check(
   "trigger carries no leaf font-size override",
   !/font-size:/.test(trigger),
-);
-
-// Actions: SDK pair rule — order 2, pushing left to the slot.
-check("actions order is 2", /order:\s*2/.test(actions));
-check(
-  "actions have no margin-left:auto",
-  !/margin-left:\s*auto/.test(actions),
 );
 
 if (failures > 0) {

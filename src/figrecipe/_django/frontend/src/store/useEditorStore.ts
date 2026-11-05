@@ -110,6 +110,10 @@ interface EditorState {
   // ── Sync: Element ↔ Data ────────────────────────────────
   elementDataMap: Record<string, ElementDataLink>;
   highlightedDataRows: number[];
+  /** Table columns currently carrying X/Y plot badges (mirrored from the
+   *  Data pane) -- the canvas emphasizes elements drawn from them. */
+  badgedColumns: string[];
+  setBadgedColumns: (columns: string[]) => void;
 
   // ── Sync: Calls & Labels (moved from Properties local state) ──
   calls: Record<string, CallRecord[]>;
@@ -127,10 +131,12 @@ interface EditorState {
 
   // ── Zoom / Debug / Rulers / Toast ──────────────────────
   zoomControls: ZoomControls | null;
-  /** Last canvas viewport (zoom/pan) — kept here so a tab change, which
-   *  unmounts the canvas, restores the view the user was working in. */
-  canvasView: CanvasView | null;
-  setCanvasView: (view: CanvasView) => void;
+  /** Last canvas viewport (zoom/pan) per figure canvas — kept here so tab
+   *  changes (which unmount the canvas) and figure switches restore the view
+   *  the user was working in. Keyed by canvas (1 Figure = 1 Canvas); a canvas
+   *  with no entry yet is auto-fitted on arrival instead. */
+  canvasViews: Record<string, CanvasView>;
+  setCanvasView: (canvasKey: string, view: CanvasView) => void;
   /** Which figure set the view was last AUTO-FITTED for. Session-scoped on
    *  purpose: the canvas unmounts on every tab switch, so a component ref cannot
    *  remember "already fitted" — it reset and the remount refit threw the
@@ -150,11 +156,11 @@ interface EditorState {
   /** @param options.isCurrent — apply the server's table only when this still
    *  returns true after the read (the Data pane uses it to ignore a response a
    *  newer edit has overtaken). */
-  loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
+  loadDatatable: (options?: { isCurrent?: () => boolean; recipe?: string; activate?: boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
-  addFigure: (path: string) => Promise<void>;
-  removeFigure: (id: string) => void;
+  addFigure: (path: string, canvasKey?: string) => Promise<void>;
+  removeFigure: (id: string | string[]) => void;
   selectFigure: (id: string | null) => void;
   moveFigure: (id: string, x: number, y: number) => void;
   alignFigures: (
@@ -244,6 +250,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   datatableRevision: null,
   elementDataMap: {},
   highlightedDataRows: [],
+  badgedColumns: [],
+  setBadgedColumns: (columns) => set({ badgedColumns: columns }),
   calls: {},
   labels: {},
   statBrackets: {},
@@ -257,7 +265,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   snapEnabled: true,
   activeSnapGuides: [],
   zoomControls: null,
-  canvasView: null,
+  canvasViews: {},
   canvasFitKey: null,
   showHitmap: false,
   showRulers: true,
@@ -357,16 +365,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const recipeParam =
           new URLSearchParams(window.location.search).get("recipe") || "";
         const recipePath =
-          currentFile ?? recipeParam.split("/").pop() ?? "preview";
+          recipeParam || currentFile || "preview";
         const fig: PlacedFigure = {
           id: newId(),
           path: recipePath,
+          canvasKey: recipePath,
           x: 0,
           y: 0,
           previewImage: data.image,
           bboxes: data.bboxes,
           imgSize: data.img_size,
           panelLetter: "A",
+          clewTracked: data.clew_tracked ?? false,
         };
         set({ placedFigures: [fig], selectedFigureId: fig.id });
       } else if (selectedFigureId) {
@@ -378,6 +388,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                   previewImage: data.image,
                   bboxes: data.bboxes,
                   imgSize: data.img_size,
+                  clewTracked: data.clew_tracked ?? f.clewTracked ?? false,
                 }
               : f,
           ),
@@ -420,7 +431,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       rememberLastProject(workingDir);
       set({
         files: data.tree,
-        currentFile: data.current_file,
+        currentFile: data.recipe_path ?? data.current_file,
         workingDir,
       });
     } catch (e) {
@@ -438,11 +449,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   loadDatatable: async (options?) => {
+    const requestRecipe = options?.recipe ?? get().currentFile ?? undefined;
     set({ datatableLoadError: null });
     try {
-      const data = await api.get<{
+      const read = options?.recipe
+        ? <T>(endpoint: string) => api.getForRecipe<T>(endpoint, options.recipe!)
+        : api.get;
+      const data = await read<{
+        recipe_path?: string;
+        chunks?: {id: string; label: string; kind: TabData["dataKind"]; panel_path: string; source_ref: string; columns: ColumnDef[]; rows: (string | number)[][]; source: TabData["source"]; revision?: string | null}[];
         columns: ColumnDef[];
         rows: (string | number)[][];
+        source?: string | null;
         revision?: string | null;
         element_data_map?: Record<
           string,
@@ -459,7 +477,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         label: gettext("Data"),
         columns: data.columns ?? [],
         rows: data.rows ?? [],
+        source:
+          data.source === "project" ||
+          data.source === "import" ||
+          data.source === "record"
+            ? data.source
+            : null,
       };
+      const chunks: TabData[] = data.chunks?.map(chunk => ({
+        id: chunk.id, label: chunk.label, columns: chunk.columns, rows: chunk.rows,
+        source: chunk.source, panelPath: chunk.panel_path, sourceRef: chunk.source_ref,
+        dataKind: chunk.kind, revision: chunk.revision,
+      })) ?? [];
+      const incoming = chunks.length ? chunks : tab.columns.length ? [tab] : [];
+      const panelPath = data.recipe_path || chunks[0]?.panelPath || requestRecipe;
+      const retained = Object.fromEntries(Object.entries(get().datatableTabs)
+        .filter(([, existing]) => existing.panelPath
+          ? existing.panelPath !== panelPath : options?.activate === false));
+      const tables = { ...retained, ...Object.fromEntries(incoming.map(table => [table.id, table])) };
+      const active = incoming.find(table => table.id === get().activeTabId) ?? incoming[0];
       // Build element-data mapping if provided by backend
       const elementDataMap: Record<
         string,
@@ -473,14 +509,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           };
         }
       }
+      for (const table of incoming) table.elementDataMap = elementDataMap;
+      if (options?.activate === false) {
+        set({datatableTabs: tables});
+        return;
+      }
       set({
-        datatableTabs: { main: tab },
-        activeTabId: "main",
+        datatableTabs: tables,
+        activeTabId: active?.id ?? null,
         elementDataMap,
         datatableRevision:
           typeof data.revision === "string" ? data.revision : null,
       });
     } catch (e) {
+      if (e instanceof ApiSessionExpired) return;
+      if (options?.activate === false) {
+        get().showToast(gettext("Could not load data for one of the placed panels"), "error");
+        return;
+      }
       console.warn("[Editor] No datatable data available:", e);
       // Fail loud, not blank: the Data pane renders this with a retry
       // affordance. The technical detail stays in the console above; the
@@ -576,7 +622,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
   toggleHitmap: () => set((s) => ({ showHitmap: !s.showHitmap })),
-  setCanvasView: (view) => set({ canvasView: view }),
+  setCanvasView: (canvasKey, view) =>
+    set((s) => ({ canvasViews: { ...s.canvasViews, [canvasKey]: view } })),
   setCanvasFitKey: (key) => set({ canvasFitKey: key }),
   toggleSnap: () => set((s) => ({ snapEnabled: !s.snapEnabled })),
   toggleRulers: () => set((s) => ({ showRulers: !s.showRulers })),

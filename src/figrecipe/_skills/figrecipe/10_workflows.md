@@ -69,3 +69,10 @@ data = fr.extract_data("plot.png")
 - [cropping.md](cropping.md) — Figure cropping
 - [styles.md](styles.md) — Style presets
 - [diagram.md](diagram.md) — Diagrams (Mermaid, Graphviz)
+
+### Table column names and plot roles
+
+In the editor Data page, the column name stays unchanged. A separate localized
+**X axis** or **Y axis** badge identifies its assigned plot role; matching colors
+continue down the column. Clearing the assignment removes the badge. The shared
+SDK still owns sorting, resizing, cell selection and editing.

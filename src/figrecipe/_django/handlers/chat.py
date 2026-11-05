@@ -18,10 +18,23 @@ from scitex_sdk.app import chat as _chat
 
 from ..._utils._optional import missing_extra
 
-_raw_chat_stream = _chat.chat_stream_view
-_raw_session_detail = _chat.session_detail_view
-_raw_session_list = _chat.session_list_view
-_raw_session_messages = _chat.session_messages_view
+# SDK view attributes load their Django ORM integration. Resolve them only
+# when handling a request, after the host has populated its app registry.
+# Merely importing the handler package must not depend on test/import order.
+def _raw_chat_stream(request):
+    return _chat.chat_stream_view(request)
+
+
+def _raw_session_detail(request, session_id):
+    return _chat.session_detail_view(request, session_id)
+
+
+def _raw_session_list(request):
+    return _chat.session_list_view(request)
+
+
+def _raw_session_messages(request, session_id):
+    return _chat.session_messages_view(request, session_id)
 
 
 def _database_is_configured() -> bool:

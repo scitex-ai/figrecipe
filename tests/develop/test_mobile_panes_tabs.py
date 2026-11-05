@@ -79,7 +79,7 @@ def test_editor_declares_the_four_phone_tabs():
     )
     # Assert
     assert checks == (
-        [("data", "Data", 1), ("plot", "Plot", 2),
+        [("data", "Data", 1), ("plot", "Panel", 2),
          ("figure", "Figure", 3), ("details", "Details", 4)],
         *([True] * 11),
     )
@@ -89,7 +89,7 @@ def test_editor_declares_the_four_phone_tabs():
     "tab,page_class",
     [
         ("data", "data-page"),
-        ("plot", "editor-plot-page"),
+        ("plot", "editor-panel-page"),
         ("canvas", "editor-figure-page"),
     ],
 )

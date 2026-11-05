@@ -267,6 +267,11 @@ class FigureRecord:
     # same un-pinned ink. Captured at SAVE; ``False`` on legacy recipes (which
     # then take the pin path, matching their pre-flag behaviour).
     layout_collapsed: bool = False
+    # True when the recipe was written while a scitex-clew session was
+    # active. Best-effort provenance observability: the editor reads it back
+    # as the tracked indicator. Untracked saves leave it False (and the key
+    # out of the YAML, keeping recipes lean).
+    clew_tracked: bool = False
     # Figure-level decorations (suptitle, supxlabel, supylabel)
     suptitle: Optional[Dict[str, Any]] = None
     supxlabel: Optional[Dict[str, Any]] = None
@@ -353,6 +358,9 @@ class FigureRecord:
         # reproducer skips the constrained_layout panel pin for a collapsed save.
         if self.layout_collapsed:
             result["figure"]["layout_collapsed"] = True
+        # Persist the clew-tracked flag only when True (keeps recipes lean).
+        if self.clew_tracked:
+            result["figure"]["clew_tracked"] = True
         # Add suptitle if set
         if self.suptitle is not None:
             result["figure"]["suptitle"] = self.suptitle
@@ -415,6 +423,7 @@ class FigureRecord:
             rcparams=fig_data.get("rcparams"),
             constrained_layout=fig_data.get("constrained_layout", False),
             layout_collapsed=fig_data.get("layout_collapsed", False),
+            clew_tracked=fig_data.get("clew_tracked", False),
             suptitle=fig_data.get("suptitle"),
             supxlabel=fig_data.get("supxlabel"),
             supylabel=fig_data.get("supylabel"),

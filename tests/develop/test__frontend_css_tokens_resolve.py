@@ -46,11 +46,22 @@ _DECL = re.compile(r"(?m)^\s*(--[A-Za-z0-9_-]+)\s*:")
 # though nothing in this repo defines them. Adding a name here is a claim that
 # scitex-ui declares it -- `test_shell_provided_token_exists_in_scitex_ui`
 # checks the claim wherever scitex-ui is importable.
+#
+# Includes the SDK brand family (operator 2026-10-23: navy/gold, no default
+# blue): --stx-accent (the one chrome accent, navy #1a2a40 light / gold
+# #d4a87a dark), --color-primary (+ hover/on-primary, the brand fill), and
+# --stx-accent-tint. Verified declared in scitex-ui primitives/colors
+# (_dark.css + _light.css) 2026-10-24.
 _SHELL_PROVIDED = {
     "--app-accent-figrecipe",
     "--bg-primary",
     "--bg-secondary",
     "--border-color",
+    "--stx-accent",
+    "--stx-accent-tint",
+    "--color-primary",
+    "--color-primary-hover",
+    "--color-on-primary",
     "--status-error",
     "--status-success",
     "--status-warning",

@@ -68,8 +68,8 @@
 }
 
 .object-tree__item--selected {
-  background: rgba(88, 166, 255, 0.12);
-  border-color: rgba(88, 166, 255, 0.5);
+  background: var(--stx-accent-tint);
+  border-color: var(--stx-accent);
   color: var(--vis-text-primary, #e6edf3);
 }
 

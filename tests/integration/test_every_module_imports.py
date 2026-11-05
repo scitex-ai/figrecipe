@@ -36,6 +36,10 @@ from __future__ import annotations
 
 import importlib
 import pathlib
+import json
+import os
+import subprocess
+import sys
 import warnings
 
 import pytest
@@ -84,11 +88,20 @@ ALLOWED_MISSING = {
 
 
 def _all_module_names() -> list[str]:
-    """Every importable module path under the installed figrecipe package."""
+    """Every importable module path under the installed figrecipe package.
+
+    Vendored third-party trees (node_modules/) are not package code: they are
+    gitignored npm artefacts that happen to contain .py helper scripts. They
+    must not be walked here — a broken helper (or a helper my earlier hygiene
+    touched) is not a package import failure. Found live 2026-10-24: the gate
+    walked katex's generate_fonts/extract_tfms/format_json via the editable
+    install and blocked the develop push on env-only failures."""
     root = pathlib.Path(figrecipe.__file__).parent
     names = []
     for path in sorted(root.rglob("*.py")):
         if "__pycache__" in str(path):
+            continue
+        if "node_modules" in path.parts:
             continue
         rel = path.relative_to(root).with_suffix("")
         parts = list(rel.parts)
@@ -169,3 +182,24 @@ def test_each_allowlist_entry_states_a_dependency_and_a_reason(prefix):
     )
     # Assert
     assert well_formed
+
+
+@pytest.mark.parametrize("configured", [False, True], ids=["unconfigured", "settings-only"])
+def test_handler_import_does_not_populate_the_django_registry(configured):
+    # Arrange: a genuine new interpreter has no earlier test's Django setup.
+    environment = dict(os.environ)
+    environment.pop("DJANGO_SETTINGS_MODULE", None)
+    environment["CONFIGURE_ONLY"] = "1" if configured else "0"
+    source = """
+import importlib,json,os,sys
+if os.environ['CONFIGURE_ONLY']=='1':
+    os.environ['DJANGO_SETTINGS_MODULE']='figrecipe._django.settings'
+from django.apps import apps
+importlib.import_module('figrecipe._django.handlers')
+print(json.dumps({'ready':apps.ready,'models_loaded':'scitex_sdk.app._chat.models' in sys.modules}))
+"""
+    # Act
+    result = subprocess.run([sys.executable, "-c", source], env=environment,
+                            capture_output=True, text=True, timeout=30, check=True)
+    # Assert
+    assert json.loads(result.stdout.splitlines()[-1]) == {"ready": False, "models_loaded": False}

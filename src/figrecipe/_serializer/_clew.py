@@ -44,6 +44,11 @@ def _active_tracker():
         return None
 
 
+def is_tracking() -> bool:
+    """True when a scitex-clew session is active (best-effort, never raises)."""
+    return _active_tracker() is not None
+
+
 def record_output(path: Union[str, Path]) -> None:
     """Record ``path`` as a clew output of the active session (best-effort)."""
     tracker = _active_tracker()

@@ -237,13 +237,10 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
     });
   };
 
-  const seeAllTemplates = () => {
-    const family = reveal?.family;
-    closeReveal();
-    if (!family) return;
-    setGalleryFamily(family);
-    setGalleryOpen(true);
-  };
+  // Operator UI batch: no "See all templates…" door on the hover chooser.
+  // The rail itself already opens the gallery for a family (selectFamily
+  // above), so the chooser's second same-labelled door was a parallel
+  // chooser on one screen. The gallery modal stays the template route.
 
   // TODO 130 — hover/focus tracking on the SelectorNav container: the scitex-ui
   // items are <button>s in PLOT_TYPES order and carry no data-id, so we map by
@@ -359,7 +356,6 @@ export function PlotTypeNav({ paneAttrs = {} }: { paneAttrs?: Record<string, str
           pinned={reveal.pinned}
           focusOnOpen={reveal.keyboard}
           onChoose={chooseVariant}
-          onSeeAll={seeAllTemplates}
           onPlotFromData={
             chooserOffersDataRoute(
               kindForFamily(reveal.family)?.id ?? null,

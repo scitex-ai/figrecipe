@@ -1,4 +1,4 @@
-/** Stable SDK phone tabs: Data | Plot | Figure (composition canvas) | Details. */
+/** Stable SDK phone tabs: Data | Panel | Figure (composition canvas) | Details. */
 
 import { useEffect, useState } from "react";
 import {

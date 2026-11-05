@@ -62,6 +62,9 @@ interface Props {
   imgHeight: number;
   alwaysVisible?: boolean;
   selectedElement?: string | null;
+  /** Elements drawn from the badged table columns: hover visual, no click,
+   *  no Details change. Selection wins when both name the same element. */
+  emphasizedElements?: string[];
 }
 
 export function BboxOverlay({
@@ -71,6 +74,7 @@ export function BboxOverlay({
   imgHeight,
   alwaysVisible,
   selectedElement,
+  emphasizedElements,
 }: Props) {
   if (!bboxes || Object.keys(bboxes).length === 0 || !imgWidth || !imgHeight) {
     return null;
@@ -88,6 +92,13 @@ export function BboxOverlay({
       {sorted.map(([key, bbox]) => {
         const color = typeColor(bbox.type);
         const isSelected = key === selectedElement;
+        const isEmphasized =
+          !isSelected && (emphasizedElements ?? []).includes(key);
+        const stateClass = isSelected
+          ? " bbox-group--selected"
+          : isEmphasized
+            ? " bbox-group--emphasized"
+            : "";
         const bboxExt = bbox as BBox & { points?: [number, number][] };
         const shortLabel = bbox.label ?? key.split("_").slice(1).join("_");
 
@@ -107,7 +118,7 @@ export function BboxOverlay({
           return (
             <g
               key={key}
-              className={`bbox-group${isSelected ? " bbox-group--selected" : ""}`}
+              className={`bbox-group${stateClass}`}
               style={{ "--element-color": color } as React.CSSProperties}
               onClick={handleClick}
             >
@@ -130,7 +141,7 @@ export function BboxOverlay({
           return (
             <g
               key={key}
-              className={`bbox-group${isSelected ? " bbox-group--selected" : ""}`}
+              className={`bbox-group${stateClass}`}
               style={{ "--element-color": color } as React.CSSProperties}
               onClick={handleClick}
             >
@@ -154,7 +165,7 @@ export function BboxOverlay({
         return (
           <g
             key={key}
-            className={`bbox-group bbox-group--${bbox.type}${isSelected ? " bbox-group--selected" : ""}`}
+            className={`bbox-group bbox-group--${bbox.type}${stateClass}`}
             style={{ "--element-color": color } as React.CSSProperties}
             onClick={handleClick}
           >

@@ -15,9 +15,8 @@ pip install figrecipe
 
 The coordinated source candidate declares `matplotlib>=3.5`, `numpy>=1.20`,
 `pandas>=1.3`, `PyYAML>=6`, `ruamel.yaml>=0.17`, `scipy>=1.7`, `click>=8`,
-`rich>=13`, `scitex-sdk>=0.3.0`, `scitex-config>=0.3.0` and
-`scitex-dev>=0.60.1`. SDK 0.3 is pending publication: install its reviewed
-wheel or checkout before installing this candidate. The registry command
+`rich>=13`, `scitex-sdk>=0.3.11`, `scitex-config>=0.3.0` and
+`scitex-dev>=0.60.1`. SDK 0.3.11 is published on PyPI. The registry command
 above installs the currently published FigRecipe.
 
 ## Optional extras

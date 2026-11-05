@@ -80,7 +80,10 @@ def test_plot_tab_has_no_squeezed_data_pane():
 
 
 def test_objects_tree_is_wired_above_details():
-    # Arrange
+    # Arrange: the tree stays a pure navigator — the way in lives in the
+    # model rows (operator checklist 2026-10-24 dropped the Details-pane
+    # "Go to Data" door; the rows' Tables tab is the one canonical door,
+    # and the empty Panel still points at Data).
     editor = (_FRONTEND / "InnerEditor.tsx").read_text(encoding="utf-8")
     pane = (
         _FRONTEND / "components" / "PropertiesPane" / "PropertiesPane.tsx"
@@ -94,8 +97,15 @@ def test_objects_tree_is_wired_above_details():
         for check, present in [
             ("Details does not render the tree", "<ObjectTree" in pane),
             ("tree never selects a figure", "selectFigure" in tree),
-            ("tree empty state has no way in", "onRequestDataTab" in tree),
+            (
+                "tree empty state keeps a Data door (rows own the way in)",
+                "onRequestDataTab" not in tree,
+            ),
             ("Plot tab cannot jump to Data", "onRequestDataTab" in editor),
+            (
+                "model rows have no Tables tab to jump with",
+                'selectTab("data")' in editor,
+            ),
         ]
         if not present
     ]
@@ -237,3 +247,106 @@ def test_sample_import_bootstraps_recipe_on_fresh_session():
     has_retry = "api/new" in source and "No recipe loaded" in source
     # Assert
     assert has_retry
+
+
+def test_data_grid_leads_the_page_chrome_follows():
+    # Arrange: operator batch apps-figrecipe-ui-feedback-20261023 item 3 —
+    # table-first. The grid must render before the tab strip, the plot form
+    # and the CRUD toolbar in the non-empty branch.
+    source = (
+        _FRONTEND / "components" / "DataTablePane" / "DataTablePane.tsx"
+    ).read_text(encoding="utf-8")
+    # Act
+    body = source.split("tabs.length === 0 ?", 1)[1]
+    order = [
+        body.index(marker)
+        for marker in (
+            "<DataTable",
+            "<FileTabs",
+            "<PlotFromColumns",
+            "data-pane__toolbar",
+        )
+    ]
+    # Assert
+    assert order == sorted(order), "DataTable must lead: tabs, plot form, toolbar follow"
+
+
+def test_derived_table_locks_until_explicit_adoption():
+    # Arrange: edit-lock for figure-recorded (incl. clew-chained) tables.
+    source = (
+        _FRONTEND / "components" / "DataTablePane" / "DataTablePane.tsx"
+    ).read_text(encoding="utf-8")
+    # Act
+    problems = [
+        check
+        for check, present in [
+            (
+                "no record-source lock",
+                'activeTab?.source === "record"' in source,
+            ),
+            (
+                "grid not read-only when locked",
+                "readOnly={locked}" in source,
+            ),
+            (
+                "CRUD affordances ignore the lock",
+                source.count("locked || !activeTab") >= 6,
+            ),
+            (
+                "write path has no lock choke point",
+                'liveTab?.source === "record"' in source,
+            ),
+            (
+                "no explicit adoption path",
+                "handleAdopt" in source and 'gettext("Saved")' in source,
+            ),
+        ]
+        if not present
+    ]
+    # Assert
+    assert problems == []
+
+
+def test_data_tabs_use_the_shared_file_tabs():
+    # Arrange: operator follow-up — the bespoke vivid tab strip is gone,
+    # replaced by the SDK shared FileTabs (theme-owned active state).
+    source = (
+        _FRONTEND / "components" / "DataTablePane" / "DataTablePane.tsx"
+    ).read_text(encoding="utf-8")
+    # Act
+    problems = []
+    if 'from "@scitex/sdk/ui/react/app/file-tabs"' not in source:
+        problems.append("no shared FileTabs import")
+    if "<FileTabs" not in source:
+        problems.append("strip is not the shared FileTabs")
+    if "datatable-panel__tab" in source or "getPanelColor" in source:
+        problems.append("bespoke vivid tab strip remains")
+    # Assert
+    assert problems == []
+
+
+def test_table_source_travels_from_backend_to_tab():
+    # Arrange: the lock reads the backend `source`, so it must survive the
+    # store untouched (project/import stay editable, record locks).
+    pane = (
+        _FRONTEND / "components" / "DataTablePane" / "DataTablePane.tsx"
+    ).read_text(encoding="utf-8")
+    store = (_FRONTEND / "store" / "useEditorStore.ts").read_text(
+        encoding="utf-8"
+    )
+    types = (_FRONTEND / "types" / "editor.ts").read_text(encoding="utf-8")
+    # Act
+    problems = [
+        check
+        for check, present in [
+            ("TabData has no source", '"record" | null' in types),
+            ("store drops the source", "source:" in store and '"record"' in store),
+            (
+                "adoption never unlocks",
+                "persistTable(table" in pane or "persistTable(next" in pane,
+            ),
+        ]
+        if not present
+    ]
+    # Assert
+    assert problems == []

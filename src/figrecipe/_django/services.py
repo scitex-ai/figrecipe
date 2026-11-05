@@ -96,8 +96,13 @@ def get_or_create_editor(
 
     if session_key in _editor_cache:
         editor, _ = _editor_cache[session_key]
-        _editor_cache[session_key] = (editor, time.time())
-        return editor
+        # Older mutation-based switch/new handlers could leave a cache key
+        # pointing at another recipe. A read must never reuse that record.
+        cached_path = getattr(editor, "recipe_path", None)
+        if cached_path and Path(cached_path).resolve() == Path(recipe_path).resolve():
+            _editor_cache[session_key] = (editor, time.time())
+            return editor
+        _editor_cache.pop(session_key, None)
 
     editor = _create_editor(recipe_path, style)
     _editor_cache[session_key] = (editor, time.time())

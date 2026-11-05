@@ -4,12 +4,24 @@
 
 import { useEffect, useState } from "react";
 import { redo, undo } from "../../hooks/useUndoRedo";
+import { useUndoRedoState } from "../../hooks/useUndoRedoState";
 import { useEditorStore } from "../../store/useEditorStore";
+import { canvasOf } from "../../types/editor";
 import { Canvas } from "../Canvas/Canvas";
 import { ExportDialog } from "../ExportDialog/ExportDialog";
 import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
-export function CanvasPane({ active = true }: { active?: boolean }) {
+export function CanvasPane({
+  active = true,
+  onRequestPanelTab,
+  onRequestTablesTab,
+}: {
+  active?: boolean;
+  /** Jump to the Panels row (empty canvas needs a way in). */
+  onRequestPanelTab?: () => void;
+  /** Jump to the Tables row (empty canvas needs its data source). */
+  onRequestTablesTab?: () => void;
+}) {
   const {
     placedFigures,
     selectedFigureId,
@@ -25,6 +37,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
     showHitmap,
     toggleHitmap,
   } = useEditorStore();
+  const { canUndo, canRedo } = useUndoRedoState();
   const [exportOpen, setExportOpen] = useState(false);
   // Mount the drawing surface once, on its first visible visit. This leaves
   // session restoration ahead of its initial viewport read and keeps every
@@ -38,13 +51,20 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
   // figures the label used to be the bare token "No figures" with no
   // explanation — say what it means and how to get out of it.
   const selectedFig = placedFigures.find((f) => f.id === selectedFigureId);
+  // 1 Figure = 1 Canvas: this pane shows the selected figure's canvas
+  // only. With no selection the fallback shows everything, so a stale
+  // selection can never strand existing figures on a blank canvas.
+  const activeCanvasKey = selectedFig ? canvasOf(selectedFig) : null;
+  const canvasFigures = activeCanvasKey
+    ? placedFigures.filter((f) => canvasOf(f) === activeCanvasKey)
+    : placedFigures;
   const figLabel = selectedFig
     ? (selectedFig.path.split("/").pop() ?? gettext("figure"))
-    : placedFigures.length > 0
-      ? interpolate(ngettext("%s figure", "%s figures", placedFigures.length), [placedFigures.length])
+    : canvasFigures.length > 0
+      ? interpolate(ngettext("%s figure", "%s figures", canvasFigures.length), [canvasFigures.length])
       : gettext("No figures yet");
   const figLabelTitle =
-    placedFigures.length === 0
+    canvasFigures.length === 0
       ? gettext("No figures are on the canvas yet. Add one from the plot-type gallery or open a recipe from the file tree.")
       : undefined;
 
@@ -75,6 +95,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Undo (Ctrl+Z)")}
             aria-label={gettext("Undo (Ctrl+Z)")}
+            disabled={!canUndo}
             onClick={undo}
           >
             <i className="fas fa-undo" aria-hidden="true" />
@@ -85,6 +106,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Redo (Ctrl+Shift+Z)")}
             aria-label={gettext("Redo (Ctrl+Shift+Z)")}
+            disabled={!canRedo}
             onClick={redo}
           >
             <i className="fas fa-redo" aria-hidden="true" />
@@ -117,12 +139,15 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
 
           <span className="toolbar-sep" />
 
-          {/* Zoom */}
+          {/* Zoom — dead until the Figure canvas mounts and registers its
+              controls (operator batch apps-figrecipe-ui-feedback-20261023
+              item 4): a click before that was a silent no-op. */}
           <button
             className="pane-header-btn"
             type="button"
             title={gettext("Zoom to fit")}
             aria-label={gettext("Zoom to fit")}
+            disabled={canvasFigures.length === 0 || !zoomControls}
             onClick={zoomControls?.zoomToFit}
           >
             <i className="fas fa-compress-arrows-alt" aria-hidden="true" />
@@ -135,6 +160,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Toggle hit regions — click a plot element to select it")}
             aria-label={gettext("Toggle hit regions — click a plot element to select it")}
+            disabled={canvasFigures.length === 0}
             onClick={toggleHitmap}
           >
             <i className="fas fa-bullseye" aria-hidden="true" />
@@ -149,6 +175,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Save (Ctrl+S)")}
             aria-label={gettext("Save (Ctrl+S)")}
+            disabled={canvasFigures.length === 0}
             onClick={save}
           >
             <i className="fas fa-save" aria-hidden="true" />
@@ -159,6 +186,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Restore original")}
             aria-label={gettext("Restore original")}
+            disabled={canvasFigures.length === 0}
             onClick={restore}
           >
             <i className="fas fa-undo-alt" aria-hidden="true" />
@@ -169,6 +197,7 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
             type="button"
             title={gettext("Export (PNG/SVG/PDF)")}
             aria-label={gettext("Export (PNG/SVG/PDF)")}
+            disabled={canvasFigures.length === 0}
             onClick={() => setExportOpen(true)}
           >
             <i className="fas fa-download" aria-hidden="true" />
@@ -193,7 +222,34 @@ export function CanvasPane({ active = true }: { active?: boolean }) {
 
       {/* Canvas content */}
       <div className="pane-content canvas-content">
-        {canvasMounted && <Canvas active={active} />}
+        {canvasFigures.length === 0 ? (
+          <div className="canvas-empty" role="note">
+            <p className="canvas-empty__title">{gettext("No figures yet")}</p>
+            <p className="canvas-empty__model">
+              {gettext("A figure depends on its panels — open Panels to draw one, or pick CSVs in Data.")}
+            </p>
+            <div className="gallery-start-actions">
+              <button
+                type="button"
+                className="gallery-start-primary"
+                onClick={onRequestPanelTab}
+              >
+                <i className="fas fa-chart-line" aria-hidden="true" />
+                {gettext("Open Panels")}
+              </button>
+              <button
+                type="button"
+                className="gallery-start-primary"
+                onClick={onRequestTablesTab}
+              >
+                <i className="fas fa-table" aria-hidden="true" />
+                {gettext("Go to Data")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          canvasMounted && <Canvas active={active} />
+        )}
       </div>
 
       {/* Export dialog */}

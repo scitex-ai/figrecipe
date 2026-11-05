@@ -18,7 +18,7 @@ from .._utils._numpy_io import (
     save_array,
     save_arrays_single_csv,
 )
-from ._clew import record_output
+from ._clew import is_tracking, record_output
 from ._tick_faithfulness import (
     assert_tick_call_faithful,
     assert_ticklabel_calls_faithful,
@@ -107,6 +107,13 @@ def save_recipe(
         from ..styles._rcparams import capture_rcparams_delta
 
         record.rcparams = capture_rcparams_delta()
+
+    # Stamp the clew-tracked flag when a session is active (best-effort, never
+    # blocks the save): the editor reads it back as the tracked indicator.
+    # One-way only -- a re-save outside clew never clears a stamp an earlier
+    # save recorded. Provenance is monotonic: the lineage fact happened.
+    if is_tracking():
+        record.clew_tracked = True
 
     # Convert record to dict
     data = record.to_dict()

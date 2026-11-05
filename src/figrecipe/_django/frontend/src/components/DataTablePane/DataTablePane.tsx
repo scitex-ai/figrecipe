@@ -1,3 +1,5 @@
+import { tableWriteMatches } from "./tableWriteContext";
+import { closeDataTab, selectDataTab } from "../../store/editorNavigation";
 /** Left pane — Data table with vis_app pane-header.
  * Uses scitex-ui's shared DataTable component (no figrecipe-original table).
  *
@@ -8,9 +10,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataTable } from "@scitex/sdk/ui/react/app/data-table/DataTable.tsx";
-import { api, ApiError, setRecipe } from "../../api/client";
+import { FileTabs } from "@scitex/sdk/ui/react/app/file-tabs";
+import { api, ApiError, ApiSessionExpired, apiSessionId, setRecipe } from "../../api/client";
 import { useEditorStore } from "../../store/useEditorStore";
-import { getPanelColor } from "../../utils/panelColors";
 import { PlotFromColumns } from "./PlotFromColumns";
 import {
   badgeColumnHighlights,
@@ -19,6 +21,7 @@ import {
   selectionAfterColumnClick,
   type HoverBadge,
 } from "./dataColumnHighlight";
+import { recordingCalls, recordingRecipe } from "./provenanceChip";
 import type { ColumnSelection } from "./columnPlotSelection";
 import {
   addColumn,
@@ -49,9 +52,11 @@ import {
 } from "./dataTableEdit";
 import {
   applyColumnHighlight,
+  applyRowHighlight,
   readRowValues,
   readSelectedCells,
   renderedColumnNodes,
+  renderedRowNodes,
   type ColumnRoleWords,
 } from "./dataTableDom";
 import {
@@ -59,6 +64,7 @@ import {
   type TableSaveQueue,
 } from "./tableSaveQueue";
 import { SAMPLE_TABLE_CSV, SAMPLE_TABLE_FORMAT } from "./sampleData";
+import { DraftDataGrid } from "./DraftDataGrid";
 import { parsePastedTable } from "./pasteData";
 import { gettext, ngettext, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
 
@@ -131,9 +137,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     datatableTabs,
     activeTabId,
     datatableLoadError,
-    highlightedDataRows: _highlightedDataRows,
-    placedFigures,
-    removeFigure,
+    highlightedDataRows,
     showToast,
     loadDatatable,
     refreshAfterMutation,
@@ -149,6 +153,16 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     x: null,
     ys: [],
   });
+  const setBadgedColumns = useEditorStore((s) => s.setBadgedColumns);
+  /** Mirror the badges to the store so the canvas can emphasize the elements
+   *  drawn from the badged columns (highlight only -- never a selection). */
+  useEffect(() => {
+    setBadgedColumns(
+      [badgeSelection.x, ...badgeSelection.ys].filter(
+        (c): c is string => c !== null,
+      ),
+    );
+  }, [badgeSelection, setBadgedColumns]);
   /** A click on a table column, handed down to the badges. */
   const [columnCommand, setColumnCommand] = useState<{
     name: string;
@@ -186,6 +200,16 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
 
   const tabs = Object.values(datatableTabs);
   const activeTab = activeTabId ? datatableTabs[activeTabId] : null;
+  const hasTable = !!activeTab?.columns.length;
+  /** Provenance chip for a locked (figure-recorded) table: the session
+   *  recipe plus the recording call ids parsed from the columns. Bare
+   *  tokens, no translatable copy (see provenanceChip). */
+  const provenanceRecipe = activeTab?.panelPath?.split("/").pop() ?? recordingRecipe();
+  const provenanceCalls = useMemo(
+    () => recordingCalls((activeTab?.columns ?? []).map((c) => c.name)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeTab?.columns],
+  );
 
   console.log(
     "[DataTablePane] tabs:",
@@ -219,8 +243,15 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
    *  starts the next write — because persistTable's reload lands later and a
    *  newer edit's write must already be based on what the server just kept. */
   const saveQueue = useRef<TableSaveQueue>(
-    createTableSaveQueue(async (csv: string) => {
-      const base = useEditorStore.getState().datatableRevision;
+    createTableSaveQueue(async (job: string) => {
+      const {csv, session, recipe, tabId} = JSON.parse(job) as {csv: string; session: number; recipe: string | null; tabId: string | null};
+      // A queued edit belongs to the recipe that accepted the gesture. A
+      // navigation must never retarget it to another panel/project.
+      const current = useEditorStore.getState();
+      if (!tableWriteMatches({session, recipe, tabId}, {session: apiSessionId(), recipe: current.currentFile, tabId: current.activeTabId})) {
+        throw new ApiSessionExpired();
+      }
+      const base = current.datatableRevision;
       const res = await api.post<{ revision?: string | null }>(
         "datatable/import",
         { content: csv, format: "csv", base_revision: base },
@@ -259,7 +290,11 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
    *  table. */
   const persistTable = useCallback(
     async (table: TableModel, message: string) => {
-      const outcome = await saveQueue.enqueue(serializeTableToCsv(table));
+      const owner = useEditorStore.getState();
+      const operationSession = apiSessionId();
+      const outcome = await saveQueue.enqueue(JSON.stringify({csv: serializeTableToCsv(table),
+        session: operationSession, recipe: owner.currentFile, tabId: owner.activeTabId}));
+      if (apiSessionId() !== operationSession || useEditorStore.getState().activeTabId !== owner.activeTabId) return;
       if (outcome.status === "failed") {
         // 409: another client stored a newer table meanwhile. Adopt it instead
         // of re-sending this edit on top, which would discard their edits —
@@ -316,6 +351,27 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     [loadDatatable, refreshAfterMutation, saveQueue, showToast],
   );
 
+  /** Edit-lock (operator batch apps-figrecipe-ui-feedback-20261023 item 3).
+   *
+   *  A table derived from the figure's recorded data (`source === "record"` —
+   *  which is also where clew-chained derivations surface, since composition
+   *  records panel recipes/data through the same record) is read-only until
+   *  the user explicitly takes ownership of it. Hand-editing a derived table
+   *  would silently fork it from the figure it came from and break the
+   *  provenance chain. Project-stored and session-imported tables are the
+   *  user's own and stay editable.
+   *
+   *  Adoption reuses the normal write path: persisting forks the shown table
+   *  into the project store, the reload then reports source "project", and
+   *  the lock releases. No new copy: the button reuses "Edit table", the
+   *  toast reuses "Saved". */
+  const locked = activeTab?.source === "record";
+  const handleAdopt = useCallback(() => {
+    const table = currentTable();
+    if (!table) return;
+    void persistTable(table, gettext("Saved"));
+  }, [currentTable, persistTable]);
+
   /** The single write path for every edit: snapshot for undo, update the model,
    *  then persist. The snapshot carries the plot assignment too, so undoing a
    *  delete that cleared an X/Y binding brings the binding back with the table. */
@@ -326,6 +382,14 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         showToast(gettext("No data table to edit"), "error");
         return;
       }
+      // Locked derived table: the UI disables every write affordance, and
+      // this choke point refuses programmatic writes too (paste, cell edits).
+      // Ownership is taken explicitly through handleAdopt, never by editing.
+      const live = useEditorStore.getState();
+      const liveTab = live.activeTabId
+        ? live.datatableTabs[live.activeTabId]
+        : null;
+      if (liveTab?.source === "record") return;
       const label = opLabel(op);
       setUndoStack((stack) =>
         pushUndo(stack, {
@@ -428,7 +492,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
    *  and the module stays free of the i18n layer (accessibility was previously
    *  the CSS `::after` letter alone, which no screen reader reads out). */
   const roleWords = useMemo<ColumnRoleWords>(
-    () => ({ x: gettext("X column"), y: gettext("Y column") }),
+    () => ({ x: gettext("X axis"), y: gettext("Y axis") }),
     [],
   );
 
@@ -447,6 +511,25 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     observer.observe(root, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [highlights, roleWords]);
+
+  // Rows linked to the selected canvas element (see applyRowHighlight: matched
+  // by value, so sorting the view cannot misplace them). Same re-apply
+  // discipline as the column highlight above.
+  const linkedDatasetRows = useMemo(() => activeTab?.rows ?? [], [activeTab]);
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+    const sync = () =>
+      applyRowHighlight(
+        renderedRowNodes(root),
+        linkedDatasetRows,
+        highlightedDataRows,
+      );
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [linkedDatasetRows, highlightedDataRows]);
 
   // A different tab is a different table: the old selection and the undo
   // history no longer describe what is on screen.
@@ -735,32 +818,8 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [active, handleRedo, handleUndo]);
 
-  /** Close a tab and remove the corresponding figure from canvas. */
-  const handleCloseTab = useCallback(
-    (tabId: string) => {
-      // Find figure that matches this tab by path, id, or fall back to selected/first
-      const figure =
-        placedFigures.find((f) => f.path === tabId || f.id === tabId) ??
-        placedFigures.find(
-          (f) => f.id === useEditorStore.getState().selectedFigureId,
-        ) ??
-        (placedFigures.length === 1 ? placedFigures[0] : null);
-      if (figure) {
-        removeFigure(figure.id);
-      }
-      // Always remove the tab
-      useEditorStore.setState((s) => {
-        const updated = { ...s.datatableTabs };
-        delete updated[tabId];
-        const remaining = Object.keys(updated);
-        return {
-          datatableTabs: updated,
-          activeTabId: remaining.length > 0 ? remaining[0] : null,
-        };
-      });
-    },
-    [placedFigures, removeFigure],
-  );
+  // Closing data never removes a panel or mutates its source file.
+  const handleCloseTab = closeDataTab;
 
   const handleExportCsv = useCallback(async () => {
     try {
@@ -877,6 +936,81 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
     }
   }, [showToast, handleImportTextContent]);
 
+  /** Project-data picker state: CSV/TSV/JSON files the project owns. */
+  const [projectFiles, setProjectFiles] = useState<string[] | null>(null);
+  const [projectFilesOpen, setProjectFilesOpen] = useState(false);
+  const [projectFilesLoading, setProjectFilesLoading] = useState(false);
+
+  /** Tables dropdown menu: open list with per-table Delete (the toggle
+   *  alone used to open nothing). Closes on selection, deletion, Escape,
+   *  or outside click. */
+  const [tableMenuOpen, setTableMenuOpen] = useState(false);
+  const tableMenuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!tableMenuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (tableMenuRef.current && !tableMenuRef.current.contains(e.target as Node)) {
+        setTableMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTableMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [tableMenuOpen]);
+
+  /** Load-from-project CTA: list, then import through the same path. */
+  const handleProjectFilesToggle = useCallback(async () => {
+    if (projectFilesOpen) {
+      setProjectFilesOpen(false);
+      return;
+    }
+    setProjectFilesOpen(true);
+    if (projectFiles !== null) return;
+    setProjectFilesLoading(true);
+    try {
+      const res = await api.get<{ files?: string[] }>("api/project-data");
+      setProjectFiles(Array.isArray(res?.files) ? res.files : []);
+    } catch {
+      setProjectFiles([]);
+    } finally {
+      setProjectFilesLoading(false);
+    }
+  }, [projectFilesOpen, projectFiles]);
+
+  const handleProjectFileLoad = useCallback(
+    async (path: string) => {
+      setProjectFilesOpen(false);
+      try {
+        const res = await api.get<{ content?: string; error?: string }>(
+          `api/file-content/${path}`,
+        );
+        if (typeof res?.content !== "string") {
+          showToast(
+            interpolate(gettext("Could not read %s"), [path]),
+            "error",
+          );
+          return;
+        }
+        const ext = path.split(".").pop()?.toLowerCase();
+        const format = ext === "tsv" ? "tsv" : ext === "json" ? "json" : "csv";
+        await handleImportTextContent(res.content, format);
+        showToast(
+          interpolate(gettext("Loaded %s from project"), [path]),
+          "success",
+        );
+      } catch {
+        /* handleImportTextContent already toasted the failure. */
+      }
+    },
+    [showToast, handleImportTextContent],
+  );
+
   const dataset = useMemo(
     () =>
       activeTab
@@ -908,17 +1042,69 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             />
           </button>
         )}
-        {/* Data dropdown */}
-        <div className="data-dropdown-container">
-          <button className="data-dropdown-toggle" type="button">
+        {/* Data dropdown: open tables with per-table Delete. The toggle
+            used to open nothing — a chevron that goes nowhere teaches
+            users the control is broken. Selecting jumps to the table;
+            Delete closes it (and its linked figure, like the tab ×). */}
+        <div className="data-dropdown-container" ref={tableMenuRef}>
+          <button
+            className="data-dropdown-toggle"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={tableMenuOpen}
+            onClick={() => setTableMenuOpen((open) => !open)}
+          >
             <i className="fas fa-table" />
             <span className="data-dropdown-label">
               {tabs.length > 0
-                ? interpolate(ngettext("%s table", "%s tables", tabs.length), [tabs.length])
+                ? activeTab?.label ?? gettext("Data")
                 : gettext("No tables")}
             </span>
             <i className="fas fa-chevron-down" />
           </button>
+          {tableMenuOpen && (
+            <ul className="data-dropdown-menu" role="menu" aria-label={gettext("Tables")}>
+              {tabs.length === 0 ? (
+                <li className="data-dropdown-empty" role="none">
+                  {gettext("No tables")}
+                </li>
+              ) : (
+                tabs.map((t) => {
+                  const deleteLabel = interpolate(gettext("Delete %s table"), [t.label]);
+                  return (
+                    <li key={t.id} className="data-dropdown-item" role="none">
+                      <button
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={t.id === activeTabId}
+                        className="data-dropdown-name"
+                        title={t.label}
+                        onClick={() => {
+                          selectDataTab(t.id);
+                          setTableMenuOpen(false);
+                        }}
+                      >
+                        {t.label}
+                      </button>
+                      <button
+                        type="button"
+                        className="data-dropdown-delete"
+                        title={deleteLabel}
+                        aria-label={deleteLabel}
+                        disabled={t.source === "record"}
+                        onClick={() => {
+                          handleCloseTab(t.id);
+                          setTableMenuOpen(false);
+                        }}
+                      >
+                        <i className="fas fa-trash" aria-hidden="true" />
+                      </button>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          )}
           <button
             className="pane-header-btn data-new-btn"
             type="button"
@@ -1006,6 +1192,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
       {/* Hidden file input for CSV import */}
       <input
         ref={fileInputRef}
+        data-figrecipe-import-input=""
         type="file"
         accept=".csv,.tsv,.json,.xlsx"
         style={{ display: "none" }}
@@ -1027,24 +1214,23 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
         onMouseOver={handlePointerOver}
         onMouseOut={handlePointerOut}
       >
-        {tabs.length === 0 ? (
-          /* No tables: the starter grid used to sit here with nothing to do
-             in it. Name the three ways in instead — unless the last load
-             FAILED, in which case the table is not empty, it is unreachable:
-             say so with a retry (error-fallback-ui), never a silent blank. */
-          <div className="datatable-empty-state" role={datatableLoadError ? "alert" : undefined}>
+        {!hasTable ? (
+          /* A local draft never writes on mount. Failed loads retain their
+             retry state instead of offering a misleading empty worksheet. */
+          <div className={`datatable-empty-state ${datatableLoadError ? "" : "datatable-empty-state--worksheet"}`} role={datatableLoadError ? "alert" : undefined}>
+            {!datatableLoadError && <DraftDataGrid onImport={handleImportTextContent} />}
+            {datatableLoadError && <>
             <i
               className={`fas ${datatableLoadError ? "fa-triangle-exclamation" : "fa-table"} datatable-empty-icon`}
               aria-hidden="true"
             />
             <div className="datatable-empty-title">
-              {datatableLoadError ?? gettext("No tables")}
+              {datatableLoadError}
             </div>
             <div className="datatable-empty-hint">
-              {datatableLoadError
-                ? gettext("Check the connection, then try again — your tables are still stored.")
-                : gettext("Import a CSV file, paste cells from a spreadsheet, or load a sample table to begin.")}
+              {gettext("Check the connection, then try again — your tables are still stored.")}
             </div>
+            </>}
             <div className="datatable-empty-actions">
               {datatableLoadError ? (
                 <button
@@ -1063,7 +1249,10 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => fileInputRef.current?.click()}
               >
                 <i className="fas fa-file-import" aria-hidden="true" />
-                {gettext("Import CSV")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Import CSV")}
+                  <span className="datatable-empty-cta-sub">{gettext("a file from your computer")}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -1071,7 +1260,10 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => void handlePasteData()}
               >
                 <i className="fas fa-paste" aria-hidden="true" />
-                {gettext("Paste data")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Paste data")}
+                  <span className="datatable-empty-cta-sub">{gettext("cells copied from a spreadsheet")}</span>
+                </span>
               </button>
               <button
                 type="button"
@@ -1079,44 +1271,114 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
                 onClick={() => void handleSampleData()}
               >
                 <i className="fas fa-wand-magic-sparkles" aria-hidden="true" />
-                {gettext("Load sample data")}
+                <span className="datatable-empty-cta-text">
+                  {gettext("Load sample data")}
+                  <span className="datatable-empty-cta-sub">{gettext("a built-in example table")}</span>
+                </span>
               </button>
+              <button
+                type="button"
+                className="data-pane__btn datatable-empty-cta"
+                onClick={() => void handleProjectFilesToggle()}
+              >
+                <i className="fas fa-folder-open" aria-hidden="true" />
+                <span className="datatable-empty-cta-text">
+                  {gettext("Load from project")}
+                  <span className="datatable-empty-cta-sub">{gettext("CSVs already in this project")}</span>
+                </span>
+              </button>
+              {projectFilesOpen && (
+                <div
+                  className="datatable-project-files"
+                  role="listbox"
+                  aria-label={gettext("Project data files")}
+                >
+                  {projectFilesLoading ? (
+                    <div className="datatable-project-files-empty">
+                      {gettext("Listing project files…")}
+                    </div>
+                  ) : projectFiles && projectFiles.length > 0 ? (
+                    projectFiles.map((path) => (
+                      <button
+                        key={path}
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        className="datatable-project-file"
+                        onClick={() => void handleProjectFileLoad(path)}
+                      >
+                        <i className="fas fa-file-csv" aria-hidden="true" />
+                        {path}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="datatable-project-files-empty">
+                      {gettext("No CSV files in this project yet — upload data first.")}
+                    </div>
+                  )}
+                </div>
+              )}
               </>
               )}
             </div>
           </div>
         ) : (
           <>
-        {tabs.length >= 1 && (
-          <div className="datatable-panel__tabs">
-            {tabs.map((tab, idx) => (
-              <button
-                key={tab.id}
-                className={`datatable-panel__tab${tab.id === activeTabId ? " active" : ""}`}
-                style={{
-                  borderLeft: `3px solid ${getPanelColor(idx)}`,
-                }}
-                onClick={() => useEditorStore.setState({ activeTabId: tab.id })}
-                type="button"
+        {/* Table-first: the grid itself leads the page; the Files strip, the
+            plot form and the CRUD toolbar follow it. Files first: the strip
+            names every CSV the page holds and each tab closes (×) — the
+            table Delete for the checklist. */}
+        {locked && (
+          <div className="data-pane__prompt" role="note">
+            <i className="fas fa-lock" aria-hidden="true" />
+            <span className="data-pane__prompt-label">
+              {activeTab?.source === "record"
+                ? gettext("Figure-recorded table — read-only until you take ownership.")
+                : gettext("Read-only table — take ownership to edit.")}
+            </span>
+            <button
+              type="button"
+              className="data-pane__btn"
+              onClick={handleAdopt}
+              title={gettext("Edit table")}
+            >
+              <i className="fas fa-pen" aria-hidden="true" />
+              {gettext("Edit table")}
+            </button>
+            {(provenanceRecipe || provenanceCalls.length > 0) && (
+              <span
+                className="data-pane__provenance"
+                data-provenance-recipe={provenanceRecipe ?? ""}
+                data-provenance-calls={provenanceCalls.join(",")}
               >
-                {tab.label}
-                <span
-                  className="datatable-panel__tab-close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseTab(tab.id);
-                  }}
-                  title={gettext("Close tab and remove figure")}
-                >
-                  &times;
-                </span>
-              </button>
-            ))}
+                <i className="fas fa-link" aria-hidden="true" />
+                {[provenanceRecipe, ...provenanceCalls]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            )}
           </div>
+        )}
+        <DataTable
+          key={`table:${activeTab?.id ?? "empty"}`}
+          data={dataset}
+          style={{ flex: 1, height: "auto", minHeight: 0 }}
+          readOnly={locked}
+          onCellSelect={handleCellSelect}
+          onDataChange={handleDataChange}
+        />
+        {tabs.length >= 1 && (
+          <FileTabs
+            tabs={tabs.map((tab) => ({ path: tab.id, label: tab.label }))}
+            activeTab={activeTabId}
+            onTabSwitch={selectDataTab}
+            onTabClose={handleCloseTab}
+            showNewButton={false}
+          />
         )}
         {activeTab && (
           <PlotFromColumns
-            key={activeTab.id}
+            key={`plot:${activeTab.id}`}
             tab={activeTab}
             columnCommand={columnCommand}
             selectionCommand={selectionCommand}
@@ -1135,7 +1397,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleAddRow}
-            disabled={!activeTab}
+            disabled={locked || !activeTab}
             title={gettext("Add a row below the selected one")}
           >
             <i className="fas fa-plus" aria-hidden="true" />
@@ -1145,7 +1407,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleDeleteRow}
-            disabled={!activeTab}
+            disabled={locked || !activeTab}
             title={gettext("Delete the selected row")}
           >
             <i className="fas fa-minus" aria-hidden="true" />
@@ -1156,7 +1418,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleAddColumn}
-            disabled={!activeTab}
+            disabled={locked || !activeTab}
             title={gettext("Add a column at the end of the table")}
           >
             <i className="fas fa-plus" aria-hidden="true" />
@@ -1166,7 +1428,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={() => setRenameDraft(activeColumnName ?? "")}
-            disabled={!activeTab || !activeColumnName}
+            disabled={locked || !activeTab || !activeColumnName}
             title={gettext("Rename the selected column")}
           >
             <i className="fas fa-pen" aria-hidden="true" />
@@ -1176,7 +1438,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleDuplicateColumn}
-            disabled={!activeTab || !activeColumnName}
+            disabled={locked || !activeTab || !activeColumnName}
             title={gettext("Duplicate the selected column beside itself")}
           >
             <i className="fas fa-clone" aria-hidden="true" />
@@ -1186,7 +1448,7 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
             type="button"
             className="data-pane__btn"
             onClick={handleDeleteColumn}
-            disabled={!activeTab || !activeColumnName}
+            disabled={locked || !activeTab || !activeColumnName}
             title={gettext("Delete the selected column")}
           >
             <i className="fas fa-trash-alt" aria-hidden="true" />
@@ -1258,12 +1520,6 @@ export function DataTablePane({ onToggleCollapse, collapsed, hideCollapse, activ
           </div>
         )}
 
-        <DataTable
-          data={dataset}
-          style={{ flex: 1 }}
-          onCellSelect={handleCellSelect}
-          onDataChange={handleDataChange}
-        />
           </>
         )}
       </div>

@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   applyColumnHighlight,
+  applyRowHighlight,
   readRowValues,
   readSelectedCells,
   type TableNode,
@@ -293,6 +294,93 @@ ok("a column the table did not render becomes an empty value, not a hole", () =>
   const values = readRowValues(nodes, 0);
   // Assert
   assert.deepEqual(values, ["a", "", "c"]);
+});
+
+// ------------------------------------------------------- element rows
+
+/** A table showing the dataset rows in a different (sorted) order: display
+ *  row 0 shows dataset row 1 and vice versa. */
+function fakeSortedTable() {
+  const nodes: FakeNode[] = [
+    fakeNode({ "data-col": "0" }, "time"),
+    fakeNode({ "data-col": "1" }, "signal"),
+    // display row 0 <- dataset row 1
+    fakeNode({ "data-row": "0", "data-col": "0" }, "1"),
+    fakeNode({ "data-row": "0", "data-col": "1" }, "2.5"),
+    // display row 1 <- dataset row 0
+    fakeNode({ "data-row": "1", "data-col": "0" }, "0"),
+    fakeNode({ "data-row": "1", "data-col": "1" }, "1.5"),
+  ];
+  return { nodes };
+}
+
+const DATASET_ROWS: (readonly unknown[])[] = [
+  [0, 1.5],
+  [1, 2.5],
+];
+
+ok("an element's rows are matched by value, not by display position", () => {
+  // Arrange
+  const { nodes } = fakeSortedTable();
+  // Act: dataset row 0 is [0, 1.5], shown at display row 1.
+  applyRowHighlight(nodes, DATASET_ROWS, [0]);
+  // Assert: the cells showing 0 / 1.5 carry the stamp, wherever they sit.
+  const stamped = nodes.filter((n) =>
+    n.classList.contains("data-pane__row--from-element"),
+  );
+  assert.deepEqual(
+    stamped.map((n) => n.textContent),
+    ["0", "1.5"],
+  );
+  for (const node of stamped) {
+    assert.equal(node.getAttribute("data-row-highlight"), "element");
+  }
+});
+
+ok("clearing the indices clears every row stamp", () => {
+  // Arrange
+  const { nodes } = fakeSortedTable();
+  applyRowHighlight(nodes, DATASET_ROWS, [0, 1]);
+  // Act
+  applyRowHighlight(nodes, DATASET_ROWS, []);
+  // Assert
+  for (const node of nodes) {
+    assert.deepEqual(node.tokens(), []);
+    assert.equal(node.getAttribute("data-row-highlight"), null);
+  }
+});
+
+ok("dataset indices outside the table stamp nothing, not the wrong row", () => {
+  // Arrange
+  const { nodes } = fakeSortedTable();
+  // Act
+  applyRowHighlight(nodes, DATASET_ROWS, [7]);
+  // Assert
+  for (const node of nodes) {
+    assert.deepEqual(node.tokens(), []);
+  }
+});
+
+ok("axis badges are localized, header-only, and cleared without renaming columns", () => {
+  // Arrange
+  const table = fakeTable(2, 1);
+  table.header(0).textContent = "x";
+  table.header(1).textContent = "y";
+  const highlights: ColumnHighlight[] = [
+    {index: 0, name: "x", role: "x", preview: false},
+    {index: 1, name: "y", role: "y", preview: false},
+  ];
+  // Act / Assert
+  applyColumnHighlight(table.nodes, highlights);
+  assert.equal(table.header(0).getAttribute("data-col-axis-label"), "X axis");
+  applyColumnHighlight(table.nodes, highlights, {x: "横軸", y: "縦軸"});
+  assert.deepEqual([table.header(0).textContent, table.header(1).textContent], ["x", "y"]);
+  assert.equal(table.header(0).getAttribute("data-col-axis-label"), "横軸");
+  assert.equal(table.header(1).getAttribute("aria-label"), "y, 縦軸");
+  assert.equal(table.cell(0, 0).getAttribute("data-col-axis-label"), null);
+  applyColumnHighlight(table.nodes, []);
+  assert.equal(table.header(0).getAttribute("data-col-axis-label"), null);
+  assert.equal(table.header(1).getAttribute("aria-label"), null);
 });
 
 // ------------------------------------------------------- module hygiene

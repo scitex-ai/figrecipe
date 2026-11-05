@@ -2,7 +2,7 @@
  *
  * Two surfaces render the same templates and must not drift:
  *   - GalleryPanel  — the modal opened from the plot-type nav
- *   - GalleryStart  — what the Plot canvas shows before anything is open
+ *   - GalleryStart  — what the Panel canvas shows before anything is open
  *
  * Both need the same three things (categories, thumbnails, add-to-canvas), so
  * they share this hook rather than each keeping its own copy of the fetch
@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../api/client";
+import { canvasOf } from "../../types/editor";
 import { mapWithConcurrency } from "../../utils/mapWithConcurrency";
 import { useEditorStore } from "../../store/useEditorStore";
 import { gettext, gettext_noop, interpolate } from "@scitex/sdk/ui/ts/_base/gettext.ts";
@@ -66,7 +67,14 @@ export function useGalleryTemplates() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-  const { addFigure, showToast } = useEditorStore();
+  const addFigure = useEditorStore((s) => s.addFigure);
+  const showToast = useEditorStore((s) => s.showToast);
+  // Gallery add lands on the CURRENT canvas (1 Figure = 1 Canvas: the
+  // figure being worked on collects the new panel).
+  const activeCanvasKey = useEditorStore((s) => {
+    const sel = s.placedFigures.find((f) => f.id === s.selectedFigureId);
+    return sel ? canvasOf(sel) : undefined;
+  });
 
   // Names already requested. Keying the fetch effect off `thumbnails` alone
   // re-fires it on every arrival, and an in-flight request has no entry yet —
@@ -130,42 +138,15 @@ export function useGalleryTemplates() {
           "api/gallery/add",
           { template: tmpl.name },
         );
-        await addFigure(result.recipe_path);
+        await addFigure(result.recipe_path, activeCanvasKey);
         return true;
       } catch (e) {
         showToast(interpolate(gettext("Failed to add template: %s"), [e]), "error");
         return false;
       }
     },
-    [addFigure, showToast],
+    [addFigure, activeCanvasKey, showToast],
   );
 
-  /** Open the figure a brand-new workspace should start on.
-   *
-   * The server decides whether there is one: it seeds a small demo recipe
-   * (and its data) into an EMPTY workspace, hands back an existing seed
-   * unchanged, and returns `null` for a workspace that already holds the
-   * user's own recipes — a real project must not be littered with a demo.
-   *
-   * Resolves to `true` only when a figure is now on the canvas, so the
-   * caller can fall back to the template grid on `false`.
-   */
-  const openDemoFigure = useCallback(async () => {
-    try {
-      const result = await api.post<{ recipe_path: string | null }>(
-        "api/gallery/demo",
-        {},
-      );
-      if (!result.recipe_path) return false;
-      await addFigure(result.recipe_path);
-      return true;
-    } catch (e) {
-      // Never a toast: the visitor did not ask for this, so a failure must
-      // degrade to the gallery silently rather than open with an error.
-      console.error("[Gallery] Could not open the demo figure:", e);
-      return false;
-    }
-  }, [addFigure]);
-
-  return { data, loading, failed, thumbnails, addTemplate, openDemoFigure };
+  return { data, loading, failed, thumbnails, addTemplate };
 }
