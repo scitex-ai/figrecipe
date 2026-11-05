@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.44.2"
+version = "0.44.3"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -69,10 +69,11 @@ dev = [
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
     # Activates the mandatory package-owned logger auditor and its Issue SPI.
-    "scitex-dev>=0.62.4.dev0",
+    "scitex-dev>=0.62.16",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
-    "scitex-logging>=0.2.3",
+    # Git-aware source inventory excludes ignored npm dependencies from audits.
+    "scitex-logging>=0.2.5",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
@@ -135,6 +136,7 @@ graph-interactive = [
     "pyvis>=0.3",
 ]
 docs = [
+    "fastmcp>=2.0",
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",
     "myst-parser>=2.0",
