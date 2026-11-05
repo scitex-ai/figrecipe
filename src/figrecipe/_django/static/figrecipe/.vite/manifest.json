@@ -1,6 +1,6 @@
 {
-  "_mobile-DlA8liVe.js": {
-    "file": "assets/mobile-DlA8liVe.js",
+  "_mobile-DSODq2nV.js": {
+    "file": "assets/mobile-DSODq2nV.js",
     "name": "mobile"
   },
   "index.html": {
@@ -9,7 +9,7 @@
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_mobile-DlA8liVe.js"
+      "_mobile-DSODq2nV.js"
     ],
     "dynamicImports": [
       "src/workspace.ts"
@@ -22,7 +22,7 @@
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_mobile-DlA8liVe.js"
+      "_mobile-DSODq2nV.js"
     ]
   },
   "style.css": {
