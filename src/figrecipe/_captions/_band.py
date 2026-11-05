@@ -203,6 +203,10 @@ def extend_figure_for_caption(
         "wspace": float(sp.wspace),
         "hspace": float(sp.hspace),
     }
+    # Keep the live metadata consistent with the pinned rectangles. Updating
+    # SubplotParams does not move axes (unlike Figure.subplots_adjust), so the
+    # resolved inch geometry stays intact for composition and save capture.
+    sp.update(**new_layout)
 
     # 5) Mirror into the record so save -> reproduce recreates the same canvas.
     if hasattr(record, "figsize"):
