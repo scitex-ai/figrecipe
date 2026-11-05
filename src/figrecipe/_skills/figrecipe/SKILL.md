@@ -51,6 +51,7 @@ This package does not ship as a submodule of the `scitex` umbrella.
 * [26_tight-layout-and-page-filling](26_tight-layout-and-page-filling.md) — use the page tightly (tiled over grid, never stretch); fr.empty_cells / fr.layout_report as the deterministic foundation
 
 ### Workflows
+* [31_editor-data-and-fit](31_editor-data-and-fit.md) — direct worksheet entry, provenance locks, Fit, export, and current table-close semantics
 * [10_workflows](10_workflows.md) — Common figure workflows
 * [11_cli-reference](11_cli-reference.md) + [13_cli-extras](13_cli-extras.md) — Extended CLI notes
 * [12_mcp-tools](12_mcp-tools.md) + [14_mcp-tool-catalog](14_mcp-tool-catalog.md) — MCP tool reference

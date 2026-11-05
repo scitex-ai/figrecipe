@@ -225,12 +225,15 @@ export function fitContentView(
   containerH: number,
   box: ContentBox,
   buffer = 40,
+  contentOrigin: Point = { x: 0, y: 0 },
 ): ViewState | null {
   if (
     !Number.isFinite(containerW) ||
     !Number.isFinite(containerH) ||
     !Number.isFinite(box.x) ||
     !Number.isFinite(box.y) ||
+    !Number.isFinite(contentOrigin.x) ||
+    !Number.isFinite(contentOrigin.y) ||
     !(box.w > 0) ||
     !(box.h > 0)
   ) {
@@ -240,9 +243,10 @@ export function fitContentView(
   const availH = containerH - buffer;
   if (!(availW > 0) || !(availH > 0)) return null;
   const zoom = clampZoom(Math.min(availW / box.w, availH / box.h));
-  // Translate the actual content bounds (including negative coordinates)
-  // to the inset; unused room belongs at the right/bottom, never above it.
-  const panX = buffer / 2 - zoom * box.x;
-  const panY = buffer / 2 - zoom * box.y;
+  // The transform starts at the ruler grid; figure coordinates start at
+  // the page inside it. Anchor the actual image at the inset in either
+  // ruler state; unused room belongs at the right/bottom.
+  const panX = buffer / 2 - zoom * (box.x + contentOrigin.x);
+  const panY = buffer / 2 - zoom * (box.y + contentOrigin.y);
   return sanitizeView({ zoom, panX, panY });
 }

@@ -345,6 +345,23 @@ ok("fitContentView maximizes content and anchors its bounds at top-left", () => 
   }
 });
 
+ok("Fit keeps figure bounds inside the viewport with visible or hidden rulers", () => {
+  const box = { x: 12, y: 24, w: 718, h: 251 };
+  for (const origin of [{ x: 60, y: 60 }, { x: 0, y: 0 }]) {
+    const view = fitContentView(1139, 874, box, 40, origin)!;
+    const left = view.panX + view.zoom * (box.x + origin.x);
+    const top = view.panY + view.zoom * (box.y + origin.y);
+    const right = left + view.zoom * box.w;
+    const bottom = top + view.zoom * box.h;
+    assert.ok(left >= 20 - 1e-9);
+    assert.ok(top >= 20 - 1e-9);
+    assert.ok(right <= 1119 + 1e-9);
+    assert.ok(bottom <= 854 + 1e-9);
+    assert.ok(Math.abs(left - 20) < 1e-9);
+    assert.ok(Math.abs(top - 20) < 1e-9);
+  }
+});
+
 ok("fitContentView has no 1.0 cap but respects the zoom clamp", () => {
   // A 200x100 figure in the same viewport would fit at 7x — clamped to MAX.
   const big = fitContentView(1440, 900, { x: 0, y: 0, w: 200, h: 100 });

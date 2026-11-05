@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """Shared utilities for recipe serialization."""
 
+import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -40,3 +42,15 @@ def _sanitize_filename(name: str) -> str:
     Replaces dots (except for extensions) to avoid Path.with_suffix() issues.
     """
     return name.replace(".", "_")
+
+
+def _link_source_data(source: Path, target: Path) -> None:
+    """Link from the physical output parent without removing its own source."""
+    source = source.resolve(strict=True)
+    parent = target.parent.resolve(strict=True)
+    if not target.is_symlink() and target.exists() and target.samefile(source):
+        return
+    relative = os.path.relpath(source, parent)
+    if target.is_symlink() or target.exists():
+        target.unlink()
+    target.symlink_to(relative)

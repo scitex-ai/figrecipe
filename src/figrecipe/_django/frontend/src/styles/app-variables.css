@@ -97,7 +97,9 @@ body {
 }
 
 #root {
-  height: 100vh;
+  /* The SDK shell already reserves its header/footer outside this mount. */
+  height: 100%;
+  min-height: 0;
 }
 
 /* ── Scrollbars ──────────────────────────────────────── */
