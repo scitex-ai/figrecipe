@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Build relative data links from the physical output directory so loaded,
+  composed and embedded recipes remain readable through symlinked folders.
+- Preserve existing CSV backing files when re-saving a loaded recipe in place.
+
 ## [0.44.3] - 2026-11-05
 
 - Build MCP autodoc with the actual FastMCP dependency supplied by the docs extra.
