@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.3] - 2026-11-05
+
+- Build MCP autodoc with the actual FastMCP dependency supplied by the docs extra.
+- Require the Git-aware logging auditor in development environments so ignored
+  npm dependencies remain outside authored-source checks after frontend builds.
+
 - Capture the live layout engine and subplot margins when saving, so changes
   through `tight_layout`, `set_layout_engine`, or `subplots_adjust` are replayed
   with the same geometry and pass the existing reproduction validator.
