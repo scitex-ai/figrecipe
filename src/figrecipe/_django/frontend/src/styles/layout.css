@@ -33,26 +33,6 @@
    Stacked top to bottom (Figures / Panels / Tables) so the navigator
    reads as the dependency chain, not four flat siblings. */
 
-/* figrecipe's app-local project selector (TODO 145/147). Now inside the
-   canonical .stx-app-header__slot--project-selector wrapper (scitex-ui CSS
-   pins it left-after-title on desktop, full-width on phones). The wrapper
-   owns margin/align — we only cap the selector's own width on desktop so
-   the trigger doesn't balloon past the title. */
-.project-scope-selector {
-  max-width: 260px;
-}
-.project-scope-selector .stx-app-project-selector__trigger {
-  max-width: 100%;
-  /* Trigger geometry/text come from the SDK (36px / 0.85rem, identical
-     everywhere per mandate) — no leaf override (was 28px/12px). */
-}
-.project-scope-selector .stx-app-project-selector__current,
-.project-scope-selector .stx-app-project-selector__placeholder {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .inner-editor__tab {
   display: flex;
   align-items: center;
@@ -742,3 +722,18 @@
   gap: 12px;
   align-items: center;
 }
+
+/* Navigation is a relationship graph; removal detaches composition items. */
+.editor-nav-item { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.editor-nav-item__remove {
+  border: 0; background: transparent; color: var(--color-danger, var(--status-error));
+  cursor: pointer; padding: 2px 5px; font-size: 16px; line-height: 1;
+}
+.editor-nav-item__remove:disabled { opacity: .35; cursor: not-allowed; }
+.editor-nav-menu {
+  position: fixed; z-index: 10000; padding: 6px;
+  border: 1px solid var(--vis-border); border-radius: 4px;
+  background: var(--vis-bg-secondary); color: var(--vis-text-primary);
+}
+.editor-nav-menu button { padding: 6px 10px; background: transparent; border: 0; color: var(--color-danger, var(--status-error)); cursor: pointer; }
+.editor-nav-menu button:disabled { opacity: .4; cursor: not-allowed; }

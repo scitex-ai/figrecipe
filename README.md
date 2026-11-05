@@ -82,15 +82,16 @@ FigRecipe treats recipe, data, and style as first-class attributes of every figu
 
 Requires Python >= 3.10.
 
-This coordinated source candidate requires the reviewed `scitex-sdk>=0.3.11`
-owner. Install the published 0.3.11 release; the following registry commands
-describe the published package.
+The core package requires `scitex-sdk>=0.3.18`. GUI extras require
+`scitex-sdk>=0.3.20` for the canonical header's API action; the developer extra
+requires `scitex-sdk>=0.3.21` for nested Vite output auditing. The frontend build
+retains its immutable SDK 0.3.18 source and lock. Production main-bundle source
+maps retain paths and mappings without embedded sources; debugging requires the
+matching source checkout or sdist and the pinned SDK source.
 
-Exact content output in this source candidate requires `scitex-logging>=0.2.3`;
-its developer extra also requires `scitex-dev>=0.62.4.dev0` to activate the
-package-owned auditor. Until those coordinated releases are published, install
-their reviewed wheels before this candidate. This change creates no release tag
-or package publication.
+Exact content output requires `scitex-logging>=0.2.3`. The developer extra also
+requires `scitex-dev>=0.62.4.dev0` to activate the package-owned logging auditor.
+Install the extras below to resolve their declared dependencies together.
 
 ```bash
 uv pip install "figrecipe[all]"
@@ -190,7 +191,8 @@ fr.load_style("MATPLOTLIB")   # Pure Matplotlib
 
 For precise adjustments, GUI editor is available. The Data page supports
 [direct entry in an editable worksheet](docs/data-worksheet.md), CSV import,
-and plotting from selected columns.
+and plotting from selected columns. Assigned columns keep their original names;
+separate localized **X axis** and **Y axis** badges identify plot roles.
 
 <p align="center">
   <img src="docs/figrecipe-gui-demo.png" alt="FigRecipe GUI Editor" width="100%"/>

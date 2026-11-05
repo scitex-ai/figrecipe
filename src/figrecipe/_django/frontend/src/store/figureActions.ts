@@ -2,7 +2,7 @@
 
 import { api, ApiSessionExpired, apiSessionId, isApiSessionCurrent, setRecipe } from "../api/client";
 import { DPI, getPanelBboxes } from "../hooks/useSnap";
-import { pushUndoState } from "../hooks/useUndoRedo";
+import { prepareUndoState, pushUndoState } from "../hooks/useUndoRedo";
 import { newId } from "../utils/newId";
 import type {
   BBox,
@@ -61,10 +61,13 @@ export function createFigureActions(set: Set, get: Get) {
           PreviewResponse & {
             color_map?: Record<string, unknown>;
             working_dir?: string;
+            recipe_path?: string;
           }
         >(`api/switch?dpi=${DPI}`, { path, dark_mode: get().darkMode });
 
         if (data.working_dir) set({ workingDir: data.working_dir });
+        const wd = data.working_dir || get().workingDir;
+        const fullPath = data.recipe_path || (path.startsWith("/") || !wd ? path : `${wd}/${path}`);
 
         let nextY = 0;
         const siblings = placedFigures.filter((f) => canvasOf(f) === canvas);
@@ -76,8 +79,8 @@ export function createFigureActions(set: Set, get: Get) {
 
         const newFig: PlacedFigure = {
           id: newId(),
-          path,
-          canvasKey: canvas,
+          path: fullPath,
+          canvasKey: canvasKey ?? fullPath,
           x: 0,
           y: nextY,
           previewImage: data.image,
@@ -89,12 +92,11 @@ export function createFigureActions(set: Set, get: Get) {
         set((s) => ({
           placedFigures: [...s.placedFigures, newFig],
           selectedFigureId: newFig.id,
-          currentFile: path,
+          currentFile: fullPath,
+          activeTabId: null,
         }));
 
         const params = new URLSearchParams(window.location.search);
-        const wd = data.working_dir || get().workingDir;
-        const fullPath = wd ? `${wd}/${path}` : path;
         setRecipe(fullPath);
         session = apiSessionId();
         params.set("recipe", fullPath);
@@ -118,22 +120,16 @@ export function createFigureActions(set: Set, get: Get) {
       }
     },
 
-    removeFigure: (id: string) => {
+    removeFigure: (id: string | string[]) => {
+      prepareUndoState();
+      const ids = new Set(Array.isArray(id) ? id : [id]);
       set((s) => {
-        const figure = s.placedFigures.find((f) => f.id === id);
-        const remaining = s.placedFigures.filter((f) => f.id !== id);
+        const figure = s.placedFigures.find((f) => f.id === s.selectedFigureId && ids.has(f.id));
+        const remaining = s.placedFigures.filter((f) => !ids.has(f.id));
 
-        // Clean up data table tab for the removed figure
-        const updatedTabs = { ...s.datatableTabs };
-        if (figure?.path) {
-          delete updatedTabs[figure.path];
-        }
-        // If active tab was for this figure, switch to first remaining tab
-        let activeTabId = s.activeTabId;
-        if (figure?.path && activeTabId === figure.path) {
-          const tabKeys = Object.keys(updatedTabs);
-          activeTabId = tabKeys.length > 0 ? tabKeys[0] : null;
-        }
+        // Removing placements never deletes their source data or recipes.
+        const updatedTabs = s.datatableTabs;
+        const activeTabId = s.activeTabId;
 
         // Renumber panel letters within each canvas separately: letters
         // restart on every canvas (1 Figure = 1 Canvas).
@@ -147,10 +143,10 @@ export function createFigureActions(set: Set, get: Get) {
         // Selection follows the removed figure's canvas: first remaining
         // panel on the same canvas, else the first remaining figure.
         let selectedFigureId = s.selectedFigureId;
-        let selectedFigureIds = s.selectedFigureIds.filter((fid) => fid !== id);
+        let selectedFigureIds = s.selectedFigureIds.filter((fid) => !ids.has(fid));
         let selectedElement = s.selectedElement;
         let selectedBbox = s.selectedBbox;
-        if (s.selectedFigureId === id) {
+        if (s.selectedFigureId && ids.has(s.selectedFigureId)) {
           const removedCanvas = figure ? canvasOf(figure) : null;
           const sameCanvas = removedCanvas
             ? relabeled.filter((f) => canvasOf(f) === removedCanvas)
@@ -171,6 +167,12 @@ export function createFigureActions(set: Set, get: Get) {
           activeTabId,
         };
       });
+      const selected = get().placedFigures.find(panel => panel.id === get().selectedFigureId);
+      if (selected) {
+        setRecipe(selected.path);
+        const table = Object.values(get().datatableTabs).find(tab => tab.panelPath === selected.path);
+        set({currentFile: selected.path, activeTabId: table?.id ?? null});
+      }
       pushUndoState();
     },
 
@@ -205,9 +207,18 @@ export function createFigureActions(set: Set, get: Get) {
     },
 
     selectFigure: (id: string | null) => {
+      const panel = get().placedFigures.find(figure => figure.id === id);
+      if (panel && panel.path !== get().currentFile) {
+        setRecipe(panel.path);
+        set({currentFile: panel.path});
+        void get().loadDatatable();
+        void get().loadHitmap();
+      }
+      const table = panel ? Object.values(get().datatableTabs).find(tab => tab.panelPath === panel.path) : null;
       set({
         selectedFigureId: id,
         selectedFigureIds: id ? [id] : [],
+        ...(panel ? {activeTabId: table?.id ?? null} : {}),
         selectedElement: null,
         selectedBbox: null,
       } as never);

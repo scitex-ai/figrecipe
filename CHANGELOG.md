@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.3] - 2026-11-05
+
+- Build MCP autodoc with the actual FastMCP dependency supplied by the docs extra.
+- Require the Git-aware logging auditor in development environments so ignored
+  npm dependencies remain outside authored-source checks after frontend builds.
+
+- Capture the live layout engine and subplot margins when saving, so changes
+  through `tight_layout`, `set_layout_engine`, or `subplots_adjust` are replayed
+  with the same geometry and pass the existing reproduction validator.
+- Correct the quickstart's layered ZIP example to use `save_bundle` explicitly.
+
+## [0.44.2] - 2026-11-04
+
+- Mount the standalone editor header through the existing shared SDK port,
+  keeping one project picker and the host-provided API documentation link.
+- Keep the editor below its header within the available parent height,
+  including hosts that reserve space for their own header.
+- Require SDK 0.3.20 in GUI extras for the shared API action, and SDK 0.3.21
+  for development audits that bind nested Vite output to authored sources.
+  Keep the immutable SDK 0.3.18 build owner and retain prior hashed chunks.
+- Derive both normal frontend and built-library version fallbacks from the
+  Python package version, so the 0.44.2 builds report their actual version.
+
+## [0.44.1] - 2026-11-03
+
+- Keep sorted Data column names readable in light/dark host themes by binding
+  the SDK foreground token inside the Data pane; retain role-badge colors and layout.
+
+- Separate localized X axis/Y axis badges from unchanged table column names,
+  preserving role colors, accessible labels and shared SDK table interactions.
+
+- Keep one sample-data grid across selection updates and table switches by giving the grid and plot controls distinct React identities; prevent repeated headers and compressed cell coordinates.
+- Retain previous hashed frontend chunks in source builds so cached entry scripts keep working with development static-file serving as well as collected assets.
+
+- Track the two missing quickstart diagram PNGs with generator provenance, and check every documentation image link resolves to a jailed regular Git PNG.
+
+- Keep all Figure, Panel and source Data tabs available, with reversible composition removal and keyboard context menus. Recorded Data stays locked until adopted.
+- Preserve YAML inline versus linked CSV/NPY data identities and panel relationships; queued edits remain scoped to their original recipe/tab/session.
+- Keep cached editor records owned by their recipe when creating or switching Figures; repair legacy cache entries that point at another recipe.
+- Fit content at the top-left. Export only the selected Figure with a project/Figure/UTC filename, preserving panels placed at negative coordinates.
+
+- Use the SDK React AppHeader binding in the editor and the same SDK mount for server-declared rows. Header appearance now comes from the SDK, with one project picker retained in either mode.
+- Keep session-only imported data labelled as imported data, without inventing a project CSV path; preserve exact imported rows on the next read.
+- Keep optional Django export imports behind the documented editor-extra boundary; defer shared chat views until request handling so handler imports do not require a populated Django registry.
+- Require the published SDK 0.3.17 for React headers, selection coverage, and explicit operational project-scope support. The immutable frontend build uses that same released owner source.
+- Declare project support explicitly so hosts retain authorized project choices while refusing unsupported user scope.
+
 ## [0.44.0] - 2026-10-24
 
 - The canvas remembers size and position per figure: switching figures

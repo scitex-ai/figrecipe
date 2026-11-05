@@ -1,4 +1,4 @@
-/** App-header placement gate (scitex-ui 0.22.0 canonical, compass-impl L381 (a)).
+/** App-header placement gate (public SDK 0.3.18 canonical ownership).
  *
  * Hub ruling (9/16, both-owner confirmation): the 'dotfiles' dropdown on the
  * /apps/figrecipe mount is FIGRECIPE's own ProjectScopeSelector (A), NOT a hub
@@ -39,46 +39,27 @@ function check(name: string, cond: boolean) {
 
 const inner = read(SRC, "InnerEditor.tsx");
 
-// 1. Canonical app header exists in the editor tree.
-check(
-  "InnerEditor renders a .stx-app-header element",
-  /<header\s+className="stx-app-header"/.test(inner),
-);
-
-// 2. The project selector is INSIDE a canonical slot, not the tab row —
-// either the owned slot (fallback header, no server row) or the server SSoT
-// slot via portal (figrecipe-ssot-header-row-20261017: header[data-ssot]
-// present). Exactly one of the two renders at runtime; the single `picker`
-// element below is shared by both paths.
-check(
-  "selector wrapped in .stx-app-header__slot--project-selector",
-  /<div\s+className="stx-app-header__slot--project-selector">[\s\S]*?\{picker\}[\s\S]*?<\/div>/.test(
-    inner,
-  ) &&
-    /header\.stx-app-header\[data-ssot\][\s\S]*?\.stx-app-header__slot--project-selector/.test(
-      inner,
-    ),
-);
-check(
-  "ProjectScopeSelector appears exactly once (no duplicate picker)",
-  (inner.match(/<ProjectScopeSelector\s*\/>/g) || []).length === 1,
-);
-check(
-  "selector NOT in the tab row (moved out of .inner-editor__tabs)",
-  !/<div className="inner-editor__tabs">[\s\S]*?<ProjectScopeSelector\s*\/>/.test(
-    inner,
-  ),
-);
-
-// 3. Exactly one title; the brand title is figrecipe's own.
-check(
-  "a header title element exists",
-  /<span className="stx-app-header__title">/.test(inner),
-);
-check(
-  "title is the invariant brand name 'FigRecipe' via gettext (not hardcoded EN/JA mix)",
-  /gettext\("FigRecipe"\)/.test(inner),
-);
+// The leaf delegates rendering to the SDK React binding, or portals the same
+// picker into the SDK-owned server row. The real editorAppHeader.spec.ts suite
+// exercises both paths under React StrictMode, including rerender and unmount.
+const bridge = read(SRC, "components/EditorAppHeader.tsx");
+check("InnerEditor delegates its title/version/picker to EditorAppHeader",
+  /<EditorAppHeader\s+title=\{gettext\("FigRecipe"\)\}\s+version=\{resolvedVersion\}/.test(inner) &&
+  /projectSelector=\{<ProjectScopeSelector\s*\/>\}/.test(inner));
+check("editor has no handwritten shared header markup",
+  !/<header\b/.test(inner) && !/<(?:span|div)\s+className="stx-app-header__/.test(inner));
+check("one project selector is declared, outside the tab row",
+  (inner.match(/<ProjectScopeSelector\s*\/>/g) || []).length === 1 &&
+  !/<div className="inner-editor__tabs"[\s\S]*?<ProjectScopeSelector\s*\/>/.test(inner));
+check("SPA bridge uses the public SDK AppHeader binding",
+  /import\s*\{\s*AppHeader\s*\}\s*from\s*"@scitex\/sdk\/ui\/react\/app\/app-header"/.test(bridge) &&
+  /<AppHeader\s+title=\{title\}\s+version=\{version\}\s+projectSelector=\{projectSelector\}/.test(bridge));
+check("server bridge mounts the SDK row and portals into its canonical slot",
+  /mountAppHeader\(region,\s*\{\s*projectSlot:\s*true\s*\}\)/.test(bridge) &&
+  /serverRoot\.querySelector<HTMLElement>\("\.stx-app-header__slot--project-selector"\)/.test(bridge) &&
+  /createPortal\(projectSelector,\s*slot\)/.test(bridge));
+check("bridge never duplicates the shared header renderer",
+  !/<header\b/.test(bridge) && !/<(?:span|div)\s+className="stx-app-header__/.test(bridge));
 
 // 4. Version is DERIVED, not hardcoded: resolved as prop -> #root
 //    [data-version] -> __FIGRECIPE_VERSION__ (build-time from pyproject.toml).
@@ -93,8 +74,8 @@ check(
   /getAttribute\("data-version"\)/.test(inner),
 );
 check(
-  "version badge rendered conditionally (hidden only when all sources empty)",
-  /resolvedVersion &&/.test(inner),
+  "resolved version is delegated to the SDK-owned badge",
+  /<EditorAppHeader[\s\S]*?version=\{resolvedVersion\}/.test(inner),
 );
 
 // 5. The Django view stamps data-version from figrecipe.__version__ (the

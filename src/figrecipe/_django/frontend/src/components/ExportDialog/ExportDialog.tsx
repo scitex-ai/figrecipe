@@ -1,6 +1,7 @@
 /** Export dialog — modal with format, filename, and DPI selection. */
 
 import { useCallback, useEffect, useState } from "react";
+import { exportTarget, exportFilename } from "./exportTarget";
 import { api } from "../../api/client";
 import { buildExportPayload } from "../../store/persistActions";
 import { useEditorStore } from "../../store/useEditorStore";
@@ -15,9 +16,9 @@ const FORMATS = [
     id: "png",
     label: "PNG",
     icon: "fas fa-file-image",
-    hint: gettext_noop("Raster (300 DPI)"),
+    hint: gettext_noop("PNG image"),
   },
-  { id: "svg", label: "SVG", icon: "fas fa-file-code", hint: gettext_noop("Vector") },
+  { id: "svg", label: "SVG", icon: "fas fa-file-code", hint: gettext_noop("SVG image") },
   { id: "pdf", label: "PDF", icon: "fas fa-file-pdf", hint: gettext_noop("Print-ready") },
 ];
 
@@ -26,8 +27,11 @@ export function ExportDialog({ onClose }: Props) {
   const placedFigures = useEditorStore((s) => s.placedFigures);
   const workingDir = useEditorStore((s) => s.workingDir);
   const darkMode = useEditorStore((s) => s.darkMode);
+  const selectedId = useEditorStore((s) => s.selectedFigureId);
+  const projectName = useEditorStore((s) => s.projectName ?? s.projectId ?? s.workingDir);
+  const target = exportTarget(placedFigures, selectedId);
   const [format, setFormat] = useState("png");
-  const [filename, setFilename] = useState("composed");
+  const [filename, setFilename] = useState(() => exportFilename(projectName, target.figureNumber));
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -42,9 +46,9 @@ export function ExportDialog({ onClose }: Props) {
     setExporting(true);
     try {
       let blob: Blob;
-      if (placedFigures.length > 0) {
+      if (target.panels.length > 0) {
         const payload = buildExportPayload(
-          placedFigures,
+          target.panels,
           workingDir,
           darkMode,
           filename,
@@ -71,7 +75,7 @@ export function ExportDialog({ onClose }: Props) {
     filename,
     showToast,
     onClose,
-    placedFigures,
+    target.panels,
     workingDir,
     darkMode,
   ]);

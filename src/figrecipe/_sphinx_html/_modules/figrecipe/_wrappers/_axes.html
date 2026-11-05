@@ -5,16 +5,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._wrappers._axes &mdash; FigRecipe v0.36.0</title>
+  <title>figrecipe._wrappers._axes &mdash; FigRecipe v0.44.3</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
 
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=5864e6e0"></script>
+      <script src="../../../_static/documentation_options.js?v=f0644c7e"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -239,6 +240,8 @@
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.empty_cells"><code class="docutils literal notranslate"><span class="pre">empty_cells()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.layout_report"><code class="docutils literal notranslate"><span class="pre">layout_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.auto_tile_layout"><code class="docutils literal notranslate"><span class="pre">auto_tile_layout()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.resolve_compose_preset"><code class="docutils literal notranslate"><span class="pre">resolve_compose_preset()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.list_compose_presets"><code class="docutils literal notranslate"><span class="pre">list_compose_presets()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.gui"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.crop"><code class="docutils literal notranslate"><span class="pre">crop()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
@@ -381,6 +384,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.embed"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.embed()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__dir__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__dir__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_recording_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_recording_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_cla_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_cla_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_bar_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_bar_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_boxplot_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_boxplot_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_stem_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_stem_wrapper()</span></code></a></li>
@@ -544,12 +548,38 @@
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"stem"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_stem_wrapper</span><span class="p">()</span>
 
+        <span class="c1"># Route cla() to a wrapper that also clears this axes' recorded calls</span>
+        <span class="c1"># and decorations: the live cla() removes every artist and every</span>
+        <span class="c1"># decoration from the axes, but the records kept claiming them, so a</span>
+        <span class="c1"># replay drew a cleared axes (card</span>
+        <span class="c1"># figrecipe-cla-replay-still-diverges-20260927).</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"cla"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_cla_wrapper</span><span class="p">()</span>
+
         <span class="c1"># Route add_patch to a wrapper that records a serializable patch spec</span>
         <span class="c1"># (raw patches are objects that otherwise vanish on replay)</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"add_patch"</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">._axes_patches</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_add_patch_wrapper</span>
 
             <span class="k">return</span> <span class="n">build_add_patch_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># Route add_line/add_artist/add_collection to wrappers that record a</span>
+        <span class="c1"># serializable artist spec (raw artists otherwise vanish on replay;</span>
+        <span class="c1"># card figrecipe-unrecorded-axes-artist-methods-20261005). Non-Line2D</span>
+        <span class="c1"># artists fail loud at call time; twinx/twiny stay unrouted (raw Axes</span>
+        <span class="c1"># needs its own secondary-axes design, same card).</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="s2">"add_line"</span><span class="p">,</span>
+            <span class="s2">"add_artist"</span><span class="p">,</span>
+            <span class="s2">"add_collection"</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_axes_lines</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">"add_line"</span><span class="p">:</span> <span class="n">_axes_lines</span><span class="o">.</span><span class="n">build_add_line_wrapper</span><span class="p">,</span>
+                <span class="s2">"add_artist"</span><span class="p">:</span> <span class="n">_axes_lines</span><span class="o">.</span><span class="n">build_add_artist_wrapper</span><span class="p">,</span>
+                <span class="s2">"add_collection"</span><span class="p">:</span> <span class="n">_axes_lines</span><span class="o">.</span><span class="n">build_add_collection_wrapper</span><span class="p">,</span>
+            <span class="p">}[</span><span class="n">name</span><span class="p">](</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="c1"># Route inset_axes to a wrapper that records its content as a managed</span>
         <span class="c1"># sub-panel (raw inset axes are otherwise unrecorded and vanish on replay)</span>
@@ -678,6 +708,53 @@
         <span class="k">return</span> <span class="n">wrapper</span></div>
 
 
+<div class="viewcode-block" id="RecordingAxes._create_cla_wrapper">
+<a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_cla_wrapper">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_cla_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Create wrapper for cla() that resets the axes' recorded state.</span>
+
+<span class="sd">        matplotlib's ``Axes.cla()`` resets the axes: every artist it holds is</span>
+<span class="sd">        gone and the axis label/title/ticks are blanked. Two things then went</span>
+<span class="sd">        wrong (card figrecipe-cla-replay-still-diverges-20260927):</span>
+
+<span class="sd">        * the recorder kept the calls and decorations that made those artists,</span>
+<span class="sd">          so a replay re-drew the cleared axes -- after ``ax.set_xlabel("x");</span>
+<span class="sd">          ax.cla()`` the recipe still carried the label and the replay showed</span>
+<span class="sd">          it. A cleared axes has no recorded state to replay, so its records</span>
+<span class="sd">          are dropped, and the artist registry goes with them (the artists they</span>
+<span class="sd">          noted are gone; a stale weakref must not be read as a live one).</span>
+<span class="sd">        * ``cla()`` rebuilds the tick/axis text artists with matplotlib's</span>
+<span class="sd">          default font, discarding the figrecipe style family applied at axes</span>
+<span class="sd">          creation. The replayed axes (styled fresh) then used the style font</span>
+<span class="sd">          while the live one used the default, and the renders differed over</span>
+<span class="sd">          the tick labels even though every readable state entry matched</span>
+<span class="sd">          (measured MSE 428.51 for a bare draw-then-cla). Re-applying the</span>
+<span class="sd">          recorded style restores the family and the renders match at 0.00.</span>
+<span class="sd">        """</span>
+        <span class="n">base_cla</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ax</span><span class="o">.</span><span class="n">cla</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">base_cla</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_track</span><span class="p">:</span>
+                <span class="n">ax_record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="o">.</span><span class="n">get_or_create_axes</span><span class="p">(</span>
+                    <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_position</span>
+                <span class="p">)</span>
+                <span class="n">ax_record</span><span class="o">.</span><span class="n">calls</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">ax_record</span><span class="o">.</span><span class="n">decorations</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_artist_refs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_result_refs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="c1"># Restore the figrecipe style the fresh tick/axis text artists</span>
+                <span class="c1"># lost in the reset (font family, sizes, tick params).</span>
+                <span class="n">style</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="p">,</span> <span class="s2">"style"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">style</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">..styles._internal</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_style_mm</span>
+
+                    <span class="n">apply_style_mm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ax</span><span class="p">,</span> <span class="n">style</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
 <div class="viewcode-block" id="RecordingAxes._create_bar_wrapper">
 <a class="viewcode-back" href="../../../api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_bar_wrapper">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_bar_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -702,6 +779,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_position</span><span class="p">,</span>
                 <span class="n">track</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_track</span> <span class="ow">and</span> <span class="n">track</span><span class="p">,</span>
                 <span class="n">call_id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span>
+                <span class="n">artist_refs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_artist_refs</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">wrapper</span></div>

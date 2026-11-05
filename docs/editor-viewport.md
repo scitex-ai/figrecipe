@@ -1,7 +1,7 @@
 # Figure view and export
 
-On the Figures page, **Fit** centers the figure content and enlarges it to fit
-the available canvas viewport. Rulers can stay visible or be toggled off; their
+On the Figures page, **Fit** aligns figure content to the top-left and enlarges
+it to fit the available canvas viewport. Rulers can stay visible or be toggled off; their
 tracks do not shift the fitted figure outside the viewport. The standalone
 editor fills the SDK shell's content frame, leaving shell controls outside it.
 

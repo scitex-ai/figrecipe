@@ -156,11 +156,11 @@ interface EditorState {
   /** @param options.isCurrent — apply the server's table only when this still
    *  returns true after the read (the Data pane uses it to ignore a response a
    *  newer edit has overtaken). */
-  loadDatatable: (options?: { isCurrent?: () => boolean }) => Promise<void>;
+  loadDatatable: (options?: { isCurrent?: () => boolean; recipe?: string; activate?: boolean }) => Promise<void>;
   loadPanelPositions: () => Promise<void>;
 
   addFigure: (path: string, canvasKey?: string) => Promise<void>;
-  removeFigure: (id: string) => void;
+  removeFigure: (id: string | string[]) => void;
   selectFigure: (id: string | null) => void;
   moveFigure: (id: string, x: number, y: number) => void;
   alignFigures: (
@@ -365,7 +365,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const recipeParam =
           new URLSearchParams(window.location.search).get("recipe") || "";
         const recipePath =
-          currentFile ?? recipeParam.split("/").pop() ?? "preview";
+          recipeParam || currentFile || "preview";
         const fig: PlacedFigure = {
           id: newId(),
           path: recipePath,
@@ -431,7 +431,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       rememberLastProject(workingDir);
       set({
         files: data.tree,
-        currentFile: data.current_file,
+        currentFile: data.recipe_path ?? data.current_file,
         workingDir,
       });
     } catch (e) {
@@ -449,9 +449,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   loadDatatable: async (options?) => {
+    const requestRecipe = options?.recipe ?? get().currentFile ?? undefined;
     set({ datatableLoadError: null });
     try {
-      const data = await api.get<{
+      const read = options?.recipe
+        ? <T>(endpoint: string) => api.getForRecipe<T>(endpoint, options.recipe!)
+        : api.get;
+      const data = await read<{
+        recipe_path?: string;
+        chunks?: {id: string; label: string; kind: TabData["dataKind"]; panel_path: string; source_ref: string; columns: ColumnDef[]; rows: (string | number)[][]; source: TabData["source"]; revision?: string | null}[];
         columns: ColumnDef[];
         rows: (string | number)[][];
         source?: string | null;
@@ -478,6 +484,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ? data.source
             : null,
       };
+      const chunks: TabData[] = data.chunks?.map(chunk => ({
+        id: chunk.id, label: chunk.label, columns: chunk.columns, rows: chunk.rows,
+        source: chunk.source, panelPath: chunk.panel_path, sourceRef: chunk.source_ref,
+        dataKind: chunk.kind, revision: chunk.revision,
+      })) ?? [];
+      const incoming = chunks.length ? chunks : tab.columns.length ? [tab] : [];
+      const panelPath = data.recipe_path || chunks[0]?.panelPath || requestRecipe;
+      const retained = Object.fromEntries(Object.entries(get().datatableTabs)
+        .filter(([, existing]) => existing.panelPath
+          ? existing.panelPath !== panelPath : options?.activate === false));
+      const tables = { ...retained, ...Object.fromEntries(incoming.map(table => [table.id, table])) };
+      const active = incoming.find(table => table.id === get().activeTabId) ?? incoming[0];
       // Build element-data mapping if provided by backend
       const elementDataMap: Record<
         string,
@@ -491,14 +509,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           };
         }
       }
+      for (const table of incoming) table.elementDataMap = elementDataMap;
+      if (options?.activate === false) {
+        set({datatableTabs: tables});
+        return;
+      }
       set({
-        datatableTabs: { main: tab },
-        activeTabId: "main",
+        datatableTabs: tables,
+        activeTabId: active?.id ?? null,
         elementDataMap,
         datatableRevision:
           typeof data.revision === "string" ? data.revision : null,
       });
     } catch (e) {
+      if (e instanceof ApiSessionExpired) return;
+      if (options?.activate === false) {
+        get().showToast(gettext("Could not load data for one of the placed panels"), "error");
+        return;
+      }
       console.warn("[Editor] No datatable data available:", e);
       // Fail loud, not blank: the Data pane renders this with a retry
       // affordance. The technical detail stays in the console above; the

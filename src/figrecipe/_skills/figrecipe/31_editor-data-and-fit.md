@@ -18,7 +18,7 @@ the worksheet. After creation, choose X/Y columns and **Plot** to draw the data.
 Manual entries do not record clew provenance. Figure-recorded tables stay
 read-only until **Edit table** explicitly takes ownership.
 
-On Figures, **Fit** centers the rendered figure image inside the current canvas,
+On Figures, **Fit** anchors the rendered figure image at the top-left of the current canvas,
 with rulers either visible or hidden. It changes view positioning rather than
 figure dimensions. **Export** opens the filename/PNG/SVG/PDF dialog; confirm the
 download and inspect the exported artifact separately for scientific quality.

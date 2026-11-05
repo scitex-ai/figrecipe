@@ -58,10 +58,8 @@ autodoc_default_options = {
     "exclude-members": "__weakref__",
 }
 
-# Mock imports for packages that may not be installed on RTD
-autodoc_mock_imports = [
-    "fastmcp",
-]
+# The docs extra supplies the actual MCP interface for autodoc.
+autodoc_mock_imports = []
 
 # Autosummary settings
 autosummary_generate = True
