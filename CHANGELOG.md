@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.4] - 2026-11-05
+
+- Account for the page origin inside the ruler grid when fitting a figure.
+  Keep the complete image at the top-left with rulers visible or hidden.
+- Size the standalone editor root to its parent content frame.
+- Use `SciTeX FigRecipe` consistently for default in-app headers while
+  preserving explicit custom labels and the shorter launcher name.
+- Package the editor data, fit and export workflow skill with source-backed
+  viewport documentation.
+
 ## [0.44.3] - 2026-11-05
 
 - Build MCP autodoc with the actual FastMCP dependency supplied by the docs extra.
