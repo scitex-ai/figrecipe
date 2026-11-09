@@ -221,6 +221,9 @@ Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
 [tool.hatch.build.targets.sdist]
 exclude = ["src/figrecipe/_django/frontend/node_modules/**"]
 
+[tool.hatch.build.targets.sdist.force-include]
+".scitex/dev/cli-audit-dict.yaml" = ".scitex/dev/cli-audit-dict.yaml"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/figrecipe"]
 exclude = [
@@ -232,6 +235,9 @@ exclude = [
     "src/figrecipe/_django/frontend/build-version.ts",
     "src/figrecipe/_django/frontend/eslint.config.js",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+".scitex/dev/cli-audit-dict.yaml" = "figrecipe/_cli_audit_dict.yaml"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
