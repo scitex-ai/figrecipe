@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.5] - 2026-11-09
+
+- Ship the package-owned CLI dictionary in wheels and retain its canonical
+  source path for source-to-wheel rebuilds. Recognize the FigRecipe namespace
+  when its commands are mounted by the umbrella.
+- Refresh bundled frontend version fallbacks for this release while retaining
+  previously shipped hashed assets.
+
 ## [0.44.4] - 2026-11-05
 
 - Build relative data links from the physical output directory so loaded,
