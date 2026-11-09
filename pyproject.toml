@@ -221,7 +221,10 @@ Repository = "https://github.com/ywatanabe1989/figrecipe.git"
 Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
 
 [tool.hatch.build.targets.sdist]
-exclude = ["src/figrecipe/_django/frontend/node_modules/**"]
+exclude = [
+    "src/figrecipe/_django/frontend/node_modules/**",
+    "GITIGNORED/**",
+]
 
 [tool.hatch.build.targets.sdist.force-include]
 ".scitex/dev/cli-audit-dict.yaml" = ".scitex/dev/cli-audit-dict.yaml"

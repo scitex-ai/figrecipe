@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Exclude the ignored working-state directory from source archives, including
+  configuration filenames that VCS ignore exceptions can otherwise revive.
+
 ## [0.44.5] - 2026-11-09
 
 - Ship the package-owned CLI dictionary in wheels and retain its canonical

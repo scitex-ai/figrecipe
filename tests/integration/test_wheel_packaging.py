@@ -169,3 +169,37 @@ def test_cli_dictionary_survives_source_and_rebuilt_wheel(tmp_path):
         "source-private": False,
         "rebuilt-private": False,
     }
+
+
+def test_sdist_never_revives_config_files_inside_ignored_working_state(tmp_path):
+    # Arrange
+    project = Path(__file__).resolve().parents[2]
+    for name in ("pyproject.toml", ".gitignore"):
+        (tmp_path / name).write_bytes((project / name).read_bytes())
+    _copy_cli_dictionary(project, tmp_path)
+    (tmp_path / "README.md").write_text("Owned private-state fixture\n")
+    (tmp_path / "LICENSE").write_text("Owned private-state fixture\n")
+    package = tmp_path / "src/figrecipe"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("")
+    private = tmp_path / "GITIGNORED/private-runtime"
+    private.mkdir(parents=True)
+    for name in ("pyproject.toml", ".readthedocs.yaml", ".gitkeep"):
+        (private / name).write_text("SYNTHETIC NONSECRET PRIVATE-STATE CANARY\n")
+    expected = (project / ".scitex/dev/cli-audit-dict.yaml").read_bytes()
+
+    # Act
+    source = next(SdistBuilder(str(tmp_path)).build(directory=str(tmp_path / "dist")))
+    with tarfile.open(source) as archive:
+        names = archive.getnames()
+        dictionary = next(
+            n for n in names if n.endswith("/.scitex/dev/cli-audit-dict.yaml")
+        )
+        observed = (
+            [n for n in names if "/GITIGNORED/" in n],
+            archive.extractfile(dictionary).read(),
+            any(n.endswith("/src/figrecipe/__init__.py") for n in names),
+        )
+
+    # Assert
+    assert observed == ([], expected, True)
