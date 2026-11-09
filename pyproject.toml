@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.44.4"
+version = "0.44.5"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -61,6 +61,8 @@ dev = [
     "pytest-cov>=4.0.0",
     # The owning wheel exclusion control imports the actual build backend.
     "hatchling",
+    # Gallery artifact controls need a PEP 517 frontend in fresh dev installs.
+    "build",
     "packaging>=23.0",
     "tomli>=2.0; python_version < '3.11'",
     "pytest-xdist>=3.0.0",
@@ -221,6 +223,9 @@ Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
 [tool.hatch.build.targets.sdist]
 exclude = ["src/figrecipe/_django/frontend/node_modules/**"]
 
+[tool.hatch.build.targets.sdist.force-include]
+".scitex/dev/cli-audit-dict.yaml" = ".scitex/dev/cli-audit-dict.yaml"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/figrecipe"]
 exclude = [
@@ -232,6 +237,9 @@ exclude = [
     "src/figrecipe/_django/frontend/build-version.ts",
     "src/figrecipe/_django/frontend/eslint.config.js",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+".scitex/dev/cli-audit-dict.yaml" = "figrecipe/_cli_audit_dict.yaml"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -3,6 +3,8 @@
 # See: scitex-dev/_skills/general/03_interface_02_cli/07_audit-cli.md
 
 nouns:
+  # Package namespace when this CLI is mounted by the scitex umbrella.
+  - figrecipe
   # Shell names used as `figrecipe completion <shell>` leaves
   - bash
   - zsh
