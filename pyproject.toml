@@ -61,6 +61,8 @@ dev = [
     "pytest-cov>=4.0.0",
     # The owning wheel exclusion control imports the actual build backend.
     "hatchling",
+    # Gallery artifact controls need a PEP 517 frontend in fresh dev installs.
+    "build",
     "packaging>=23.0",
     "tomli>=2.0; python_version < '3.11'",
     "pytest-xdist>=3.0.0",

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when its commands are mounted by the umbrella.
 - Refresh bundled frontend version fallbacks for this release while retaining
   previously shipped hashed assets.
+- Include the build frontend in development installs so the existing gallery
+  distribution checks also run in fresh environments.
 
 ## [0.44.4] - 2026-11-05
 
