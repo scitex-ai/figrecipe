@@ -68,35 +68,51 @@ def test_source_must_belong_to_main_before_release_execution(job):
     assert verification is not None
 
 
-@pytest.mark.parametrize("job", ["frontend", "test", "build"])
-@pytest.mark.parametrize("accepted", [True, False])
-def test_actual_main_ancestry_check_accepts_only_promoted_source(tmp_path, job, accepted):
-    # Arrange
+def _git(repo, *args):
+    return subprocess.run(
+        ["git", "-C", str(repo), "-c", "user.name=Release fixture",
+         "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false",
+         "-c", "core.hooksPath=/dev/null", *args],
+        check=True, capture_output=True, text=True, timeout=5,
+    )
+
+
+def _promoted_repo(tmp_path, job):
     repo = tmp_path / "figrecipe" if job == "frontend" else tmp_path
     repo.mkdir(exist_ok=True)
+    _git(repo, "init", "-q")
+    (repo / "proof").write_text("accepted")
+    _git(repo, "add", "proof")
+    _git(repo, "commit", "-qm", "accepted fixture")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    return repo
 
-    def git(*args):
-        return subprocess.run(
-            ["git", "-C", str(repo), "-c", "user.name=Release fixture",
-             "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false",
-             "-c", "core.hooksPath=/dev/null", *args],
-            check=True, capture_output=True, text=True, timeout=5,
-        )
 
-    git("init", "-q")
-    proof = repo / "proof"
-    proof.write_text("accepted")
-    git("add", "proof")
-    git("commit", "-qm", "accepted fixture")
-    git("update-ref", "refs/remotes/origin/main", "HEAD")
-    if not accepted:
-        proof.write_text("not promoted")
-        git("commit", "-qam", "unpromoted fixture")
+def _check_ancestry(tmp_path, job):
     steps = yaml.safe_load(WORKFLOW.read_text())["jobs"][job]["steps"]
     script = next(s["run"] for s in steps if "--is-ancestor" in s.get("run", ""))
     env = dict(os.environ, GITHUB_OUTPUT=str(tmp_path / "output"))
+    return subprocess.run(["bash", "-euo", "pipefail"], input=script, text=True,
+                          cwd=tmp_path, env=env, capture_output=True, timeout=5)
+
+
+@pytest.mark.parametrize("job", ["frontend", "test", "build"])
+def test_actual_main_ancestry_check_accepts_promoted_source(tmp_path, job):
+    # Arrange
+    _promoted_repo(tmp_path, job)
     # Act
-    result = subprocess.run(["bash", "-euo", "pipefail"], input=script, text=True,
-                            cwd=tmp_path, env=env, capture_output=True, timeout=5)
+    result = _check_ancestry(tmp_path, job)
     # Assert
-    assert (result.returncode == 0) is accepted
+    assert result.returncode == 0
+
+
+@pytest.mark.parametrize("job", ["frontend", "test", "build"])
+def test_actual_main_ancestry_check_refuses_unpromoted_source(tmp_path, job):
+    # Arrange
+    repo = _promoted_repo(tmp_path, job)
+    (repo / "proof").write_text("not promoted")
+    _git(repo, "commit", "-qam", "unpromoted fixture")
+    # Act
+    result = _check_ancestry(tmp_path, job)
+    # Assert
+    assert result.returncode != 0
