@@ -38,7 +38,7 @@ def build_workspace_context(request, current_project=None):
 
     return {
         "app_slug": "figrecipe",
-        "app_label": "FigRecipe",
+        "app_label": "SciTeX FigRecipe",
         "app_version": __version__,
         "hosted": access is not None,
         "project_id": access.id if access else "",

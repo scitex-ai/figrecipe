@@ -5,11 +5,11 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: figrecipe VERSION\n"
+"Project-Id-Version: figrecipe\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-09-14 21:24+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2026-11-02 14:43+0000\n"
+"Last-Translator: SciTeX contributors\n"
 "Language: ja\n"
 "Language-Team: Japanese\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -1597,17 +1597,8 @@ msgstr "再試行"
 msgid "Could not load the data table"
 msgstr "データテーブルを読み込めませんでした"
 
-#: frontend/components/Properties/Properties.tsx
-msgid "Edit"
-msgstr "編集"
 
-#: frontend/components/Properties/Properties.tsx
-msgid "Arrange"
-msgstr "配置"
 
-#: frontend/components/Properties/Properties.tsx
-msgid "Display"
-msgstr "表示"
 
 #: frontend/src/components/DataTablePane/DataTablePane.tsx
 msgid "Could not read %s"
@@ -1782,3 +1773,34 @@ msgstr "テーブルを作成"
 #: frontend/src/components/DataTablePane/DraftDataGrid.tsx
 msgid "Manual input is for plotting in the UI; clew provenance is not recorded for these entries."
 msgstr "手動入力は画面上でのプロット用です。これらの入力の clew 来歴は記録されません。"
+
+#: frontend/src/InnerEditor.tsx
+#, python-format
+msgid "Remove Figure %s from composition"
+msgstr "図 %s を構成から削除"
+
+#: frontend/src/InnerEditor.tsx
+#, python-format
+msgid "Remove %s from composition"
+msgstr "%s を構成から削除"
+
+#: frontend/src/InnerEditor.tsx
+#, python-format
+msgid "Remove %s data tab"
+msgstr "%s のデータタブを削除"
+
+#: frontend/src/store/editorNavigation.ts
+msgid "Figure-recorded data is read-only. Take ownership before removing it."
+msgstr "図の作成時に記録されたデータは読み取り専用です。削除する前に所有権を取得してください。"
+
+#: frontend/src/store/useEditorStore.ts
+msgid "Could not load data for one of the placed panels"
+msgstr "配置したパネルの一部のデータを読み込めませんでした。"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "X axis"
+msgstr "X軸"
+
+#: frontend/src/components/DataTablePane/DataTablePane.tsx
+msgid "Y axis"
+msgstr "Y軸"

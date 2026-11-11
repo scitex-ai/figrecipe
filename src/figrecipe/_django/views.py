@@ -154,7 +154,7 @@ def editor_page(request, view_path=""):
             "figrecipe/standalone.html",
             {
                 "app_name": "figrecipe",
-                "app_label": os.environ.get("FIGRECIPE_APP_LABEL", "FigRecipe Editor"),
+                "app_label": os.environ.get("FIGRECIPE_APP_LABEL", "SciTeX FigRecipe"),
                 "app_version": app_version,
                 "working_dir": working_dir,
                 "working_dir_name": access.name if access else working_dir_name,

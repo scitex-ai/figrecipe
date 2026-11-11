@@ -1,1 +1,1 @@
-export default { resolve: {dedupe: ["react", "react-dom"]}, test: {environment: "jsdom", include: ["tests/editorAppHeader.test.ts"]} };
+export default { resolve: {dedupe: ["react", "react-dom"]}, test: {environment: "jsdom", include: ["tests/**/*.spec.ts"]} };

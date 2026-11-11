@@ -6,16 +6,16 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quick Start &mdash; FigRecipe v0.36.0</title>
+  <title>Quick Start &mdash; FigRecipe v0.44.5</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
 
-  
+
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=5864e6e0"></script>
+      <script src="_static/documentation_options.js?v=9f9558aa"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -24,17 +24,17 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Terminology" href="terminology.html" />
-    <link rel="prev" title="Installation" href="installation.html" /> 
+    <link rel="prev" title="Installation" href="installation.html" />
 </head>
 
-<body class="wy-body-for-nav"> 
+<body class="wy-body-for-nav">
   <div class="wy-grid-for-nav">
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
 
-          
-          
+
+
           <a href="index.html" class="icon icon-home">
             FigRecipe
           </a>
@@ -242,6 +242,8 @@
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.empty_cells"><code class="docutils literal notranslate"><span class="pre">empty_cells()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.layout_report"><code class="docutils literal notranslate"><span class="pre">layout_report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.auto_tile_layout"><code class="docutils literal notranslate"><span class="pre">auto_tile_layout()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.resolve_compose_preset"><code class="docutils literal notranslate"><span class="pre">resolve_compose_preset()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.list_compose_presets"><code class="docutils literal notranslate"><span class="pre">list_compose_presets()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.gui"><code class="docutils literal notranslate"><span class="pre">gui()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.crop"><code class="docutils literal notranslate"><span class="pre">crop()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api/figrecipe.html#figrecipe.info"><code class="docutils literal notranslate"><span class="pre">info()</span></code></a></li>
@@ -384,6 +386,7 @@
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.embed"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.embed()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes.__dir__"><code class="docutils literal notranslate"><span class="pre">RecordingAxes.__dir__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_recording_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_recording_wrapper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_cla_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_cla_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_bar_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_bar_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_boxplot_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_boxplot_wrapper()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="api/figrecipe.html#figrecipe._wrappers.RecordingAxes._create_stem_wrapper"><code class="docutils literal notranslate"><span class="pre">RecordingAxes._create_stem_wrapper()</span></code></a></li>
@@ -435,7 +438,7 @@
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-             
+
   <section id="quick-start">
 <h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
 <section id="creating-your-first-reproducible-figure">
@@ -477,19 +480,22 @@
 <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Quadratic Data"</span><span class="p">)</span>
 
 <span class="c1"># Save as self-contained ZIP bundle</span>
-<span class="n">fr</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="s2">"figure.zip"</span><span class="p">)</span>
+<span class="n">fr</span><span class="o">.</span><span class="n">save_bundle</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="s2">"figure.zip"</span><span class="p">,</span> <span class="n">save_hitmap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <a class="reference internal image-reference" href="_images/quickstart_bundle.png"><img alt="Bundle format example" class="align-center" src="_images/quickstart_bundle.png" style="width: 400px;" />
 </a>
 <p><strong>Bundle Structure:</strong></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>figure.zip
-├── spec.json         # WHAT to plot (semantic specification)
-├── style.json        # HOW it looks (colors, fonts, sizes)
-├── data.csv          # Immutable source data
-└── exports/
-    ├── figure.png
-    └── figure_hitmap.png
+└── figure/
+    ├── spec.json         # WHAT to plot (semantic specification)
+    ├── style.json        # HOW it looks (colors, fonts, sizes)
+    ├── data.csv          # Source data table
+    ├── recipe.yaml       # Reproducible figure recipe
+    ├── recipe_data/      # Arrays referenced by the recipe
+    └── exports/
+        ├── figure.png
+        └── figure_hitmap.png
 </pre></div>
 </div>
 <p><strong>Load and Reproduce from Bundle:</strong></p>
@@ -514,6 +520,9 @@
 </div>
 <p>Use whichever style you prefer — they all go through the same pipeline
 with style-based DPI, auto-crop, and recipe generation.</p>
+<p>The recipe records the live layout engine and subplot margins at save time.
+Changes made after figure creation with <code class="docutils literal notranslate"><span class="pre">tight_layout()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">set_layout_engine()</span></code>, or <code class="docutils literal notranslate"><span class="pre">subplots_adjust()</span></code> therefore reach reproduction.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Never bypass the wrapper with <code class="docutils literal notranslate"><span class="pre">fig.fig.savefig()</span></code> — that accesses
@@ -757,7 +766,7 @@ figrecipe<span class="w"> </span>mcp<span class="w"> </span>install<span class="
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
+
 
 </footer>
         </div>
@@ -768,7 +777,7 @@ figrecipe<span class="w"> </span>mcp<span class="w"> </span>install<span class="
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
 
 </body>
 </html>

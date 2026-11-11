@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.44.1"
+version = "0.44.5"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -44,7 +44,7 @@ dependencies = [
     "scipy>=1.7.0",
     "click>=8.0.0",
     "rich>=13.0.0",
-    "scitex-sdk>=0.3.17",
+    "scitex-sdk>=0.3.18",
     "scitex-config>=0.3.0",
     # >=0.60.1: src/figrecipe/_cli/_skills.py imports scitex-dev's shared
     # skills_click_group federation primitive (PS-217). The floor moves in
@@ -56,11 +56,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "scitex-sdk>=0.3.17",
+    "scitex-sdk>=0.3.21",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     # The owning wheel exclusion control imports the actual build backend.
     "hatchling",
+    # Gallery artifact controls need a PEP 517 frontend in fresh dev installs.
+    "build",
     "packaging>=23.0",
     "tomli>=2.0; python_version < '3.11'",
     "pytest-xdist>=3.0.0",
@@ -69,10 +71,11 @@ dev = [
     "pre-commit>=3.5.0",
     "pyyaml>=6.0.0",
     # Activates the mandatory package-owned logger auditor and its Issue SPI.
-    "scitex-dev>=0.62.4.dev0",
+    "scitex-dev>=0.62.16",
     # Mirror runtime extras so `pip install -e .[dev]` runs the full suite.
     # Tests import these unguarded; PS210 audit invariants.
-    "scitex-logging>=0.2.3",
+    # Git-aware source inventory excludes ignored npm dependencies from audits.
+    "scitex-logging>=0.2.5",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
@@ -98,24 +101,24 @@ seaborn = [
     # `pip install figrecipe` always provides it.
 ]
 scitex = [
-    "scitex-sdk>=0.3.17",
+    "scitex-sdk>=0.3.20",
     "scitex-logging>=0.2.3",
     "scitex-pd",
     "scitex-stats",
     "scitex-types",
 ]
 editor = [
-    "scitex-sdk>=0.3.17",
+    "scitex-sdk>=0.3.20",
     "django>=4.2.0",
     "Pillow>=9.0.0",
 ]
 app = [
-    "scitex-sdk>=0.3.17",
+    "scitex-sdk>=0.3.20",
     "django>=4.2.0",
     "Pillow>=9.0.0",
 ]
 desktop = [
-    "scitex-sdk>=0.3.17",
+    "scitex-sdk>=0.3.20",
     "django>=4.2.0",
     "Pillow>=9.0.0",
     "pywebview>=4.0.0",
@@ -135,6 +138,7 @@ graph-interactive = [
     "pyvis>=0.3",
 ]
 docs = [
+    "fastmcp>=2.0",
     "sphinx>=7.0",
     "sphinx-rtd-theme>=2.0",
     "myst-parser>=2.0",
@@ -216,6 +220,15 @@ Documentation = "https://figrecipe.readthedocs.io"
 Repository = "https://github.com/ywatanabe1989/figrecipe.git"
 Issues = "https://github.com/ywatanabe1989/figrecipe/issues"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "src/figrecipe/_django/frontend/node_modules/**",
+    "GITIGNORED/**",
+]
+
+[tool.hatch.build.targets.sdist.force-include]
+".scitex/dev/cli-audit-dict.yaml" = ".scitex/dev/cli-audit-dict.yaml"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/figrecipe"]
 exclude = [
@@ -224,8 +237,12 @@ exclude = [
     "src/figrecipe/_django/frontend/package*.json",
     "src/figrecipe/_django/frontend/tsconfig*.json",
     "src/figrecipe/_django/frontend/vite.config.ts",
+    "src/figrecipe/_django/frontend/build-version.ts",
     "src/figrecipe/_django/frontend/eslint.config.js",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+".scitex/dev/cli-audit-dict.yaml" = "figrecipe/_cli_audit_dict.yaml"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
