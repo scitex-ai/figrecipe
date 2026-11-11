@@ -1,31 +1,12 @@
-/** App-header metrics gate (SSoT edition).
+/** Canonical SDK header metrics and absence of leaf overrides.
  *
- * Supersedes the Writer-scale leaf gate from #460 (operator mandate
- * xch_20261016T232922Z): the header is OWNED BY THE SDK SSoT since the
- * [infra/fig-header] migration — scitex-ui all.css (app-header.css) renders
- * .stx-app-header, and the leaf must not redefine any of it (see the banner
- * at the top of src/styles/layout.css). Asserting leaf-side 44px/15px/13px
- * rules therefore collided with the shipped architecture and failed the
- * v0.44.0 release (run 40140835338, "Run the native frontend controls",
- * 5 checks FAILED) on code that was otherwise green.
+ * The declared SDK 0.3.17 owner (08ff4236) defines a 40px row, 4px block
+ * padding, a 14px title and a 12px version. Verify the installed owner's CSS;
+ * FigRecipe must not fork those rules. SDK 0.3.23 retains the same type sizes.
+ * The old rem assertions described the retired scitex-ui stylesheet rather
+ * than the declared SDK. Header changes belong in the SDK and its contract.
  *
- * Current operator direction (apps-lead 2026-11-01, cross-app header
- * consistency 2026-10-23) keeps the SSoT: this gate now pins the SSoT
- * contract instead of a leaf fork —
- * - the SDK (pinned owner, resolved the same way the contract test
- *   resolves it) provides the row: min-height 40px, padding-block 4px
- *   with 12px inline base, actions slot order 2;
- * - the leaf carries NO header geometry/type override: no height,
- *   min-height, padding, font-size, or order on .stx-app-header or its
- *   __title/__version/__actions elements (selector-trigger pin already
- *   covered: SDK 36px / 0.85rem, identical everywhere).
- *
- * A hollow header (SDK drops the rule) or a reintroduced leaf fork both
- * fail loudly here. Writer-scale (44px/15px/13px) can only return via an
- * SDK change + pin bump — never a leaf override.
- *
- *   node --experimental-strip-types \
- *     src/figrecipe/_django/frontend/tests/appHeaderMetrics.test.ts
+ * Run: node --experimental-strip-types tests/appHeaderMetrics.test.ts
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -89,11 +70,11 @@ check(
 const sdkActions = rule(sdkHeader, ".stx-app-header__actions");
 check("sdk actions order is 2", /order:\s*2/.test(sdkActions));
 const sdkTitle = rule(sdkHeader, ".stx-app-header__title");
-check("sdk title scale is 0.85rem", /font-size:\s*0\.85rem/.test(sdkTitle));
+check("sdk title scale is 14px", /font-size:\s*14px/.test(sdkTitle));
 const sdkVersion = rule(sdkHeader, ".stx-app-header__version");
 check(
-  "sdk version scale is 0.78rem",
-  /font-size:\s*0\.78rem/.test(sdkVersion),
+  "sdk version scale is 12px",
+  /font-size:\s*12px/.test(sdkVersion),
 );
 
 /* ── No leaf fork: the leaf redefines none of the header. ── */
