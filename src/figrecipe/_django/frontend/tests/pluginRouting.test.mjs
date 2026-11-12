@@ -8,7 +8,7 @@ const result = await build({
   bundle: true, write: false, format: "esm", platform: "node",
   define: { "import.meta.env.VITE_API_BASE": '""' },
 });
-globalThis.document = { cookie: "csrftoken=fixture-token" };
+globalThis.document = { querySelector: () => null, cookie: "csrftoken=fixture-token" };
 globalThis.window = { location: { search: "?project=alpha&recipe=figure.yaml" } };
 const calls = [];
 globalThis.fetch = async (url, options = {}) => {

@@ -3,8 +3,9 @@
  * The hub mounts figrecipe behind Django's CSRF check and does NOT csrf_exempt
  * the mount (scitex-hub, 2026-09-14). The editor's POST/PATCH/DELETE calls did
  * not send the CSRF token, so e.g. api/gallery/demo 403'd. The fix: a shared
- * csrfToken() helper (reads Django's csrftoken cookie) attached to EVERY
- * non-GET API call.
+ * csrfToken() helper attached to EVERY non-GET API call. It prefers Django's
+ * rendered hidden token so HttpOnly cookies remain protected, then falls back
+ * to a readable standalone cookie. csrfHttpOnly.test.mjs executes both paths.
  *
  * Source-conformance gate (Node, no framework): verifies the helper exists and
  * that each known mutating call site carries the X-CSRFToken header, so a

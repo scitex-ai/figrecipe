@@ -17,7 +17,7 @@ const result = await build({
   } }],
 });
 globalThis.window = { location: { search: "", pathname: "/workspace/" }, history: { replaceState() {} } };
-globalThis.document = { cookie: "" };
+globalThis.document = { querySelector: () => null, cookie: "" };
 const originalFetch = globalThis.fetch;
 const { mountFigrecipeEditor } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString("base64")}`);
 const container = mount => ({ getAttribute: name => name === "data-stx-mount" ? mount : null });
