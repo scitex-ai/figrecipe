@@ -118,6 +118,18 @@ jobs:
       - name: Strict library build
         working-directory: figrecipe/src/figrecipe/_django/frontend
         run: npm run build:lib
+      - name: Bind frontend assets to the qualified source
+        working-directory: figrecipe
+        env:
+          FIGRECIPE_RELEASE_TAG: ${{ steps.ver.outputs.version }}
+        run: python3 .github/ci/frontend-assets.py record src/figrecipe/_django/static/figrecipe "${FIGRECIPE_RELEASE_TAG#v}" "$(git rev-parse HEAD)"
+      - name: Transfer the qualified frontend to the package job
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualified-frontend
+          path: figrecipe/src/figrecipe/_django/static/figrecipe/
+          include-hidden-files: true
+          if-no-files-found: error
 
   test:
     needs: [runner-admission]
@@ -198,6 +210,11 @@ jobs:
           git merge-base --is-ancestor HEAD origin/main
           figrecipe_release_source_sha="$(git rev-parse HEAD)"
           printf 'sha=%s\n' "$figrecipe_release_source_sha" >> "$GITHUB_OUTPUT"
+      - name: Receive the qualified frontend assets
+        uses: actions/download-artifact@v4
+        with:
+          name: qualified-frontend
+          path: src/figrecipe/_django/static/figrecipe/
       # Build INSIDE the SIF (no setup-python on the bare Spartan node).
       # build-in-sif.sh installs the `build` frontend into a writable --target
       # inside the SIF, then `python -m build` → dist/. fail-loud on empty dist.

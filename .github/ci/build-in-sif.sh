@@ -23,10 +23,16 @@ PY="$TMPDIR/venv/bin/python"
 export PATH="$TMPDIR/venv/bin:$VENV/bin:$PATH"
 uv pip install --python "$PY" build "scitex-dev>=0.62.1"
 rm -rf dist
+# Refuse missing, stale or modified frontend bytes before creating artifacts.
+FRONTEND_VERSION="${2:?canonical release tag required}"
+FRONTEND_VERSION="${FRONTEND_VERSION#v}"
+FRONTEND_SOURCE="$(git rev-parse HEAD)"
+"$PY" .github/ci/frontend-assets.py verify src/figrecipe/_django/static/figrecipe "$FRONTEND_VERSION" "$FRONTEND_SOURCE"
 "$PY" -m build --outdir dist
 WHEEL="$(find dist -maxdepth 1 -name '*.whl' -print -quit)"
 SDIST="$(find dist -maxdepth 1 -name '*.tar.gz' -print -quit)"
 [ -n "$WHEEL" ] && [ -n "$SDIST" ] || { echo "::error::wheel and sdist are both required"; exit 1; }
+"$PY" .github/ci/frontend-assets.py verify src/figrecipe/_django/static/figrecipe "$FRONTEND_VERSION" "$FRONTEND_SOURCE" --wheel "$WHEEL"
 # Resolve the complete owning dependency graph against the built wheel.
 uv pip install --python "$PY" "$WHEEL[all]"
 "$PY" -m pip check
