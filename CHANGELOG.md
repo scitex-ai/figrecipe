@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.6] - 2026-11-12
+
+- Send the Django-rendered CSRF token when available so editor changes work
+  with HttpOnly CSRF cookies, while retaining the cookie fallback.
+- Admit release CPU jobs through the shared runner policy and bind canonical
+  release tags to source promoted to main. Keep frontend, native, artifact
+  and publication gates in their existing order.
+- Separate release-test acceptance and refusal cases without changing the
+  underlying conditions.
 - Exclude the ignored working-state directory from source archives, including
   configuration filenames that VCS ignore exceptions can otherwise revive.
 
