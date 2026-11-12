@@ -17,7 +17,7 @@ const bundle=await build({
   }}]
 });
 globalThis.window={location:{search:"?project=alpha",pathname:"/host/workspace/"}};
-globalThis.document={cookie:"csrftoken=synthetic-token"};
+globalThis.document={querySelector:()=>null,cookie:"csrftoken=synthetic-token"};
 const calls=[];
 globalThis.fetch=async (url,options)=>{calls.push({url,options}); return {ok:true,json:async()=>url.includes("stats/run")?{result:{p:0.01},annotation:{stars:"*"}}:{bracket_id:"b1",preview:"synthetic"}};};
 const leaf=await import("data:text/javascript;base64,"+Buffer.from(bundle.outputFiles[0].text).toString("base64"));

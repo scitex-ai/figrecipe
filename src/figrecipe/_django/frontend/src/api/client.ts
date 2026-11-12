@@ -43,16 +43,20 @@ function ensureCurrent(session: number): void {
 }
 
 /**
- * The Django CSRF token, read from the `csrftoken` cookie.
+ * The Django CSRF token from its rendered form input, then the cookie.
  *
  * The hub mounts figrecipe behind Django's CSRF check and does NOT csrf_exempt
  * the mount (scitex-hub, 2026-09-14), so every non-GET API call must send it.
- * Without it, POST/PATCH/DELETE from the editor (e.g. api/gallery/demo) get a
- * 403 "Forbidden" — the live-audit demo-open failure. Django sets the cookie
- * via its CSRF middleware; this reads it (same-origin, so JS may). Returns ""
- * when absent (standalone / no cookie) — harmless on a CSRF-exempt host.
+ * Without it, POST/PATCH/DELETE from the editor get a 403. Hub keeps the CSRF
+ * cookie HttpOnly in staging and production, so prefer Django's rendered
+ * hidden token. The cookie fallback supports standalone hosts that expose it.
+ * Returns "" when neither source exists; the host still enforces CSRF.
  */
 export function csrfToken(): string {
+  const rendered = document.querySelector<HTMLInputElement>(
+    'input[name="csrfmiddlewaretoken"]',
+  )?.value;
+  if (rendered) return rendered;
   const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : "";
 }

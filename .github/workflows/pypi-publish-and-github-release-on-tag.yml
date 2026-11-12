@@ -1,60 +1,12 @@
 name: release
 
-# Tag-driven release pipeline — SELF-HOSTED via the CI SIF, destination set by
-# the repo Actions Variable CI_RUNS_ON.
-#
-# THE FALLBACK IS `ubuntu-latest` AND THAT IS DELIBERATE. It used to be
-# `["self-hosted","Linux","X64","scitex-ci"]` — a label carried only by the
-# Spartan runners, all four of which were measured OFFLINE on 2026-08-15. An
-# unset CI_RUNS_ON therefore queued a RELEASE against a label no online runner
-# served: forever, silently, because GitHub queues an unmatchable job instead of
-# rejecting it.
-#
-# This job cannot actually run on a hosted runner — exec-in-sif.sh requires an
-# apptainer and the CI SIF, and says so as a hard error. So the fallback buys a
-# FAST, LOUD failure instead of a hang. For a release that is the whole
-# difference: a tag push that errors in a minute gets fixed, while a tag push
-# that sits in "queued" looks like a slow queue on exactly the day someone is
-# waiting for the artifact.
-#
-# The intended operator flow is:
-#
-#     git tag vX.Y.Z && git push origin vX.Y.Z
-#
-# Everything else fires automatically:
-#
-#   1. test          — matrix pytest INSIDE the SIF. Must pass or the pipeline
-#                      halts; nothing is published until tests are green on the
-#                      tagged commit.
-#   2. build         — after real tests and strict native frontend controls,
-#                      wheel + sdist built INSIDE the SIF, uploaded as artifact.
-#   3. publish       — PyPI via MANUAL OIDC trusted publishing INSIDE the SIF.
-#   4. release       — GitHub Release with CHANGELOG notes + artifacts.
-#   5. sync-main     — open a develop→main PR with a normal merge so main
-#                      always equals the latest released commit. Skipped
-#                      if main already matches.
-#
-# WHY the SIF (operator standardization 2026-06-18, fleet canary 2026-06-21):
-# the Spartan compute runners have NO Python on the bare node, so the old
-# `actions/setup-python@v5` step failed at init ("version 3.x not found for
-# this OS"). The working pytest-matrix CI runs INSIDE the pre-built, reused
-# scitex-ci SIF (`apptainer exec ci-cpu.sif`), which bakes python 3.11/3.12/
-# 3.13 + pip + uv + fd at /opt/venv-<ver>. This release pipeline mirrors that:
-#   - test/build run `bash .github/ci/exec-in-sif.sh <inner>.sh <pyver>`.
-#   - publish CANNOT use pypa/gh-action-pypi-publish (a Docker action; the
-#     compute nodes have no Docker), so it does MANUAL OIDC trusted publishing
-#     inside the SIF (.github/ci/publish-in-sif.sh): GitHub OIDC JWT →
-#     PyPI mint-token → twine upload. Trust config on PyPI is unchanged.
-#   - actions/checkout, upload/download-artifact, codecov are JS actions and
-#     run fine on the self-hosted runner.
-# fail-loud: a missing SIF/shim/interpreter is a HARD error, never a
-# bare-runner fallback.
-#
-# runs-on driven by repo Actions Variable CI_RUNS_ON; SIF + apptainer paths
-# come from SCITEX_CI_SIF / SCITEX_CI_APPTAINER (same as pytest-matrix).
-#
-# Manual re-run: the workflow also accepts a `version` input via
-# workflow_dispatch so you can re-publish without re-tagging.
+# All release jobs use shared original-event admission and the organization CPU
+# pool. An unconfirmed self-hosted admission uses the hosted fail-loud path;
+# the owning SIF wrappers still refuse missing runtimes or image digests.
+# Frontend, full native tests and artifact validation precede the existing
+# PyPI OIDC publisher and automatic GitHub release. Promote source to main
+# before tagging; never move published tags or replace released artifacts.
+# A manual dispatch selects an existing canonical tag as data, not shell code.
 
 on:
   push:
@@ -73,20 +25,37 @@ env:
   RUN_E2E: "1"
 
 jobs:
+  runner-admission:
+    uses: scitex-ai/.github/.github/workflows/runner-admission.yml@d7d96c34d68cdfbb5503a933591f7748b5aa30ee
+    permissions: {}
+    with:
+      runs_on: '["self-hosted","Linux","X64","scitex-org-cpu"]'
+
   frontend:
+    needs: [runner-admission]
     name: frontend-build-on-ubuntu-latest
-    runs-on: [self-hosted, Linux, X64, scitex-ci]
+    runs-on: >-
+      ${{ needs.runner-admission.outputs.native_authorized == 'true'
+          && fromJSON('{"group":"Organization","labels":["self-hosted","Linux","X64","scitex-org-cpu"]}')
+          || fromJSON('["ubuntu-latest"]') }}
     timeout-minutes: 15
     steps:
       - name: Resolve immutable release tag
         id: ver
+        env:
+          FIGRECIPE_RELEASE_TAG: ${{ inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            [[ "$GITHUB_REF" == refs/tags/* ]]
             v="${GITHUB_REF#refs/tags/}"
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            v="$FIGRECIPE_RELEASE_TAG"
           else
-            v="${{ inputs.version }}"
+            exit 1
           fi
-          echo "version=$v" >> "$GITHUB_OUTPUT"
+          [[ "$v" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          printf 'version=%s\n' "$v" >> "$GITHUB_OUTPUT"
       - name: Prepare job-owned state and caches
         run: |
           set -euo pipefail
@@ -100,6 +69,9 @@ jobs:
         with:
           path: figrecipe
           ref: ${{ steps.ver.outputs.version }}
+          fetch-depth: 0
+      - name: Refuse frontend tags outside main
+        run: git -C figrecipe merge-base --is-ancestor HEAD origin/main
       - name: Check out the pinned canonical SDK owner
         uses: actions/checkout@v4
         with:
@@ -148,7 +120,11 @@ jobs:
         run: npm run build:lib
 
   test:
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    needs: [runner-admission]
+    runs-on: >-
+      ${{ needs.runner-admission.outputs.native_authorized == 'true'
+          && fromJSON('{"group":"Organization","labels":["self-hosted","Linux","X64","scitex-org-cpu"]}')
+          || fromJSON('["ubuntu-latest"]') }}
     strategy:
       fail-fast: false
       matrix:
@@ -156,17 +132,26 @@ jobs:
     steps:
       - name: Resolve version
         id: ver
+        env:
+          FIGRECIPE_RELEASE_TAG: ${{ inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            [[ "$GITHUB_REF" == refs/tags/* ]]
             v="${GITHUB_REF#refs/tags/}"
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            v="$FIGRECIPE_RELEASE_TAG"
           else
-            v="${{ inputs.version }}"
+            exit 1
           fi
-          echo "version=$v" >> "$GITHUB_OUTPUT"
+          [[ "$v" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          printf 'version=%s\n' "$v" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.ver.outputs.version }}
           fetch-depth: 0
+      - name: Refuse tags outside main
+        run: git merge-base --is-ancestor HEAD origin/main
       # SIF-based self-hosted test run — mirrors pytest-matrix exactly. No
       # setup-python (the bare Spartan node has no Python tool cache; that step
       # failed "version not found for this OS"); no apt fd-install (fd is baked
@@ -177,24 +162,42 @@ jobs:
         run: bash .github/ci/exec-in-sif.sh run-in-sif.sh ${{ matrix.python-version }}
 
   build:
-    needs: [test, frontend]
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    needs: [test, frontend, runner-admission]
+    runs-on: >-
+      ${{ needs.runner-admission.outputs.native_authorized == 'true'
+          && fromJSON('{"group":"Organization","labels":["self-hosted","Linux","X64","scitex-org-cpu"]}')
+          || fromJSON('["ubuntu-latest"]') }}
     outputs:
       version: ${{ steps.ver.outputs.version }}
+      source_sha: ${{ steps.source.outputs.sha }}
     steps:
       - name: Resolve version
         id: ver
+        env:
+          FIGRECIPE_RELEASE_TAG: ${{ inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            [[ "$GITHUB_REF" == refs/tags/* ]]
             v="${GITHUB_REF#refs/tags/}"
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            v="$FIGRECIPE_RELEASE_TAG"
           else
-            v="${{ inputs.version }}"
+            exit 1
           fi
-          echo "version=$v" >> "$GITHUB_OUTPUT"
+          [[ "$v" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          printf 'version=%s\n' "$v" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.ver.outputs.version }}
           fetch-depth: 0
+      - name: Record the validated build source
+        id: source
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor HEAD origin/main
+          figrecipe_release_source_sha="$(git rev-parse HEAD)"
+          printf 'sha=%s\n' "$figrecipe_release_source_sha" >> "$GITHUB_OUTPUT"
       # Build INSIDE the SIF (no setup-python on the bare Spartan node).
       # build-in-sif.sh installs the `build` frontend into a writable --target
       # inside the SIF, then `python -m build` → dist/. fail-loud on empty dist.
@@ -207,8 +210,11 @@ jobs:
           path: dist/
 
   publish:
-    needs: build
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    needs: [build, runner-admission]
+    runs-on: >-
+      ${{ needs.runner-admission.outputs.native_authorized == 'true'
+          && fromJSON('{"group":"Organization","labels":["self-hosted","Linux","X64","scitex-org-cpu"]}')
+          || fromJSON('["ubuntu-latest"]') }}
     environment:
       name: pypi
       url: https://pypi.org/p/figrecipe
@@ -221,7 +227,7 @@ jobs:
       # publish-in-sif.sh are on disk (the build job uploaded only dist/).
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.build.outputs.version }}
+          ref: ${{ needs.build.outputs.source_sha }}
       - uses: actions/download-artifact@v4
         with:
           name: dist
@@ -235,8 +241,11 @@ jobs:
         run: bash .github/ci/exec-in-sif.sh publish-in-sif.sh 3.12
 
   release:
-    needs: [build, publish]
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    needs: [build, publish, runner-admission]
+    runs-on: >-
+      ${{ needs.runner-admission.outputs.native_authorized == 'true'
+          && fromJSON('{"group":"Organization","labels":["self-hosted","Linux","X64","scitex-org-cpu"]}')
+          || fromJSON('["ubuntu-latest"]') }}
     permissions:
       contents: write
     steps:
@@ -284,8 +293,11 @@ jobs:
   sync-main:
     # Open develop→main PR so main always equals the latest released
     # commit. A normal protected merge leaves the PR open until gates pass.
-    needs: publish
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["ubuntu-latest"]') }}
+    needs: [publish, runner-admission]
+    runs-on: >-
+      ${{ needs.runner-admission.outputs.native_authorized == 'true'
+          && fromJSON('{"group":"Organization","labels":["self-hosted","Linux","X64","scitex-org-cpu"]}')
+          || fromJSON('["ubuntu-latest"]') }}
     permissions:
       contents: write
       pull-requests: write

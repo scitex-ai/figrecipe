@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const source=fileURLToPath(new URL("../src/",import.meta.url));
 const bundle=await build({stdin:{contents:'export * from "./api/client"; export {useEditorStore,resetEditorWorkspace} from "./store/useEditorStore";',resolveDir:source,loader:"ts"},bundle:true,write:false,format:"esm",platform:"node",define:{"import.meta.env.VITE_API_BASE":'""'}});
 globalThis.window={location:{search:"?project=old-url&recipe=old.yaml"}};
-globalThis.document={cookie:"csrftoken=synthetic-token"};
+globalThis.document={querySelector:()=>null,cookie:"csrftoken=synthetic-token"};
 globalThis.localStorage={getItem:()=>null,setItem(){}};
 const leaf=await import("data:text/javascript;base64,"+Buffer.from(bundle.outputFiles[0].text).toString("base64"));
 leaf.setApiBase("/custom/plot");leaf.setWorkingDir("/synthetic/A");leaf.setRecipe("a.yaml");leaf.setProject("A");
