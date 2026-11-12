@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.44.6] - 2026-11-12
+## [0.44.7] - 2026-11-12
+
+- Transfer the compiled frontend from its validated build job into the
+  package job, including the hidden Vite manifest. Record source commit,
+  version and file hashes; reject stale or modified assets before packaging
+  and verify the wheel contains those exact frontend bytes.
+- Include the rendered-token CSRF correction and source/admission safeguards
+  described below. Retain the native, frontend, artifact and publication
+  gates without changing test deadlines, worker counts or coverage.
+
+## [0.44.6] - Not published
+
+The release attempt was stopped before publication because the package job
+had not received the freshly built frontend. Its tag remains unchanged.
+
 
 - Send the Django-rendered CSRF token when available so editor changes work
   with HttpOnly CSRF cookies, while retaining the cookie fallback.
