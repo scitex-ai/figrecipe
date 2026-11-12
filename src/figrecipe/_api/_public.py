@@ -150,7 +150,8 @@ def save(
     facecolor : str, optional
         Background color. When opaque, patches are made visible.
     save_hitmap : bool
-        If True (default), save hitmap image for GUI editor element selection.
+        If True, save hitmap image for GUI editor element selection.
+        Default False.
     save_editable : bool
         If True, write the editable-figure JSON (schema
         ``scitex.plt.figure.editable``) to ``<stem>.json`` next to the image.
