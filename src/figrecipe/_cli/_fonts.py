@@ -31,10 +31,10 @@ def fonts(check: Optional[str], search: Optional[str], as_json: bool) -> None:
     """
     import json
 
-    from ..styles._style_applier import check_font, list_available_fonts
+    from ..styles._style_applier import list_available_fonts
 
     if check:
-        available = check_font(check)
+        available = check in list_available_fonts()
         if as_json:
             click.echo(json.dumps({"font": check, "available": bool(available)}))
         else:
