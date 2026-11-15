@@ -326,8 +326,15 @@ def _render_to_file(
 
         w, h = Image.open(path).size
         w_mm, h_mm = w / dpi * 25.4, h / dpi * 25.4
-        _log = getattr(logger, "success", logger.info)
-        _log("diagram saved: %s [W: %.1fmm, H: %.1fmm]", path.name, w_mm, h_mm)
+        if fig._figrecipe_diagram_failed:
+            logger.error(
+                "diagram validation failed; diagnostic saved: %s; %s",
+                path.name,
+                "; ".join(fig._figrecipe_validation_errors),
+            )
+        else:
+            _log = getattr(logger, "success", logger.info)
+            _log("diagram saved: %s [W: %.1fmm, H: %.1fmm]", path.name, w_mm, h_mm)
     except Exception:
         pass
     return path

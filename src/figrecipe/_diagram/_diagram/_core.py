@@ -99,7 +99,16 @@ class Diagram:
         language: Optional[str] = None,
         bullet: Optional[str] = None,
     ) -> "Diagram":
-        """Add a rich text box. See BoxSpec for node_class/state/language/bullet."""
+        """Add a rich text box, optionally placed by its centre in millimetres.
+
+        ``x_mm`` and ``y_mm`` locate the box centre, not its top-left corner.
+        With an explicit canvas height, the origin is the bottom-left and y
+        increases upward. Keep half the box width/height inside the canvas
+        bounds to avoid clipping. If height is omitted, it is inferred from
+        the text when x, y and width are provided.
+
+        See BoxSpec for node_class/state/language/bullet.
+        """
         fill_color = normalize_color(fill_color)
         border_color = normalize_color(border_color)
         title_color = normalize_color(title_color)
