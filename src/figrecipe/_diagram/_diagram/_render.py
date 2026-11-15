@@ -253,6 +253,7 @@ def render_container(diagram: "Diagram", ax: Axes, cid: str, container: Dict) ->
             ha=ha,
             va=va,
             fontsize=resolve_font_config()["title_size"],
+            fontfamily=resolve_font_config()["default_family_chain"],
             fontweight="bold",
             color=colors["text"],
             zorder=7,
@@ -418,6 +419,7 @@ def render_arrow(diagram: "Diagram", ax: Axes, arrow: "ArrowSpec") -> None:
             ha="center",
             va="center",
             fontsize=resolve_font_config()["edge_label_size"],
+            fontfamily=resolve_font_config()["default_family_chain"],
             color=color,
             fontstyle="italic",
             zorder=6,
@@ -465,5 +467,6 @@ def draw_all_elements(diagram, ax):
             ha="center",
             va="top",
             fontsize=resolve_font_config()["title_size"],
+            fontfamily=resolve_font_config()["default_family_chain"],
             fontweight="bold",
         )

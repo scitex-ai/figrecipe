@@ -98,7 +98,7 @@ def create_node_patch(
         "ha": "center",
         "va": "center",
         "fontsize": font["node_size"],
-        "fontfamily": font["family"],
+        "fontfamily": font["family_chain"],
         "fontweight": font["weight"],
         "color": colors["text"],
         "zorder": 3,

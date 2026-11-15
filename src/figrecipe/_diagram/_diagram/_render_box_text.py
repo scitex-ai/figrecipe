@@ -94,6 +94,9 @@ def render_box_text(
     as a block taller than a single row, so the next item's row landed inside
     that block.
     """
+    from .._shared._styles_native import resolve_font_config
+
+    font = resolve_font_config()
     is_code = box.shape == "codeblock"
     items = _build_text_items(box, title_color, colors)
 
@@ -135,7 +138,11 @@ def render_box_text(
             fontsize=fsize,
             fontweight=fweight,
             color=fcolor,
-            fontfamily="monospace" if is_code and row_cursor > 0 else "sans-serif",
+            fontfamily=(
+                font["monospace_family_chain"]
+                if is_code and row_cursor > 0
+                else font["family_chain"]
+            ),
             fontstyle="normal",
             zorder=7,
             bbox=txt_bg,

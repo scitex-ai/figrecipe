@@ -112,6 +112,17 @@ FONT_CONFIG = {
 _FALLBACK_WARNED = False
 
 
+def _with_cjk_fallback(family):
+    """Append the existing leaf-resolved fallback, preserving generic families."""
+    from ...styles._fonts import cjk_font
+
+    chain = [family] if isinstance(family, str) else list(family)
+    fallback = cjk_font()
+    if fallback and fallback not in chain:
+        chain.append(fallback)
+    return chain
+
+
 def resolve_font_config() -> Dict[str, object]:
     """Resolve diagram font sizes from the *active* figrecipe style.
 
@@ -133,7 +144,11 @@ def resolve_font_config() -> Dict[str, object]:
 
     ``family`` and ``weight`` are not style-driven and keep their FONT_CONFIG
     values (the style's ``fonts.family`` governs rcParams already; diagram text
-    inherits it through matplotlib unless explicitly set).
+    inherits it through matplotlib unless explicitly set). The additional
+    ``family_chain``, ``default_family_chain`` and ``monospace_family_chain``
+    retain those original choices and append the installed CJK fallback from
+    ``styles._fonts``. They do not mutate global rcParams or require a prior
+    recording subplots call.
 
     Returns
     -------
@@ -144,7 +159,12 @@ def resolve_font_config() -> Dict[str, object]:
     """
     global _FALLBACK_WARNED
 
+    import matplotlib as mpl
+
     config = dict(FONT_CONFIG)
+    config["family_chain"] = _with_cjk_fallback(config["family"])
+    config["default_family_chain"] = _with_cjk_fallback(mpl.rcParams["font.family"])
+    config["monospace_family_chain"] = _with_cjk_fallback("monospace")
 
     try:
         from ...styles._kwargs_converter import to_subplots_kwargs
