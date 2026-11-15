@@ -114,11 +114,18 @@ def test_standalone_render_does_not_change_global_fonts(fallback_override):
     assert after == before
 
 
-def test_standalone_japanese_labels_draw_with_installed_cjk_font():
-    # Arrange
+@pytest.fixture
+def installed_cjk():
     reset_cjk_font_cache()
-    if cjk_font() is None:
+    family = cjk_font()
+    if family is None:
         pytest.skip("No installed CJK family: real Japanese render is unverified here")
+    return family
+
+
+def test_standalone_japanese_labels_draw_with_installed_cjk_font(installed_cjk):
+    # Arrange
+    # The real font precondition lives in the fixture; no lookup is mocked.
     # Act
     with mpl.rc_context(mpl.rcParamsDefault), warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
