@@ -70,6 +70,51 @@ def load_style(
 
 After calling `load_style()`, subsequent `fr.subplots()` calls automatically use the loaded style.
 
+## Japanese and other CJK labels
+
+Install a font with the glyphs you need in the environment that creates and
+reproduces the figure. Figrecipe does not install or embed font files. The
+configured Latin face (Arial in SCITEX) alone does not cover Japanese.
+
+List the actual installed family names, then check the exact family you intend
+to use. A fallback face is not evidence that the requested family is installed:
+
+```bash
+figrecipe list-fonts --search "Noto" --json
+figrecipe list-fonts --check "Noto Sans JP" --json
+```
+
+A missing family produces `"available": false` and exit status 1. Install it
+before continuing. Use your installed family's exact name; `Noto Sans JP` is
+an example, and `IPAexGothic` is another possible choice when installed.
+
+For recorded plots, `FIGRECIPE_CJK_FONT` selects an installed fallback before
+the built-in candidate list. Set it before the first font lookup in a fresh
+Python process, for example when running the following script:
+
+```bash
+FIGRECIPE_CJK_FONT="Noto Sans JP" python my_figure.py
+```
+
+```python
+import figrecipe as fr
+
+fr.load_style("SCITEX")
+fig, ax = fr.subplots()
+ax.plot([0, 1, 2], [1, 3, 2])
+ax.set_title("日本語")
+ax.set_xlabel("月")
+fr.save(fig, "japanese.png", validate=True)
+```
+
+Use the same font environment when reproducing the recipe. Restart Python after
+installing a font or changing the override, because fallback resolution is
+cached. An unavailable override warns and tries the built-in candidates; it
+does not install the missing font. Avoid changing native Matplotlib `Text`
+objects after plotting: those mutations are not recorded and can make recipe
+validation fail. This workflow does not establish standalone Diagram box/arrow
+font support or preserve manual `rcParams` font preference order.
+
 ## Built-in presets
 
 | Preset | Description |
@@ -140,7 +185,7 @@ fr.load_style("/path/to/my_style.yaml")
 style = fr.load_style("SCITEX")
 style.axes.width_mm   # 40 (default axes width)
 style.axes.height_mm
-style.fonts.size
+style.fonts.title_pt   # 8 in SCITEX
 ```
 
 ## Style in declarative spec
