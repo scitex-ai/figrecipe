@@ -23,9 +23,13 @@ Use `figrecipe gui open` to launch the GUI editor.
 | `--json` | Set a context preference; only subcommands consuming it change output |
 | `-h`, `--help` | Show this message and exit |
 
-Use a command's own `--json` option when available. For example,
-`figrecipe list-fonts --json` emits JSON, while the root preference alone
-(`figrecipe --json list-fonts`) is not consumed by that command.
+For `list-fonts`, both `figrecipe --json list-fonts` and
+`figrecipe list-fonts --json` emit structured output, including checks and
+filtered inventories. A missing exact font still exits 1 with
+`available: false`; fallback faces do not count as availability. Root/local
+flag combinations and text output are covered by
+`tests/figrecipe/_cli/test__fonts.py`. Other commands' consumption of the root
+preference remains a separate check; use their own `--json` when available.
 
 ## Configuration scope
 

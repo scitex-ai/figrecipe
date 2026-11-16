@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Honor root `--json` for font checks, filtered searches and inventories as well
+  as the existing command option, retaining exact-font availability exit codes.
+
 ## [0.44.7] - 2026-11-12
 
 - Transfer the compiled frontend from its validated build job into the
