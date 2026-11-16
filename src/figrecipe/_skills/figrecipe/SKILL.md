@@ -53,6 +53,7 @@ This package does not ship as a submodule of the `scitex` umbrella.
 ### Workflows
 * [31_editor-data-and-fit](31_editor-data-and-fit.md) — direct worksheet entry, provenance locks, Fit, export, and current table-close semantics
 * [10_workflows](10_workflows.md) — Common figure workflows
+* [32_clew-provenance](32_clew-provenance.md) — what scitex-clew records for a saved figure; `derived_from` declared only for an unchanged `fr.reproduce`d figure (level-2 minimal slice)
 * [11_cli-reference](11_cli-reference.md) + [13_cli-extras](13_cli-extras.md) — Extended CLI notes
 * [12_mcp-tools](12_mcp-tools.md) + [14_mcp-tool-catalog](14_mcp-tool-catalog.md) — MCP tool reference
 
