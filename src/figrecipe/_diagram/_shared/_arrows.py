@@ -88,7 +88,7 @@ def create_edge_arrow(
             "ha": "center",
             "va": "bottom",
             "fontsize": font["edge_label_size"],
-            "fontfamily": font["family"],
+            "fontfamily": font["family_chain"],
             "color": edge_style["color"],
             "zorder": 4,
         }
