@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib
 
@@ -312,6 +312,10 @@ class FigureRecord:
     live_colorbars: List[Any] = field(default_factory=list, repr=False, compare=False)
     # Per-panel caption texts (set via fr.compose(panel_captions=...))
     figure_panel_captions: Optional[List[str]] = None
+    # Subplot construction semantics; absent on legacy recipes means unshared.
+    # Append fields to retain the positional constructor order of older callers.
+    sharex: Union[bool, str] = False
+    sharey: Union[bool, str] = False
 
     def get_axes_key(self, row: int, col: int) -> str:
         """Get dictionary key for axes at position."""
@@ -354,6 +358,10 @@ class FigureRecord:
         # Add constrained_layout if True
         if self.constrained_layout:
             result["figure"]["constrained_layout"] = True
+        if self.sharex is not False:
+            result["figure"]["sharex"] = self.sharex
+        if self.sharey is not False:
+            result["figure"]["sharey"] = self.sharey
         # Persist the collapse flag only when True (keeps recipes lean); the
         # reproducer skips the constrained_layout panel pin for a collapsed save.
         if self.layout_collapsed:
@@ -422,6 +430,8 @@ class FigureRecord:
             style=fig_data.get("style"),
             rcparams=fig_data.get("rcparams"),
             constrained_layout=fig_data.get("constrained_layout", False),
+            sharex=fig_data.get("sharex", False),
+            sharey=fig_data.get("sharey", False),
             layout_collapsed=fig_data.get("layout_collapsed", False),
             clew_tracked=fig_data.get("clew_tracked", False),
             suptitle=fig_data.get("suptitle"),

@@ -20,6 +20,14 @@ import figrecipe as fr
 | `Pltz` | Enriched axes wrapper (`plot_line`, `set_xyt`, …) |
 | `sns` | Seaborn passthrough (with style harmonization) |
 
+Subplot recipes retain `sharex` and `sharey` Boolean and `"all"`, `"row"`,
+`"col"`, `"none"` modes for replay, including shared-axis tick-label suppression.
+Legacy recipes without those fields retain the historical unshared behavior;
+the original sharing cannot be inferred retroactively. Controls using real YAML
+round trips and outside legends are in
+`tests/figrecipe/_wrappers/test__subplots.py`. This covers construction-time
+sharing, not arbitrary sharing changes made later through raw Matplotlib axes.
+
 ## Save / load / reproduce
 
 | Symbol | Purpose |

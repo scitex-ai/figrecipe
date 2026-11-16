@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Honor root `--json` for font checks, filtered searches and inventories as well
   as the existing command option, retaining exact-font availability exit codes.
+- Record and replay subplot `sharex`/`sharey` modes, preserving shared-axis
+  topology and tick-label suppression. Legacy recipes remain unshared when
+  the fields are absent; old sharing cannot be recovered retroactively.
 
 ## [0.44.7] - 2026-11-12
 
