@@ -75,8 +75,17 @@ def diagram_to_dict(info: "Diagram") -> Dict[str, Any]:
         ],
         "arrows": [
             {
+                "id": arrow.id,
                 "source": arrow.source,
                 "target": arrow.target,
+                "source_dx": arrow.source_dx,
+                "source_dy": arrow.source_dy,
+                "target_dx": arrow.target_dx,
+                "target_dy": arrow.target_dy,
+                "label_offset_mm": (
+                    list(arrow.label_offset_mm) if arrow.label_offset_mm is not None else None
+                ),
+                "margin_mm": arrow.margin_mm,
                 "source_anchor": arrow.source_anchor,
                 "target_anchor": arrow.target_anchor,
                 "label": arrow.label,
@@ -171,6 +180,16 @@ def diagram_from_dict(data: Dict[str, Any]) -> "Diagram":
     for arrow_data in data.get("arrows", []):
         diagram._arrows.append(
             ArrowSpec(
+                id=arrow_data.get("id"),
+                source_dx=arrow_data.get("source_dx", 0.0),
+                source_dy=arrow_data.get("source_dy", 0.0),
+                target_dx=arrow_data.get("target_dx", 0.0),
+                target_dy=arrow_data.get("target_dy", 0.0),
+                label_offset_mm=(
+                    tuple(arrow_data["label_offset_mm"])
+                    if arrow_data.get("label_offset_mm") is not None else None
+                ),
+                margin_mm=arrow_data.get("margin_mm"),
                 source=arrow_data["source"],
                 target=arrow_data["target"],
                 source_anchor=arrow_data.get("source_anchor", "auto"),

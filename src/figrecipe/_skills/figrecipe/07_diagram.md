@@ -59,6 +59,21 @@ g = Graphviz("digraph { A -> B -> C }")
 g.render("graph.png")
 ```
 
+## CJK text and recipe geometry
+
+Native diagram box text, container/diagram titles and arrow labels append the
+installed CJK fallback without requiring an earlier `fr.subplots()` call.
+Set `FIGRECIPE_CJK_FONT` to an installed family name before the first font
+lookup when the built-in candidate list does not select the font you need.
+The original serif, sans-serif and plain-code monospace choices are retained;
+font files must also be available in the environment that replays the recipe.
+Syntax-highlighted code text has its own rendering path.
+
+Arrow endpoint adjustments, label offsets and margins are saved with the
+recipe, so a positioned label does not move back over its arrow on replay.
+Older recipes retain their previous defaults; reconstruct any adjustments
+omitted by an older writer before resaving them.
+
 ## Diagram presets
 
 ```python
