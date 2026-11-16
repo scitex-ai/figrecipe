@@ -15,10 +15,31 @@ figrecipe supports two diagram types: box-and-arrow builders (Python API) and te
 ```python
 import figrecipe as fr
 
-diagram = fr.Diagram()
-# Build diagram programmatically
-diagram.render("flow.png")
+diagram = fr.Diagram(width_mm=110, height_mm=45)
+diagram.add_box(
+    "input", "Input", shape="box",
+    x_mm=25, y_mm=22, width_mm=35, height_mm=18,
+)
+diagram.add_box(
+    "output", "Output", shape="box",
+    x_mm=85, y_mm=22, width_mm=35, height_mm=18,
+)
+diagram.add_arrow("input", "output")
+path = diagram.save("flow.png", save_debug=False)
 ```
+
+Box positions (`x_mm`, `y_mm`) are **centres in millimetres**, not top-left
+corners. With the explicit canvas size above, `(0, 0)` is the bottom-left
+and y increases upward. Leave at least half a box's width/height between
+its centre and the canvas edge so the box fits.
+
+`diagram.render()` returns a Matplotlib `(fig, ax)` pair; its optional first
+argument is an axes, **not a filename**. Use `diagram.save(path)` (also
+available as `render_to_file(path)`) to write an image. A valid save also
+writes the diagram recipe beside it. `save_debug=False` omits the separate
+debug image. If layout validation fails, the returned path has a `_FAILED`
+suffix and an error reports the failed rule and offending element IDs;
+that diagnostic is not a valid output, and no recipe is written for it.
 
 ## Mermaid diagrams
 
