@@ -165,9 +165,10 @@ def save(
         If save_recipe=True: (image_path, yaml_path, ValidationResult or None)
         If save_recipe=False: (image_path, None, None)
     """
+    from .._serializer._derived_sources import declares_figure_sources
     from ._save import save_figure
 
-    result = save_figure(
+    result = declares_figure_sources(save_figure)(
         fig=fig,
         path=path,
         save_recipe=save_recipe,

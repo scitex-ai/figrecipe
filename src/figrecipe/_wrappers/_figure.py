@@ -454,8 +454,9 @@ class RecordingFigure(FigureTextMixin):
             return fname, None, None
 
         from .._api._save import save_figure
+        from .._serializer._derived_sources import declares_figure_sources as _decl
 
-        return save_figure(
+        return _decl(save_figure)(
             self,
             fname,
             save_recipe=save_recipe,
@@ -495,10 +496,13 @@ class RecordingFigure(FigureTextMixin):
             CSV structure: 'separate' (default) or 'single' (scitex-compatible).
         """
         from .._serializer import save_recipe
+        from .._serializer._derived_sources import declares_figure_sources as _decl
 
-        return save_recipe(
-            self._recorder.figure_record, path, include_data, data_format, csv_format
-        )
+        return _decl(
+            lambda fig: save_recipe(
+                fig.record, path, include_data, data_format, csv_format
+            )
+        )(self)
 
 
 # Backward compat: create_recording_subplots moved to _subplots.py

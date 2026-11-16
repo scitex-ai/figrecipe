@@ -11,6 +11,8 @@ from matplotlib.axes import Axes
 
 from .._recorder import CallRecord, FigureRecord
 from .._serializer import load_recipe
+from .._serializer._clew import collecting_inputs, record_input
+from .._serializer._derived_sources import snapshot_sources
 from .._utils._bundle import resolve_recipe_path
 from .._utils._grid import parse_grid_id
 from ._colorbars import _replay_colorbars
@@ -63,38 +65,51 @@ def reproduce(
     path, temp_dir = resolve_recipe_path(path)
 
     try:
-        record = load_recipe(path)
-
-        # Check for override file and merge if exists
-        if apply_overrides:
-            overrides_path = path.with_suffix(".overrides.json")
-            if overrides_path.exists():
-                import json
-
-                with open(overrides_path) as f:
-                    data = json.load(f)
-
-                # Apply style overrides
-                manual_overrides = data.get("manual_overrides", {})
-                if manual_overrides:
-                    if record.style is None:
-                        record.style = {}
-                    record.style.update(manual_overrides)
-
-                # Apply call overrides (kwargs changes from editor)
-                call_overrides = data.get("call_overrides", {})
-                if call_overrides:
-                    for ax_key, ax_record in record.axes.items():
-                        for call in ax_record.calls:
-                            if call.id in call_overrides:
-                                call.kwargs.update(call_overrides[call.id])
-
-        return reproduce_from_record(
-            record, calls=calls, skip_decorations=skip_decorations
-        )
+        # Collect every file read while rebuilding (recipe, its data files,
+        # overrides): the reproduced figure is derived from exactly these.
+        with collecting_inputs() as sources:
+            fig_axes = _reproduce_from_path(
+                path, calls, skip_decorations, apply_overrides
+            )
+        fig = fig_axes[0]
+        if temp_dir is None and getattr(fig, "record", None) is not None:
+            snapshot_sources(fig.record, sources)
+        return fig_axes
     finally:
         if temp_dir is not None and temp_dir.exists():
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def _reproduce_from_path(path, calls, skip_decorations, apply_overrides):
+    """Load the recipe at ``path`` (+ overrides) and rebuild the figure."""
+    record = load_recipe(path)
+
+    # Check for override file and merge if exists
+    if apply_overrides:
+        overrides_path = path.with_suffix(".overrides.json")
+        if overrides_path.exists():
+            import json
+
+            record_input(overrides_path)  # read below -> a figure input
+            with open(overrides_path) as f:
+                data = json.load(f)
+
+            # Apply style overrides
+            manual_overrides = data.get("manual_overrides", {})
+            if manual_overrides:
+                if record.style is None:
+                    record.style = {}
+                record.style.update(manual_overrides)
+
+            # Apply call overrides (kwargs changes from editor)
+            call_overrides = data.get("call_overrides", {})
+            if call_overrides:
+                for ax_key, ax_record in record.axes.items():
+                    for call in ax_record.calls:
+                        if call.id in call_overrides:
+                            call.kwargs.update(call_overrides[call.id])
+
+    return reproduce_from_record(record, calls=calls, skip_decorations=skip_decorations)
 
 
 def reproduce_from_record(
@@ -397,9 +412,7 @@ def _replay_call(
         # Log warning but continue
         import warnings
 
-        warnings.warn(
-            f"Failed to replay {method_name}: {e}", ReplayFailureWarning
-        )
+        warnings.warn(f"Failed to replay {method_name}: {e}", ReplayFailureWarning)
         return None
 
 

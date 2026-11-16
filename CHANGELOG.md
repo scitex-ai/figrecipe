@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Clew provenance: a figure rebuilt by `fr.reproduce(recipe)` and saved
+  unchanged records its image, recipe and data CSVs with
+  `derived_from` = the files the reproduction read (recipe, its data files,
+  applied overrides), so `clew.slice(level=2)` drops a run's unrelated
+  inputs. Any later plot call/decoration withdraws the declaration;
+  in-memory figures and bundle reproductions are never declared. Older
+  scitex-clew without `derived_from` records the outputs undeclared.
 - Enclose fractional recorded raster crop bounds and physical margins by
   rounding outward, avoiding trimmed edges and undersized sub-pixel margins.
 
