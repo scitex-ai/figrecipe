@@ -28,8 +28,16 @@ For `list-fonts`, both `figrecipe --json list-fonts` and
 filtered inventories. A missing exact font still exits 1 with
 `available: false`; fallback faces do not count as availability. Root/local
 flag combinations and text output are covered by
-`tests/figrecipe/_cli/test__fonts.py`. Other commands' consumption of the root
-preference remains a separate check; use their own `--json` when available.
+`tests/figrecipe/_cli/test__fonts.py`.
+
+Diagram discovery also honors both positions: `figrecipe --json diagram
+show-presets` and `figrecipe diagram show-presets --json` return the same
+structured data. This applies to `diagram show-info PATH`, `show-presets`
+and `show-backends`, with root/local/both flags, default text and missing-file
+behavior covered by `tests/figrecipe/_cli/test__diagram.py`. Backend discovery
+reports local availability; it does not establish successful rendering.
+Other commands' consumption of the root preference remains a separate check;
+use their own `--json` when available.
 
 ## Configuration scope
 

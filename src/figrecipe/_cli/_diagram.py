@@ -14,6 +14,15 @@ from .._utils._console import render_rich
 console = Console()
 
 
+def _json_requested(local_flag: bool) -> bool:
+    """Honor root JSON preferences without requiring a Click context."""
+    context = click.get_current_context(silent=True)
+    root_options = context.find_root().obj if context is not None else None
+    return local_flag or (
+        isinstance(root_options, dict) and bool(root_options.get("as_json"))
+    )
+
+
 @click.group()
 def diagram():
     """Create and manage diagrams (flowcharts, pipelines, etc.)."""
@@ -185,7 +194,7 @@ def info(path: str, as_json: bool):
         "groups": len(d.spec.layout.groups),
         "column": column,
     }
-    if as_json:
+    if _json_requested(as_json):
         click.echo(_json.dumps(payload, indent=2))
         return
 
@@ -212,7 +221,7 @@ def presets(as_json: bool):
     from .._diagram import list_presets as list_diagram_presets
 
     preset_info = list_diagram_presets()
-    if as_json:
+    if _json_requested(as_json):
         click.echo(_json.dumps(preset_info, indent=2))
         return
 
@@ -339,7 +348,7 @@ def backends(as_json: bool):
     from .._diagram._shared._render import get_available_backends
 
     backend_info = get_available_backends()
-    if as_json:
+    if _json_requested(as_json):
         click.echo(_json.dumps(backend_info, indent=2))
         return
 

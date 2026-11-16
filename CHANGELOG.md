@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Honor root `--json` for diagram info, presets and rendering-backend discovery,
+  matching their local flags while preserving text output and input errors.
+
 - Honor root `--json` for font checks, filtered searches and inventories as well
   as the existing command option, retaining exact-font availability exit codes.
 - Record and replay subplot `sharex`/`sharey` modes, preserving shared-axis

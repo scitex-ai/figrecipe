@@ -164,3 +164,94 @@ def test_render_graphviz_uses_real_backend_or_reports_missing_binary(tmp_path):
         )
         expected_exit = 1
     assert (result.returncode, correct_output) == (expected_exit, True)
+
+
+_JSON_POSITIONS = [(["--json"], []), ([], ["--json"]), (["--json"], ["--json"])]
+
+
+@pytest.mark.parametrize("root_flags,local_flags", _JSON_POSITIONS)
+def test_diagram_info_honors_json_position(tmp_path, root_flags, local_flags):
+    # Arrange
+    from figrecipe._cli import main
+
+    path = _graph_recipe(tmp_path)
+    args = [*root_flags, "diagram", "show-info", str(path), *local_flags]
+    expected = {
+        "path": str(path), "type": "pipeline", "title": "Owned graph",
+        "nodes": 2, "edges": 1, "groups": 0, "column": "double",
+    }
+    # Act
+    result = CliRunner().invoke(main, args)
+    # Assert
+    assert (result.exit_code, json.loads(result.stdout)) == (0, expected)
+
+
+@pytest.mark.parametrize("root_flags,local_flags", _JSON_POSITIONS)
+def test_diagram_presets_honor_json_position(root_flags, local_flags):
+    # Arrange
+    from figrecipe._cli import main
+    from figrecipe._diagram import list_presets
+
+    args = [*root_flags, "diagram", "show-presets", *local_flags]
+    expected = list_presets()
+    # Act
+    result = CliRunner().invoke(main, args)
+    # Assert
+    assert (result.exit_code, json.loads(result.stdout)) == (0, expected)
+
+
+@pytest.mark.parametrize("root_flags,local_flags", _JSON_POSITIONS)
+def test_diagram_backends_honor_json_position(root_flags, local_flags):
+    # Arrange
+    from figrecipe._cli import main
+    from figrecipe._diagram._shared._render import get_available_backends
+
+    args = [*root_flags, "diagram", "show-backends", *local_flags]
+    expected = get_available_backends()
+    # Act
+    result = CliRunner().invoke(main, args)
+    # Assert
+    assert (result.exit_code, json.loads(result.stdout)) == (0, expected)
+
+
+def test_diagram_info_preserves_default_text(tmp_path):
+    # Arrange
+    args = [sys.executable, "-m", "figrecipe", "diagram", "show-info",
+            str(_graph_recipe(tmp_path))]
+    # Act
+    result = subprocess.run(
+        args, capture_output=True, text=True,
+        env={**os.environ, "SCITEX_LOGGING_LEVEL": "INFO"},
+    )
+    # Assert
+    assert (result.returncode, "Diagram Info:" in result.stdout) == (0, True)
+
+
+@pytest.mark.parametrize(
+    "command,heading",
+    [("show-presets", "Available Diagram Presets:"),
+     ("show-backends", "Diagram Rendering Backends:")],
+)
+def test_diagram_catalogs_preserve_default_text(command, heading):
+    # Arrange
+    args = [sys.executable, "-m", "figrecipe", "diagram", command]
+    # Act
+    result = subprocess.run(
+        args, capture_output=True, text=True,
+        env={**os.environ, "SCITEX_LOGGING_LEVEL": "INFO"},
+    )
+    # Assert
+    assert (result.returncode, heading in result.stdout) == (0, True)
+
+
+@pytest.mark.parametrize("root_flags", [[], ["--json"]])
+def test_diagram_info_missing_file_remains_usage_error(tmp_path, root_flags):
+    # Arrange
+    from figrecipe._cli import main
+
+    path = tmp_path / "missing.yaml"
+    args = [*root_flags, "diagram", "show-info", str(path)]
+    # Act
+    result = CliRunner().invoke(main, args)
+    # Assert
+    assert (result.exit_code, "does not exist" in result.stderr) == (2, True)
