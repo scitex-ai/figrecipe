@@ -155,8 +155,11 @@ def main(
 
     Use 'figrecipe gui open' to launch the GUI editor.
 
-    Config is loaded with the SciTeX precedence chain:
+    Target config precedence (not implemented by this CLI entry point):
       config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
+
+    This entry point does not automatically load that chain. Pass explicit
+    command options and input files; style and GUI readers have separate scope.
     """
     # Stash --json so subcommands can read it via ctx.obj
     ctx.ensure_object(dict)

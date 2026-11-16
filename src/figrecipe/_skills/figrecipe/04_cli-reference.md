@@ -1,7 +1,7 @@
 ---
 description: |
   [TOPIC] CLI reference
-  [DETAILS] `figrecipe` console entry — plot, reproduce, compose, gui, convert, crop, diff, hitmap, extract, validate, info, diagram, style, list-fonts.
+  [DETAILS] `figrecipe` console entry — plot, reproduce, compose, gui, convert, crop, diff, show-hitmap, extract, validate, info, diagram, style, list-fonts.
 tags: [figrecipe-cli-reference]
 ---
 
@@ -20,14 +20,27 @@ Use `figrecipe gui open` to launch the GUI editor.
 |---|---|
 | `-V`, `--version` | Show version and exit |
 | `--help-recursive` | Show help for all commands |
-| `--json` | Emit structured JSON (propagates to subcommands) |
+| `--json` | Set a context preference; only subcommands consuming it change output |
 | `-h`, `--help` | Show this message and exit |
 
-## Configuration precedence
+Use a command's own `--json` option when available. For example,
+`figrecipe list-fonts --json` emits JSON, while the root preference alone
+(`figrecipe --json list-fonts`) is not consumed by that command.
+
+## Configuration scope
+
+The target SciTeX precedence chain is:
 
 ```
 config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
 ```
+
+The CLI entry point (`_cli/_main.py::main`) does not implement this loader.
+Use explicit command options and input files. In a controlled check,
+`list-fonts --check "DejaVu Sans" --json` ignores malformed local `config.yaml`
+and `$FIGRECIPE_CONFIG` files; that is a configuration-consumption gap, not
+evidence of working precedence. Style and GUI readers have separate scope.
+The shared configuration contract remains outstanding.
 
 ## Commands
 
@@ -47,7 +60,7 @@ config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
 | `convert` | Convert between figure formats |
 | `crop` | Crop an image to its content area |
 | `diff` | Compare two images and report pixel differences |
-| `hitmap` | Generate hitmap visualization from two images |
+| `show-hitmap` | Generate hitmap visualization from two images |
 
 ### Data + validation
 
@@ -85,13 +98,19 @@ The ordinary `fr.save` validation is a separate check.
 ## Examples
 
 ```bash
-figrecipe plot recipe.yaml -o figure.png
-figrecipe reproduce figure.png.recipe.yaml
+figrecipe plot spec.yaml -o figure.png --save-recipe
+figrecipe reproduce figure.yaml
 figrecipe crop figure.png
 figrecipe diff a.png b.png
-figrecipe diagram create flow.yaml --backend mermaid
+figrecipe diagram create flow.mmd --format mermaid
 figrecipe style list
 ```
+
+`plot` consumes a declarative specification (`figure` and `plots`), while
+`reproduce` consumes the recorded companion recipe. These are different inputs.
+Graph compilation commands under `diagram` use `GraphDiagram`; the mm-based
+box-and-arrow builder remains `fr.Diagram`.
+Owning graph CLI controls are in `tests/figrecipe/_cli/test__diagram.py`.
 
 For per-command flags, run `figrecipe <command> --help` or
 `figrecipe --help-recursive`.
