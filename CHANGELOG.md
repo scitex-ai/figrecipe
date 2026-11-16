@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Enclose fractional recorded raster crop bounds and physical margins by
+  rounding outward, avoiding trimmed edges and undersized sub-pixel margins.
+
 - Reject invalid save validation levels before modifying output files, so
   misspellings cannot silently suppress reproducibility-failure exceptions.
 
