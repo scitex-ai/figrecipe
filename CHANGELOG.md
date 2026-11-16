@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Route graph CLI creation, conversion, inspection, splitting and rendering to
+  `GraphDiagram`, preserving the separate mm-based `fr.Diagram` builder. Report
+  rendering-backend failures as visible CLI errors even at warning log level.
+
 ## [0.44.7] - 2026-11-12
 
 - Transfer the compiled frontend from its validated build job into the
