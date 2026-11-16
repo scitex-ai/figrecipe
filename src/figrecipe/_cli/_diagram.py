@@ -14,6 +14,15 @@ from .._utils._console import render_rich
 console = Console()
 
 
+def _json_requested(local_flag: bool) -> bool:
+    """Honor root JSON preferences without requiring a Click context."""
+    context = click.get_current_context(silent=True)
+    root_options = context.find_root().obj if context is not None else None
+    return local_flag or (
+        isinstance(root_options, dict) and bool(root_options.get("as_json"))
+    )
+
+
 @click.group()
 def diagram():
     """Create and manage diagrams (flowcharts, pipelines, etc.)."""
@@ -65,9 +74,9 @@ def create(
             f"DRY RUN — would create {output} (type={diagram_type}, format={output_format})"
         )
         return
-    from .._diagram import Diagram
+    from .._diagram import GraphDiagram
 
-    d = Diagram(type=diagram_type, title=title or "", column=column)
+    d = GraphDiagram(type=diagram_type, title=title or "", column=column)
     output_path = Path(output)
 
     if output_format == "mermaid":
@@ -111,16 +120,16 @@ def convert(
             f"DRY RUN — would convert {input} -> {output} (format={output_format})"
         )
         return
-    from .._diagram import Diagram
+    from .._diagram import GraphDiagram
 
     input_path = Path(input)
     output_path = Path(output)
 
     # Load diagram
     if input_path.suffix in (".yaml", ".yml"):
-        d = Diagram.from_yaml(input_path)
+        d = GraphDiagram.from_yaml(input_path)
     elif input_path.suffix == ".mmd":
-        d = Diagram.from_mermaid(input_path)
+        d = GraphDiagram.from_mermaid(input_path)
     else:
         render_rich(f"[red]Error:[/red] Unknown input format: {input_path.suffix}", __name__)
         raise SystemExit(1)
@@ -158,15 +167,15 @@ def info(path: str, as_json: bool):
     """
     import json as _json
 
-    from .._diagram import Diagram
+    from .._diagram import GraphDiagram
 
     input_path = Path(path)
 
     # Load diagram
     if input_path.suffix in (".yaml", ".yml"):
-        d = Diagram.from_yaml(input_path)
+        d = GraphDiagram.from_yaml(input_path)
     elif input_path.suffix == ".mmd":
-        d = Diagram.from_mermaid(input_path)
+        d = GraphDiagram.from_mermaid(input_path)
     else:
         render_rich(f"[red]Error:[/red] Unknown format: {input_path.suffix}", __name__)
         raise SystemExit(1)
@@ -185,7 +194,7 @@ def info(path: str, as_json: bool):
         "groups": len(d.spec.layout.groups),
         "column": column,
     }
-    if as_json:
+    if _json_requested(as_json):
         click.echo(_json.dumps(payload, indent=2))
         return
 
@@ -212,7 +221,7 @@ def presets(as_json: bool):
     from .._diagram import list_presets as list_diagram_presets
 
     preset_info = list_diagram_presets()
-    if as_json:
+    if _json_requested(as_json):
         click.echo(_json.dumps(preset_info, indent=2))
         return
 
@@ -238,12 +247,12 @@ def split(input: str, max_nodes: int, strategy: str, output_dir: Optional[str]):
     Example:
         figrecipe diagram split large_workflow.yaml --max-nodes 8 -o parts/
     """
-    from .._diagram import Diagram
+    from .._diagram import GraphDiagram
 
     input_path = Path(input)
 
     if input_path.suffix in (".yaml", ".yml"):
-        d = Diagram.from_yaml(input_path)
+        d = GraphDiagram.from_yaml(input_path)
     else:
         render_rich("[red]Error:[/red] Split only supports YAML input", __name__)
         raise SystemExit(1)
@@ -298,7 +307,7 @@ def render(
         figrecipe diagram render workflow.yaml workflow.png
         figrecipe diagram render workflow.mmd output.svg --backend mermaid.ink
     """
-    from .._diagram import Diagram
+    from .._diagram import GraphDiagram
 
     input_path = Path(input)
     output_path = Path(output)
@@ -311,9 +320,9 @@ def render(
 
     # Load diagram
     if input_path.suffix in (".yaml", ".yml"):
-        d = Diagram.from_yaml(input_path)
+        d = GraphDiagram.from_yaml(input_path)
     elif input_path.suffix == ".mmd":
-        d = Diagram.from_mermaid(input_path)
+        d = GraphDiagram.from_mermaid(input_path)
     else:
         render_rich(f"[red]Error:[/red] Unknown input format: {input_path.suffix}", __name__)
         raise SystemExit(1)
@@ -322,8 +331,7 @@ def render(
         result = d.render(output_path, format=format, backend=backend, scale=scale)
         render_rich(f"[green]✓[/green] Rendered: {result}", __name__)
     except RuntimeError as e:
-        render_rich(f"[red]Error:[/red] {e}", __name__)
-        raise SystemExit(1)
+        raise click.ClickException(str(e)) from e
 
 
 @diagram.command("show-backends")
@@ -340,7 +348,7 @@ def backends(as_json: bool):
     from .._diagram._shared._render import get_available_backends
 
     backend_info = get_available_backends()
-    if as_json:
+    if _json_requested(as_json):
         click.echo(_json.dumps(backend_info, indent=2))
         return
 

@@ -62,9 +62,9 @@ def hitmap(
     - heatmap mode: Colormap showing difference magnitude
 
     Examples:
-        figrecipe hitmap original.png reproduced.png
-        figrecipe hitmap original.png reproduced.png -o hitmap.png --mode binary
-        figrecipe hitmap original.png reproduced.png --threshold 5
+        figrecipe show-hitmap original.png reproduced.png
+        figrecipe show-hitmap original.png reproduced.png -o hitmap.png --mode binary
+        figrecipe show-hitmap original.png reproduced.png --threshold 5
     """
     try:
         from .._utils._hitmap import create_hitmap

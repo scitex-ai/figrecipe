@@ -260,3 +260,103 @@ def test_subplot_adjustment_after_creation_preserves_validated_reproduction(tmp_
     replay, _ = fr.reproduce(target)
     # Assert
     assert replay.record.layout["left"] == 0.25
+
+
+
+def _save_error(fig, target, **options):
+    try:
+        fr.save(fig, target, **options)
+    except ValueError as error:
+        return str(error)
+    return ""
+
+
+@pytest.mark.parametrize("level", ["erorr", "warn", "", None])
+def test_invalid_validation_level_rejected_without_creating_files(tmp_path, level):
+    # Arrange
+    fig = make_figure()
+    target = tmp_path / "invalid.png"
+    # Act
+    error = _save_error(fig, target, validate_error_level=level)
+    # Assert
+    assert (error.startswith("validate_error_level"), list(tmp_path.iterdir())) == (
+        True, [],
+    )
+
+
+@pytest.mark.parametrize("level", ["erorr", "warn", "", None])
+def test_invalid_validation_level_preserves_existing_file(tmp_path, level):
+    # Arrange
+    fig = make_figure()
+    target = tmp_path / "existing.png"
+    target.write_bytes(b"pre-existing user content")
+    # Act
+    error = _save_error(fig, target, validate_error_level=level)
+    # Assert
+    assert (
+        error.startswith("validate_error_level"), target.read_bytes(),
+        sorted(p.name for p in tmp_path.iterdir()),
+    ) == (True, b"pre-existing user content", ["existing.png"])
+
+
+@pytest.mark.parametrize("options", [{"validate": False}, {"save_recipe": False}])
+def test_invalid_validation_level_rejected_when_checks_disabled(tmp_path, options):
+    # Arrange
+    fig = make_figure()
+    target = tmp_path / "disabled.png"
+    # Act
+    error = _save_error(fig, target, validate_error_level="erorr", **options)
+    # Assert
+    assert (error.startswith("validate_error_level"), list(tmp_path.iterdir())) == (
+        True, [],
+    )
+
+
+def _divergent_figure():
+    fig = make_figure()
+    # Deliberate unrecorded Matplotlib edit, as with a post-plot font workaround.
+    fig.fig.text(0.05, 0.5, "UNRECORDED", fontsize=42, color="black")
+    return fig
+
+
+def test_default_validation_raises_for_both_consecutive_saves(tmp_path):
+    # Arrange
+    fig = _divergent_figure()
+    targets = [tmp_path / "first.png", tmp_path / "second.png"]
+    # Act: same figure/process and ordinary threshold on both calls.
+    errors = [_save_error(fig, target) for target in targets]
+    # Assert
+    assert ["Reproducibility validation failed" in error for error in errors] == [
+        True, True,
+    ]
+
+
+def test_warning_validation_returns_actual_failed_result(tmp_path):
+    # Arrange
+    import warnings
+
+    fig = _divergent_figure()
+    # Act
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        image, recipe, result = fr.save(
+            fig, tmp_path / "warning.png", validate_error_level="warning",
+        )
+    # Assert
+    assert (
+        any("Reproducibility validation failed" in str(w.message) for w in caught),
+        result.valid, result.mse > 100.0, image.exists(), recipe.exists(),
+    ) == (True, False, True, True, True)
+
+
+def test_debug_validation_returns_actual_failed_result(tmp_path):
+    # Arrange
+    fig = _divergent_figure()
+    # Act
+    image, recipe, result = fr.save(
+        fig, tmp_path / "debug.png", validate_error_level="debug",
+    )
+    # Assert
+    assert (result.valid, result.mse > 100.0, image.exists(), recipe.exists()) == (
+        False, True, True, True,
+    )

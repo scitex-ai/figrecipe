@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Reject invalid save validation levels before modifying output files, so
+  misspellings cannot silently suppress reproducibility-failure exceptions.
+
+- Honor root `--json` for diagram info, presets and rendering-backend discovery,
+  matching their local flags while preserving text output and input errors.
+
+- Honor root `--json` for font checks, filtered searches and inventories as well
+  as the existing command option, retaining exact-font availability exit codes.
+- Record and replay subplot `sharex`/`sharey` modes, preserving shared-axis
+  topology and tick-label suppression. Legacy recipes remain unshared when
+  the fields are absent; old sharing cannot be recovered retroactively.
+- Route graph CLI creation, conversion, inspection, splitting and rendering to
+  `GraphDiagram`, preserving the separate mm-based `fr.Diagram` builder. Report
+  rendering-backend failures as visible CLI errors even at warning log level.
+
 ## [0.44.7] - 2026-11-12
 
 - Transfer the compiled frontend from its validated build job into the

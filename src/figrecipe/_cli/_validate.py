@@ -32,9 +32,10 @@ def validate(
     strict: bool,
     quiet: bool,
 ) -> None:
-    """Validate that a recipe reproduces its original figure.
+    """Check recipe self-consistency by comparing two replayed renders.
 
     SOURCE is the path to a .yaml recipe file.
+    This standalone check does not compare against the original image.
 
     \b
     Example:

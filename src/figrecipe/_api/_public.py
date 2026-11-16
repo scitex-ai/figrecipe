@@ -13,12 +13,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
+from .._quality._validator import ValidationResult
 from .._recorder import FigureRecord
 from .._reproducer import get_recipe_info
 from .._reproducer import reproduce as _reproduce_core
 from .._serializer import load_recipe
 from .._utils._numpy_io import CsvFormat, DataFormat
-from .._quality._validator import ValidationResult
 from .._wrappers import RecordingAxes, RecordingFigure
 
 
@@ -134,6 +134,8 @@ def save(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle failures: 'error', 'warning', or 'debug'.
+        Other values raise ValueError before changing files, even if
+        validate=False or save_recipe=False.
     validate_axis_range_alignment : bool
         If True (default), run the runtime ``axis_range_alignment``
         check on the rendered figure. Catches the autoscale-with-
