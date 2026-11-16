@@ -1,7 +1,7 @@
 ---
 description: |
   [TOPIC] CLI reference
-  [DETAILS] `figrecipe` console entry — plot, reproduce, compose, gui, convert, crop, diff, hitmap, extract, validate, info, diagram, style, fonts.
+  [DETAILS] `figrecipe` console entry — plot, reproduce, compose, gui, convert, crop, diff, hitmap, extract, validate, info, diagram, style, list-fonts.
 tags: [figrecipe-cli-reference]
 ---
 
@@ -54,7 +54,7 @@ config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
 | Command | Purpose |
 |---|---|
 | `extract` | Extract plotted data arrays from a recipe |
-| `validate` | Validate that a recipe reproduces its original figure |
+| `validate` | Render a recipe twice and compare those renders for self-consistency |
 | `info` | Show information about a recipe |
 
 ### Diagram
@@ -68,7 +68,19 @@ config.yaml -> $FIGRECIPE_CONFIG -> ~/.scitex/figrecipe/config.yaml -> defaults
 | Command | Purpose |
 |---|---|
 | `style` | Manage figure styles and presets |
-| `fonts` | List or check available fonts |
+| `list-fonts` | List or check available fonts |
+
+`list-fonts` is the registered command name (`_cli/_fonts.py`); the Python
+callback is named `fonts`. For example,
+`figrecipe list-fonts --check "DejaVu Sans" --json` reports exact installed-family
+availability. Font fallback does not count as availability; a missing family
+returns `available: false` and exit 1. Owning controls are in
+`tests/figrecipe/_cli/test__fonts.py`.
+
+Standalone `validate` calls `_api/_validate.py::validate_recipe`: it compares
+two replays, rather than a replay with the original image. A passing result
+establishes recipe self-consistency, not fidelity to the original plot.
+The ordinary `fr.save` validation is a separate check.
 
 ## Examples
 
