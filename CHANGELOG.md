@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Record and replay subplot `sharex`/`sharey` modes, preserving shared-axis
+  topology and tick-label suppression. Legacy recipes remain unshared when
+  the fields are absent; old sharing cannot be recovered retroactively.
+
 ## [0.44.7] - 2026-11-12
 
 - Transfer the compiled frontend from its validated build job into the

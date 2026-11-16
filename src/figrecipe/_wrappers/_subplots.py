@@ -64,8 +64,20 @@ def create_recording_subplots(
 
     # Start recording (record grid shape so panel-letter assignment for
     # data-file / legend-file naming agrees with the rendered panel labels).
-    recorder.start_figure(
+    record = recorder.start_figure(
         figsize=tuple(figsize), dpi=int(dpi), nrows=nrows, ncols=ncols
+    )
+    # Matplotlib has validated these options; normalize Boolean-like inputs
+    # to recipe primitives while retaining its row/col/all/none string modes.
+    record.sharex = (
+        kwargs["sharex"]
+        if isinstance(kwargs.get("sharex"), str)
+        else bool(kwargs.get("sharex", False))
+    )
+    record.sharey = (
+        kwargs["sharey"]
+        if isinstance(kwargs.get("sharey"), str)
+        else bool(kwargs.get("sharey", False))
     )
 
     # Wrap axes

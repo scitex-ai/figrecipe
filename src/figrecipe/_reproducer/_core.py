@@ -172,6 +172,8 @@ def _reproduce_grid(
         figsize=record.figsize,
         dpi=record.dpi,
         constrained_layout=record.constrained_layout,
+        sharex=record.sharex,
+        sharey=record.sharey,
     )
 
     # Apply layout if recorded (skip if constrained_layout is used)
