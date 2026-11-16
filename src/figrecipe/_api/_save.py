@@ -164,6 +164,8 @@ def save_figure(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle validation failures: 'error', 'warning', or 'debug'.
+        Other values raise ValueError before changing files, even if
+        validate=False or save_recipe=False.
     validate_axis_range_alignment : bool
         If True (default), run the runtime ``axis_range_alignment``
         check on the rendered figure before saving. Complements the
@@ -203,6 +205,12 @@ def save_figure(
         raise TypeError(
             "Expected RecordingFigure. Use fr.subplots() to create "
             "a recording-enabled figure."
+        )
+
+    if validate_error_level not in ("error", "warning", "debug"):
+        raise ValueError(
+            "validate_error_level must be 'error', 'warning', or 'debug'; "
+            f"got {validate_error_level!r}"
         )
 
     # Get DPI and transparency from style if not specified

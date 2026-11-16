@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Reject invalid save validation levels before modifying output files, so
+  misspellings cannot silently suppress reproducibility-failure exceptions.
+
 - Honor root `--json` for diagram info, presets and rendering-backend discovery,
   matching their local flags while preserving text output and input errors.
 
