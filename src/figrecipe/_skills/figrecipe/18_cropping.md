@@ -22,14 +22,9 @@ def crop(
     output_path=None,       # default: input with "_cropped" suffix
     margin_mm=1.0,          # margin in millimeters (default: 1.0)
     margin_px=None,         # margin in pixels (overrides margin_mm)
-    margin_left_mm=None,   # per-side mm margins override margin_mm
-    margin_right_mm=None,
-    margin_top_mm=None,
-    margin_bottom_mm=None,
     overwrite=False,        # overwrite input file in place
     verbose=False,
     return_offset=False,    # if True, return (path, offset_dict)
-    crop_box=None,          # explicit (left, upper, right, lower) pixel box
 ) -> Path | Tuple[Path, dict]
 ```
 
@@ -59,10 +54,10 @@ path, offset = fr.crop("figure.png", return_offset=True)
 # offset: {"left": N, "top": N, "right": N, "bottom": N}  (pixels)
 ```
 
-Python supports uniform millimeter or pixel margins and per-side millimeter
-margins. The CLI exposes one uniform `--margin` in mm or px; the MCP tool exposes
-one uniform `margin_mm`. Neither exposes Python's per-side margin arguments or
-explicit crop box.
+The public `fr.crop()` supports one uniform millimeter or pixel margin. The
+CLI exposes one uniform `--margin` in mm or px; the MCP tool exposes one uniform
+`margin_mm`. Per-side margins and an explicit crop box are internal utility
+options, not parameters of these public interfaces.
 
 ## CLI: figrecipe crop
 
@@ -101,7 +96,8 @@ Figures created by `fr.compose()` are automatically marked for 1mm-margin croppi
 
 ## Implementation and behavioral coverage
 
-The leaf implementation is `figrecipe._utils._crop.crop`; the CLI adapter is
+The public Python wrapper is `figrecipe._api._public.crop`, delegating to
+`figrecipe._utils._crop.crop`; the CLI adapter is
 `figrecipe._cli._crop.crop`, and the MCP adapter is
 `figrecipe._mcp.server.plt_crop`. Legacy crop dispatch controls live in
 `tests/figrecipe/_api/test__save_crop.py`; mode/metadata/padding controls live in

@@ -344,7 +344,7 @@ def plt_crop(
     Use for requests to crop whitespace, trim a figure, remove margins, or
     crop to content. Reads Pillow-supported raster images such as PNG/JPEG;
     PDF input is not supported. This MCP tool accepts a uniform margin only;
-    per-side margins and pixel margins are available through Python fr.crop().
+    pixel margins are available through Python fr.crop().
 
     Parameters
     ----------
