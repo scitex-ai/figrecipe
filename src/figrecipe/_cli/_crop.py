@@ -57,16 +57,16 @@ def crop(
     margin_mm = None
     margin_px = None
 
-    if margin.endswith("mm"):
-        margin_mm = float(margin[:-2])
-    elif margin.endswith("px"):
-        margin_px = int(margin[:-2])
-    else:
-        # Default to mm
-        try:
+    try:
+        if margin.endswith("mm"):
+            margin_mm = float(margin[:-2])
+        elif margin.endswith("px"):
+            margin_px = int(margin[:-2])
+        else:
+            # Default to mm
             margin_mm = float(margin)
-        except ValueError:
-            raise click.ClickException(f"Invalid margin format: {margin}") from None
+    except ValueError:
+        raise click.ClickException(f"Invalid margin format: {margin}") from None
 
     # Determine output path
     if output:
