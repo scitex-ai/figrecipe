@@ -63,9 +63,15 @@ heatmap outputs are checked with actual images in
 `tests/figrecipe/_cli/test__hitmap.py`; catalog filters and unknown-module errors
 are checked in `tests/figrecipe/_cli/test__mcp.py`.
 
-GUI lifecycle consumption of the root preference remains a separate check;
-use its own `--json` when available. These checks do not qualify launching or
-stopping a GUI, hosted rendering, external MCP services or all image inputs.
+GUI lifecycle commands honor root, local and combined `--json` preferences.
+For example, `figrecipe --json gui status` and `figrecipe gui status --json`
+return the same runtime-state schema. Dry-run `gui open` / `gui serve`, bare
+`gui [SOURCE]`, and the deprecated `start-gui` alias also honor both positions.
+Directory dry-runs emit only JSON on stdout; the alias warning stays on stderr.
+Plain directory output keeps its browsing notice. Owning controls:
+`tests/integration/test_cli_gui_json.py` (dry-run and isolated absent-state
+cases). These checks do not qualify starting or stopping a live GUI, desktop
+windows, hosted rendering, external MCP services or all image inputs.
 
 ## Configuration scope
 
