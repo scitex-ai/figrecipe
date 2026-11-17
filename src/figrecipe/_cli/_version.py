@@ -4,6 +4,8 @@
 
 import click
 
+from ._json_output import json_requested
+
 
 @click.command(
     "version", hidden=True, context_settings={"ignore_unknown_options": True}
@@ -36,6 +38,8 @@ def show_version(full: bool, as_json: bool) -> None:
       $ figrecipe show-version --full
       $ figrecipe show-version --full --json
     """
+    as_json = json_requested(as_json)
+
     from .. import __version__
 
     if as_json:

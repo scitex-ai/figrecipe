@@ -4,6 +4,8 @@
 
 import click
 
+from ._json_output import json_requested
+
 # Color mapping for types (matching scitex)
 TYPE_COLORS = {"M": "blue", "C": "magenta", "F": "green", "V": "cyan"}
 
@@ -134,6 +136,8 @@ def list_python_apis(verbose: int, max_depth: int, root_only: bool, as_json: boo
       figrecipe list-python-apis -v
       figrecipe list-python-apis --json
     """
+
+    as_json = json_requested(as_json)
 
     import figrecipe
 

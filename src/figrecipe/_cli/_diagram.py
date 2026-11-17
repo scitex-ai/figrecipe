@@ -10,17 +10,9 @@ from rich.console import Console
 from rich.syntax import Syntax
 
 from .._utils._console import render_rich
+from ._json_output import json_requested as _json_requested
 
 console = Console()
-
-
-def _json_requested(local_flag: bool) -> bool:
-    """Honor root JSON preferences without requiring a Click context."""
-    context = click.get_current_context(silent=True)
-    root_options = context.find_root().obj if context is not None else None
-    return local_flag or (
-        isinstance(root_options, dict) and bool(root_options.get("as_json"))
-    )
 
 
 @click.group()

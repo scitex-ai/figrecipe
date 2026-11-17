@@ -43,8 +43,18 @@ one-pixel-different inputs, root/local/both flags and ordinary text output are
 covered by `tests/figrecipe/_cli/test__diff.py`. A completed comparison exits 0
 even when `is_match` is false; command/input errors remain errors.
 
+Read-only metadata commands also accept the root flag: `info RECIPE`,
+`show-version` (including `--full`), `style list`, `style show NAME`, and
+`list-python-apis`. For example, `figrecipe --json style show SCITEX` and
+`figrecipe style show SCITEX --json` return the same preset data. Their existing
+JSON schemas and ordinary text modes are preserved. Recipe metadata is about
+the loaded recipe, not proof that its saved image reproduces. Owning controls:
+`tests/integration/test_cli_metadata_json.py`; root/local/both forms are compared
+using a normally saved, validated recipe and actual installed metadata.
+
 Other commands' consumption of the root preference remains a separate check;
-use their own `--json` when available.
+use their own `--json` when available. In particular, these read-only checks do
+not qualify GUI lifecycle operations, hitmap generation or MCP discovery.
 
 ## Configuration scope
 

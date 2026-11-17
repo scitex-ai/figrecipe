@@ -6,6 +6,7 @@ import click
 from rich.console import Console
 
 from .._utils._console import render_rich
+from ._json_output import json_requested
 
 console = Console()
 
@@ -57,6 +58,7 @@ def list_styles(as_json: bool) -> None:
     """
     from .. import list_presets
 
+    as_json = json_requested(as_json)
     presets = list_presets()
 
     if as_json:
@@ -86,6 +88,8 @@ def show_style(name: str, as_json: bool) -> None:
     from ruamel.yaml import YAML
 
     from ..styles._style_loader import load_preset
+
+    as_json = json_requested(as_json)
 
     try:
         style_dict = load_preset(name)

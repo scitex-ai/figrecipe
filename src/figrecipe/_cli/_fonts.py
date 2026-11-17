@@ -6,6 +6,8 @@ from typing import Optional
 
 import click
 
+from ._json_output import json_requested
+
 
 @click.command("list-fonts")
 @click.option(
@@ -34,11 +36,7 @@ def fonts(check: Optional[str], search: Optional[str], as_json: bool) -> None:
 
     from ..styles._style_applier import list_available_fonts
 
-    context = click.get_current_context(silent=True)
-    root_options = context.find_root().obj if context is not None else None
-    as_json = as_json or (
-        isinstance(root_options, dict) and bool(root_options.get("as_json"))
-    )
+    as_json = json_requested(as_json)
 
     if check:
         available = check in list_available_fonts()

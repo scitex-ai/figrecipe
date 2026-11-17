@@ -7,6 +7,8 @@ from pathlib import Path
 
 import click
 
+from ._json_output import json_requested
+
 
 @click.command()
 @click.argument("source", type=click.Path(exists=True))
@@ -33,6 +35,8 @@ def info(source: str, as_json: bool, verbose: bool) -> None:
       $ figrecipe info figure.yaml --verbose
       $ figrecipe info figure.yaml --json
     """
+    as_json = json_requested(as_json)
+
     from .. import info as fr_info
 
     source_path = Path(source)
