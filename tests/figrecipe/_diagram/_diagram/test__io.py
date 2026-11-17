@@ -261,3 +261,45 @@ def test_extensionless_png_receives_same_crop_as_explicit_png(
         explicit_size = explicit.size
     # Assert
     assert implicit_size == explicit_size
+
+
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_hitmap_sidecar_is_png_for_every_output_format(
+    tmp_path, suffix, diagram_save_method, valid_diagram
+):
+    # Arrange
+    from PIL import Image
+
+    diagram, valid = valid_diagram
+    stem = "flow_hitmap" if valid else "flow_FAILED_hitmap"
+    # Act
+    getattr(diagram, diagram_save_method)(
+        tmp_path / ("flow" + suffix), save_hitmap=True, save_debug=False
+    )
+    with Image.open(tmp_path / (stem + ".png")) as image:
+        actual = image.format
+    # Assert
+    assert actual == "PNG"
+
+
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_hitmap_sidecar_pixels_use_json_color_map(
+    tmp_path, suffix, diagram_save_method, valid_diagram
+):
+    # Arrange
+    import json
+
+    from PIL import Image
+
+    diagram, valid = valid_diagram
+    stem = "flow_hitmap" if valid else "flow_FAILED_hitmap"
+    # Act
+    getattr(diagram, diagram_save_method)(
+        tmp_path / ("flow" + suffix), save_hitmap=True, save_debug=False
+    )
+    mapping = json.loads((tmp_path / (stem + ".json")).read_text())
+    color = tuple(mapping["box:input"]["rgb"])
+    with Image.open(tmp_path / (stem + ".png")) as image:
+        pixels = {color for _, color in image.getcolors(image.width * image.height)}
+    # Assert
+    assert color in pixels

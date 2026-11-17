@@ -46,6 +46,8 @@ A valid vector save logs its filename without claiming raster dimensions.
 An extensionless filename uses Matplotlib's `savefig.format` (PNG by default);
 the returned path includes that extension, including for `_FAILED` diagnostics.
 Raster cropping and optional debug/recipe sidecars use this resolved path.
+With `save_hitmap=True`, the element hitmap is always `<stem>_hitmap.png`
+with a matching JSON color map, including when the main image is SVG or PDF.
 Owning controls: `tests/figrecipe/_diagram/_diagram/test__io.py`.
 
 ## Mermaid diagrams

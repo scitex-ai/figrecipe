@@ -326,7 +326,8 @@ def _render_to_file(
     if save_hitmap:
         from ._hitmap import save_diagram_hitmap
 
-        save_diagram_hitmap(diagram, path.with_stem(path.stem + "_hitmap"), dpi=dpi)
+        hitmap_path = path.with_name(path.stem + "_hitmap.png")
+        save_diagram_hitmap(diagram, hitmap_path, dpi=dpi)
     if save_debug:
         from ._debug import generate_debug_image
 
