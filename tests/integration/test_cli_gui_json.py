@@ -85,3 +85,40 @@ def test_gui_plain_directory_dry_run_preserves_human_output(tmp_path, command, v
     assert (result.exit_code, result.stdout, state.exists()) == (
         0, f"Browsing directory: {browse}\nWould {verb} editor at http://127.0.0.1:31296.\n", False,
     )
+
+
+@pytest.mark.parametrize("command", [
+    ["gui", "open"], ["gui", "serve"], ["gui"], ["start-gui"],
+])
+@pytest.mark.parametrize("port", [-1, 0, 65536])
+@pytest.mark.parametrize("prefix", [[], ["--json"]])
+def test_gui_invalid_fixed_port_is_refused_before_runtime_actions(tmp_path, command, port, prefix):
+    # Arrange
+    state = tmp_path / "gui-state.json"
+    args = [*prefix, *command, "--dry-run", "--port", str(port)]
+    # Act
+    result = CliRunner().invoke(main, args, env={"FIGRECIPE_GUI_STATE": str(state)})
+    # Assert
+    assert {
+        "exit": result.exit_code,
+        "stdout": result.stdout,
+        "range_error": result.stderr.endswith(
+            f"Error: Invalid value for '--port': {port} is not in the range 1<=x<=65535.\n"
+        ),
+        "state_created": state.exists(),
+    } == {"exit": 2, "stdout": "", "range_error": True, "state_created": False}
+
+
+@pytest.mark.parametrize("command", [
+    ["gui", "open"], ["gui", "serve"], ["gui"], ["start-gui"],
+])
+@pytest.mark.parametrize("port", [1, 31296, 65535])
+def test_gui_fixed_port_boundaries_remain_available_in_dry_run(tmp_path, command, port):
+    # Arrange
+    state = tmp_path / "gui-state.json"
+    payload = {"host": "127.0.0.1", "port": port, "source": None, "working_dir": None}
+    payload.update({"serve": {"would_serve": True}}.get(command[-1], {"would_open": True, "desktop": False}))
+    # Act
+    result = CliRunner().invoke(main, [*command, "--dry-run", "--port", str(port), "--json"], env={"FIGRECIPE_GUI_STATE": str(state)})
+    # Assert
+    assert (result.exit_code, json.loads(result.stdout), state.exists()) == (0, payload, False)

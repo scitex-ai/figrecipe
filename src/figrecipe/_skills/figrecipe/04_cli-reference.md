@@ -68,7 +68,10 @@ For example, `figrecipe --json gui status` and `figrecipe gui status --json`
 return the same runtime-state schema. Dry-run `gui open` / `gui serve`, bare
 `gui [SOURCE]`, and the deprecated `start-gui` alias also honor both positions.
 Directory dry-runs emit only JSON on stdout; the alias warning stays on stderr.
-Plain directory output keeps its browsing notice. Owning controls:
+Plain directory output keeps its browsing notice. The CLI's `--port` is a fixed
+integer from 1 through 65535; 0 does not request automatic port allocation.
+Range validity does not establish permission to bind or port availability.
+Owning controls:
 `tests/integration/test_cli_gui_json.py` (dry-run and isolated absent-state
 cases). These checks do not qualify starting or stopping a live GUI, desktop
 windows, hosted rendering, external MCP services or all image inputs.

@@ -130,9 +130,9 @@ def gui():
 @click.argument("source", type=click.Path(exists=True), required=False)
 @click.option(
     "--port",
-    type=int,
+    type=click.IntRange(1, 65535),
     default=DEFAULT_PORT,
-    help=f"Server port (default: {DEFAULT_PORT}).",
+    help=f"Fixed server port, 1-65535 (default: {DEFAULT_PORT}).",
 )
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1).")
 @click.option("--dry-run", is_flag=True, default=False, help="Print, don't launch.")
@@ -247,9 +247,9 @@ def _autoserve(source: Optional[str], port: int, host: str) -> dict:
 @click.argument("source", type=click.Path(exists=True), required=False)
 @click.option(
     "--port",
-    type=int,
+    type=click.IntRange(1, 65535),
     default=DEFAULT_PORT,
-    help=f"Server port (default: {DEFAULT_PORT}).",
+    help=f"Fixed server port, 1-65535 (default: {DEFAULT_PORT}).",
 )
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1).")
 @click.option("--no-browser", is_flag=True, default=False, help="Don't open browser.")
@@ -422,7 +422,7 @@ def gui_stop(dry_run, yes, as_json):
 
 @click.command("start-gui", hidden=True)
 @click.argument("source", type=click.Path(exists=True), required=False)
-@click.option("--port", type=int, default=DEFAULT_PORT)
+@click.option("--port", type=click.IntRange(1, 65535), default=DEFAULT_PORT)
 @click.option("--host", default="127.0.0.1")
 @click.option("--no-browser", is_flag=True, default=False)
 @click.option("--desktop", is_flag=True, default=False)
