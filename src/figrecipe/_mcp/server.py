@@ -339,7 +339,12 @@ def plt_crop(
     margin_mm: float = 1.0,
     overwrite: bool = False,
 ) -> Dict[str, Any]:
-    """Trim whitespace borders from a figure image with per-side mm-precision margins. Drop-in replacement for `PIL.Image.crop` + manual bbox detection, ImageMagick `-trim`, `pdfcrop`, and matplotlib's `bbox_inches='tight'` (with more control). Use whenever the user asks to "crop whitespace", "trim the figure", "remove margins", "tighten the bounding box", "crop to content", or "cut blank space around the plot". Works on PNG/JPEG/PDF.
+    """Trim whitespace from a raster image with one uniform millimeter margin.
+
+    Use for requests to crop whitespace, trim a figure, remove margins, or
+    crop to content. Reads Pillow-supported raster images such as PNG/JPEG;
+    PDF input is not supported. This MCP tool accepts a uniform margin only;
+    per-side margins and pixel margins are available through Python fr.crop().
 
     Parameters
     ----------
@@ -347,7 +352,7 @@ def plt_crop(
         Path to the input image.
 
     output_path : str, optional
-        Path for cropped output. Defaults to input with .cropped suffix.
+        Path for cropped output. Defaults to input with _cropped suffix.
 
     margin_mm : float
         Margin to keep around content in millimeters.

@@ -8,21 +8,28 @@ tags: [figrecipe-cropping, figrecipe]
 
 # Cropping
 
-Removes whitespace border from saved figure images, leaving only the content area with a specified margin.
+Removes whitespace borders from saved raster images, leaving the content area
+with a specified margin. PNG and JPEG are supported through Pillow. PDF input
+is not supported; export a raster image before calling crop.
 
 Requires: `pip install figrecipe[imaging]` (Pillow).
 
 ## fr.crop()
 
-```python
+```text
 def crop(
     input_path,
     output_path=None,       # default: input with "_cropped" suffix
     margin_mm=1.0,          # margin in millimeters (default: 1.0)
     margin_px=None,         # margin in pixels (overrides margin_mm)
+    margin_left_mm=None,   # per-side mm margins override margin_mm
+    margin_right_mm=None,
+    margin_top_mm=None,
+    margin_bottom_mm=None,
     overwrite=False,        # overwrite input file in place
     verbose=False,
     return_offset=False,    # if True, return (path, offset_dict)
+    crop_box=None,          # explicit (left, upper, right, lower) pixel box
 ) -> Path | Tuple[Path, dict]
 ```
 
@@ -39,7 +46,7 @@ fr.crop("figure.png")
 fr.crop("figure.png", output_path="figure_tight.png")
 
 # Larger margin
-fr.crop("figure.pdf", margin_mm=3.0)
+fr.crop("figure.png", margin_mm=3.0)
 
 # Pixel margin
 fr.crop("figure.png", margin_px=10)
@@ -51,6 +58,11 @@ fr.crop("figure.png", overwrite=True)
 path, offset = fr.crop("figure.png", return_offset=True)
 # offset: {"left": N, "top": N, "right": N, "bottom": N}  (pixels)
 ```
+
+Python supports uniform millimeter or pixel margins and per-side millimeter
+margins. The CLI exposes one uniform `--margin` in mm or px; the MCP tool exposes
+one uniform `margin_mm`. Neither exposes Python's per-side margin arguments or
+explicit crop box.
 
 ## CLI: figrecipe crop
 
@@ -76,13 +88,22 @@ figrecipe crop figure.png --overwrite
 ```python
 result = plt_crop(
     input_path="figure.png",
-    output_path=None,       # optional; defaults to input + ".cropped" suffix
+    output_path=None,       # optional; defaults to input with "_cropped" suffix
     margin_mm=1.0,
     overwrite=False,
 )
-# result: {"output_path": "figure.cropped.png", "success": True}
+# result: {"output_path": "figure_cropped.png", "success": True}
 ```
 
 ## Auto-crop on compose
 
 Figures created by `fr.compose()` are automatically marked for 1mm-margin cropping when saved. This happens transparently during `fr.save()` — no explicit crop call needed for composed figures.
+
+## Implementation and behavioral coverage
+
+The leaf implementation is `figrecipe._utils._crop.crop`; the CLI adapter is
+`figrecipe._cli._crop.crop`, and the MCP adapter is
+`figrecipe._mcp.server.plt_crop`. Legacy crop dispatch controls live in
+`tests/figrecipe/_api/test__save_crop.py`; mode/metadata/padding controls live in
+`tests/integration/test_crop_corner_sampling.py`. A raster export is required
+for PDF figures; these adapters do not provide a PDF rasterizer.

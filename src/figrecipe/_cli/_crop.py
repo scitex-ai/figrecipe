@@ -35,12 +35,13 @@ def crop(
 ) -> None:
     """Crop an image to its content area.
 
-    IMAGE is the path to the image file (PNG, PDF, etc.).
+    IMAGE is a Pillow-supported raster image, such as PNG or JPEG.
+    PDF input is not supported. The margin is uniform on all sides.
 
     \b
     Example:
       $ figrecipe crop figure.png
-      $ figrecipe crop figure.pdf -o trimmed.pdf --margin 2mm
+      $ figrecipe crop figure.png -o trimmed.png --margin 2mm
       $ figrecipe crop figure.png --overwrite --margin 5px
     """
     try:
