@@ -36,6 +36,13 @@ structured data. This applies to `diagram show-info PATH`, `show-presets`
 and `show-backends`, with root/local/both flags, default text and missing-file
 behavior covered by `tests/figrecipe/_cli/test__diagram.py`. Backend discovery
 reports local availability; it does not establish successful rendering.
+Image comparison accepts both `figrecipe --json diff a.png b.png` and
+`figrecipe diff a.png b.png --json`. Both return the existing pixel statistics,
+including `is_match`, without writing a difference image. Matching and
+one-pixel-different inputs, root/local/both flags and ordinary text output are
+covered by `tests/figrecipe/_cli/test__diff.py`. A completed comparison exits 0
+even when `is_match` is false; command/input errors remain errors.
+
 Other commands' consumption of the root preference remains a separate check;
 use their own `--json` when available.
 
