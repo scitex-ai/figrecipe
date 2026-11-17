@@ -122,6 +122,24 @@ def mm_to_pixels(mm: float, dpi: int = 300) -> int:
     return round(mm * dpi / 25.4)
 
 
+
+def _corner_background(img):
+    """Match raster-corner medians while materializing only four pixels.
+
+    Sampling through Pillow retains the original mode and NumPy dtype,
+    including Boolean and floating-point grayscale, before taking the median.
+    """
+    width, height = img.size
+    corners = []
+    for x, y in [(0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1)]:
+        with img.crop((x, y, x + 1, y + 1)) as pixel:
+            corners.append(np.array(pixel)[0, 0])
+    median = np.median(corners, axis=0)
+    if np.ndim(median) == 0:
+        return int(median)
+    return tuple(int(value) for value in median.astype(np.uint8))
+
+
 def crop(
     input_path: Union[str, Path],
     output_path: Optional[Union[str, Path]] = None,
@@ -268,28 +286,8 @@ def crop(
     needs_extend = left < 0 or upper < 0 or right > img.width or lower > img.height
 
     if needs_extend:
-        # Detect background color from corners
-        img_array = np.array(img)
-        if len(img_array.shape) == 3:
-            h, w = img_array.shape[:2]
-            corners = [
-                img_array[0, 0],
-                img_array[0, w - 1],
-                img_array[h - 1, 0],
-                img_array[h - 1, w - 1],
-            ]
-            bg_color = tuple(
-                int(x) for x in np.median(corners, axis=0).astype(np.uint8)
-            )
-        else:
-            h, w = img_array.shape
-            corners = [
-                img_array[0, 0],
-                img_array[0, w - 1],
-                img_array[h - 1, 0],
-                img_array[h - 1, w - 1],
-            ]
-            bg_color = int(np.median(corners))
+        # Padding needs only the four corner samples, not a full raster copy.
+        bg_color = _corner_background(img)
 
         # Calculate new canvas size
         new_width = right - left
