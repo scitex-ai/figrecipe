@@ -54,9 +54,18 @@ the loaded recipe, not proof that its saved image reproduces. Owning controls:
 `tests/integration/test_cli_metadata_json.py`; root/local/both forms are compared
 using a normally saved, validated recipe and actual installed metadata.
 
-Other commands' consumption of the root preference remains a separate check;
-use their own `--json` when available. In particular, these read-only checks do
-not qualify GUI lifecycle operations, hitmap generation or MCP discovery.
+MCP catalog discovery (`mcp list-tools`, including `--module plt` and
+`--module diagram`) accepts both flag positions and reports the same local
+names and schemas. Listing tools does not execute their callbacks or qualify a
+remote connection. `show-hitmap A B -o OUTPUT` also honors either flag position;
+it writes the image and reports its path, mode and statistics. Diff, binary and
+heatmap outputs are checked with actual images in
+`tests/figrecipe/_cli/test__hitmap.py`; catalog filters and unknown-module errors
+are checked in `tests/figrecipe/_cli/test__mcp.py`.
+
+GUI lifecycle consumption of the root preference remains a separate check;
+use its own `--json` when available. These checks do not qualify launching or
+stopping a GUI, hosted rendering, external MCP services or all image inputs.
 
 ## Configuration scope
 

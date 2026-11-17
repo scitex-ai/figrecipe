@@ -7,6 +7,8 @@ from typing import Optional
 
 import click
 
+from ._json_output import json_requested
+
 
 @click.command("show-hitmap")
 @click.argument("original", type=click.Path(exists=True))
@@ -66,6 +68,8 @@ def hitmap(
         figrecipe show-hitmap original.png reproduced.png -o hitmap.png --mode binary
         figrecipe show-hitmap original.png reproduced.png --threshold 5
     """
+    as_json = json_requested(as_json)
+
     try:
         from .._utils._hitmap import create_hitmap
     except ImportError:
