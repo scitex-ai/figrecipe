@@ -96,6 +96,9 @@ def show_style(name: str, as_json: bool) -> None:
     except Exception as e:
         raise click.ClickException(f"Failed to load preset '{name}': {e}") from e
 
+    if style_dict is None:
+        raise click.ClickException(f"Unknown style preset '{name}'.")
+
     if as_json:
         import json as _json
 
@@ -112,7 +115,7 @@ def show_style(name: str, as_json: bool) -> None:
     import io
 
     stream = io.StringIO()
-    yaml.dump(style_dict, stream)
+    yaml.dump(dict(style_dict), stream)
     click.echo(stream.getvalue())
 
 

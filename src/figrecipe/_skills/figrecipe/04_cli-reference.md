@@ -47,7 +47,9 @@ Read-only metadata commands also accept the root flag: `info RECIPE`,
 `show-version` (including `--full`), `style list`, `style show NAME`, and
 `list-python-apis`. For example, `figrecipe --json style show SCITEX` and
 `figrecipe style show SCITEX --json` return the same preset data. Their existing
-JSON schemas and ordinary text modes are preserved. Recipe metadata is about
+JSON schemas are preserved. Plain `style show` emits the preset as YAML;
+an unknown preset exits 1 instead of returning null success. These behaviors
+are covered by `tests/figrecipe/_cli/test__style.py`. Recipe metadata is about
 the loaded recipe, not proof that its saved image reproduces. Owning controls:
 `tests/integration/test_cli_metadata_json.py`; root/local/both forms are compared
 using a normally saved, validated recipe and actual installed metadata.
