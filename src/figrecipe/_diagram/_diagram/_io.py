@@ -303,6 +303,10 @@ def _render_to_file(
 
     path = Path(path)
     fig, ax = diagram.render()
+    if not path.suffix:
+        # Match Matplotlib before cropping, sidecars and diagnostic naming.
+        filename = path.name.rstrip(".")
+        path = path.with_name(f"{filename}.{fig.canvas.get_default_filetype()}")
     if fig._figrecipe_diagram_failed:
         path = path.with_stem(f"{path.stem}_FAILED")
 

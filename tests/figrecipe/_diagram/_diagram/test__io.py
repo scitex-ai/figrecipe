@@ -186,3 +186,78 @@ def test_label_offset_recipe_remains_valid_when_rendered():
     plt.close(replayed)
     # Assert
     assert failures == (False, False)
+
+
+@pytest.fixture(params=["png", "svg", "pdf"])
+def default_save_format(request):
+    import matplotlib as mpl
+
+    with mpl.rc_context({"savefig.format": request.param}):
+        yield request.param
+
+
+@pytest.fixture(params=["save", "render_to_file"])
+def diagram_save_method(request):
+    return request.param
+
+
+@pytest.fixture(params=[False, True])
+def valid_diagram(request):
+    diagram = Diagram(width_mm=110, height_mm=45)
+    diagram.add_box(
+        "input",
+        "Input",
+        shape="box",
+        x_mm=25 if request.param else 0,
+        y_mm=22,
+        width_mm=35,
+        height_mm=18,
+    )
+    return diagram, request.param
+
+
+def test_extensionless_save_returns_existing_image(
+    tmp_path, default_save_format, diagram_save_method, valid_diagram
+):
+    # Arrange
+    diagram, _ = valid_diagram
+    # Act
+    path = getattr(diagram, diagram_save_method)(tmp_path / "flow", save_debug=False)
+    # Assert
+    assert path.is_file()
+
+
+def test_extensionless_save_returns_default_format_path(
+    tmp_path, default_save_format, diagram_save_method, valid_diagram
+):
+    # Arrange
+    diagram, valid = valid_diagram
+    stem = "flow" if valid else "flow_FAILED"
+    expected = tmp_path / f"{stem}.{default_save_format}"
+    # Act
+    path = getattr(diagram, diagram_save_method)(tmp_path / "flow", save_debug=False)
+    # Assert
+    assert path == expected
+
+
+def test_extensionless_png_receives_same_crop_as_explicit_png(
+    tmp_path, diagram_save_method, valid_diagram
+):
+    # Arrange
+    import matplotlib as mpl
+    from PIL import Image
+
+    diagram, valid = valid_diagram
+    suffix = "" if valid else "_FAILED"
+    # Act
+    with mpl.rc_context({"savefig.format": "png"}):
+        getattr(diagram, diagram_save_method)(tmp_path / "implicit", save_debug=False)
+        getattr(diagram, diagram_save_method)(
+            tmp_path / "explicit.png", save_debug=False
+        )
+    with Image.open(tmp_path / f"implicit{suffix}.png") as implicit:
+        implicit_size = implicit.size
+    with Image.open(tmp_path / f"explicit{suffix}.png") as explicit:
+        explicit_size = explicit.size
+    # Assert
+    assert implicit_size == explicit_size
