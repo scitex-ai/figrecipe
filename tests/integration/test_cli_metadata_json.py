@@ -24,12 +24,31 @@ def recipe(tmp_path):
 @pytest.mark.parametrize("command", [
     ["show-version"], ["show-version", "--full"],
     ["style", "list"], ["style", "show", "SCITEX"],
-    ["list-python-apis", "--root-only"], ["info", "{recipe}"],
+    ["list-python-apis", "--root-only"],
 ])
 @pytest.mark.parametrize("position", ["root", "local", "both"])
-def test_metadata_json_matches_local_contract(recipe, command, position):
+def test_metadata_json_matches_local_contract(command, position):
     # Arrange
-    args = [part.format(recipe=recipe) for part in command]
+    args = command
+    runner = CliRunner()
+    local = runner.invoke(main, [*args, "--json"])
+    variants = {
+        "root": ["--json", *args],
+        "local": [*args, "--json"],
+        "both": ["--json", *args, "--json"],
+    }
+    # Act
+    actual = runner.invoke(main, variants[position])
+    # Assert
+    assert (actual.exit_code, json.loads(actual.stdout)) == (
+        local.exit_code, json.loads(local.stdout),
+    )
+
+
+@pytest.mark.parametrize("position", ["root", "local", "both"])
+def test_recipe_metadata_json_matches_local_contract(recipe, position):
+    # Arrange
+    args = ["info", str(recipe)]
     runner = CliRunner()
     local = runner.invoke(main, [*args, "--json"])
     variants = {
