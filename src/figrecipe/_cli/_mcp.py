@@ -4,6 +4,8 @@
 
 import click
 
+from ._json_output import json_requested
+
 
 @click.group(invoke_without_command=True)
 @click.option("--help-recursive", is_flag=True, help="Show help for all subcommands")
@@ -193,6 +195,8 @@ def list_tools(
       $ figrecipe mcp list-tools -vv
       $ figrecipe mcp list-tools --json --module plt
     """
+    as_json = json_requested(as_json)
+
     try:
         from .._mcp.server import mcp as mcp_server
     except ImportError as e:

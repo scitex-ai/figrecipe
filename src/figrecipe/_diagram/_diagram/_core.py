@@ -35,7 +35,6 @@ try:
 
     logger = getLogger(__name__)
 except ImportError:
-
     logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -462,7 +461,13 @@ class Diagram:
         save_debug: bool = True,
         watermark: bool = False,
     ) -> Path:
-        """Render, crop, and save. watermark=True adds 'Plotted by scitex.ai'."""
+        """Render, crop, and save; return the actual image path.
+
+        An extensionless path uses Matplotlib's ``savefig.format`` (PNG by
+        default). ``watermark=True`` adds 'Plotted by scitex.ai'.
+        ``save_hitmap=True`` writes a PNG hitmap and JSON color map alongside
+        any main image format.
+        """
         from ._io import render_to_file as _rtf
 
         return _rtf(

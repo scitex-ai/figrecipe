@@ -4,7 +4,6 @@ Auto-generated subpackage mirror placeholder; replace with real tests
 as the module matures. Satisfies the src<->tests mirror audit rule.
 """
 
-
 import logging
 
 import pytest
@@ -17,85 +16,120 @@ def test_import__diagram__diagram__io_module():
     # Arrange
     # Act
     # Assert
-    module_path = 'figrecipe._diagram._diagram._io'
+    module_path = "figrecipe._diagram._diagram._io"
     # Act
     mod = pytest.importorskip(module_path)
     # Assert
     assert mod.__name__ == module_path
 
 
-def _save(tmp_path, x_mm):
+def _save(tmp_path, x_mm, suffix=".png"):
     diagram = Diagram(width_mm=110, height_mm=45)
-    diagram.add_box("input", "Input", shape="box", x_mm=x_mm, y_mm=22,
-                    width_mm=35, height_mm=18)
-    return diagram.save(tmp_path / "flow.png", save_debug=False)
+    diagram.add_box(
+        "input", "Input", shape="box", x_mm=x_mm, y_mm=22, width_mm=35, height_mm=18
+    )
+    return diagram.save(tmp_path / ("flow" + suffix), save_debug=False)
 
 
-def test_rejected_diagram_logs_error_with_offending_id(tmp_path, caplog):
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_rejected_diagram_logs_error_with_offending_id(tmp_path, caplog, suffix):
     # Arrange
     caplog.set_level(logging.DEBUG)
     # Act
-    _save(tmp_path, 0)
-    errors = [record.getMessage() for record in caplog.records
-              if record.name.endswith("._diagram._io") and record.levelno >= logging.ERROR]
+    _save(tmp_path, 0, suffix)
+    errors = [
+        record.getMessage()
+        for record in caplog.records
+        if record.name.endswith("._diagram._io") and record.levelno >= logging.ERROR
+    ]
     # Assert
-    assert any("input" in message and "validation failed" in message for message in errors)
+    assert any(
+        "input" in message and "validation failed" in message for message in errors
+    )
 
 
-def test_rejected_diagram_does_not_log_success(tmp_path, caplog):
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_rejected_diagram_does_not_log_success(tmp_path, caplog, suffix):
     # Arrange
     caplog.set_level(logging.DEBUG)
     # Act
-    _save(tmp_path, 0)
-    messages = [record.getMessage() for record in caplog.records
-                if record.name.endswith("._diagram._io")]
+    _save(tmp_path, 0, suffix)
+    messages = [
+        record.getMessage()
+        for record in caplog.records
+        if record.name.endswith("._diagram._io")
+    ]
     # Assert
     assert not any(message.startswith("diagram saved:") for message in messages)
 
 
-def test_rejected_diagram_preserves_failed_diagnostic(tmp_path):
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_rejected_diagram_preserves_failed_diagnostic(tmp_path, suffix):
     # Arrange
-    expected = tmp_path / "flow_FAILED.png"
+    expected = tmp_path / ("flow_FAILED" + suffix)
     # Act
-    path = _save(tmp_path, 0)
+    path = _save(tmp_path, 0, suffix)
     # Assert
     assert path == expected and path.is_file()
 
 
-def test_valid_diagram_logs_success(tmp_path, caplog):
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_valid_diagram_logs_success(tmp_path, caplog, suffix):
     # Arrange
     caplog.set_level(logging.DEBUG)
     # Act
-    _save(tmp_path, 25)
-    messages = [record.getMessage() for record in caplog.records
-                if record.name.endswith("._diagram._io")]
+    _save(tmp_path, 25, suffix)
+    messages = [
+        record.getMessage()
+        for record in caplog.records
+        if record.name.endswith("._diagram._io")
+    ]
     # Assert
     assert any(message.startswith("diagram saved:") for message in messages)
 
 
-def test_valid_diagram_preserves_requested_path(tmp_path):
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_valid_diagram_preserves_requested_path(tmp_path, suffix):
     # Arrange
-    expected = tmp_path / "flow.png"
+    expected = tmp_path / ("flow" + suffix)
     # Act
-    path = _save(tmp_path, 25)
+    path = _save(tmp_path, 25, suffix)
     # Assert
     assert path == expected and path.is_file()
 
 
-_GEOMETRY_FIELDS = ("id", "source_dx", "source_dy", "target_dx", "target_dy",
-                    "label_offset_mm", "margin_mm")
+_GEOMETRY_FIELDS = (
+    "id",
+    "source_dx",
+    "source_dy",
+    "target_dx",
+    "target_dy",
+    "label_offset_mm",
+    "margin_mm",
+)
 
 
 def _positioned_arrow_diagram():
     from figrecipe import Diagram
 
     diagram = Diagram(width_mm=110, height_mm=50)
-    diagram.add_box("input", "Input", shape="box", x_mm=25, y_mm=22,
-                    width_mm=30, height_mm=20)
-    diagram.add_box("output", "Output", shape="box", x_mm=85, y_mm=22,
-                    width_mm=30, height_mm=20)
-    diagram.add_arrow("input", "output", label="Convert", source_dx=1, source_dy=2,
-                      target_dx=-3, target_dy=-2, label_offset_mm=(0, 6), margin_mm=2)
+    diagram.add_box(
+        "input", "Input", shape="box", x_mm=25, y_mm=22, width_mm=30, height_mm=20
+    )
+    diagram.add_box(
+        "output", "Output", shape="box", x_mm=85, y_mm=22, width_mm=30, height_mm=20
+    )
+    diagram.add_arrow(
+        "input",
+        "output",
+        label="Convert",
+        source_dx=1,
+        source_dy=2,
+        target_dx=-3,
+        target_dy=-2,
+        label_offset_mm=(0, 6),
+        margin_mm=2,
+    )
     return diagram
 
 
@@ -103,6 +137,7 @@ def _positioned_arrow_diagram():
 def test_arrow_geometry_survives_yaml_recipe(field):
     # Arrange
     import yaml
+
     from figrecipe import Diagram
 
     diagram = _positioned_arrow_diagram()
@@ -125,14 +160,21 @@ def test_legacy_arrow_recipe_uses_original_geometry_defaults():
     arrow = Diagram.from_dict(data)._arrows[0]
     actual = {field: getattr(arrow, field) for field in _GEOMETRY_FIELDS}
     # Assert
-    assert actual == {"id": None, "source_dx": 0.0, "source_dy": 0.0,
-                      "target_dx": 0.0, "target_dy": 0.0,
-                      "label_offset_mm": None, "margin_mm": None}
+    assert actual == {
+        "id": None,
+        "source_dx": 0.0,
+        "source_dy": 0.0,
+        "target_dx": 0.0,
+        "target_dy": 0.0,
+        "label_offset_mm": None,
+        "margin_mm": None,
+    }
 
 
 def test_label_offset_recipe_remains_valid_when_rendered():
     # Arrange
     import matplotlib.pyplot as plt
+
     from figrecipe import Diagram
 
     diagram = _positioned_arrow_diagram()
@@ -144,3 +186,120 @@ def test_label_offset_recipe_remains_valid_when_rendered():
     plt.close(replayed)
     # Assert
     assert failures == (False, False)
+
+
+@pytest.fixture(params=["png", "svg", "pdf"])
+def default_save_format(request):
+    import matplotlib as mpl
+
+    with mpl.rc_context({"savefig.format": request.param}):
+        yield request.param
+
+
+@pytest.fixture(params=["save", "render_to_file"])
+def diagram_save_method(request):
+    return request.param
+
+
+@pytest.fixture(params=[False, True])
+def valid_diagram(request):
+    diagram = Diagram(width_mm=110, height_mm=45)
+    diagram.add_box(
+        "input",
+        "Input",
+        shape="box",
+        x_mm=25 if request.param else 0,
+        y_mm=22,
+        width_mm=35,
+        height_mm=18,
+    )
+    return diagram, request.param
+
+
+def test_extensionless_save_returns_existing_image(
+    tmp_path, default_save_format, diagram_save_method, valid_diagram
+):
+    # Arrange
+    diagram, _ = valid_diagram
+    # Act
+    path = getattr(diagram, diagram_save_method)(tmp_path / "flow", save_debug=False)
+    # Assert
+    assert path.is_file()
+
+
+def test_extensionless_save_returns_default_format_path(
+    tmp_path, default_save_format, diagram_save_method, valid_diagram
+):
+    # Arrange
+    diagram, valid = valid_diagram
+    stem = "flow" if valid else "flow_FAILED"
+    expected = tmp_path / f"{stem}.{default_save_format}"
+    # Act
+    path = getattr(diagram, diagram_save_method)(tmp_path / "flow", save_debug=False)
+    # Assert
+    assert path == expected
+
+
+def test_extensionless_png_receives_same_crop_as_explicit_png(
+    tmp_path, diagram_save_method, valid_diagram
+):
+    # Arrange
+    import matplotlib as mpl
+    from PIL import Image
+
+    diagram, valid = valid_diagram
+    suffix = "" if valid else "_FAILED"
+    # Act
+    with mpl.rc_context({"savefig.format": "png"}):
+        getattr(diagram, diagram_save_method)(tmp_path / "implicit", save_debug=False)
+        getattr(diagram, diagram_save_method)(
+            tmp_path / "explicit.png", save_debug=False
+        )
+    with Image.open(tmp_path / f"implicit{suffix}.png") as implicit:
+        implicit_size = implicit.size
+    with Image.open(tmp_path / f"explicit{suffix}.png") as explicit:
+        explicit_size = explicit.size
+    # Assert
+    assert implicit_size == explicit_size
+
+
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_hitmap_sidecar_is_png_for_every_output_format(
+    tmp_path, suffix, diagram_save_method, valid_diagram
+):
+    # Arrange
+    from PIL import Image
+
+    diagram, valid = valid_diagram
+    stem = "flow_hitmap" if valid else "flow_FAILED_hitmap"
+    # Act
+    getattr(diagram, diagram_save_method)(
+        tmp_path / ("flow" + suffix), save_hitmap=True, save_debug=False
+    )
+    with Image.open(tmp_path / (stem + ".png")) as image:
+        actual = image.format
+    # Assert
+    assert actual == "PNG"
+
+
+@pytest.mark.parametrize("suffix", [".png", ".svg", ".pdf"])
+def test_hitmap_sidecar_pixels_use_json_color_map(
+    tmp_path, suffix, diagram_save_method, valid_diagram
+):
+    # Arrange
+    import json
+
+    from PIL import Image
+
+    diagram, valid = valid_diagram
+    stem = "flow_hitmap" if valid else "flow_FAILED_hitmap"
+    # Act
+    getattr(diagram, diagram_save_method)(
+        tmp_path / ("flow" + suffix), save_hitmap=True, save_debug=False
+    )
+    mapping = json.loads((tmp_path / (stem + ".json")).read_text())
+    color = tuple(mapping["box:input"]["rgb"])
+    with Image.open(tmp_path / (stem + ".png")) as image:
+        pixels = {color for _, color in image.getcolors(image.width * image.height)}
+    # Assert
+    assert color in pixels

@@ -53,6 +53,7 @@ import click
 
 from . import _gui_runtime
 from ._gui_click import _DefaultGroup, _kill_port, _port_holder, _port_is_free
+from ._json_output import json_requested
 
 DEFAULT_PORT = _gui_runtime.DEFAULT_PORT
 
@@ -129,9 +130,9 @@ def gui():
 @click.argument("source", type=click.Path(exists=True), required=False)
 @click.option(
     "--port",
-    type=int,
+    type=click.IntRange(1, 65535),
     default=DEFAULT_PORT,
-    help=f"Server port (default: {DEFAULT_PORT}).",
+    help=f"Fixed server port, 1-65535 (default: {DEFAULT_PORT}).",
 )
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1).")
 @click.option("--dry-run", is_flag=True, default=False, help="Print, don't launch.")
@@ -150,8 +151,9 @@ def gui_serve(source, port, host, dry_run, as_json):
         $ figrecipe gui serve
         $ figrecipe gui serve figure.yaml --port 31297
     """
+    as_json = json_requested(as_json)
     source_path, working_dir = _resolve_source(source)
-    if working_dir is not None:
+    if working_dir is not None and not as_json:
         click.echo(f"Browsing directory: {working_dir}")
     if dry_run:
         payload = {
@@ -245,9 +247,9 @@ def _autoserve(source: Optional[str], port: int, host: str) -> dict:
 @click.argument("source", type=click.Path(exists=True), required=False)
 @click.option(
     "--port",
-    type=int,
+    type=click.IntRange(1, 65535),
     default=DEFAULT_PORT,
-    help=f"Server port (default: {DEFAULT_PORT}).",
+    help=f"Fixed server port, 1-65535 (default: {DEFAULT_PORT}).",
 )
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1).")
 @click.option("--no-browser", is_flag=True, default=False, help="Don't open browser.")
@@ -271,8 +273,9 @@ def gui_open(source, port, host, no_browser, desktop, dry_run, as_json):
         $ figrecipe gui open figure.yaml --port 31297
         $ figrecipe gui open --desktop
     """
+    as_json = json_requested(as_json)
     source_path, working_dir = _resolve_source(source)
-    if working_dir is not None:
+    if working_dir is not None and not as_json:
         click.echo(f"Browsing directory: {working_dir}")
     if dry_run:
         payload = {
@@ -352,6 +355,7 @@ def gui_status(as_json):
         $ figrecipe gui status
         $ figrecipe gui status --json
     """
+    as_json = json_requested(as_json)
     current = _gui_runtime.status()
     if as_json:
         _emit_json(current)
@@ -376,6 +380,7 @@ def gui_stop(dry_run, yes, as_json):
         $ figrecipe gui stop -y
         $ figrecipe gui stop --dry-run
     """
+    as_json = json_requested(as_json)
     current = _gui_runtime.status()
     if not current.get("running"):
         if as_json:
@@ -417,7 +422,7 @@ def gui_stop(dry_run, yes, as_json):
 
 @click.command("start-gui", hidden=True)
 @click.argument("source", type=click.Path(exists=True), required=False)
-@click.option("--port", type=int, default=DEFAULT_PORT)
+@click.option("--port", type=click.IntRange(1, 65535), default=DEFAULT_PORT)
 @click.option("--host", default="127.0.0.1")
 @click.option("--no-browser", is_flag=True, default=False)
 @click.option("--desktop", is_flag=True, default=False)

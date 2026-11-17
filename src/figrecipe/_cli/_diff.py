@@ -6,6 +6,8 @@ from pathlib import Path
 
 import click
 
+from ._json_output import json_requested
+
 
 @click.command()
 @click.argument("original", type=click.Path(exists=True))
@@ -39,7 +41,10 @@ def diff(
         figrecipe diff original.png reproduced.png
         figrecipe diff original.png reproduced.png --threshold 5
         figrecipe diff original.png reproduced.png --json
+        figrecipe --json diff original.png reproduced.png
     """
+    json_output = json_requested(json_output)
+
     try:
         from .._utils._hitmap import compute_diff_stats
     except ImportError:

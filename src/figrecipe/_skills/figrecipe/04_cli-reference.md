@@ -36,8 +36,45 @@ structured data. This applies to `diagram show-info PATH`, `show-presets`
 and `show-backends`, with root/local/both flags, default text and missing-file
 behavior covered by `tests/figrecipe/_cli/test__diagram.py`. Backend discovery
 reports local availability; it does not establish successful rendering.
-Other commands' consumption of the root preference remains a separate check;
-use their own `--json` when available.
+Image comparison accepts both `figrecipe --json diff a.png b.png` and
+`figrecipe diff a.png b.png --json`. Both return the existing pixel statistics,
+including `is_match`, without writing a difference image. Matching and
+one-pixel-different inputs, root/local/both flags and ordinary text output are
+covered by `tests/figrecipe/_cli/test__diff.py`. A completed comparison exits 0
+even when `is_match` is false; command/input errors remain errors.
+
+Read-only metadata commands also accept the root flag: `info RECIPE`,
+`show-version` (including `--full`), `style list`, `style show NAME`, and
+`list-python-apis`. For example, `figrecipe --json style show SCITEX` and
+`figrecipe style show SCITEX --json` return the same preset data. Their existing
+JSON schemas are preserved. Plain `style show` emits the preset as YAML;
+an unknown preset exits 1 instead of returning null success. These behaviors
+are covered by `tests/figrecipe/_cli/test__style.py`. Recipe metadata is about
+the loaded recipe, not proof that its saved image reproduces. Owning controls:
+`tests/integration/test_cli_metadata_json.py`; root/local/both forms are compared
+using a normally saved, validated recipe and actual installed metadata.
+
+MCP catalog discovery (`mcp list-tools`, including `--module plt` and
+`--module diagram`) accepts both flag positions and reports the same local
+names and schemas. Listing tools does not execute their callbacks or qualify a
+remote connection. `show-hitmap A B -o OUTPUT` also honors either flag position;
+it writes the image and reports its path, mode and statistics. Diff, binary and
+heatmap outputs are checked with actual images in
+`tests/figrecipe/_cli/test__hitmap.py`; catalog filters and unknown-module errors
+are checked in `tests/figrecipe/_cli/test__mcp.py`.
+
+GUI lifecycle commands honor root, local and combined `--json` preferences.
+For example, `figrecipe --json gui status` and `figrecipe gui status --json`
+return the same runtime-state schema. Dry-run `gui open` / `gui serve`, bare
+`gui [SOURCE]`, and the deprecated `start-gui` alias also honor both positions.
+Directory dry-runs emit only JSON on stdout; the alias warning stays on stderr.
+Plain directory output keeps its browsing notice. The CLI's `--port` is a fixed
+integer from 1 through 65535; 0 does not request automatic port allocation.
+Range validity does not establish permission to bind or port availability.
+Owning controls:
+`tests/integration/test_cli_gui_json.py` (dry-run and isolated absent-state
+cases). These checks do not qualify starting or stopping a live GUI, desktop
+windows, hosted rendering, external MCP services or all image inputs.
 
 ## Configuration scope
 

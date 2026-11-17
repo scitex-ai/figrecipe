@@ -17,7 +17,6 @@ try:
 
     logger = getLogger(__name__)
 except ImportError:
-
     logger = slogging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -83,7 +82,9 @@ def diagram_to_dict(info: "Diagram") -> Dict[str, Any]:
                 "target_dx": arrow.target_dx,
                 "target_dy": arrow.target_dy,
                 "label_offset_mm": (
-                    list(arrow.label_offset_mm) if arrow.label_offset_mm is not None else None
+                    list(arrow.label_offset_mm)
+                    if arrow.label_offset_mm is not None
+                    else None
                 ),
                 "margin_mm": arrow.margin_mm,
                 "source_anchor": arrow.source_anchor,
@@ -187,7 +188,8 @@ def diagram_from_dict(data: Dict[str, Any]) -> "Diagram":
                 target_dy=arrow_data.get("target_dy", 0.0),
                 label_offset_mm=(
                     tuple(arrow_data["label_offset_mm"])
-                    if arrow_data.get("label_offset_mm") is not None else None
+                    if arrow_data.get("label_offset_mm") is not None
+                    else None
                 ),
                 margin_mm=arrow_data.get("margin_mm"),
                 source=arrow_data["source"],
@@ -301,6 +303,10 @@ def _render_to_file(
 
     path = Path(path)
     fig, ax = diagram.render()
+    if not path.suffix:
+        # Match Matplotlib before cropping, sidecars and diagnostic naming.
+        filename = path.name.rstrip(".")
+        path = path.with_name(f"{filename}.{fig.canvas.get_default_filetype()}")
     if fig._figrecipe_diagram_failed:
         path = path.with_stem(f"{path.stem}_FAILED")
 
@@ -320,7 +326,8 @@ def _render_to_file(
     if save_hitmap:
         from ._hitmap import save_diagram_hitmap
 
-        save_diagram_hitmap(diagram, path.with_stem(path.stem + "_hitmap"), dpi=dpi)
+        hitmap_path = path.with_name(path.stem + "_hitmap.png")
+        save_diagram_hitmap(diagram, hitmap_path, dpi=dpi)
     if save_debug:
         from ._debug import generate_debug_image
 
@@ -340,22 +347,31 @@ def _render_to_file(
             )
         plt.close(debug_fig)
     plt.close(fig)
-    try:
-        from PIL import Image
+    # Validation outcome must not depend on Pillow recognizing the output.
+    # SVG/PDF diagnostics are still failed artifacts, not silent successes.
+    if fig._figrecipe_diagram_failed:
+        logger.error(
+            "diagram validation failed; diagnostic saved: %s; %s",
+            path.name,
+            "; ".join(fig._figrecipe_validation_errors),
+        )
+    else:
+        message = "diagram saved: %s"
+        details = [path.name]
+        if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp"}:
+            try:
+                from PIL import Image
 
-        w, h = Image.open(path).size
-        w_mm, h_mm = w / dpi * 25.4, h / dpi * 25.4
-        if fig._figrecipe_diagram_failed:
-            logger.error(
-                "diagram validation failed; diagnostic saved: %s; %s",
-                path.name,
-                "; ".join(fig._figrecipe_validation_errors),
-            )
-        else:
-            _log = getattr(logger, "success", logger.info)
-            _log("diagram saved: %s [W: %.1fmm, H: %.1fmm]", path.name, w_mm, h_mm)
-    except Exception:
-        pass
+                with Image.open(path) as image:
+                    w, h = image.size
+            except (ImportError, OSError, ValueError):
+                # Dimensions are optional metadata; preserve the save outcome.
+                pass
+            else:
+                message += " [W: %.1fmm, H: %.1fmm]"
+                details.extend((w / dpi * 25.4, h / dpi * 25.4))
+        _log = getattr(logger, "success", logger.info)
+        _log(message, *details)
     return path
 
 
