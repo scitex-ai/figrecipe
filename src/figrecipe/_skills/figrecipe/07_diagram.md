@@ -40,6 +40,10 @@ writes the diagram recipe beside it. `save_debug=False` omits the separate
 debug image. If layout validation fails, the returned path has a `_FAILED`
 suffix and an error reports the failed rule and offending element IDs;
 that diagnostic is not a valid output, and no recipe is written for it.
+PNG, SVG and PDF saves report the same validation outcome: failed artifacts
+log the rule and offending IDs at error level and never log a save success.
+A valid vector save logs its filename without claiming raster dimensions.
+Owning controls: `tests/figrecipe/_diagram/_diagram/test__io.py`.
 
 ## Mermaid diagrams
 

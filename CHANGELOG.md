@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Report native Diagram validation errors for SVG/PDF as well as PNG, without
+  depending on raster metadata. Valid vector saves log their filename; rejected
+  diagrams retain their diagnostic path and never log save success.
+
 - Clew provenance: a figure rebuilt by `fr.reproduce(recipe)` and saved
   unchanged records its image, recipe and data CSVs with
   `derived_from` = the files the reproduction read (recipe, its data files,
