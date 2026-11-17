@@ -101,11 +101,18 @@ Options: `-o/--output`, `--margin` (e.g., `2mm`, `10px`, default `1mm`), `--over
 
 ### figrecipe diff
 
-Show pixel difference between two figures.
+Report pixel-difference statistics between two images. This command does not
+write a difference image and has no `-o` option. See `04_cli-reference.md` for
+the canonical command inventory and global-option scope.
 
 ```bash
-figrecipe diff old.png new.png -o diff.png
+figrecipe diff old.png new.png --json
+figrecipe --json diff old.png new.png
 ```
+
+Both forms return the same statistics, including `is_match`; a completed
+comparison exits 0 even for different images. Owning controls:
+`tests/figrecipe/_cli/test__diff.py`.
 
 ### figrecipe hitmap
 
