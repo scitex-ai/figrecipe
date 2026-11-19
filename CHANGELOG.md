@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-11-19
+
 - **Linter: `STX-I001` (`import matplotlib.pyplot`) and `STX-I009` (`import seaborn`) are** now owned and emitted by this package, moved
   from the scitex-dev engine. Ids, severities, messages and gates are
   unchanged, so findings are unchanged; this was proven identical with
