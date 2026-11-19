@@ -459,7 +459,7 @@
 <p>This includes:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">editor</span></code>: GUI editor (Django + React)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imaging</span></code>: Image processing (Pillow, scipy)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">imaging</span></code>: Image processing (Pillow)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mcp</span></code>: MCP server for AI integration (fastmcp)</p></li>
 </ul>
 </section>
@@ -488,12 +488,10 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 </section>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Python 3.10+</p></li>
-<li><p>matplotlib &gt;= 3.6</p></li>
-<li><p>numpy</p></li>
-<li><p>PyYAML</p></li>
-</ul>
+<p>Supported Python versions and dependency constraints are declared in the
+<a class="reference external" href="https://github.com/scitex-ai/figrecipe/blob/main/pyproject.toml">package metadata</a>.
+The installer resolves required packages, including the shared SDK and SciPy,
+automatically. Optional extras add requirements for their selected features.</p>
 </section>
 </section>
 
