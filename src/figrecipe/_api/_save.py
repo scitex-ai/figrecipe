@@ -32,6 +32,7 @@ from ._save_config import (  # noqa: F401
     resolve_save_paths,
 )
 from ._save_crop import dispatch_crop, wants_content_crop
+from ._save_extent import _save_expanded_content_crop
 from ._save_helpers import (
     _capture_axes_bboxes,
     _capture_content_layout,
@@ -369,6 +370,8 @@ def save_figure(
         restore_patches = _make_patches_opaque(fig)
 
     pad_inches = 0.0  # updated below if use_tight
+    rendered_crop_offset = None
+    render_bbox = None
 
     try:
         if use_constrained:
@@ -418,12 +421,18 @@ def save_figure(
                     image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
                 )
             elif use_content_crop:
-                # Save FULL-CANVAS; cropped to the recorded content_bbox below so the
-                # saved SIZE is a deterministic function of content (no tight re-
-                # measure). Replaces bbox_inches="tight" for constrained_layout.
-                fig.fig.savefig(
-                    image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
+                # Overflow must be rendered before cropping; in-bounds figures
+                # retain the original full-canvas deterministic crop path.
+                rendered_crop_offset, render_bbox = _save_expanded_content_crop(
+                    fig, image_path, dpi=dpi, crop_margin_mm=crop_margin_mm,
+                    crop_margins_mm=(crop_margin_left_mm, crop_margin_right_mm,
+                                     crop_margin_top_mm, crop_margin_bottom_mm),
+                    transparent=transparent, facecolor=facecolor,
                 )
+                if rendered_crop_offset is None:
+                    fig.fig.savefig(
+                        image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
+                    )
             else:
                 # LEGACY constrained path (content_bbox unavailable): crop at save
                 # time via bbox_inches="tight" (size-jittering, kept for back-compat).
@@ -461,10 +470,18 @@ def save_figure(
                     use_constrained = False
                     use_tight = False
         else:
-            # Standard save without bbox_inches to preserve mm layout
-            fig.fig.savefig(
-                image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
-            )
+            if use_content_crop:
+                rendered_crop_offset, render_bbox = _save_expanded_content_crop(
+                    fig, image_path, dpi=dpi, crop_margin_mm=crop_margin_mm,
+                    crop_margins_mm=(crop_margin_left_mm, crop_margin_right_mm,
+                                     crop_margin_top_mm, crop_margin_bottom_mm),
+                    transparent=transparent, facecolor=facecolor,
+                )
+            if rendered_crop_offset is None:
+                # Fixed-canvas and in-bounds output retain existing behavior.
+                fig.fig.savefig(
+                    image_path, dpi=dpi, transparent=transparent, facecolor=facecolor
+                )
     finally:
         # Restore original patch alphas
         if restore_patches is not None:
@@ -477,23 +494,26 @@ def save_figure(
     #     UserWarning, to the legacy crop when content_bbox is underivable.
     #   * legacy content-aware crop() for raster, or crop_svg() for SVG.
     #   * skipped when bbox_inches="tight" already cropped at save time (use_tight).
-    crop_offset = dispatch_crop(
-        fig,
-        image_path,
-        is_croppable=is_croppable,
-        is_svg=is_svg,
-        use_tight=use_tight,
-        use_content_crop=use_content_crop,
-        crop_margin_mm=crop_margin_mm,
-        crop_margins_mm=(
-            crop_margin_left_mm,
-            crop_margin_right_mm,
-            crop_margin_top_mm,
-            crop_margin_bottom_mm,
-        ),
-        mm_layout=mm_layout,
-        dpi=dpi,
-    )
+    if rendered_crop_offset is not None:
+        crop_offset = rendered_crop_offset
+    else:
+        crop_offset = dispatch_crop(
+            fig,
+            image_path,
+            is_croppable=is_croppable,
+            is_svg=is_svg,
+            use_tight=use_tight,
+            use_content_crop=use_content_crop,
+            crop_margin_mm=crop_margin_mm,
+            crop_margins_mm=(
+                crop_margin_left_mm,
+                crop_margin_right_mm,
+                crop_margin_top_mm,
+                crop_margin_bottom_mm,
+            ),
+            mm_layout=mm_layout,
+            dpi=dpi,
+        )
 
     # Capture axes bounding boxes (adjusted for crop if cropping occurred)
     _capture_axes_bboxes(fig, crop_offset)
@@ -517,13 +537,14 @@ def save_figure(
     #   * otherwise (content-aware/no crop) -> full-canvas (matches the image).
     # Standalone diagrams render their hitmap separately regardless.
     if save_hitmap:
-        _hitmap_bbox = "tight" if use_tight else None
+        _hitmap_bbox = render_bbox if render_bbox is not None else ("tight" if use_tight else None)
         _hitmap_pad = pad_inches if use_tight else 0.0
         _hitmap_path = _save_hitmap(
             fig, image_path, dpi, verbose, _hitmap_bbox, _hitmap_pad
         )
         if (
             use_content_crop
+            and rendered_crop_offset is None
             and _hitmap_path is not None
             and getattr(fig.record, "content_bbox", None) is not None
         ):

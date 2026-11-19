@@ -4,7 +4,9 @@
 
 import math
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
+
+from matplotlib.transforms import BboxBase
 
 from .._utils._optional import missing_extra
 
@@ -667,14 +669,14 @@ def save_hitmap(
     image_path: Path,
     dpi: int,
     verbose: bool,
-    bbox_inches: Optional[str] = None,
+    bbox_inches: Optional[Union[str, BboxBase]] = None,
     pad_inches: float = 0.0,
 ) -> Optional[Path]:
     """Save hitmap image for GUI editor element selection.
 
     Parameters
     ----------
-    bbox_inches : str, optional
+    bbox_inches : str or Bbox, optional
         If "tight", hitmap is rendered with bbox_inches="tight" to match
         figures saved with constrained_layout (e.g. pie, imshow).
     pad_inches : float

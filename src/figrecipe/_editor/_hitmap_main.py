@@ -14,9 +14,10 @@ The color encoding uses 24-bit RGB:
 """
 
 import io
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 from matplotlib.figure import Figure
+from matplotlib.transforms import BboxBase
 
 from .._utils._optional import missing_extra
 
@@ -31,7 +32,7 @@ def generate_hitmap(
     dpi: int = 150,
     include_text: bool = True,
     target_size: Optional[Tuple[int, int]] = None,
-    bbox_inches: Optional[str] = None,
+    bbox_inches: Optional[Union[str, BboxBase]] = None,
     pad_inches: float = 0.0,
 ) -> Tuple[Image.Image, Dict[str, Any]]:
     """
@@ -156,6 +157,8 @@ def generate_hitmap(
     hitmap_dpi = dpi
     fig_w, fig_h = fig.get_size_inches()
     max_fig_dim = max(fig_w, fig_h)
+    if not is_diagram and isinstance(bbox_inches, BboxBase):
+        max_fig_dim = max(max_fig_dim, bbox_inches.width, bbox_inches.height)
     if is_diagram:
         max_pixels = 1500
         if max_fig_dim * hitmap_dpi > max_pixels:
