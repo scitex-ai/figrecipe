@@ -45,6 +45,8 @@ scitex-cloud. The orchestrator re-exports it as ``scitex.plt``.
    terminology
    gallery
    style_reference
+   explicit-background-alpha
+   overflow-content-crop
    cli_reference
    mcp_spec
 
