@@ -28,13 +28,20 @@ def fonts(check: Optional[str], search: Optional[str], as_json: bool) -> None:
       $ figrecipe list-fonts --search arial
       $ figrecipe list-fonts --check "DejaVu Sans"
       $ figrecipe list-fonts --json
+      $ figrecipe --json list-fonts --check "DejaVu Sans"
     """
     import json
 
-    from ..styles._style_applier import check_font, list_available_fonts
+    from ..styles._style_applier import list_available_fonts
+
+    context = click.get_current_context(silent=True)
+    root_options = context.find_root().obj if context is not None else None
+    as_json = as_json or (
+        isinstance(root_options, dict) and bool(root_options.get("as_json"))
+    )
 
     if check:
-        available = check_font(check)
+        available = check in list_available_fonts()
         if as_json:
             click.echo(json.dumps({"font": check, "available": bool(available)}))
         else:

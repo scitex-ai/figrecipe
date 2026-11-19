@@ -13,12 +13,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
+from .._quality._validator import ValidationResult
 from .._recorder import FigureRecord
 from .._reproducer import get_recipe_info
 from .._reproducer import reproduce as _reproduce_core
 from .._serializer import load_recipe
 from .._utils._numpy_io import CsvFormat, DataFormat
-from .._quality._validator import ValidationResult
 from .._wrappers import RecordingAxes, RecordingFigure
 
 
@@ -134,6 +134,8 @@ def save(
         Maximum acceptable MSE for validation (default: 100).
     validate_error_level : str
         How to handle failures: 'error', 'warning', or 'debug'.
+        Other values raise ValueError before changing files, even if
+        validate=False or save_recipe=False.
     validate_axis_range_alignment : bool
         If True (default), run the runtime ``axis_range_alignment``
         check on the rendered figure. Catches the autoscale-with-
@@ -150,7 +152,8 @@ def save(
     facecolor : str, optional
         Background color. When opaque, patches are made visible.
     save_hitmap : bool
-        If True (default), save hitmap image for GUI editor element selection.
+        If True, save hitmap image for GUI editor element selection.
+        Default False.
     save_editable : bool
         If True, write the editable-figure JSON (schema
         ``scitex.plt.figure.editable``) to ``<stem>.json`` next to the image.
@@ -162,9 +165,10 @@ def save(
         If save_recipe=True: (image_path, yaml_path, ValidationResult or None)
         If save_recipe=False: (image_path, None, None)
     """
+    from .._serializer._derived_sources import declares_figure_sources
     from ._save import save_figure
 
-    result = save_figure(
+    result = declares_figure_sources(save_figure)(
         fig=fig,
         path=path,
         save_recipe=save_recipe,

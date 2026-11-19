@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Helper functions for save operations (extracted for modularity)."""
 
+import math
 from pathlib import Path
 from typing import Optional
 
@@ -76,7 +77,9 @@ def crop_to_content_bbox(
     to the actual saved-image pixel dimensions and therefore stays correct at
     any dpi (the validator re-saves at dpi=150 while the user's real save may be
     dpi=300). Margins (``crop_margin_{left,right,top,bottom}_mm``) are added in
-    pixels at ``dpi`` to match the normal crop path.
+    pixels at ``dpi`` before rounding the combined bounds outward, so the
+    raster contains the full fractional box and at least the requested margin.
+    This can add an edge pixel compared with earlier nearest-pixel crops.
 
     Returns the same ``crop_offset`` dict shape as ``_utils._crop.crop`` (so
     ``_capture_axes_bboxes`` keeps working), or ``None`` on failure (the caller
@@ -87,7 +90,7 @@ def crop_to_content_bbox(
     except ImportError as exc:  # pragma: no cover - supplied by a figrecipe extra
         raise missing_extra(exc) from exc
 
-    from .._utils._crop import crop, mm_to_pixels
+    from .._utils._crop import crop
 
     try:
         left, bottom, width, height = (float(v) for v in content_bbox)
@@ -99,15 +102,19 @@ def crop_to_content_bbox(
 
     # content_bbox is matplotlib y-up; PIL crop box is y-down (origin top-left).
     # top edge in mpl fraction = bottom + height; bottom edge = bottom.
-    left_px = round(left * img_w) - mm_to_pixels(margins_mm["left"], dpi)
-    right_px = round((left + width) * img_w) + mm_to_pixels(
-        margins_mm["right"], dpi
+    # Enclose the recorded content AND the requested physical margin. Rounding
+    # either component to the nearest pixel can trim an edge or undershoot a
+    # sub-pixel margin. The same recorded box still determines every replay.
+    pixels_per_mm = dpi / 25.4
+    left_px = math.floor(left * img_w - margins_mm["left"] * pixels_per_mm)
+    right_px = math.ceil(
+        (left + width) * img_w + margins_mm["right"] * pixels_per_mm
     )
-    upper_px = round((1.0 - (bottom + height)) * img_h) - mm_to_pixels(
-        margins_mm["top"], dpi
+    upper_px = math.floor(
+        (1.0 - (bottom + height)) * img_h - margins_mm["top"] * pixels_per_mm
     )
-    lower_px = round((1.0 - bottom) * img_h) + mm_to_pixels(
-        margins_mm["bottom"], dpi
+    lower_px = math.ceil(
+        (1.0 - bottom) * img_h + margins_mm["bottom"] * pixels_per_mm
     )
 
     if right_px - left_px <= 0 or lower_px - upper_px <= 0:

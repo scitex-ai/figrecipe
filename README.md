@@ -54,7 +54,7 @@ x = np.linspace(0, 2 * np.pi, 100)
 fig, ax = fr.subplots()
 ax.plot(x, np.sin(x), id="sine")
 fr.save(fig, "figure.png")
-# Produces: figure.png, figure.yaml, figure_data/sine.csv
+# Produces: figure.png, figure.yaml, figure_data/sine_x.csv, figure_data/sine_y.csv
 ```
 
 Reload and edit from the saved recipe:
@@ -322,12 +322,13 @@ import figrecipe as fr
 import numpy as np
 
 fig, ax = fr.subplots()
-ax.plot(np.sin(np.linspace(0, 10, 100)), id="sine")
+x = np.linspace(0, 10, 100)
+ax.plot(x, np.sin(x), id="sine")
 fr.save(fig, "figure.png")  # Saves + validates pixel-identical reproduction
-# Output: figure.png, figure.yaml, figure_data/sine.csv
+# Output: figure.png, figure.yaml, figure_data/sine_x.csv, figure_data/sine_y.csv
 
-fr.save(fig, "fig.zip")     # self-contained zip bundle
-fr.load("fig.png")          # reload from any format
+fr.save(fig, "figure.plt.zip")  # self-contained single-plot bundle
+fr.load("figure.png")       # reload the saved figure
 fig, ax = fr.reproduce("figure.yaml")
 fr.gui(fig)                 # Launch visual editor
 fr.compose(sources=["panel_a.yaml", "panel_b.yaml"], output_path="composed.png", layout="horizontal")

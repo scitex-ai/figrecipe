@@ -60,6 +60,7 @@ def replay_diagram_call(ax: Axes, call: CallRecord) -> Any:
         ax.set_title(
             renderer.spec.title,
             fontsize=resolve_font_config()["title_size"],
+            fontfamily=resolve_font_config()["default_family_chain"],
             fontweight="bold",
         )
 

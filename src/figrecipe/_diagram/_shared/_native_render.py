@@ -133,6 +133,7 @@ class DiagramRenderer:
             ax.set_title(
                 self.spec.title,
                 fontsize=resolve_font_config()["title_size"],
+                fontfamily=resolve_font_config()["default_family_chain"],
                 fontweight="bold",
             )
 

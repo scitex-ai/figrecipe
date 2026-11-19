@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-11-19
+
+- **Linter: `STX-I001` (`import matplotlib.pyplot`) and `STX-I009` (`import seaborn`) are** now owned and emitted by this package, moved
+  from the scitex-dev engine. Ids, severities, messages and gates are
+  unchanged, so findings are unchanged; this was proven identical with
+  `scitex-dev linter fingerprint` on the SciTeX examples and
+  paper-scitex-clew corpus. The rules are declared only when the installed
+  scitex-dev (>= 0.65.0) names this package as their owner. With an older
+  engine, the engine keeps emitting its own copy.
+- **Linter: the FM001–FM009 checker now ships here**
+  (`figrecipe._quality._fm_checker`, a verbatim port of the scitex-dev engine
+  copy). figrecipe declares the `fm-checker` capability, so scitex-dev >= 0.65.0
+  skips its own copy.
+
+- Clew provenance: a figure rebuilt by `fr.reproduce(recipe)` and saved
+  unchanged records its image, recipe and data CSVs with
+  `derived_from` = the files the reproduction read (recipe, its data files,
+  applied overrides), so `clew.slice(level=2)` drops a run's unrelated
+  inputs. Any later plot call/decoration withdraws the declaration;
+  in-memory figures and bundle reproductions are never declared. Older
+  scitex-clew without `derived_from` records the outputs undeclared.
+- Enclose fractional recorded raster crop bounds and physical margins by
+  rounding outward, avoiding trimmed edges and undersized sub-pixel margins.
+
+- Reject invalid save validation levels before modifying output files, so
+  misspellings cannot silently suppress reproducibility-failure exceptions.
+
+- Honor root `--json` for diagram info, presets and rendering-backend discovery,
+  matching their local flags while preserving text output and input errors.
+
+- Honor root `--json` for font checks, filtered searches and inventories as well
+  as the existing command option, retaining exact-font availability exit codes.
+- Record and replay subplot `sharex`/`sharey` modes, preserving shared-axis
+  topology and tick-label suppression. Legacy recipes remain unshared when
+  the fields are absent; old sharing cannot be recovered retroactively.
+- Route graph CLI creation, conversion, inspection, splitting and rendering to
+  `GraphDiagram`, preserving the separate mm-based `fr.Diagram` builder. Report
+  rendering-backend failures as visible CLI errors even at warning log level.
+
 ## [0.44.7] - 2026-11-12
 
 - Transfer the compiled frontend from its validated build job into the
