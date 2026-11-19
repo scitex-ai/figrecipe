@@ -6,6 +6,13 @@ import pytest
 
 spi = pytest.importorskip("scitex_dev.linter.spi")
 
+# figrecipe owns I001/I009 only once scitex-dev ships the handover
+# (>= 0.65.0: spi.HANDOVER + spi.add_issue); older engines keep emitting them.
+pytestmark = pytest.mark.skipif(
+    spi.__dict__.get("HANDOVER", {}).get("STX-I001") != "figrecipe",
+    reason="installed scitex-dev predates the STX-I001/I009 handover",
+)
+
 from scitex_dev.linter.config import LinterConfig  # noqa: E402
 
 from figrecipe._quality._import_checker import (  # noqa: E402
