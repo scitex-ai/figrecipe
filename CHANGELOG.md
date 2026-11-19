@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Linter: `STX-I001` (`import matplotlib.pyplot`) and `STX-I009` (`import seaborn`) are** now owned and emitted by this package, moved
+  from the scitex-dev engine. Ids, severities, messages and gates are
+  unchanged, so findings are unchanged; this was proven identical with
+  `scitex-dev linter fingerprint` on the SciTeX examples and
+  paper-scitex-clew corpus. The rules are declared only when the installed
+  scitex-dev (>= 0.65.0) names this package as their owner. With an older
+  engine, the engine keeps emitting its own copy.
+- **Linter: the FM001–FM009 checker now ships here**
+  (`figrecipe._quality._fm_checker`, a verbatim port of the scitex-dev engine
+  copy). figrecipe declares the `fm-checker` capability, so scitex-dev >= 0.65.0
+  skips its own copy.
+
 - Clew provenance: a figure rebuilt by `fr.reproduce(recipe)` and saved
   unchanged records its image, recipe and data CSVs with
   `derived_from` = the files the reproduction read (recipe, its data files,
