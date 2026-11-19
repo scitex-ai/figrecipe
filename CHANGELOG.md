@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Report failed `fr.Diagram` SVG exports with the validation reason and
+  offending identifiers, retaining diagnostic output without a success log.
+- Preserve explicit zero and partial background alpha during PNG export while
+  retaining opaque/`auto` compatibility and patch-state restoration. Existing
+  artist layers and save-time recipe behavior are unchanged. See
+  [explicit background alpha](docs/sphinx/explicit-background-alpha.md).
+- Render content beyond the original canvas before deterministic raster
+  content crops, including output-DPI text extents and requested margins.
+  Keep replay/hitmap extents aligned without changing validation thresholds
+  or pixel budgets. Fixed-canvas exports without a requested content crop and
+  vector output retain their existing behavior. See
+  [outside-canvas content crops](docs/sphinx/overflow-content-crop.md).
+- Include both guides, their Markdown source links and current-version HTML
+  in the installed leaf documentation provider's navigation and search index.
+
 ## [0.45.0] - 2026-11-19
 
 - **Linter: `STX-I001` (`import matplotlib.pyplot`) and `STX-I009` (`import seaborn`) are** now owned and emitted by this package, moved
