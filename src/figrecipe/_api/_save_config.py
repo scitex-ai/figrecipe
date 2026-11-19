@@ -110,13 +110,25 @@ def get_save_transparency() -> bool:
 
 
 def _is_opaque_facecolor(facecolor) -> bool:
-    """Check if facecolor is an opaque color (not transparent/none)."""
+    """Return whether an explicit Matplotlib color has fully opaque alpha.
+
+    RGBA tuples and short/long alpha-hex strings must keep their alpha: forcing
+    patch alpha to 1 overrides the alpha embedded in the requested color.
+    ``None`` leaves the style in charge; the legacy transparent sentinel is
+    retained. ``"auto"`` keeps the existing opaque patch override while
+    Matplotlib selects the figure color. Invalid colors raise its normal
+    ``ValueError``.
+    """
+    from matplotlib.colors import to_rgba
+
     if facecolor is None:
         return False
     if isinstance(facecolor, str):
         if facecolor.lower() in ("none", "transparent"):
             return False
-    return True
+        if facecolor == "auto":
+            return True
+    return to_rgba(facecolor)[3] == 1.0
 
 
 def _make_patches_opaque(fig):

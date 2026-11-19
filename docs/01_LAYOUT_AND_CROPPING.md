@@ -2,6 +2,9 @@
 
 This document explains how matplotlib handles figure layout (element positioning) and output cropping (whitespace trimming). FigRecipe uses sensible defaults for both.
 
+For explicit export colors and transparency, see
+[Explicit background alpha](explicit-background-alpha.md).
+
 ---
 
 ## Part 1: Layout Engines
