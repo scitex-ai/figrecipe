@@ -272,6 +272,7 @@ UserWarning: The figure layout has changed to tight
 
 ## References
 
+- [Requested raster crops with content outside the canvas](overflow-content-crop.md)
 - [Matplotlib: Constrained Layout Guide](https://matplotlib.org/stable/tutorials/intermediate/constrainedlayout_guide.html)
 - [Matplotlib: Tight Layout Guide](https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html)
 - [Matplotlib: savefig() Documentation](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html)
