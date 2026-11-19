@@ -28,7 +28,8 @@ scitex-cloud. The orchestrator re-exports it as ``scitex.plt``.
 - **scitex** (`docs <https://scitex-python.readthedocs.io/>`_): Orchestrator that re-exports ``scitex.plt``
 - **scitex-sdk** (`source <https://github.com/scitex-ai/scitex-sdk>`_): Shared
   ``scitex_sdk.app`` runtime and ``scitex_sdk.ui`` Python/frontend components.
-  FigRecipe requires the genuinely published SDK 0.3.0 owner.
+  Supported SDK versions are declared by the runtime dependencies and optional
+  extras in FigRecipe's `package metadata <https://github.com/scitex-ai/figrecipe/blob/main/pyproject.toml>`_.
   FigRecipe retains its own workspace templates, editor and project authority.
 
 .. toctree::

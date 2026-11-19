@@ -6,17 +6,16 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; FigRecipe v0.45.0</title>
+  <title>Installation &mdash; FigRecipe v0.45.1</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
-      <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
 
 
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=b6498c4d"></script>
+      <script src="_static/documentation_options.js?v=12310854"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -460,7 +459,7 @@
 <p>This includes:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">editor</span></code>: GUI editor (Django + React)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imaging</span></code>: Image processing (Pillow, scipy)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">imaging</span></code>: Image processing (Pillow)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mcp</span></code>: MCP server for AI integration (fastmcp)</p></li>
 </ul>
 </section>
@@ -489,12 +488,10 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 </section>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Python 3.10+</p></li>
-<li><p>matplotlib &gt;= 3.6</p></li>
-<li><p>numpy</p></li>
-<li><p>PyYAML</p></li>
-</ul>
+<p>Supported Python versions and dependency constraints are declared in the
+<a class="reference external" href="https://github.com/scitex-ai/figrecipe/blob/main/pyproject.toml">package metadata</a>.
+The installer resolves required packages, including the shared SDK and SciPy,
+automatically. Optional extras add requirements for their selected features.</p>
 </section>
 </section>
 

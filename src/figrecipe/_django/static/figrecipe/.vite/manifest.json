@@ -1,6 +1,6 @@
 {
-  "_mobile-6OxW_mCL.js": {
-    "file": "assets/mobile-6OxW_mCL.js",
+  "_mobile-C4F-Dcra.js": {
+    "file": "assets/mobile-C4F-Dcra.js",
     "name": "mobile"
   },
   "index.html": {
@@ -9,7 +9,7 @@
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_mobile-6OxW_mCL.js"
+      "_mobile-C4F-Dcra.js"
     ],
     "dynamicImports": [
       "src/workspace.ts"
@@ -22,7 +22,7 @@
     "isEntry": true,
     "isDynamicEntry": true,
     "imports": [
-      "_mobile-6OxW_mCL.js"
+      "_mobile-C4F-Dcra.js"
     ]
   },
   "style.css": {

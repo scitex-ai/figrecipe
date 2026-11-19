@@ -22,7 +22,7 @@ Install with all optional dependencies:
 This includes:
 
 - ``editor``: GUI editor (Django + React)
-- ``imaging``: Image processing (Pillow, scipy)
+- ``imaging``: Image processing (Pillow)
 - ``mcp``: MCP server for AI integration (fastmcp)
 
 Individual Extras
@@ -55,7 +55,7 @@ For development:
 Requirements
 ------------
 
-- Python 3.10+
-- matplotlib >= 3.6
-- numpy
-- PyYAML
+Supported Python versions and dependency constraints are declared in the
+`package metadata <https://github.com/scitex-ai/figrecipe/blob/main/pyproject.toml>`_.
+The installer resolves required packages, including the shared SDK and SciPy,
+automatically. Optional extras add requirements for their selected features.
