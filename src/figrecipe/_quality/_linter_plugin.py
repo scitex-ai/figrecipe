@@ -80,12 +80,26 @@ def get_plugin():
     # installed without scitex-linter.
     # ------------------------------------------------------------------
     checkers: list = []
+    capabilities: list = []
+    extra_rules: list = []
     try:
-        from scitex_dev.linter._fm_checker import FMChecker
-
-        checkers.append(FMChecker)
+        from scitex_dev.linter import spi
     except ImportError:
-        pass
+        spi = None
+    if spi is not None:
+        # FM001-FM009: figrecipe's own checker (moved from the engine). The
+        # `fm-checker` capability tells scitex-dev >= 0.65.0 to skip its copy.
+        from ._fm_checker import bind_fm_checker
+
+        checkers.append(bind_fm_checker(fm, spi))
+        capabilities.append("fm-checker")
+        # STX-I001 / STX-I009, when the engine yields them to figrecipe.
+        from ._import_checker import bind_raw_import_checker, owned_import_rules
+
+        owned = owned_import_rules(Rule, spi)
+        if owned is not None:
+            extra_rules.extend(owned)
+            checkers.append(bind_raw_import_checker(*owned, spi))
 
     style_checker = _make_style_kwarg_checker(
         plot["P006"], plot["P007"], plot["P008"], plot["P009"]
@@ -143,7 +157,10 @@ def get_plugin():
         checkers.append(raster_checker)
 
     return {
-        "rules": list(fm.values()) + list(fig.values()) + list(plot.values()),
+        "rules": list(fm.values())
+        + list(fig.values())
+        + list(plot.values())
+        + extra_rules,
         "call_rules": {
             # FM rules via call patterns
             (None, "tight_layout"): fm["FM002"],
@@ -162,4 +179,5 @@ def get_plugin():
             "bar": plot["P003"],
         },
         "checkers": checkers,
+        "capabilities": capabilities,
     }
