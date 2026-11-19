@@ -5,16 +5,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._wrappers._figure &mdash; FigRecipe v0.44.5</title>
+  <title>figrecipe._wrappers._figure &mdash; FigRecipe v0.45.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
 
 
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=9f9558aa"></script>
+      <script src="../../../_static/documentation_options.js?v=b6498c4d"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -134,6 +135,8 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../explicit-background-alpha.html">Explicit background alpha</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../overflow-content-crop.html">Rendering ink beyond the canvas during a content crop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cli_reference.html">CLI Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#usage">Usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#figure-creation">Figure Creation</a><ul>
@@ -939,8 +942,9 @@
             <span class="k">return</span> <span class="n">fname</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">.._api._save</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_figure</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer._derived_sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">declares_figure_sources</span> <span class="k">as</span> <span class="n">_decl</span>
 
-        <span class="k">return</span> <span class="n">save_figure</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">_decl</span><span class="p">(</span><span class="n">save_figure</span><span class="p">)(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">fname</span><span class="p">,</span>
             <span class="n">save_recipe</span><span class="o">=</span><span class="n">save_recipe</span><span class="p">,</span>
@@ -983,10 +987,13 @@
 <span class="sd">            CSV structure: 'separate' (default) or 'single' (scitex-compatible).</span>
 <span class="sd">        """</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_recipe</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer._derived_sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">declares_figure_sources</span> <span class="k">as</span> <span class="n">_decl</span>
 
-        <span class="k">return</span> <span class="n">save_recipe</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_recorder</span><span class="o">.</span><span class="n">figure_record</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">include_data</span><span class="p">,</span> <span class="n">data_format</span><span class="p">,</span> <span class="n">csv_format</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">_decl</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">fig</span><span class="p">:</span> <span class="n">save_recipe</span><span class="p">(</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">record</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">include_data</span><span class="p">,</span> <span class="n">data_format</span><span class="p">,</span> <span class="n">csv_format</span>
+            <span class="p">)</span>
+        <span class="p">)(</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
 
 

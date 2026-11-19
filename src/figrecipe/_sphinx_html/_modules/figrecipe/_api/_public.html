@@ -5,16 +5,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>figrecipe._api._public &mdash; FigRecipe v0.44.5</title>
+  <title>figrecipe._api._public &mdash; FigRecipe v0.45.0</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
 
 
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=9f9558aa"></script>
+      <script src="../../../_static/documentation_options.js?v=b6498c4d"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -134,6 +135,8 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../../../explicit-background-alpha.html">Explicit background alpha</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../overflow-content-crop.html">Rendering ink beyond the canvas during a content crop</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../cli_reference.html">CLI Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#usage">Usage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../cli_reference.html#figure-creation">Figure Creation</a><ul>
@@ -452,12 +455,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.figure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Figure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._quality._validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._recorder</span><span class="w"> </span><span class="kn">import</span> <span class="n">FigureRecord</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._reproducer</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_recipe_info</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._reproducer</span><span class="w"> </span><span class="kn">import</span> <span class="n">reproduce</span> <span class="k">as</span> <span class="n">_reproduce_core</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_recipe</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._utils._numpy_io</span><span class="w"> </span><span class="kn">import</span> <span class="n">CsvFormat</span><span class="p">,</span> <span class="n">DataFormat</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.._quality._validator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecordingAxes</span><span class="p">,</span> <span class="n">RecordingFigure</span>
 
 
@@ -578,6 +581,8 @@
 <span class="sd">        Maximum acceptable MSE for validation (default: 100).</span>
 <span class="sd">    validate_error_level : str</span>
 <span class="sd">        How to handle failures: 'error', 'warning', or 'debug'.</span>
+<span class="sd">        Other values raise ValueError before changing files, even if</span>
+<span class="sd">        validate=False or save_recipe=False.</span>
 <span class="sd">    validate_axis_range_alignment : bool</span>
 <span class="sd">        If True (default), run the runtime ``axis_range_alignment``</span>
 <span class="sd">        check on the rendered figure. Catches the autoscale-with-</span>
@@ -594,7 +599,8 @@
 <span class="sd">    facecolor : str, optional</span>
 <span class="sd">        Background color. When opaque, patches are made visible.</span>
 <span class="sd">    save_hitmap : bool</span>
-<span class="sd">        If True (default), save hitmap image for GUI editor element selection.</span>
+<span class="sd">        If True, save hitmap image for GUI editor element selection.</span>
+<span class="sd">        Default False.</span>
 <span class="sd">    save_editable : bool</span>
 <span class="sd">        If True, write the editable-figure JSON (schema</span>
 <span class="sd">        ``scitex.plt.figure.editable``) to ``&lt;stem&gt;.json`` next to the image.</span>
@@ -606,9 +612,10 @@
 <span class="sd">        If save_recipe=True: (image_path, yaml_path, ValidationResult or None)</span>
 <span class="sd">        If save_recipe=False: (image_path, None, None)</span>
 <span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.._serializer._derived_sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">declares_figure_sources</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">._save</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_figure</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">save_figure</span><span class="p">(</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">declares_figure_sources</span><span class="p">(</span><span class="n">save_figure</span><span class="p">)(</span>
         <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span>
         <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
         <span class="n">save_recipe</span><span class="o">=</span><span class="n">save_recipe</span><span class="p">,</span>

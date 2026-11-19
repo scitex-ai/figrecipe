@@ -3,7 +3,7 @@
 This document explains how matplotlib handles figure layout (element positioning) and output cropping (whitespace trimming). FigRecipe uses sensible defaults for both.
 
 For explicit export colors and transparency, see
-[Explicit background alpha](explicit-background-alpha.md).
+[Explicit background alpha](sphinx/explicit-background-alpha.md).
 
 ---
 
@@ -275,7 +275,7 @@ UserWarning: The figure layout has changed to tight
 
 ## References
 
-- [Requested raster crops with content outside the canvas](overflow-content-crop.md)
+- [Requested raster crops with content outside the canvas](sphinx/overflow-content-crop.md)
 - [Matplotlib: Constrained Layout Guide](https://matplotlib.org/stable/tutorials/intermediate/constrainedlayout_guide.html)
 - [Matplotlib: Tight Layout Guide](https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html)
 - [Matplotlib: savefig() Documentation](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html)
