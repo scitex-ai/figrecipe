@@ -40,6 +40,10 @@ writes the diagram recipe beside it. `save_debug=False` omits the separate
 debug image. If layout validation fails, the returned path has a `_FAILED`
 suffix and an error reports the failed rule and offending element IDs;
 that diagnostic is not a valid output, and no recipe is written for it.
+Failure reporting also applies to SVG output: it does not depend on Pillow
+reading raster dimensions. `tests/integration/test_diagram_svg_failure_logging.py`
+checks actual PNG/SVG diagnostics through both save names, with debug output
+enabled and disabled, plus successful PNG exports and a file-write failure.
 
 ## Mermaid diagrams
 
