@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.1] - 2026-11-19
+
 - Report failed `fr.Diagram` SVG exports with the validation reason and
   offending identifiers, retaining diagnostic output without a success log.
 - Preserve explicit zero and partial background alpha during PNG export while
