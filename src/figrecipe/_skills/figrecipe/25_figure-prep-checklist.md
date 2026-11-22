@@ -26,6 +26,9 @@ Before a figure script is allowed into a publication pipeline:
 - [ ] Style preset applied via `fr.load_style(...)` or
       `figrecipe.subplots(style=...)` — no manual `rcParams` overrides
       that bypass figrecipe.
+- [ ] Labels, values, units, and short explanations are on or next to their
+      targets where legible; no avoidable cross-figure color-to-legend lookup.
+      Use a separate legend only when it improves readability or comparison.
 - [ ] Output saved via `fr.save(fig, ...)` (not `fig.savefig`).
 - [ ] Caption / docstring explicitly names the data source and the
       NaN-handling choice.
@@ -41,6 +44,9 @@ Before a figure script is allowed into a publication pipeline:
       (STX-FM018).
 
 ## Anti-patterns
+
+- A pie chart or diagram whose reader must match colors to a distant table
+  even though each slice or node could carry a readable direct label.
 
 - A `make_representative_figure()` helper that silently picks
   `subject_ids[0]` "for the example" — encodes cherry-pick into the

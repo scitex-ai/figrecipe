@@ -31,6 +31,16 @@ import figrecipe
 
 This package does not ship as a submodule of the `scitex` umbrella.
 
+## Put information beside its target
+
+Keep labels, values, units, and brief explanations on or adjacent to the marks,
+slices, nodes, or arrows they describe. Prefer direct labeling when it fits
+legibly; color reinforces identity rather than requiring a distant legend lookup.
+For small pie slices, use short adjacent labels with clear leaders. A separate
+legend or table is appropriate when direct labels would collide, obscure data,
+or make a dense shared encoding harder to read. Inspect the exported figure at
+its final display size before choosing the exception.
+
 ## Sub-skills
 
 ### Mandatory
