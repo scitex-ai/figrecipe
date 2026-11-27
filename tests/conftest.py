@@ -3,39 +3,22 @@
 Two responsibilities:
 
 1. Headless matplotlib + figure cleanup (existing).
-2. Subprocess coverage wiring — force-set COVERAGE_PROCESS_START and
-   COVERAGE_FILE at module-import time, and drop an idempotent `.pth`
-   shim in site-packages so child Python interpreters (subprocess.run,
-   jupyter nbconvert --execute, pytest-xdist workers) start coverage
-   tracing on their own. `os.environ.setdefault` would be a no-op here
-   because pytest-cov sets COVERAGE_FILE to a tmp dir before conftest
-   loads.
+2. Subprocess coverage wiring — subprocess coverage is configured in
+   pyproject.toml via coverage.py's subprocess patch; test collection must
+   not install .pth files or overwrite caller-owned coverage environment
+   variables.
 """
 
 from __future__ import annotations
 
 import gc
-import os
 import sys  # noqa: F401  (kept for downstream test usage)
-import sysconfig
 from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
 import pytest
 from scitex_dev.testing import make_pytest_configure
-
-# ---------------------------------------------------------------------------
-# Subprocess coverage wiring (module-import time — must run before tests).
-# ---------------------------------------------------------------------------
-
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-# Pin coverage's data file at the repo root and point process_startup at our
-# pyproject so child interpreters configure themselves correctly.
-os.environ["COVERAGE_PROCESS_START"] = str(_PROJECT_ROOT / "pyproject.toml")
-os.environ["COVERAGE_FILE"] = str(_PROJECT_ROOT / ".coverage")
-
 
 # ---------------------------------------------------------------------------
 # Import-vantage guard — refuse to grade a tree we are not importing.
@@ -58,45 +41,9 @@ os.environ["COVERAGE_FILE"] = str(_PROJECT_ROOT / ".coverage")
 #
 # Set SCITEX_ALLOW_FOREIGN_IMPORT=1 to test a deliberately installed build; it
 # prints loudly when used.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
 pytest_configure = make_pytest_configure("figrecipe", _PROJECT_ROOT)
 
-
-def _ensure_subprocess_coverage_shim(purelib: Path | None = None) -> Path | None:
-    """Drop an idempotent `.pth` file in site-packages that auto-starts
-    coverage in every child Python interpreter via
-    `coverage.process_startup()`.
-
-    `purelib` is overridable (tests pass a writable `tmp_path`) because the
-    real venv site-packages is read-only in some CI environments (e.g. a
-    layered/squashfs SIF image) — asserting against that path directly is
-    not hermetic. Returns the `.pth` path written, or None if the write was
-    skipped (read-only site-packages).
-    """
-    purelib = purelib if purelib is not None else Path(sysconfig.get_paths()["purelib"])
-    pth = purelib / "_figrecipe_subprocess_coverage.pth"
-    # `coverage` is imported ONLY inside the conditional: this .pth line runs
-    # on every interpreter start in the venv (not just test runs), and an
-    # unconditional top-level `import coverage` breaks any invocation where
-    # coverage isn't installed (e.g. `figrecipe --help` in a plain user venv)
-    # with a ModuleNotFoundError printed by site.py on every single command.
-    shim = (
-        "import os\n"
-        "if os.environ.get('COVERAGE_PROCESS_START'):\n"
-        "    import coverage\n"
-        "    coverage.process_startup()\n"
-    )
-    try:
-        if not pth.exists() or pth.read_text() != shim:
-            pth.write_text(shim)
-    except OSError:
-        # site-packages may be read-only (e.g. system Python, or a
-        # layered/squashfs CI image); silently skip — local dev venvs are
-        # writable and that's where this matters.
-        return None
-    return pth
-
-
-_ensure_subprocess_coverage_shim()
 
 # ---------------------------------------------------------------------------
 # Headless matplotlib + per-test figure cleanup.
