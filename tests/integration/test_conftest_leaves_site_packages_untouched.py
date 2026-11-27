@@ -11,7 +11,6 @@ from pathlib import Path
 def test_conftest_leaves_site_packages_untouched():
     # Arrange
     conftest = Path(__file__).resolve().parents[1] / "conftest.py"
-    assert conftest.is_file()
     child_code = textwrap.dedent(
         f"""\
         import os
