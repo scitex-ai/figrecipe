@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Configure subprocess coverage via coverage.py's `patch = ["subprocess"]` in pyproject.toml; `tests/conftest.py` no longer writes `.pth` files into site-packages or overwrites coverage environment variables.
+
 ## [0.45.0] - 2026-11-19
 
 - **Linter: `STX-I001` (`import matplotlib.pyplot`) and `STX-I009` (`import seaborn`) are** now owned and emitted by this package, moved
