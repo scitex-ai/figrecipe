@@ -7,8 +7,11 @@ from __future__ import annotations
 
 from pathlib import Path as _Path
 
-# Best-effort .env loading: walk parent dirs from cwd up to $HOME, loading
-# every .env found (closest wins). DEFERRED to first public-attribute access
+# Best-effort .env loading: walk parent dirs from cwd up to $HOME and export
+# only figrecipe's own ``FIGRECIPE_*`` settings (closest .env wins; process env
+# always wins). Other variables -- API keys and other credentials -- are never
+# copied into os.environ, so subprocesses do not inherit them
+# (scitex-config#47). DEFERRED to first public-attribute access
 # (see _ensure_env_loaded / __getattr__) rather than run at import: importing
 # scitex_config pulls in importlib.metadata and the walk_up does many filesystem
 # stat calls, which on a network filesystem (e.g. Spartan gpfs) dominate
@@ -18,16 +21,24 @@ from pathlib import Path as _Path
 _env_loaded = False
 
 
+_ENV_PREFIX = "FIGRECIPE_"
+
+
 def _ensure_env_loaded() -> None:
-    """Load .env files once, on first public-API use (best-effort, tolerant)."""
+    """Export ``FIGRECIPE_*`` keys from .env once, on first public-API use."""
     global _env_loaded
     if _env_loaded:
         return
     _env_loaded = True
     try:
         from scitex_config import load_dotenv as _load_dotenv
+        from scitex_config import read_dotenv as _read_dotenv
 
-        _load_dotenv(walk_up=True, stop_at=str(_Path.home()))
+        home = str(_Path.home())
+        found = _read_dotenv(walk_up=True, stop_at=home)
+        keys = [k for k in found if k.startswith(_ENV_PREFIX)]
+        if keys:
+            _load_dotenv(walk_up=True, stop_at=home, keys=keys)
     except Exception:
         pass
 
