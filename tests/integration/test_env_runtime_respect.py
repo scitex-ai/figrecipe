@@ -139,7 +139,7 @@ def test_first_api_use_loads_dotenv_from_cwd(tmp_path):
         """
         import os
         import figrecipe
-        figrecipe.subplots  # first public-attr access triggers load_dotenv(walk_up=True)
+        figrecipe.subplots  # first public-attr access exports FIGRECIPE_* .env keys
         print(os.environ.get("FIGRECIPE_ENV_RESPECT_PROBE", ""))
         """
     )
@@ -165,6 +165,55 @@ def test_first_api_use_loads_dotenv_from_cwd(tmp_path):
     )
     # Assert
     assert result.stdout.strip() == "hello", result.stderr
+
+
+@pytest.mark.skipif(
+    not _scitex_config_supports_walk_up(),
+    reason="installed scitex_config.load_dotenv predates walk_up=True kwarg",
+)
+def test_first_api_use_does_not_export_foreign_dotenv_keys(tmp_path):
+    """Only FIGRECIPE_* keys are exported; other .env variables stay out.
+
+    A project .env usually holds credentials for unrelated services. Copying
+    them into os.environ would hand them to every subprocess
+    (scitex-config#47).
+    """
+    # Arrange: a real .env holding one figrecipe key and one foreign key.
+    work = tmp_path / "with_env"
+    work.mkdir()
+    (work / ".env").write_text(
+        "FIGRECIPE_ENV_RESPECT_PROBE=hello\nFOREIGN_SERVICE_API_KEY=fake-value\n"
+    )
+    script = textwrap.dedent(
+        """
+        import os
+        import figrecipe
+        figrecipe.subplots
+        print(os.environ.get("FOREIGN_SERVICE_API_KEY", "<unset>"))
+        """
+    )
+    import figrecipe as _fr_local
+
+    pkg_src_dir = str(Path(_fr_local.__file__).resolve().parent.parent)
+    child_env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("FIGRECIPE_ENV_RESPECT_PROBE", "FOREIGN_SERVICE_API_KEY")
+    }
+    child_env["HOME"] = str(work)
+    child_env["PYTHONPATH"] = (
+        pkg_src_dir + os.pathsep + child_env.get("PYTHONPATH", "")
+    ).rstrip(os.pathsep)
+    # Act
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=str(work),
+        capture_output=True,
+        text=True,
+        env=child_env,
+    )
+    # Assert
+    assert result.stdout.strip() == "<unset>", result.stderr
 
 
 # ---------------------------------------------------------------------------
