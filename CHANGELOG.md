@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.2] - 2026-11-28
+
+### Security
+
+- On first API use figrecipe now exports only `FIGRECIPE_*` variables from
+  the `.env` files it finds between cwd and `$HOME`. It used to copy every
+  variable, including unrelated credentials, into `os.environ`, where every
+  subprocess inherited them (scitex-config#47). Process env still wins, and
+  the closest `.env` still wins. Requires `scitex-config>=0.4.0`.
+
 ## [0.45.1] - 2026-11-19
 
 - Report failed `fr.Diagram` SVG exports with the validation reason and

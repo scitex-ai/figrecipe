@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "figrecipe"
-version = "0.45.1"
+version = "0.45.2"
 description = "Reproducible matplotlib wrapper with mm-precision layouts"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -45,7 +45,7 @@ dependencies = [
     "click>=8.0.0",
     "rich>=13.0.0",
     "scitex-sdk>=0.3.18",
-    "scitex-config>=0.3.0",
+    "scitex-config>=0.4.0",
     # >=0.60.1: src/figrecipe/_cli/_skills.py imports scitex-dev's shared
     # skills_click_group federation primitive (PS-217). The floor moves in
     # the SAME commit as the call — a lean install resolving an older
